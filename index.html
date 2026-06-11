@@ -232,7 +232,6 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 <!-- HEADER -->
 <header>
   <span class="logo">🗺 Lingorm BKK</span>
-  <span class="logo-sub" data-i18n="hdr_sub"></span>
   <div class="hdr-spacer"></div>
   <button class="hdr-btn btn-add" onclick="openAddModal()">
     <span>＋</span><span data-i18n="add_loc"></span>
@@ -374,54 +373,22 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
     </div>
     <p class="modal-desc" data-i18n="add_desc"></p>
     <div class="modal-body">
-      <div class="form-2col">
-        <div class="form-row">
-          <label class="form-label"><span data-i18n="add_lbl_name_zh"></span><span style="color:var(--notfound)"> *</span></label>
-          <input class="form-input" id="add-name-zh" data-i18n-ph="add_ph_name_zh"/>
-        </div>
-        <div class="form-row">
-          <label class="form-label"><span data-i18n="add_lbl_name_en"></span><span style="color:var(--notfound)"> *</span></label>
-          <input class="form-input" id="add-name-en" data-i18n-ph="add_ph_name_en"/>
-        </div>
+      <div class="form-row">
+        <label class="form-label"><span data-i18n="add_lbl_name"></span><span style="color:var(--notfound)"> *</span></label>
+        <input class="form-input" id="add-name" data-i18n-ph="add_ph_name"/>
       </div>
       <div class="form-row">
-        <label class="form-label">
-          <span data-i18n="add_lbl_alt"></span> <span class="lbl-opt" data-i18n="opt"></span>
-        </label>
-        <input class="form-input" id="add-alt" data-i18n-ph="add_ph_alt"/>
-      </div>
-      <div class="form-2col">
-        <div class="form-row">
-          <label class="form-label" data-i18n="add_lbl_cat"></label>
-          <select class="form-select" id="add-cat"></select>
-        </div>
-        <div class="form-row">
-          <label class="form-label" data-i18n="add_lbl_icon"></label>
-          <input class="form-input" id="add-icon" maxlength="4" data-i18n-ph="add_ph_icon" style="font-size:18px"/>
-        </div>
+        <label class="form-label" data-i18n="add_lbl_cat"></label>
+        <select class="form-select" id="add-cat"></select>
       </div>
       <div class="form-row">
         <label class="form-label"><span data-i18n="add_lbl_maps"></span><span style="color:var(--notfound)"> *</span></label>
-        <input class="form-input" id="add-maps" data-i18n-ph="add_ph_maps"/>
+        <input class="form-input" id="add-maps" data-i18n-ph="add_ph_maps" type="url"/>
         <div class="form-hint" data-i18n="add_hint_maps"></div>
       </div>
-      <div class="form-2col">
-        <div class="form-row">
-          <label class="form-label"><span data-i18n="add_lbl_lat"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
-          <input class="form-input" id="add-lat" type="number" step="any" placeholder="13.7466"/>
-        </div>
-        <div class="form-row">
-          <label class="form-label"><span data-i18n="add_lbl_lng"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
-          <input class="form-input" id="add-lng" type="number" step="any" placeholder="100.5344"/>
-        </div>
-      </div>
       <div class="form-row">
-        <label class="form-label"><span data-i18n="add_lbl_notes_zh"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
-        <textarea class="form-textarea" id="add-notes-zh" rows="2" data-i18n-ph="add_ph_notes_zh"></textarea>
-      </div>
-      <div class="form-row">
-        <label class="form-label"><span data-i18n="add_lbl_notes_en"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
-        <textarea class="form-textarea" id="add-notes-en" rows="2" data-i18n-ph="add_ph_notes_en"></textarea>
+        <label class="form-label"><span data-i18n="add_lbl_notes"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
+        <textarea class="form-textarea" id="add-notes" rows="2" data-i18n-ph="add_ph_notes"></textarea>
       </div>
       <div class="form-row">
         <label class="form-label" data-i18n="add_lbl_status"></label>
@@ -575,21 +542,15 @@ const T = {
     edit_submit: '送出建議',
     // Add modal
     add_title: '➕ 新增地點',
-    add_desc: '填寫你知道的玲玲同款地點，送出後由管理員審核後才加入地圖。',
-    add_lbl_name_zh: '地點名稱（中文）',
-    add_lbl_name_en: '地點名稱（英文）',
-    add_ph_name_zh: '例：暹羅精品酒店',
-    add_ph_name_en: 'e.g. The Siam Hotel',
-    add_lbl_alt: '泰文名稱 / 別名',
-    add_ph_alt: '例：โรงแรมสยาม',
-    add_lbl_cat: '類別', add_lbl_icon: 'Emoji 圖示', add_ph_icon: '🍽',
-    add_lbl_maps: 'Google Maps 搜尋關鍵字',
-    add_ph_maps: '例：The Siam Hotel Bangkok',
-    add_hint_maps: '在 Google Maps 搜尋到地點後，複製搜尋欄的文字',
-    add_lbl_lat: '緯度 Lat', add_lbl_lng: '經度 Lng',
-    add_lbl_notes_zh: '簡短說明（中文）', add_lbl_notes_en: '簡短說明（英文）',
-    add_ph_notes_zh: '例：玲玲在 IG 直播中推薦的餐廳，招牌是...',
-    add_ph_notes_en: "e.g. Spotted in Lingorm's IG livestream...",
+    add_desc: '填寫你知道的Lingorm打卡地點，送出後由管理員審核後才加入地圖。',
+    add_lbl_name: '地點名稱',
+    add_ph_name: '例：暹羅精品酒店',
+    add_lbl_cat: '類別',
+    add_lbl_maps: 'Google Maps 連結',
+    add_ph_maps: '例：https://maps.app.goo.gl/...',
+    add_hint_maps: '在 Google Maps 找到地點後，點選「分享」複製連結',
+    add_lbl_notes: '簡短說明',
+    add_ph_notes: '例：玲玲在 IG 直播中推薦的餐廳，招牌是...',
     add_lbl_status: '狀態',
     add_lbl_source: '來源連結',
     add_lbl_source_opt: '（選填，例如 IG 貼文、YT 影片網址）',
@@ -597,7 +558,7 @@ const T = {
     add_submit: '送出',
     // Validation
     err_name_required: '請填寫地點名稱。',
-    err_maps_required: '請填寫 Google Maps 搜尋字串。',
+    err_maps_required: '請填寫 Google Maps 連結。',
     // Common
     opt: '（選填）', cancel: '取消',
     st_verified: '✅ 已驗證', st_review: '⚠️ 待確認', st_notfound: '❌ 找不到',
@@ -664,20 +625,14 @@ const T = {
     // Add modal
     add_title: '➕ Add Location',
     add_desc: "Submit a Lingorm-spotted location. An admin will review it before adding to the map.",
-    add_lbl_name_zh: 'Location name (Chinese)',
-    add_lbl_name_en: 'Location name (English)',
-    add_ph_name_zh: 'e.g. 暹羅精品酒店',
-    add_ph_name_en: 'e.g. The Siam Hotel',
-    add_lbl_alt: 'Thai name / alias',
-    add_ph_alt: 'e.g. โรงแรมสยาม',
-    add_lbl_cat: 'Category', add_lbl_icon: 'Emoji icon', add_ph_icon: '🍽',
-    add_lbl_maps: 'Google Maps search query',
-    add_ph_maps: 'e.g. The Siam Hotel Bangkok',
-    add_hint_maps: 'Search the location on Google Maps and copy the search text',
-    add_lbl_lat: 'Latitude', add_lbl_lng: 'Longitude',
-    add_lbl_notes_zh: 'Notes (Chinese)', add_lbl_notes_en: 'Notes (English)',
-    add_ph_notes_zh: 'e.g. 玲玲在 IG 直播中推薦的餐廳，招牌是...',
-    add_ph_notes_en: "e.g. Spotted in Lingorm's IG livestream...",
+    add_lbl_name: 'Location name',
+    add_ph_name: 'e.g. The Siam Hotel',
+    add_lbl_cat: 'Category',
+    add_lbl_maps: 'Google Maps link',
+    add_ph_maps: 'e.g. https://maps.app.goo.gl/...',
+    add_hint_maps: 'Find the location on Google Maps, tap "Share" to copy the link',
+    add_lbl_notes: 'Notes',
+    add_ph_notes: "e.g. Spotted in Lingorm's IG livestream...",
     add_lbl_status: 'Status',
     add_lbl_source: 'Source link',
     add_lbl_source_opt: '(optional, e.g. IG post, YouTube URL)',
@@ -685,7 +640,7 @@ const T = {
     add_submit: 'Submit',
     // Validation
     err_name_required: 'Please enter the location name.',
-    err_maps_required: 'Please enter a Google Maps search query.',
+    err_maps_required: 'Please enter a Google Maps link.',
     // Common
     opt: '(optional)', cancel: 'Cancel',
     st_verified: '✅ Verified', st_review: '⚠️ Needs Review', st_notfound: '❌ Not Found',
@@ -793,11 +748,7 @@ function getEffectiveTheme(){
 }
 function updateMapTheme(){
   if(!map)return;
-  map.setOptions({
-    colorScheme:getEffectiveTheme()==='dark'
-      ?google.maps.ColorScheme.DARK
-      :google.maps.ColorScheme.LIGHT
-  });
+  map.setOptions({colorScheme:getEffectiveTheme()==='dark'?'DARK':'LIGHT'});
 }
 function makeMarkerContent(status){
   const c={Verified:'#2e7d32','Needs Review':'#e65100','Could Not Find':'#b71c1c'}[status]||'#e65100';
@@ -846,9 +797,7 @@ window.initMapCallback=function(){
   map=new google.maps.Map(document.getElementById('map'),{
     center:{lat:13.82,lng:100.52},zoom:11,
     mapId:'__GOOGLE_MAP_ID__',
-    colorScheme:getEffectiveTheme()==='dark'
-      ?google.maps.ColorScheme.DARK
-      :google.maps.ColorScheme.LIGHT,
+    colorScheme:getEffectiveTheme()==='dark'?'DARK':'LIGHT',
     zoomControlOptions:{position:google.maps.ControlPosition.RIGHT_CENTER}
   });
   infoWindow=new google.maps.InfoWindow();
@@ -907,7 +856,7 @@ function renderList(){
       <div class="card-notes">${notes}</div>
       ${row[C.APPROX]==='TRUE'?`<div class="approx-tag">${t('approx')}</div>`:''}
       <div class="card-footer">
-        <a class="card-maplink" href="${mapsUrl}" target="_blank" onclick="event.stopPropagation()">🗺 ${t('maps')}</a>
+        <span></span>
         <button class="card-edit-btn${needsHelp?' verify-hint':''}"
           onclick="event.stopPropagation();openEditModal(${i})">
           ${needsHelp?t('edit_btn_verify'):t('edit_btn_edit')}
@@ -1060,8 +1009,7 @@ async function submitEdit(){
 // ADD MODAL
 // ═══════════════════════════════════════════════════
 function openAddModal(){
-  ['add-name-zh','add-name-en','add-alt','add-maps','add-lat','add-lng',
-   'add-notes-zh','add-notes-en','add-source','add-submitter','add-icon'].forEach(id=>
+  ['add-name','add-maps','add-notes','add-source','add-submitter'].forEach(id=>
     document.getElementById(id).value='');
   document.getElementById('ns-review').checked=true;
   resetFeedback('add-feedback','add-submit-btn',t('add_submit'));
@@ -1069,26 +1017,23 @@ function openAddModal(){
 }
 function closeAddModal(){document.getElementById('add-modal').classList.remove('open')}
 async function submitAdd(){
-  const nameZH=document.getElementById('add-name-zh').value.trim();
-  const nameEN=document.getElementById('add-name-en').value.trim();
+  const name=document.getElementById('add-name').value.trim();
   const maps=document.getElementById('add-maps').value.trim();
   const fb=document.getElementById('add-feedback');
-  if(!nameZH&&!nameEN){fb.className='submit-feedback err';fb.textContent=t('err_name_required');return}
+  if(!name){fb.className='submit-feedback err';fb.textContent=t('err_name_required');return}
   if(!maps){fb.className='submit-feedback err';fb.textContent=t('err_maps_required');return}
   const catSel=document.getElementById('add-cat');
   const catIdx=catSel.selectedIndex;
   const catObj=CATEGORIES[catIdx]||{zh:'',en:catSel.value};
+  const notes=document.getElementById('add-notes').value.trim();
   await doNetlifySubmit('add-submit-btn','add-feedback',t('add_submit'),{
     'form-name':'add-location','bot-field':'',
-    name_zh:nameZH,name_en:nameEN,
-    alt_name:document.getElementById('add-alt').value.trim(),
-    icon:document.getElementById('add-icon').value.trim(),
+    name_zh:lang==='zh'?name:'',name_en:lang==='en'?name:'',
+    alt_name:'',icon:'',
     category_zh:catObj.zh,category_en:catObj.en,
-    lat:document.getElementById('add-lat').value.trim(),
-    lng:document.getElementById('add-lng').value.trim(),
+    lat:'',lng:'',
     maps_query:maps,
-    notes_zh:document.getElementById('add-notes-zh').value.trim(),
-    notes_en:document.getElementById('add-notes-en').value.trim(),
+    notes_zh:lang==='zh'?notes:'',notes_en:lang==='en'?notes:'',
     status:document.querySelector('input[name="new-status"]:checked')?.value||'Needs Review',
     source_url:document.getElementById('add-source').value.trim(),
     submitter:document.getElementById('add-submitter').value.trim(),
