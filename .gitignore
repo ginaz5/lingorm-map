@@ -1,0 +1,10 @@
+# 環境變數（含 API key，絕對不 commit）
+.env
+.env.local
+
+# macOS
+.DS_Store
+
+# 編輯器
+.vscode/
+.idea/

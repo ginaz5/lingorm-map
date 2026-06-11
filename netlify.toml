@@ -1,0 +1,8 @@
+[build]
+  command = "bash build.sh"
+  publish = "."
+
+[build.environment]
+  # No extra env needed here — set ADMIN_PASSWORD in Netlify Dashboard:
+  # Site Settings → Environment Variables → Add variable
+  # Key: ADMIN_PASSWORD  Value: your chosen password

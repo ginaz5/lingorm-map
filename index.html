@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="auto">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Lingorm Bangkok Map</title>
+<!-- TODO: 替換成你的 API Key 和 Map ID（Google Cloud Console 取得） -->
+<script async
+  src="https://maps.googleapis.com/maps/api/js?key=__GOOGLE_MAPS_KEY__&map_ids=__GOOGLE_MAP_ID__&libraries=marker&callback=initMapCallback&loading=async">
+</script>
+<style>
+:root {
+  --bg:#f5f5f7; --surface:#fff; --surface2:#f0f0f5; --border:#e0e0e8;
+  --text:#1a1a2e; --text-muted:#666680;
+  --accent:#6c3dff; --accent-soft:#ede8ff;
+  --verified:#2e7d32; --v-bg:#e8f5e9;
+  --review:#e65100; --r-bg:#fff3e0;
+  --notfound:#b71c1c; --nf-bg:#ffebee;
+  --card-hover:#f5f0ff;
+  --header-h:52px; --tab-h:56px;
+  --shadow:0 1px 4px rgba(0,0,0,.10);
+  --shadow-md:0 4px 16px rgba(0,0,0,.12);
+  --success:#1b5e20; --success-bg:#e8f5e9;
+}
+[data-theme="dark"] {
+  --bg:#0f0f1a; --surface:#1a1a2e; --surface2:#12122a; --border:#2a2a4a;
+  --text:#e8e8f5; --text-muted:#8080aa;
+  --accent:#9d6dff; --accent-soft:#1e1440;
+  --verified:#66bb6a; --v-bg:#0d2c0f;
+  --review:#ffa726; --r-bg:#2c1a00;
+  --notfound:#ef5350; --nf-bg:#2c0a0a;
+  --card-hover:#1f1540;
+  --shadow:0 1px 4px rgba(0,0,0,.4);
+  --shadow-md:0 4px 20px rgba(0,0,0,.5);
+  --success:#66bb6a; --success-bg:#0d2c0f;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC',sans-serif;
+  background:var(--bg);color:var(--text);display:flex;flex-direction:column;transition:background .2s,color .2s}
+a{color:var(--accent)}
+/* Header */
+header{height:var(--header-h);flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:8px;box-shadow:var(--shadow);z-index:500;position:relative}
+.logo{font-size:17px;font-weight:700;color:var(--accent);white-space:nowrap}
+.logo-sub{font-size:12px;color:var(--text-muted);white-space:nowrap;display:none}
+@media(min-width:480px){.logo-sub{display:block}}
+.hdr-spacer{flex:1}
+.hdr-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  padding:6px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;
+  white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:4px}
+.hdr-btn:hover{border-color:var(--accent);color:var(--accent)}
+.icon-btn{padding:6px 8px;font-size:16px}
+.btn-add{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-add:hover{opacity:.85;color:#fff;border-color:var(--accent)}
+/* Layout */
+.app-body{flex:1;display:flex;overflow:hidden}
+.panel{width:360px;min-width:300px;flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+#map-wrap{flex:1;position:relative;overflow:hidden}
+#map{width:100%;height:100%}
+/* Filters */
+.filters{padding:10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:7px;flex-shrink:0}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;fill:var(--text-muted);pointer-events:none}
+.search-input{width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:8px 10px 8px 32px;color:var(--text);font-size:14px;outline:none;transition:border-color .15s}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--text-muted)}
+.filter-row{display:flex;gap:6px}
+.filter-sel{flex:1;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:7px 8px;color:var(--text);font-size:13px;outline:none;cursor:pointer}
+.filter-sel:focus{border-color:var(--accent)}
+.result-info{font-size:11px;color:var(--text-muted);padding:0 2px}
+/* Cards */
+.loc-list{overflow-y:auto;flex:1;padding:8px;display:flex;flex-direction:column;gap:6px}
+.loc-list::-webkit-scrollbar{width:4px}
+.loc-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.loc-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;cursor:pointer;transition:background .12s,border-color .12s,box-shadow .12s;
+  border-left:3px solid transparent;position:relative}
+.loc-card:hover{background:var(--card-hover)}
+.loc-card.active{background:var(--card-hover);border-color:var(--accent);border-left-color:var(--accent);box-shadow:var(--shadow-md)}
+.card-head{display:flex;align-items:flex-start;gap:8px}
+.card-icon{font-size:20px;line-height:1;flex-shrink:0;margin-top:1px}
+.card-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.3}
+.card-alt{font-size:11px;color:var(--text-muted);margin-top:2px}
+.badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;border:1px solid;white-space:nowrap}
+.b-cat{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.b-verified{color:var(--verified);border-color:var(--verified);background:var(--v-bg)}
+.b-review{color:var(--review);border-color:var(--review);background:var(--r-bg)}
+.b-notfound{color:var(--notfound);border-color:var(--notfound);background:var(--nf-bg)}
+.b-dup{color:#795548;border-color:#795548;background:#efebe9}
+[data-theme="dark"] .b-dup{color:#bcaaa4;border-color:#5d4037;background:#1a0f0a}
+.card-notes{font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.card-maplink{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--accent);text-decoration:none;font-weight:500}
+.card-maplink:hover{text-decoration:underline}
+.approx-tag{font-size:10px;color:var(--review);margin-top:4px}
+.card-edit-btn{font-size:11px;color:var(--text-muted);background:none;border:1px solid var(--border);
+  border-radius:6px;padding:3px 7px;cursor:pointer;white-space:nowrap;transition:all .12s;flex-shrink:0}
+.card-edit-btn:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.card-edit-btn.verify-hint{color:var(--review);border-color:var(--review);background:var(--r-bg)}
+.card-edit-btn.verify-hint:hover{color:#fff;background:var(--review);border-color:var(--review)}
+/* Map legend */
+.map-legend{position:absolute;bottom:24px;right:8px;z-index:400;background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;padding:8px 10px;box-shadow:var(--shadow-md);font-size:11px}
+.leg-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.leg-row:last-child{margin-bottom:0}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+/* Google Maps InfoWindow */
+.gm-style .gm-style-iw-c{background:var(--surface)!important;border:1px solid var(--border)!important;
+  border-radius:10px!important;box-shadow:var(--shadow-md)!important;padding:0!important}
+.gm-style .gm-style-iw-d{overflow:hidden!important;padding:12px 14px!important}
+.gm-style .gm-style-iw-t::after,.gm-style .gm-style-iw-tc::after{background:var(--surface)!important}
+button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
+/* Popup content (shared classes used in InfoWindow HTML) */
+.leaflet-popup-content-wrapper{background:var(--surface)!important;color:var(--text)!important;
+  border:1px solid var(--border)!important;border-radius:10px!important;box-shadow:var(--shadow-md)!important}
+.leaflet-popup-tip{background:var(--surface)!important}
+.popup-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.popup-alt{font-size:12px;color:var(--text-muted);margin-bottom:6px}
+.popup-notes{font-size:12px;color:var(--text-muted);line-height:1.5;margin:6px 0 8px}
+.popup-maplink{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--accent);text-decoration:none}
+.popup-maplink:hover{text-decoration:underline}
+/* Mobile */
+.tab-bar{display:none;height:var(--tab-h);flex-shrink:0;background:var(--surface);
+  border-top:1px solid var(--border);box-shadow:0 -1px 4px rgba(0,0,0,.1);z-index:300}
+.tab-btn{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--text-muted);
+  font-weight:600;padding:6px 0;transition:color .15s}
+.tab-btn.active{color:var(--accent)}
+.tab-btn svg{width:22px;height:22px;fill:currentColor}
+@media(max-width:700px){
+  .panel{width:100%;border-right:none}
+  .app-body{flex-direction:column}
+  .tab-bar{display:flex}
+  .panel[data-mobile-tab="map"]{display:none}
+  #map-wrap[data-mobile-tab="list"]{display:none}
+  .logo-sub{display:none}
+}
+/* Modals (shared) */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
+  z-index:1000;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:22px 22px 18px;width:100%;max-width:500px;box-shadow:var(--shadow-md);
+  max-height:90vh;display:flex;flex-direction:column}
+.modal-sm{max-width:380px}
+.modal-header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.modal-title{font-size:16px;font-weight:700;flex:1}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);padding:0 4px;line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-desc{font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.5}
+.modal-body{overflow-y:auto;flex:1;padding-right:2px}
+.modal-body::-webkit-scrollbar{width:4px}
+.modal-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.form-row{margin-bottom:13px}
+.form-label{font-size:12px;font-weight:600;display:block;margin-bottom:5px;color:var(--text-muted)}
+.lbl-opt{font-weight:400}
+.form-input,.form-textarea,.form-select{width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;
+  outline:none;transition:border-color .15s;font-family:inherit}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--accent)}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text-muted)}
+.form-textarea{resize:vertical;min-height:60px;line-height:1.5}
+.form-select{cursor:pointer}
+.form-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-hint{font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4}
+.form-divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;
+  padding-top:14px;border-top:1px solid var(--border);flex-shrink:0}
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:9px 20px;
+  border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s}
+.btn-primary:hover{opacity:.85}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text);
+  padding:9px 16px;border-radius:8px;cursor:pointer;font-size:13px}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+/* Status radio pills */
+.status-opts{display:flex;gap:6px;flex-wrap:wrap}
+.status-opt{display:none}
+.status-opt+label{padding:5px 12px;border-radius:20px;border:1px solid var(--border);
+  font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;background:var(--surface2);color:var(--text-muted)}
+.status-opt:checked+label{border-width:2px}
+#so-verified:checked+label,#ns-verified:checked+label{color:var(--verified);border-color:var(--verified);background:var(--v-bg)}
+#so-review:checked+label,#ns-review:checked+label{color:var(--review);border-color:var(--review);background:var(--r-bg)}
+#so-notfound:checked+label,#ns-notfound:checked+label{color:var(--notfound);border-color:var(--notfound);background:var(--nf-bg)}
+/* Feedback */
+.submit-feedback{font-size:13px;padding:10px 12px;border-radius:8px;margin-top:10px;display:none;line-height:1.4}
+.submit-feedback.ok{display:block;background:var(--success-bg);color:var(--success);border:1px solid var(--verified)}
+.submit-feedback.err{display:block;background:var(--nf-bg);color:var(--notfound);border:1px solid var(--notfound)}
+/* Sheet status */
+.sheet-status{font-size:11px;padding:4px 0}
+.sheet-status.ok{color:var(--verified)}
+.sheet-status.err{color:var(--notfound)}
+/* Loading bar */
+.loading-bar{position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--accent) 0%,#c084fc 100%);
+  z-index:1000;animation:loading 1.2s ease-in-out infinite}
+@keyframes loading{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+/* Empty state */
+.empty{text-align:center;color:var(--text-muted);padding:40px 20px}
+.empty-icon{font-size:32px;margin-bottom:8px}
+/* Pending banner */
+.pending-banner{font-size:12px;background:var(--r-bg);color:var(--review);
+  border-bottom:1px solid var(--review);padding:7px 14px;
+  display:flex;align-items:center;gap:6px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- Netlify Forms detection -->
+<form name="suggest-edit" data-netlify="true" netlify-honeypot="bot-field" style="display:none">
+  <input name="bot-field"/><input name="location_name"/><input name="location_index"/>
+  <input name="suggested_status"/><input name="maps_query"/><input name="lat"/><input name="lng"/>
+  <textarea name="notes_zh"></textarea><textarea name="notes_en"></textarea>
+  <textarea name="reason"></textarea><input name="submitter"/>
+</form>
+<form name="add-location" data-netlify="true" netlify-honeypot="bot-field" style="display:none">
+  <input name="bot-field"/><input name="name_zh"/><input name="name_en"/><input name="alt_name"/>
+  <input name="icon"/><input name="category_zh"/><input name="category_en"/>
+  <input name="lat"/><input name="lng"/><input name="maps_query"/>
+  <textarea name="notes_zh"></textarea><textarea name="notes_en"></textarea>
+  <input name="source_url"/><input name="submitter"/>
+</form>
+
+<!-- HEADER -->
+<header>
+  <span class="logo">🗺 Lingorm BKK</span>
+  <span class="logo-sub" data-i18n="hdr_sub"></span>
+  <div class="hdr-spacer"></div>
+  <button class="hdr-btn btn-add" onclick="openAddModal()">
+    <span>＋</span><span data-i18n="add_loc"></span>
+  </button>
+  <button class="hdr-btn" id="lang-btn" onclick="toggleLang()"></button>
+  <button class="hdr-btn icon-btn" id="theme-btn" onclick="cycleTheme()">🌙</button>
+</header>
+
+<!-- Pending banner -->
+<div class="pending-banner" id="pending-banner" style="display:none">
+  <span>⏳</span><span data-i18n="pending_notice"></span>
+</div>
+
+<!-- APP BODY -->
+<div class="app-body">
+  <div class="panel" id="panel" data-mobile-tab="list">
+    <div class="filters">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2Zm0 2a6 6 0 1 0 0 12A6 6 0 0 0 10 4Zm8.586 12.172 2.828 2.828-1.414 1.414-2.828-2.828 1.414-1.414Z"/></svg>
+        <input class="search-input" id="search" type="search" data-i18n-ph="search_ph" oninput="applyFilters()"/>
+      </div>
+      <div class="filter-row">
+        <select class="filter-sel" id="cat-filter" onchange="applyFilters()"></select>
+        <select class="filter-sel" id="status-filter" onchange="applyFilters()"></select>
+      </div>
+      <div class="result-info" id="result-info"></div>
+    </div>
+    <div class="loc-list" id="loc-list"></div>
+  </div>
+  <div id="map-wrap" data-mobile-tab="list">
+    <div id="map"></div>
+    <div class="map-legend">
+      <div class="leg-row"><div class="leg-dot" style="background:#2e7d32"></div><span data-i18n="leg_verified"></span></div>
+      <div class="leg-row"><div class="leg-dot" style="background:#e65100"></div><span data-i18n="leg_review"></span></div>
+      <div class="leg-row"><div class="leg-dot" style="background:#b71c1c"></div><span data-i18n="leg_notfound"></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn" id="tab-map" onclick="switchTab('map')">
+    <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+    <span data-i18n="tab_map"></span>
+  </button>
+  <button class="tab-btn active" id="tab-list" onclick="switchTab('list')">
+    <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+    <span data-i18n="tab_list"></span>
+  </button>
+</div>
+
+<!-- MODAL: SUGGEST EDIT -->
+<div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" data-i18n="edit_title"></span>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <p class="modal-desc" data-i18n="edit_desc"></p>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="form-label" data-i18n="edit_lbl_location"></label>
+        <input class="form-input" id="edit-location-name" readonly style="opacity:.6;cursor:default"/>
+        <input type="hidden" id="edit-location-index"/>
+      </div>
+      <div class="form-row">
+        <label class="form-label" data-i18n="edit_lbl_status"></label>
+        <div class="status-opts">
+          <input class="status-opt" type="radio" name="suggest-status" id="so-verified" value="Verified"/>
+          <label for="so-verified" data-i18n="st_verified"></label>
+          <input class="status-opt" type="radio" name="suggest-status" id="so-review" value="Needs Review" checked/>
+          <label for="so-review" data-i18n="st_review"></label>
+          <input class="status-opt" type="radio" name="suggest-status" id="so-notfound" value="Could Not Find"/>
+          <label for="so-notfound" data-i18n="st_notfound"></label>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">
+          <span data-i18n="edit_lbl_maps"></span> <span class="lbl-opt" data-i18n="opt"></span>
+        </label>
+        <input class="form-input" id="edit-maps" data-i18n-ph="edit_ph_maps"/>
+        <div class="form-hint" data-i18n="edit_hint_maps"></div>
+      </div>
+      <div class="form-2col">
+        <div class="form-row">
+          <label class="form-label">
+            <span data-i18n="edit_lbl_lat"></span> <span class="lbl-opt" data-i18n="opt"></span>
+          </label>
+          <input class="form-input" id="edit-lat" type="number" step="any" placeholder="13.7466"/>
+        </div>
+        <div class="form-row">
+          <label class="form-label">
+            <span data-i18n="edit_lbl_lng"></span> <span class="lbl-opt" data-i18n="opt"></span>
+          </label>
+          <input class="form-input" id="edit-lng" type="number" step="any" placeholder="100.5344"/>
+        </div>
+      </div>
+      <div class="form-hint" style="margin-top:-6px;margin-bottom:10px" data-i18n="edit_hint_coords"></div>
+      <div class="form-row">
+        <label class="form-label">
+          <span data-i18n="edit_lbl_notes_zh"></span> <span class="lbl-opt" data-i18n="opt"></span>
+        </label>
+        <textarea class="form-textarea" id="edit-notes-zh" rows="2" data-i18n-ph="edit_ph_notes_zh"></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label">
+          <span data-i18n="edit_lbl_notes_en"></span> <span class="lbl-opt" data-i18n="opt"></span>
+        </label>
+        <textarea class="form-textarea" id="edit-notes-en" rows="2" data-i18n-ph="edit_ph_notes_en"></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label">
+          <span data-i18n="edit_lbl_reason"></span> <span class="lbl-opt" data-i18n="opt"></span>
+        </label>
+        <textarea class="form-textarea" id="edit-reason" rows="2" data-i18n-ph="edit_ph_reason"></textarea>
+      </div>
+      <hr class="form-divider"/>
+      <div class="form-row">
+        <label class="form-label">
+          <span data-i18n="edit_lbl_submitter"></span> <span class="lbl-opt" data-i18n="edit_lbl_submitter_opt"></span>
+        </label>
+        <input class="form-input" id="edit-submitter" data-i18n-ph="ph_submitter"/>
+      </div>
+      <div class="submit-feedback" id="edit-feedback"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeEditModal()" data-i18n="cancel"></button>
+      <button class="btn-primary" id="edit-submit-btn" onclick="submitEdit()" data-i18n="edit_submit"></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD LOCATION -->
+<div class="modal-overlay" id="add-modal" onclick="if(event.target===this)closeAddModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" data-i18n="add_title"></span>
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+    </div>
+    <p class="modal-desc" data-i18n="add_desc"></p>
+    <div class="modal-body">
+      <div class="form-2col">
+        <div class="form-row">
+          <label class="form-label"><span data-i18n="add_lbl_name_zh"></span><span style="color:var(--notfound)"> *</span></label>
+          <input class="form-input" id="add-name-zh" data-i18n-ph="add_ph_name_zh"/>
+        </div>
+        <div class="form-row">
+          <label class="form-label"><span data-i18n="add_lbl_name_en"></span><span style="color:var(--notfound)"> *</span></label>
+          <input class="form-input" id="add-name-en" data-i18n-ph="add_ph_name_en"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">
+          <span data-i18n="add_lbl_alt"></span> <span class="lbl-opt" data-i18n="opt"></span>
+        </label>
+        <input class="form-input" id="add-alt" data-i18n-ph="add_ph_alt"/>
+      </div>
+      <div class="form-2col">
+        <div class="form-row">
+          <label class="form-label" data-i18n="add_lbl_cat"></label>
+          <select class="form-select" id="add-cat"></select>
+        </div>
+        <div class="form-row">
+          <label class="form-label" data-i18n="add_lbl_icon"></label>
+          <input class="form-input" id="add-icon" maxlength="4" data-i18n-ph="add_ph_icon" style="font-size:18px"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label"><span data-i18n="add_lbl_maps"></span><span style="color:var(--notfound)"> *</span></label>
+        <input class="form-input" id="add-maps" data-i18n-ph="add_ph_maps"/>
+        <div class="form-hint" data-i18n="add_hint_maps"></div>
+      </div>
+      <div class="form-2col">
+        <div class="form-row">
+          <label class="form-label"><span data-i18n="add_lbl_lat"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
+          <input class="form-input" id="add-lat" type="number" step="any" placeholder="13.7466"/>
+        </div>
+        <div class="form-row">
+          <label class="form-label"><span data-i18n="add_lbl_lng"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
+          <input class="form-input" id="add-lng" type="number" step="any" placeholder="100.5344"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label"><span data-i18n="add_lbl_notes_zh"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
+        <textarea class="form-textarea" id="add-notes-zh" rows="2" data-i18n-ph="add_ph_notes_zh"></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label"><span data-i18n="add_lbl_notes_en"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
+        <textarea class="form-textarea" id="add-notes-en" rows="2" data-i18n-ph="add_ph_notes_en"></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label" data-i18n="add_lbl_status"></label>
+        <div class="status-opts">
+          <input class="status-opt" type="radio" name="new-status" id="ns-verified" value="Verified"/>
+          <label for="ns-verified" data-i18n="st_verified"></label>
+          <input class="status-opt" type="radio" name="new-status" id="ns-review" value="Needs Review" checked/>
+          <label for="ns-review" data-i18n="st_review"></label>
+          <input class="status-opt" type="radio" name="new-status" id="ns-notfound" value="Could Not Find"/>
+          <label for="ns-notfound" data-i18n="st_notfound"></label>
+        </div>
+      </div>
+      <hr class="form-divider"/>
+      <div class="form-row">
+        <label class="form-label">
+          <span data-i18n="add_lbl_source"></span> <span class="lbl-opt" data-i18n="add_lbl_source_opt"></span>
+        </label>
+        <input class="form-input" id="add-source" type="url" placeholder="https://www.instagram.com/p/..."/>
+      </div>
+      <div class="form-row">
+        <label class="form-label">
+          <span data-i18n="add_lbl_submitter"></span> <span class="lbl-opt" data-i18n="opt"></span>
+        </label>
+        <input class="form-input" id="add-submitter" data-i18n-ph="ph_submitter"/>
+      </div>
+      <div class="submit-feedback" id="add-feedback"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeAddModal()" data-i18n="cancel"></button>
+      <button class="btn-primary" id="add-submit-btn" onclick="submitAdd()" data-i18n="add_submit"></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADMIN AUTH -->
+<div class="modal-overlay" id="admin-auth-modal" onclick="if(event.target===this)closeAdminAuth()">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title" data-i18n="admin_title"></span>
+      <button class="modal-close" onclick="closeAdminAuth()">✕</button>
+    </div>
+    <p class="modal-desc" data-i18n="admin_desc"></p>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="form-label" data-i18n="admin_lbl"></label>
+        <input class="form-input" id="admin-pwd" type="password" data-i18n-ph="admin_ph"
+          onkeydown="if(event.key==='Enter')verifyAdminPassword()"/>
+      </div>
+      <div class="submit-feedback" id="admin-feedback"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeAdminAuth()" data-i18n="cancel"></button>
+      <button class="btn-primary" onclick="verifyAdminPassword()" data-i18n="admin_btn"></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SHEET SETTINGS (admin only) -->
+<div class="modal-overlay" id="sheet-modal" onclick="if(event.target===this)closeSheetModal()">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <span class="modal-title" data-i18n="sheet_title"></span>
+      <button class="modal-close" onclick="closeSheetModal()">✕</button>
+    </div>
+    <p class="modal-desc" data-i18n="sheet_desc"></p>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="form-label" data-i18n="sheet_lbl"></label>
+        <input class="form-input" id="sheet-url-input" type="url" data-i18n-ph="sheet_ph"/>
+      </div>
+      <div class="sheet-status" id="sheet-status"></div>
+      <div data-i18n-html="sheet_howto" style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-top:4px"></div>
+      <hr class="form-divider"/>
+      <div data-i18n-html="sheet_netlify" style="font-size:12px;color:var(--text-muted);line-height:1.7"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="clearSheet()" data-i18n="sheet_clear"></button>
+      <button class="btn-ghost" onclick="closeSheetModal()" data-i18n="cancel"></button>
+      <button class="btn-primary" onclick="saveSheet()" data-i18n="sheet_save"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// ADMIN HASH — injected by build.sh from ADMIN_PASSWORD env var
+// ═══════════════════════════════════════════════════
+const ADMIN_HASH = '__ADMIN_HASH__';
+
+// ═══════════════════════════════════════════════════
+// CATEGORIES — single source of truth for dropdowns + filter
+// ═══════════════════════════════════════════════════
+const CATEGORIES = [
+  {zh:'餐廳',       en:'Restaurant',         icon:'🍽'},
+  {zh:'咖啡廳',     en:'Cafe',               icon:'☕'},
+  {zh:'酒店',       en:'Hotel',              icon:'🏨'},
+  {zh:'酒吧 / 俱樂部', en:'Bar / Club',      icon:'🍸'},
+  {zh:'街頭小吃',   en:'Street Food',        icon:'🍢'},
+  {zh:'Spa',        en:'Spa',                icon:'♨️'},
+  {zh:'購物',       en:'Shopping',           icon:'🛍'},
+  {zh:'活動',       en:'Activity',           icon:'🎯'},
+  {zh:'拍攝場地',   en:'Filming Location',   icon:'🎬'},
+  {zh:'街區',       en:'Neighbourhood',      icon:'🏘️'},
+  {zh:'自然 / 一日遊', en:'Nature / Day-trip', icon:'🌿'},
+  {zh:'其他',       en:'Other',              icon:'🔖'},
+];
+
+// ═══════════════════════════════════════════════════
+// i18n
+// ═══════════════════════════════════════════════════
+let lang = 'zh';
+const T = {
+  zh: {
+    hdr_sub: '鄺玲玲曼谷踩點地圖',
+    lang_btn: '🌐 EN',
+    add_loc: '新增地點',
+    search_ph: '搜尋地點…',
+    all_cat: '全部類別',
+    all_status: '全部狀態',
+    status: {Verified:'✅ 已驗證','Needs Review':'⚠️ 待確認','Could Not Find':'❌ 找不到'},
+    badge:  {Verified:'已驗證',   'Needs Review':'待確認',   'Could Not Find':'找不到'},
+    count: (n,t) => `顯示 ${n} / ${t} 個地點`,
+    maps: '在 Google Maps 開啟',
+    approx: '📍 座標為估算位置',
+    edit_btn_verify: '幫助驗證',
+    edit_btn_edit: '建議修改',
+    empty: '沒有符合的地點',
+    leg_verified: '已驗證', leg_review: '待確認', leg_notfound: '找不到',
+    tab_map: '地圖', tab_list: '清單',
+    pending_notice: '你有待審核的建議，感謝你的貢獻！',
+    submit_ok: '✅ 已送出！感謝你的貢獻，管理員審核後會更新地圖。',
+    submit_err: '❌ 送出失敗，請稍後再試。',
+    submitting: '送出中…',
+    // Edit modal
+    edit_title: '✏️ 建議修改',
+    edit_desc: '你的建議會送交審核，經確認後才會更新到地圖。感謝貢獻！',
+    edit_lbl_location: '地點',
+    edit_lbl_status: '建議狀態',
+    edit_lbl_maps: 'Google Maps 搜尋字串',
+    edit_hint_maps: '如果你找到正確的 Google Maps 頁面，可貼上店名關鍵字或完整網址',
+    edit_ph_maps: '例：Ministry of Crab Bangkok',
+    edit_lbl_lat: '緯度 Lat', edit_lbl_lng: '經度 Lng',
+    edit_hint_coords: '在 Google Maps 點選地點後，網址列可複製座標',
+    edit_lbl_notes_zh: '補充說明（中文）', edit_lbl_notes_en: '補充說明（英文）',
+    edit_ph_notes_zh: '例：確認仍在營業，建議提前預訂',
+    edit_ph_notes_en: 'e.g. Confirmed open, reservations recommended',
+    edit_lbl_reason: '修改原因',
+    edit_ph_reason: '例：親身拜訪，餐廳已搬遷…',
+    edit_lbl_submitter: '你的名字 / 聯絡方式',
+    edit_lbl_submitter_opt: '（選填，方便回覆）',
+    edit_submit: '送出建議',
+    // Add modal
+    add_title: '➕ 新增地點',
+    add_desc: '填寫你知道的玲玲同款地點，送出後由管理員審核後才加入地圖。',
+    add_lbl_name_zh: '地點名稱（中文）',
+    add_lbl_name_en: '地點名稱（英文）',
+    add_ph_name_zh: '例：暹羅精品酒店',
+    add_ph_name_en: 'e.g. The Siam Hotel',
+    add_lbl_alt: '泰文名稱 / 別名',
+    add_ph_alt: '例：โรงแรมสยาม',
+    add_lbl_cat: '類別', add_lbl_icon: 'Emoji 圖示', add_ph_icon: '🍽',
+    add_lbl_maps: 'Google Maps 搜尋關鍵字',
+    add_ph_maps: '例：The Siam Hotel Bangkok',
+    add_hint_maps: '在 Google Maps 搜尋到地點後，複製搜尋欄的文字',
+    add_lbl_lat: '緯度 Lat', add_lbl_lng: '經度 Lng',
+    add_lbl_notes_zh: '簡短說明（中文）', add_lbl_notes_en: '簡短說明（英文）',
+    add_ph_notes_zh: '例：玲玲在 IG 直播中推薦的餐廳，招牌是...',
+    add_ph_notes_en: "e.g. Spotted in Lingorm's IG livestream...",
+    add_lbl_status: '狀態',
+    add_lbl_source: '來源連結',
+    add_lbl_source_opt: '（選填，例如 IG 貼文、YT 影片網址）',
+    add_lbl_submitter: '你的名字 / 聯絡方式',
+    add_submit: '送出',
+    // Validation
+    err_name_required: '請填寫地點名稱。',
+    err_maps_required: '請填寫 Google Maps 搜尋字串。',
+    // Common
+    opt: '（選填）', cancel: '取消',
+    st_verified: '✅ 已驗證', st_review: '⚠️ 待確認', st_notfound: '❌ 找不到',
+    ph_submitter: '例：@your_ig',
+    // Admin auth
+    admin_title: '🔐 管理員登入',
+    admin_desc: '輸入管理員密碼以進入設定頁面。',
+    admin_lbl: '密碼', admin_ph: '請輸入密碼',
+    admin_btn: '登入', admin_err: '密碼錯誤',
+    admin_not_configured: '尚未設定管理員密碼。請設定 ADMIN_PASSWORD 環境變數後重新部署。',
+    // Sheet modal
+    sheet_title: '⚙️ Google Sheets 設定',
+    sheet_desc: '將 Google Sheets「發佈至網路」後，貼上 CSV 網址即可讓網頁自動讀取最新資料。',
+    sheet_lbl: 'CSV 網址',
+    sheet_ph: 'https://docs.google.com/spreadsheets/d/.../pub?...&output=csv',
+    sheet_howto: '<strong>取得 CSV 網址：</strong><br>1. Google Sheets → 檔案 → 分享 → 發佈至網路<br>2. 選擇「Locations 工作表」+「逗號分隔值 (.csv)」<br>3. 按「發佈」並複製網址貼到上方',
+    sheet_netlify: '<strong>設定 Netlify 表單通知（接收共編建議）：</strong><br>1. Netlify Dashboard → Forms → 找到 <code>suggest-edit</code> 和 <code>add-location</code><br>2. Settings → Form notifications → 加入你的 Email',
+    sheet_ok: n => `✅ 已載入 ${n} 筆資料`,
+    sheet_err: e => `❌ 載入失敗：${e}`,
+    sheet_loading: '載入中…',
+    sheet_cleared: '已清除，改用內建資料',
+    sheet_save: '儲存並載入',
+    sheet_clear: '清除',
+  },
+  en: {
+    hdr_sub: 'Lingorm Bangkok Location Map',
+    lang_btn: '🌐 中文',
+    add_loc: 'Add Location',
+    search_ph: 'Search locations…',
+    all_cat: 'All Categories',
+    all_status: 'All Statuses',
+    status: {Verified:'✅ Verified','Needs Review':'⚠️ Needs Review','Could Not Find':'❌ Not Found'},
+    badge:  {Verified:'Verified', 'Needs Review':'Needs Review','Could Not Find':'Not Found'},
+    count: (n,t) => `${n} / ${t} locations`,
+    maps: 'Open in Google Maps',
+    approx: '📍 Coordinates are approximate',
+    edit_btn_verify: 'Help verify',
+    edit_btn_edit: 'Suggest edit',
+    empty: 'No matching locations',
+    leg_verified: 'Verified', leg_review: 'Needs Review', leg_notfound: 'Not Found',
+    tab_map: 'Map', tab_list: 'List',
+    pending_notice: 'Your suggestion is pending review. Thank you!',
+    submit_ok: '✅ Submitted! The admin will review and update the map.',
+    submit_err: '❌ Submission failed, please try again.',
+    submitting: 'Submitting…',
+    // Edit modal
+    edit_title: '✏️ Suggest Edit',
+    edit_desc: 'Your suggestion will be reviewed before being applied to the map. Thank you!',
+    edit_lbl_location: 'Location',
+    edit_lbl_status: 'Suggested status',
+    edit_lbl_maps: 'Google Maps search query',
+    edit_hint_maps: 'If you found the correct Google Maps listing, paste the name or URL',
+    edit_ph_maps: 'e.g. Ministry of Crab Bangkok',
+    edit_lbl_lat: 'Latitude', edit_lbl_lng: 'Longitude',
+    edit_hint_coords: 'Open the location in Google Maps and copy the coordinates from the URL',
+    edit_lbl_notes_zh: 'Notes (Chinese)', edit_lbl_notes_en: 'Notes (English)',
+    edit_ph_notes_zh: 'e.g. 確認仍在營業，建議提前預訂',
+    edit_ph_notes_en: 'e.g. Confirmed open, reservations recommended',
+    edit_lbl_reason: 'Reason for edit',
+    edit_ph_reason: 'e.g. Visited in person, restaurant has relocated…',
+    edit_lbl_submitter: 'Your name / contact',
+    edit_lbl_submitter_opt: '(optional, for follow-up)',
+    edit_submit: 'Submit suggestion',
+    // Add modal
+    add_title: '➕ Add Location',
+    add_desc: "Submit a Lingorm-spotted location. An admin will review it before adding to the map.",
+    add_lbl_name_zh: 'Location name (Chinese)',
+    add_lbl_name_en: 'Location name (English)',
+    add_ph_name_zh: 'e.g. 暹羅精品酒店',
+    add_ph_name_en: 'e.g. The Siam Hotel',
+    add_lbl_alt: 'Thai name / alias',
+    add_ph_alt: 'e.g. โรงแรมสยาม',
+    add_lbl_cat: 'Category', add_lbl_icon: 'Emoji icon', add_ph_icon: '🍽',
+    add_lbl_maps: 'Google Maps search query',
+    add_ph_maps: 'e.g. The Siam Hotel Bangkok',
+    add_hint_maps: 'Search the location on Google Maps and copy the search text',
+    add_lbl_lat: 'Latitude', add_lbl_lng: 'Longitude',
+    add_lbl_notes_zh: 'Notes (Chinese)', add_lbl_notes_en: 'Notes (English)',
+    add_ph_notes_zh: 'e.g. 玲玲在 IG 直播中推薦的餐廳，招牌是...',
+    add_ph_notes_en: "e.g. Spotted in Lingorm's IG livestream...",
+    add_lbl_status: 'Status',
+    add_lbl_source: 'Source link',
+    add_lbl_source_opt: '(optional, e.g. IG post, YouTube URL)',
+    add_lbl_submitter: 'Your name / contact',
+    add_submit: 'Submit',
+    // Validation
+    err_name_required: 'Please enter the location name.',
+    err_maps_required: 'Please enter a Google Maps search query.',
+    // Common
+    opt: '(optional)', cancel: 'Cancel',
+    st_verified: '✅ Verified', st_review: '⚠️ Needs Review', st_notfound: '❌ Not Found',
+    ph_submitter: 'e.g. @your_ig',
+    // Admin auth
+    admin_title: '🔐 Admin Login',
+    admin_desc: 'Enter the admin password to access settings.',
+    admin_lbl: 'Password', admin_ph: 'Enter password',
+    admin_btn: 'Login', admin_err: 'Incorrect password',
+    admin_not_configured: 'Admin password not configured. Set ADMIN_PASSWORD env var and redeploy.',
+    // Sheet modal
+    sheet_title: '⚙️ Google Sheets Setup',
+    sheet_desc: 'Publish your Google Sheet as CSV. The page fetches latest data on each load.',
+    sheet_lbl: 'CSV URL',
+    sheet_ph: 'https://docs.google.com/spreadsheets/d/.../pub?...&output=csv',
+    sheet_howto: '<strong>How to get the CSV URL:</strong><br>1. Google Sheets → File → Share → Publish to web<br>2. Select "Locations sheet" + "Comma-separated values (.csv)"<br>3. Click Publish and paste the URL above',
+    sheet_netlify: '<strong>Set up Netlify form notifications:</strong><br>1. Netlify Dashboard → Forms → find <code>suggest-edit</code> and <code>add-location</code><br>2. Settings → Form notifications → add your Email',
+    sheet_ok: n => `✅ Loaded ${n} entries`,
+    sheet_err: e => `❌ Load failed: ${e}`,
+    sheet_loading: 'Loading…',
+    sheet_cleared: 'Cleared, using built-in data',
+    sheet_save: 'Save & Load',
+    sheet_clear: 'Clear',
+  }
+  // Add 'th': {...} here for Thai support in the future
+};
+
+function t(k, ...a) { const v = T[lang][k]; return typeof v === 'function' ? v(...a) : (v ?? k); }
+function tobj(k, s) { return (T[lang][k] || {})[s] || s; }
+
+// ═══════════════════════════════════════════════════
+// EMBEDDED DATA
+// ═══════════════════════════════════════════════════
+const EMBEDDED = [
+  ["The Siam Hotel","暹羅精品酒店","","Hotel","酒店","Luxury boutique hotel with Art Deco design and private pool villas on the Chao Phraya. KKday Lingorm luxury itinerary. Reserve ahead.","曼谷頂級精品酒店，Art Deco 設計風格，設私人泳池 Villa。KKday 玲玲奢華行程主打住宿。建議提前預訂。","🏨",13.7608,100.5089,"The+Siam+Hotel+Bangkok","Verified","","KKday","FALSE"],
+  ["InterContinental Khao Yai Resort","考艾洲際度假酒店","","Hotel","酒店","Orient Express-inspired train-themed resort. ~2.5 hrs from Bangkok. Lingorm's travel show.","以老式火車為主題設計的度假酒店。距曼谷約 2.5 小時。玲玲旅遊節目中出現。","🏨",14.4422,101.372,"InterContinental+Khao+Yai+Resort+Thailand","Verified","","KKday","TRUE"],
+  ["Ministry of Crab Bangkok","蟹之省曼谷店","","Restaurant","餐廳","Famous Sri Lankan giant crab restaurant. Lingorm's luxury pick. Reserve ahead.","斯里蘭卡巨蟹名店，辣味/蒜香/胡椒/牛油多種烹調。玲玲奢華行程推薦，需預訂。","🦀",13.7262,100.5155,"Ministry+of+Crab+Bangkok","Verified","","KKday","TRUE"],
+  ["Everyday MooKrata","Everyday 燒烤火鍋","Everyday MooKrata & Lobster City","Restaurant","餐廳","Mookata (Thai BBQ hot pot) with river views. KKday Lingorm trendy pick.","可邊賞河景邊享用泰式烤烘火鍋。KKday 玲玲同款潮流餐廳。","🍖",13.735,100.51,"Everyday+MooKrata+Bangkok","Needs Review","","KKday","TRUE"],
+  ["Lobster City","Lobster City 蝦肉飯","","Restaurant","餐廳","Famous for high-value shrimp rice. Long queues — go off-peak.","招牌鮮甜蝦肉飯 CP 值超高，常有長龍，建議避開繁忙時段。","🦐",13.73,100.52,"Lobster+City+Bangkok","Needs Review","","KKday","TRUE"],
+  ["Ekamai Mookata","Ekamai 燒烤火鍋","(Exact name unconfirmed)","Restaurant","餐廳","Mookata in Ekamai area where Lingorm livestreamed. Exact name unconfirmed.","玲玲直播中的泰式烤烘火鍋店，Ekamai 區。具體店名不明，前往前建議確認。","🍖",13.7208,100.587,"Mookata+Ekamai+Bangkok","Needs Review","Group C","KKday","TRUE"],
+  ["Ton Yen Ta Four","冬蔭蝦炸粉湯麵","ต้นเย็นตาโฟ กุ้งทอด","Restaurant","餐廳","Yen ta fo noodles with real fried shrimp. Lingorm's pick. Order tom yum broth.","玲玲推薦的粉湯麵店，炸蝦是真蝦。推薦點冬蔭湯底。","🍜",13.75,100.52,"ต้นเย็นตาโฟ+กุ้งทอด+Bangkok","Needs Review","","Trip.com","TRUE"],
+  ["GaGa Udon House","GaGa 烏冬","","Restaurant","餐廳","Udon restaurant on Lingorm's Bangkok map (Trip.com).","玲玲曼谷地圖（Trip.com）列出的烏冬餐廳。","🍜",13.745,100.56,"GaGa+Udon+House+Bangkok","Needs Review","","Trip.com","TRUE"],
+  ["Nice Two Meat U (N2MU)","Nice Two Meat U","N2MU Siam Square","Restaurant","餐廳","Korean-style BBQ in Siam Square where Lingorm livestreamed.","位於 Siam Square 的韓式燒肉店，玲玲在此進行直播。","🥩",13.7466,100.5344,"Nice+Two+Meat+U+Siam+Square+Bangkok","Needs Review","","Threads @nightviper74","FALSE"],
+  ["Seki Omakase","Seki 割烹","","Restaurant","餐廳","Japanese omakase on a fan's Lingorm Bangkok wishlist. Confirm first.","日本無菜單料理，出現在粉絲的玲玲風格曼谷願望清單。需提前確認是否仍在營業。","🍣",13.74,100.57,"Seki+Omakase+Bangkok","Needs Review","","Threads @nightviper74","TRUE"],
+  ["00K's Fried Chicken","Kling 最愛炸雞店","Near CH3, opens ~3pm","Restaurant","餐廳","⚠️ Kling's fried chicken near CH3. Opens ~3pm. May be closed — verify first.","⚠️ Kling 最愛炸雞，CH3 附近，下午 3 點才開。有留言指可能已關閉，前往前確認。","🍗",13.7603,100.5476,"fried+chicken+near+Channel+3+Thailand+Bangkok","Needs Review","Group D","Threads @nightviper74 + @my_go_go_d","TRUE"],
+  ["00K's Pink Noodle Shop","Kling 的粉紅色麵店","Fermented tofu broth noodles","Restaurant","餐廳","❌ Kling's pink noodles with fermented tofu broth. Name unknown.","❌ Kling 愛吃的粉紅色麵（豆腐乳醬湯底）。@my_go_go_d 有記錄，但無店名。","🍜",13.7563,100.5018,"pink+noodles+fermented+tofu+Bangkok","Could Not Find","","Threads @my_go_go_d","TRUE"],
+  ["Dear December Cafe","Dear December 咖啡廳","P'Booky Cafe","Cafe","咖啡廳","Co-star P'Booky's cafe. Daily-changing desserts. In 3 sources.","玲玲合作演員 P'Booky 的咖啡廳，每日甜點不同。出現在 3 個來源。","☕",13.82,100.56,"Dear+December+Cafe+Bangkok","Verified","Group A","Trip.com + @nightviper74 + @my_go_go_d","TRUE"],
+  ["WANWAN Coffee Roasters","WANWAN 咖啡烘焙","","Cafe","咖啡廳","On Lingorm's Trip.com map. Adjacent grocery sells shrimp crackers.","出現在玲玲的 Trip.com 地圖。旁邊雜貨店有賣蝦餅。","☕",13.748,100.532,"WANWAN+coffee+roasters+Bangkok","Needs Review","","Trip.com","TRUE"],
+  ["Chagô","Chagô 飲品店","ชาโก้","Cafe","咖啡廳","Photogenic drink brand on Lingorm's map.","上鏡感十足的人氣飲品店，出現在玲玲地圖及 @my_go_go_d 貼文。","🧋",13.746,100.535,"Chago+ชาโก้+Bangkok","Needs Review","","Trip.com + @my_go_go_d","TRUE"],
+  ["Oh! Juice","Oh! Juice 鮮果汁","Ocean N Earth juice bar","Cafe","咖啡廳","Lingorm ordered 'Ocean N Earth' (avocado+coconut+banana), 280-340 THB.","玲玲點「Ocean N Earth」（牛油果+椰子+香蕉），280–340 泰銖。","🥤",13.74,100.56,"Oh+Juice+Bangkok","Needs Review","Group B","KKday + @my_go_go_d","TRUE"],
+  ["Ternajachob Cafe","Ternajachob 咖啡廳","Thai drama 'Our Secret' filming location","Cafe","咖啡廳","Filming location for Thai drama 'Our Secret'. Fan pilgrimage.","泰劇《我們的秘密》拍攝場地。玲玲粉絲朝聖必去。","🎬",13.755,100.53,"Ternajachob+Cafe+Bangkok","Needs Review","","KKday","TRUE"],
+  ["32 Bar","32 Bar","Talat Noi","Bar / Club","酒吧 / 俱樂部","Bar in Talat Noi where Lingorm's group had chocolate drinks.","位於 Talat Noi 的酒吧，玲玲一行人在此喝巧克力飲品。","🍫",13.7348,100.514,"32+Bar+Talat+Noi+Bangkok","Needs Review","","Threads @nightviper74","TRUE"],
+  ["Sook Sabai Onsen & Spa","舒適泰日式溫泉 SPA","","Spa","Spa","Japanese onsen + Thai massage in private rooms. Lingorm's luxury relaxation pick.","結合日式溫泉與泰式按摩，提供高隱私度的包廂。玲玲奢華行程推薦的放鬆環節。","♨️",13.76,100.57,"Sook+Sabai+Onsen+Spa+Bangkok","Verified","","KKday","TRUE"],
+  ["Maison Charoenkrung","Maison Charoenkrung","Fashion boutique","Shopping","購物","Fashion boutique on Charoenkrung road associated with Lingorm's style.","石龍軍路上的時尚精品店，與玲玲相關服裝風格有關聯。","👗",13.7268,100.5139,"Maison+Charoenkrung+Bangkok","Needs Review","","Threads @nightviper74","TRUE"],
+  ["Tribe Sky Beach Club","Tribe 天空沙灘俱樂部","Rooftop at Emsphere Mall","Bar / Club","酒吧 / 俱樂部","Rooftop beach club atop Emsphere mall. Infinity pool, cocktails, city sunset.","Emsphere 商場頂層天台沙灘俱樂部，無邊際泳池、雞尾酒、城市日落。","🏖️",13.7313,100.5694,"Tribe+Sky+Beach+Club+Emsphere+Bangkok","Verified","","KKday","FALSE"],
+  ["SkyRise Adventures","SkyRise 高空歷險","Central Westville rooftop","Activity","活動","High-altitude rope course atop Central Westville mall.","Central Westville 商場頂層高空繩網設施，考驗膽量。","🧗",13.8637,100.4295,"SkyRise+Adventures+Central+Westville+Bangkok","Needs Review","","KKday","TRUE"],
+  ["Tue Kha Tang","豬肘凍","ตือ ข้า ตัง (approx)","Street Food","街頭小吃","Pork knuckle jelly from Lingorm's TV show. Location unconfirmed.","玲玲節目中品嚐的豬肘凍。確切位置未確認，建議在 Talat Noi 一帶尋找。","🥩",13.735,100.515,"pork+knuckle+jelly+Talat+Noi+Bangkok","Needs Review","","KKday","TRUE"],
+  ["Talat Noi","Talat Noi 老街區","Historic riverside quarter","Neighbourhood","街區","Historic Chinese-influenced riverside quarter. Lingorm visited. Great for walking.","曼谷歷史華人聚居區，玲玲一行人曾到訪。適合步行探索街頭藝術、老商店。","🏘️",13.7348,100.514,"Talat+Noi+Bangkok","Verified","","Threads @nightviper74","FALSE"],
+  ["Channel 3 Thailand (CH3)","泰國第三頻道 (CH3)","Lingorm's home studio","Filming Location","拍攝場地","Lingorm's home broadcast studio — fan pilgrimage. Nearby fried chicken stall possibly closed.","玲玲所屬 Channel 3 電視台，粉絲朝聖地。附近炸雞攤可能已關閉。","📺",13.7686,100.5475,"Channel+3+Thailand+Bangkok","Needs Review","Group D","Threads @nightviper74","TRUE"],
+  ["Khao Yai National Park","考艾國家公園","อุทยานแห่งชาติเขาใหญ่","Nature / Day-trip","自然 / 一日遊","Thailand's first national park & UNESCO site. ~2.5 hrs from Bangkok. Guided tour recommended.","泰國首個國家公園，UNESCO 世界遺產。距曼谷約 2.5 小時。強烈建議參加導覽團。","🌿",14.4289,101.366,"Khao+Yai+National+Park+Thailand","Verified","","KKday","FALSE"],
+];
+
+const C={EN:0,ZH:1,ALT:2,CAT_EN:3,CAT_ZH:4,NOTES_EN:5,NOTES_ZH:6,
+         ICON:7,LAT:8,LNG:9,MAPS:10,STATUS:11,DUP:12,SRC:13,APPROX:14};
+
+// ═══════════════════════════════════════════════════
+// CSV PARSER
+// ═══════════════════════════════════════════════════
+function parseCSV(text){
+  const rows=[];let row=[];let field='';let inQ=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i],nx=text[i+1];
+    if(inQ){if(ch==='"'&&nx==='"'){field+='"';i++}else if(ch==='"'){inQ=false}else{field+=ch}}
+    else{if(ch==='"'){inQ=true}else if(ch===','){row.push(field);field=''}
+      else if(ch==='\r'&&nx==='\n'){row.push(field);rows.push(row);row=[];field='';i++}
+      else if(ch==='\n'||ch==='\r'){row.push(field);rows.push(row);row=[];field=''}
+      else{field+=ch}}
+  }
+  if(field||row.length){row.push(field);rows.push(row)}
+  if(rows.length<2)return null;
+  const headers=rows[0].map(h=>h.trim());
+  const idx={};headers.forEach((h,i)=>idx[h]=i);
+  const keys=["Name_EN","Name_ZH","Alt_Name","Category_EN","Category_ZH",
+              "Notes_EN","Notes_ZH","Icon","Lat","Lng",
+              "Maps_Query","Status","Duplicate_Group","Source","Coords_Approx"];
+  return rows.slice(1).filter(r=>r.join('').trim()).map(r=>
+    keys.map(k=>(idx[k]!==undefined?r[idx[k]]||'':'').trim()));
+}
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let data=EMBEDDED, visIdx=[], activeIdx=-1;
+
+// ═══════════════════════════════════════════════════
+// MAP (Google Maps JS API)
+// ═══════════════════════════════════════════════════
+let map = null;
+let infoWindow = null;
+const markers = [];
+
+function getEffectiveTheme(){
+  const s=localStorage.getItem('theme')||'auto';
+  return s==='auto'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):s;
+}
+function updateMapTheme(){
+  if(!map)return;
+  map.setOptions({
+    colorScheme:getEffectiveTheme()==='dark'
+      ?google.maps.ColorScheme.DARK
+      :google.maps.ColorScheme.LIGHT
+  });
+}
+function makeMarkerContent(status){
+  const c={Verified:'#2e7d32','Needs Review':'#e65100','Could Not Find':'#b71c1c'}[status]||'#e65100';
+  const el=document.createElement('div');
+  el.style.cssText=`width:14px;height:14px;border-radius:50%;background:${c};border:2px solid rgba(255,255,255,.85);box-shadow:0 2px 6px rgba(0,0,0,.4)`;
+  return el;
+}
+function buildPopupContent(i){
+  const row=data[i];
+  const name=lang==='zh'?row[C.ZH]:row[C.EN];
+  const notes=lang==='zh'?row[C.NOTES_ZH]:row[C.NOTES_EN];
+  const cat=lang==='zh'?row[C.CAT_ZH]:row[C.CAT_EN];
+  const mapsUrl='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(row[C.MAPS].replace(/\+/g,' '));
+  return `<div style="min-width:200px;max-width:260px">
+    <div class="popup-name">${row[C.ICON]} ${name}</div>
+    ${row[C.ALT]?`<div class="popup-alt">${row[C.ALT]}</div>`:''}
+    <div class="badges" style="margin-bottom:6px">
+      <span class="badge b-cat">${cat}</span>
+      <span class="badge ${getBadgeClass(row[C.STATUS])}">${tobj('badge',row[C.STATUS])}</span>
+    </div>
+    <div class="popup-notes">${notes}</div>
+    <a class="popup-maplink" href="${mapsUrl}" target="_blank">🗺 ${t('maps')}</a>
+  </div>`;
+}
+function buildMarkers(){
+  if(!map)return;
+  markers.forEach(m=>{if(m)m.map=null});markers.length=0;
+  data.forEach((row,i)=>{
+    const lat=parseFloat(row[C.LAT]),lng=parseFloat(row[C.LNG]);
+    if(!lat||!lng)return;
+    const m=new google.maps.marker.AdvancedMarkerElement({
+      map,position:{lat,lng},content:makeMarkerContent(row[C.STATUS])
+    });
+    m.addListener('click',()=>{
+      infoWindow.setContent(buildPopupContent(i));
+      infoWindow.open({anchor:m,map});
+      activateCard(i);
+      if(window.innerWidth<=700)switchTab('list');
+    });
+    markers[i]=m;
+  });
+}
+
+// Called by Google Maps script after it loads
+window.initMapCallback=function(){
+  map=new google.maps.Map(document.getElementById('map'),{
+    center:{lat:13.82,lng:100.52},zoom:11,
+    mapId:'__GOOGLE_MAP_ID__',
+    colorScheme:getEffectiveTheme()==='dark'
+      ?google.maps.ColorScheme.DARK
+      :google.maps.ColorScheme.LIGHT,
+    zoomControlOptions:{position:google.maps.ControlPosition.RIGHT_CENTER}
+  });
+  infoWindow=new google.maps.InfoWindow();
+  buildMarkers();
+};
+
+// ═══════════════════════════════════════════════════
+// CARD LIST
+// ═══════════════════════════════════════════════════
+function getBadgeClass(s){
+  if(s==='Verified')return 'b-verified';
+  if(s==='Could Not Find')return 'b-notfound';
+  return 'b-review';
+}
+function applyFilters(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const cat=document.getElementById('cat-filter').value;
+  const st=document.getElementById('status-filter').value;
+  visIdx=[];
+  data.forEach((row,i)=>{
+    const nameHit=(row[C.EN]+row[C.ZH]+row[C.ALT]).toLowerCase().includes(q);
+    const notesHit=(row[C.NOTES_EN]+row[C.NOTES_ZH]).toLowerCase().includes(q);
+    // cat filter: compare against both zh and en to handle sheet-loaded data
+    const catVal=lang==='zh'?row[C.CAT_ZH]:row[C.CAT_EN];
+    const catHit=!cat||catVal===cat;
+    const stHit=!st||row[C.STATUS]===st;
+    if((nameHit||notesHit)&&catHit&&stHit)visIdx.push(i);
+  });
+  renderList();
+  document.getElementById('result-info').textContent=t('count',visIdx.length,data.length);
+}
+function renderList(){
+  const list=document.getElementById('loc-list');
+  if(!visIdx.length){list.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div>${t('empty')}</div>`;return}
+  list.innerHTML=visIdx.map(i=>{
+    const row=data[i];
+    const name=lang==='zh'?row[C.ZH]:row[C.EN];
+    const notes=lang==='zh'?row[C.NOTES_ZH]:row[C.NOTES_EN];
+    const cat=lang==='zh'?row[C.CAT_ZH]:row[C.CAT_EN];
+    const st=row[C.STATUS];
+    const mapsUrl='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(row[C.MAPS].replace(/\+/g,' '));
+    const needsHelp=st==='Needs Review'||st==='Could Not Find';
+    return `<div class="loc-card${activeIdx===i?' active':''}" id="card-${i}" onclick="activateCard(${i})">
+      <div class="card-head">
+        <div class="card-icon">${row[C.ICON]}</div>
+        <div style="flex:1;min-width:0">
+          <div class="card-name">${name}</div>
+          ${row[C.ALT]?`<div class="card-alt">${row[C.ALT]}</div>`:''}
+        </div>
+      </div>
+      <div class="badges">
+        <span class="badge b-cat">${cat}</span>
+        <span class="badge ${getBadgeClass(st)}">${tobj('badge',st)}</span>
+        ${row[C.DUP]?`<span class="badge b-dup">${row[C.DUP]}</span>`:''}
+      </div>
+      <div class="card-notes">${notes}</div>
+      ${row[C.APPROX]==='TRUE'?`<div class="approx-tag">${t('approx')}</div>`:''}
+      <div class="card-footer">
+        <a class="card-maplink" href="${mapsUrl}" target="_blank" onclick="event.stopPropagation()">🗺 ${t('maps')}</a>
+        <button class="card-edit-btn${needsHelp?' verify-hint':''}"
+          onclick="event.stopPropagation();openEditModal(${i})">
+          ${needsHelp?t('edit_btn_verify'):t('edit_btn_edit')}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function activateCard(i){
+  activeIdx=i;
+  const row=data[i];
+  const lat=parseFloat(row[C.LAT]),lng=parseFloat(row[C.LNG]);
+  if(lat&&lng&&map){
+    map.panTo({lat,lng});map.setZoom(15);
+    if(markers[i]){infoWindow.setContent(buildPopupContent(i));infoWindow.open({anchor:markers[i],map});}
+  }
+  document.querySelectorAll('.loc-card').forEach(c=>c.classList.remove('active'));
+  const card=document.getElementById('card-'+i);
+  if(card){card.classList.add('active');card.scrollIntoView({behavior:'smooth',block:'nearest'})}
+}
+
+// ═══════════════════════════════════════════════════
+// i18n — updateLangUI
+// ═══════════════════════════════════════════════════
+function toggleLang(){
+  lang=lang==='zh'?'en':'zh';localStorage.setItem('lang',lang);
+  updateLangUI();
+  buildCatFilter();buildCatDropdown();
+  applyFilters();
+  if(infoWindow&&activeIdx>=0&&markers[activeIdx]){infoWindow.setContent(buildPopupContent(activeIdx));}
+}
+
+function updateLangUI(){
+  // data-i18n: textContent
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const v=t(el.dataset.i18n);
+    if(v!==el.dataset.i18n)el.textContent=v;
+  });
+  // data-i18n-html: innerHTML
+  document.querySelectorAll('[data-i18n-html]').forEach(el=>{
+    const v=t(el.dataset.i18nHtml);
+    if(v!==el.dataset.i18nHtml)el.innerHTML=v;
+  });
+  // data-i18n-ph: placeholder
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const v=t(el.dataset.i18nPh);
+    if(v!==el.dataset.i18nPh)el.placeholder=v;
+  });
+  // lang button
+  document.getElementById('lang-btn').textContent=t('lang_btn');
+  // status filter rebuild
+  buildStatusFilter();
+}
+
+function buildStatusFilter(){
+  const sf=document.getElementById('status-filter');
+  const prev=sf.value;
+  sf.innerHTML=`<option value="">${t('all_status')}</option>`+
+    Object.entries(t('status')).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  sf.value=prev;
+}
+
+function buildCatFilter(){
+  const sel=document.getElementById('cat-filter');
+  const prev=sel.value;
+  const cats=new Set();
+  data.forEach(r=>cats.add(lang==='zh'?r[C.CAT_ZH]:r[C.CAT_EN]));
+  sel.innerHTML=`<option value="">${t('all_cat')}</option>`+
+    [...cats].sort().map(c=>`<option value="${c}">${c}</option>`).join('');
+  sel.value=prev;
+}
+
+function buildCatDropdown(){
+  const sel=document.getElementById('add-cat');
+  const prev=sel.value;
+  sel.innerHTML=CATEGORIES.map(c=>
+    `<option value="${c.en}">${c.icon} ${lang==='zh'?c.zh:c.en}</option>`
+  ).join('');
+  if(prev)sel.value=prev;
+}
+
+// ═══════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════
+const THEME_ICONS={light:'☀️',dark:'🌙',auto:'🌓'};
+function cycleTheme(){
+  const cur=localStorage.getItem('theme')||'auto';
+  localStorage.setItem('theme',cur==='auto'?'light':cur==='light'?'dark':'auto');
+  applyTheme();
+}
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',getEffectiveTheme());
+  document.getElementById('theme-btn').textContent=THEME_ICONS[localStorage.getItem('theme')||'auto'];
+  updateMapTheme();
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{
+  if((localStorage.getItem('theme')||'auto')==='auto')applyTheme();
+});
+
+// ═══════════════════════════════════════════════════
+// MOBILE TABS
+// ═══════════════════════════════════════════════════
+function switchTab(tab){
+  document.getElementById('panel').setAttribute('data-mobile-tab',tab==='map'?'map':'list');
+  document.getElementById('map-wrap').setAttribute('data-mobile-tab',tab==='list'?'list':'map');
+  document.getElementById('tab-map').classList.toggle('active',tab==='map');
+  document.getElementById('tab-list').classList.toggle('active',tab==='list');
+  if(tab==='map'&&map)google.maps.event.trigger(map,'resize');
+}
+
+// ═══════════════════════════════════════════════════
+// EDIT MODAL
+// ═══════════════════════════════════════════════════
+function openEditModal(i){
+  const row=data[i];
+  const name=lang==='zh'?row[C.ZH]:row[C.EN];
+  document.getElementById('edit-location-name').value=`${row[C.ICON]} ${name}`;
+  document.getElementById('edit-location-index').value=i;
+  document.getElementById('edit-maps').value=row[C.MAPS].replace(/\+/g,' ');
+  document.getElementById('edit-lat').value=row[C.LAT]||'';
+  document.getElementById('edit-lng').value=row[C.LNG]||'';
+  ['edit-notes-zh','edit-notes-en','edit-reason','edit-submitter'].forEach(id=>document.getElementById(id).value='');
+  const st=row[C.STATUS];
+  document.getElementById('so-verified').checked=st==='Verified';
+  document.getElementById('so-review').checked=st==='Needs Review';
+  document.getElementById('so-notfound').checked=st==='Could Not Find';
+  resetFeedback('edit-feedback','edit-submit-btn',t('edit_submit'));
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeEditModal(){document.getElementById('edit-modal').classList.remove('open')}
+async function submitEdit(){
+  const idx=parseInt(document.getElementById('edit-location-index').value);
+  const row=data[idx];
+  await doNetlifySubmit('edit-submit-btn','edit-feedback',t('edit_submit'),{
+    'form-name':'suggest-edit','bot-field':'',
+    location_name:`${row[C.ZH]} / ${row[C.EN]}`,
+    location_index:idx,
+    suggested_status:document.querySelector('input[name="suggest-status"]:checked')?.value||'',
+    maps_query:document.getElementById('edit-maps').value.trim(),
+    lat:document.getElementById('edit-lat').value.trim(),
+    lng:document.getElementById('edit-lng').value.trim(),
+    notes_zh:document.getElementById('edit-notes-zh').value.trim(),
+    notes_en:document.getElementById('edit-notes-en').value.trim(),
+    reason:document.getElementById('edit-reason').value.trim(),
+    submitter:document.getElementById('edit-submitter').value.trim(),
+  },'edit-modal');
+}
+
+// ═══════════════════════════════════════════════════
+// ADD MODAL
+// ═══════════════════════════════════════════════════
+function openAddModal(){
+  ['add-name-zh','add-name-en','add-alt','add-maps','add-lat','add-lng',
+   'add-notes-zh','add-notes-en','add-source','add-submitter','add-icon'].forEach(id=>
+    document.getElementById(id).value='');
+  document.getElementById('ns-review').checked=true;
+  resetFeedback('add-feedback','add-submit-btn',t('add_submit'));
+  document.getElementById('add-modal').classList.add('open');
+}
+function closeAddModal(){document.getElementById('add-modal').classList.remove('open')}
+async function submitAdd(){
+  const nameZH=document.getElementById('add-name-zh').value.trim();
+  const nameEN=document.getElementById('add-name-en').value.trim();
+  const maps=document.getElementById('add-maps').value.trim();
+  const fb=document.getElementById('add-feedback');
+  if(!nameZH&&!nameEN){fb.className='submit-feedback err';fb.textContent=t('err_name_required');return}
+  if(!maps){fb.className='submit-feedback err';fb.textContent=t('err_maps_required');return}
+  const catSel=document.getElementById('add-cat');
+  const catIdx=catSel.selectedIndex;
+  const catObj=CATEGORIES[catIdx]||{zh:'',en:catSel.value};
+  await doNetlifySubmit('add-submit-btn','add-feedback',t('add_submit'),{
+    'form-name':'add-location','bot-field':'',
+    name_zh:nameZH,name_en:nameEN,
+    alt_name:document.getElementById('add-alt').value.trim(),
+    icon:document.getElementById('add-icon').value.trim(),
+    category_zh:catObj.zh,category_en:catObj.en,
+    lat:document.getElementById('add-lat').value.trim(),
+    lng:document.getElementById('add-lng').value.trim(),
+    maps_query:maps,
+    notes_zh:document.getElementById('add-notes-zh').value.trim(),
+    notes_en:document.getElementById('add-notes-en').value.trim(),
+    status:document.querySelector('input[name="new-status"]:checked')?.value||'Needs Review',
+    source_url:document.getElementById('add-source').value.trim(),
+    submitter:document.getElementById('add-submitter').value.trim(),
+  },'add-modal');
+}
+
+// ═══════════════════════════════════════════════════
+// NETLIFY SUBMIT
+// ═══════════════════════════════════════════════════
+async function doNetlifySubmit(btnId,fbId,btnLabel,payload,modalId){
+  const btn=document.getElementById(btnId);
+  const fb=document.getElementById(fbId);
+  btn.disabled=true;btn.textContent=t('submitting');
+  fb.className='submit-feedback';fb.textContent='';
+  try{
+    const resp=await fetch('/',{method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams(payload).toString()});
+    if(resp.ok){
+      fb.className='submit-feedback ok';fb.textContent=t('submit_ok');
+      recordPending();
+      setTimeout(()=>document.getElementById(modalId)?.classList.remove('open'),2200);
+    }else{throw new Error(resp.status)}
+  }catch(e){
+    fb.className='submit-feedback err';fb.textContent=t('submit_err');
+    btn.disabled=false;btn.textContent=btnLabel;
+  }
+}
+function resetFeedback(fbId,btnId,btnLabel){
+  const fb=document.getElementById(fbId);fb.className='submit-feedback';fb.textContent='';
+  const btn=document.getElementById(btnId);btn.disabled=false;btn.textContent=btnLabel;
+}
+
+// ═══════════════════════════════════════════════════
+// PENDING BANNER
+// ═══════════════════════════════════════════════════
+function recordPending(){localStorage.setItem('has_pending','1');showPendingBanner()}
+function showPendingBanner(){
+  if(localStorage.getItem('has_pending')==='1')
+    document.getElementById('pending-banner').style.display='flex';
+}
+
+// ═══════════════════════════════════════════════════
+// ADMIN AUTH  — access via yoursite.netlify.app/#admin
+// ═══════════════════════════════════════════════════
+function checkAdminHash(){
+  if(location.hash==='#admin'){
+    history.replaceState(null,'',location.pathname);
+    openAdminAuth();
+  }
+}
+function openAdminAuth(){
+  document.getElementById('admin-pwd').value='';
+  const fb=document.getElementById('admin-feedback');
+  fb.className='submit-feedback';fb.textContent='';
+  document.getElementById('admin-auth-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('admin-pwd').focus(),100);
+}
+function closeAdminAuth(){document.getElementById('admin-auth-modal').classList.remove('open')}
+
+async function verifyAdminPassword(){
+  // If build.sh hasn't replaced the placeholder, admin is not configured
+  if(ADMIN_HASH==='__ADMIN_HASH__'||ADMIN_HASH===''){
+    const fb=document.getElementById('admin-feedback');
+    fb.className='submit-feedback err';fb.textContent=t('admin_not_configured');
+    return;
+  }
+  const pwd=document.getElementById('admin-pwd').value;
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pwd));
+  const hash=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  if(hash===ADMIN_HASH){
+    closeAdminAuth();
+    openSheetModal();
+  }else{
+    const fb=document.getElementById('admin-feedback');
+    fb.className='submit-feedback err';fb.textContent=t('admin_err');
+    document.getElementById('admin-pwd').value='';
+    document.getElementById('admin-pwd').focus();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// SHEET MODAL (admin only)
+// ═══════════════════════════════════════════════════
+function openSheetModal(){
+  document.getElementById('sheet-url-input').value=localStorage.getItem('sheet_url')||'';
+  document.getElementById('sheet-status').textContent='';
+  document.getElementById('sheet-modal').classList.add('open');
+}
+function closeSheetModal(){document.getElementById('sheet-modal').classList.remove('open')}
+async function saveSheet(){
+  const url=document.getElementById('sheet-url-input').value.trim();
+  if(!url){clearSheet();return}
+  const status=document.getElementById('sheet-status');
+  status.className='sheet-status';status.textContent=t('sheet_loading');
+  try{
+    const resp=await fetch(url);if(!resp.ok)throw new Error(resp.status);
+    const parsed=parseCSV(await resp.text());
+    if(!parsed||!parsed.length)throw new Error('empty');
+    localStorage.setItem('sheet_url',url);data=parsed;
+    status.className='sheet-status ok';status.textContent=t('sheet_ok',data.length);
+    rebuild();setTimeout(closeSheetModal,1200);
+  }catch(e){
+    status.className='sheet-status err';status.textContent=t('sheet_err',e.message);
+  }
+}
+function clearSheet(){
+  localStorage.removeItem('sheet_url');data=EMBEDDED;
+  document.getElementById('sheet-url-input').value='';
+  document.getElementById('sheet-status').className='sheet-status';
+  document.getElementById('sheet-status').textContent=t('sheet_cleared');
+  rebuild();
+}
+async function tryLoadSheet(){
+  const url=localStorage.getItem('sheet_url');if(!url)return;
+  const bar=document.createElement('div');bar.className='loading-bar';document.body.appendChild(bar);
+  try{
+    const resp=await fetch(url);if(!resp.ok)throw new Error();
+    const parsed=parseCSV(await resp.text());
+    if(parsed&&parsed.length)data=parsed;
+  }catch(e){}
+  bar.remove();rebuild();
+}
+
+function rebuild(){if(map)buildMarkers();buildCatFilter();applyFilters()}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+lang=localStorage.getItem('lang')||'zh';
+applyTheme();          // CSS theme only; map colorScheme applied in initMapCallback
+updateLangUI();
+buildCatDropdown();
+buildCatFilter();
+buildStatusFilter();
+applyFilters();        // renders card list immediately, before map loads
+showPendingBanner();
+tryLoadSheet();        // loads sheet data; buildMarkers() guarded by if(map)
+checkAdminHash();
+window.addEventListener('hashchange',checkAdminHash);
+window.addEventListener('resize',()=>{if(map)google.maps.event.trigger(map,'resize')});
+// initMapCallback() is called by the Google Maps script after it loads async
+</script>
+</body>
+</html>
