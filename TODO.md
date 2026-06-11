@@ -15,40 +15,20 @@
 
 ---
 
-## 🔲 Netlify 部署
+## ✅ Netlify 部署
 
-- [ ] **連接 GitHub repo**
-  - Netlify Dashboard → Add new site → Import an existing project
-  - 選 GitHub → `ginaz5/lingorm-map`
-  - Branch: `main`，Build command: `bash build.sh`，Publish directory: `.`
-
-- [ ] **設定 Netlify 環境變數**
-  - Site Settings → Environment Variables → Add variable
-  - `GOOGLE_MAPS_KEY` = 你的 API Key
-  - `GOOGLE_MAP_ID`   = 你的 Map ID
-  - `ADMIN_PASSWORD`  = 你的管理員密碼（選填）
-
-- [ ] **觸發第一次 Deploy**
-  - Deploys → Trigger deploy → Deploy site
-  - 確認 build log 出現：`✅ Google Maps key injected.` / `✅ Google Map ID injected.`
-
-- [ ] **記錄 Netlify domain**（例：`lingorm-map.netlify.app`）
+- [x] **連接 GitHub repo** (`ginaz5/lingorm-map`, branch: `main`)
+- [x] **設定 Netlify 環境變數**（`GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` / `ADMIN_PASSWORD`）
+- [x] **部署成功** — build log 確認 `✅ Google Maps key injected.` / `✅ Google Map ID injected.`
+- [x] **Netlify domain**：https://lingorm-map.netlify.app
 
 ---
 
-## 🔲 Google Cloud Console 安全設定
+## ✅ Google Cloud Console 安全設定
 
-- [ ] **HTTP Referrer 白名單**（防止其他網站盜用 key）
-  - APIs & Services → Credentials → 點進你的 API Key
-  - Application restrictions → HTTP referrers
-  - 加入：`https://lingorm-map.netlify.app/*`（換成你的實際 domain）
-
-- [ ] **API Quota 硬停**（超額停服務，不扣費）
-  - APIs & Services → Maps JavaScript API → Quotas & System Limits
-  - `Map loads per day` → 編輯 → 設為 `900`
-
-- [ ] **Budget Alert**（保險用）
-  - Billing → Budgets & Alerts → Create Budget → 金額 $5
+- [x] **HTTP Referrer 白名單** — `https://lingorm-map.netlify.app/*`
+- [x] **API Quota 硬停** — `Map loads per day` = 900（27,000/月，在免費額度內）
+- [x] **Budget Alert** — $5 預算警報
 
 ---
 

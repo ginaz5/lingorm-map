@@ -19,10 +19,11 @@
 
 **Key 安全策略（靜態網站業界標準）：**
 
-Google Maps JS API 的 key 存在於 script URL，無法在純靜態網站完全隱藏。採用雙層保護：
+Google Maps JS API 的 key 存在於 script URL，無法在純靜態網站完全隱藏。採用三層保護：
 
-1. **HTTP Referrer 白名單**（Cloud Console → Credentials）：限制 key 僅接受本站 domain 請求
-2. **API Quota 硬停**（APIs & Services → Maps JS API → Quotas）：`Map loads per day` 設為 900，超額回 `OVER_QUERY_LIMIT`，不產生費用
+1. **HTTP Referrer 白名單**（Cloud Console → Credentials）：限制 key 僅接受 `https://lingorm-map.netlify.app/*` 請求 ✅
+2. **API Quota 硬停**（APIs & Services → Maps JS API → Quotas）：`Map loads per day` = 900，超額回 `OVER_QUERY_LIMIT`，不產生費用 ✅
+3. **Budget Alert**（Billing → Budgets & alerts）：$5 觸發 email 通知 ✅
 
 費用估算：$200/月額度 ≈ 28,500 次載入，日 quota 900 × 30 = 27,000 次，預期帳單 $0。
 
@@ -49,9 +50,11 @@ Google Maps JS API 的 key 存在於 script URL，無法在純靜態網站完全
 - Netlify 免費額度：500 build minutes / 月
 - 本專案 `build.sh` 約 5–10 秒 / 次，push 20 次也只用 ~3 分鐘，遠低於限制
 
+**上線狀態：** https://lingorm-map.netlify.app ✅
+
 **部署流程：**
 ```
-git push → Netlify webhook → bash build.sh → inject ADMIN_HASH → publish
+git push → Netlify webhook → bash build.sh → inject secrets → publish
 ```
 
 ---
