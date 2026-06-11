@@ -43,6 +43,8 @@
 - [ ] 「建議修改」表單送出 → Netlify Forms 收到
 - [ ] 「新增地點」表單送出 → Netlify Forms 收到
 - [ ] Netlify Forms 通知 email 已設定
+- [ ] Netlify 環境變數 `GOOGLE_SHEET_CSV_URL` 已設定
+- [ ] `/api/locations` 可成功回傳 CSV
 
 ---
 
@@ -55,8 +57,18 @@
 
 ---
 
+## ✅ Google Sheets API Proxy（2026-06-11）
+
+- [x] 新增 Netlify Function：`/api/locations`
+- [x] Google Sheets CSV URL 改放 Netlify 環境變數 `GOOGLE_SHEET_CSV_URL`
+- [x] 前端改為呼叫站內 API，不再保存或暴露 `sheet_url`
+- [x] 管理員 Sheet 設定頁改為 API 狀態 / 重新載入
+- [x] `.env.example` / `TECH_DECISIONS.md` 同步更新
+
+---
+
 ## 🔲 上線後（選填）
 
 - [ ] 自訂網域（Netlify → Domain Management）
-- [ ] Google Sheets CSV URL 填入 ⚙️ 設定頁面並測試載入
-- [ ] 把 Netlify domain 加入 Google Sheets CORS 白名單（通常不需要，Sheets CSV 已開放 CORS）
+- [ ] Google Sheets CSV URL 填入 Netlify `GOOGLE_SHEET_CSV_URL` 並重新部署
+- [ ] 在 ⚙️ 設定頁面測試重新載入

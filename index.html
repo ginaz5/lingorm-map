@@ -451,10 +451,6 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
     </div>
     <p class="modal-desc" data-i18n="sheet_desc"></p>
     <div class="modal-body">
-      <div class="form-row">
-        <label class="form-label" data-i18n="sheet_lbl"></label>
-        <input class="form-input" id="sheet-url-input" type="url" data-i18n-ph="sheet_ph"/>
-      </div>
       <div class="sheet-status" id="sheet-status"></div>
       <div data-i18n-html="sheet_howto" style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-top:4px"></div>
       <hr class="form-divider"/>
@@ -473,6 +469,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 // ADMIN HASH — injected by build.sh from ADMIN_PASSWORD env var
 // ═══════════════════════════════════════════════════
 const ADMIN_HASH = '__ADMIN_HASH__';
+const LOCATIONS_API = '/api/locations';
 
 // ═══════════════════════════════════════════════════
 // CATEGORIES — single source of truth for dropdowns + filter
@@ -566,18 +563,16 @@ const T = {
     admin_btn: '登入', admin_err: '密碼錯誤',
     admin_not_configured: '尚未設定管理員密碼。請設定 ADMIN_PASSWORD 環境變數後重新部署。',
     // Sheet modal
-    sheet_title: '⚙️ Google Sheets 設定',
-    sheet_desc: '將 Google Sheets「發佈至網路」後，貼上 CSV 網址即可讓網頁自動讀取最新資料。',
-    sheet_lbl: 'CSV 網址',
-    sheet_ph: 'https://docs.google.com/spreadsheets/d/.../pub?...&output=csv',
-    sheet_howto: '<strong>取得 CSV 網址：</strong><br>1. Google Sheets → 檔案 → 分享 → 發佈至網路<br>2. 選擇「Locations 工作表」+「逗號分隔值 (.csv)」<br>3. 按「發佈」並複製網址貼到上方',
+    sheet_title: '⚙️ Google Sheets API 狀態',
+    sheet_desc: '資料由 Netlify Function 代抓 Google Sheets CSV；實際試算表網址只存在 Netlify 環境變數，不會暴露在前端。',
+    sheet_howto: '<strong>設定方式：</strong><br>1. Google Sheets → 檔案 → 分享 → 發佈至網路<br>2. 選擇「Locations 工作表」+「逗號分隔值 (.csv)」<br>3. 將 CSV URL 存到 Netlify 環境變數 <code>GOOGLE_SHEET_CSV_URL</code> 並重新部署',
     sheet_netlify: '<strong>設定 Netlify 表單通知（接收共編建議）：</strong><br>1. Netlify Dashboard → Forms → 找到 <code>suggest-edit</code> 和 <code>add-location</code><br>2. Settings → Form notifications → 加入你的 Email',
     sheet_ok: n => `✅ 已載入 ${n} 筆資料`,
     sheet_err: e => `❌ 載入失敗：${e}`,
     sheet_loading: '載入中…',
-    sheet_cleared: '已清除，改用內建資料',
-    sheet_save: '儲存並載入',
-    sheet_clear: '清除',
+    sheet_cleared: '已切回內建資料',
+    sheet_save: '重新載入',
+    sheet_clear: '使用內建資料',
   },
   en: {
     hdr_sub: 'Lingorm Bangkok Location Map',
@@ -648,18 +643,16 @@ const T = {
     admin_btn: 'Login', admin_err: 'Incorrect password',
     admin_not_configured: 'Admin password not configured. Set ADMIN_PASSWORD env var and redeploy.',
     // Sheet modal
-    sheet_title: '⚙️ Google Sheets Setup',
-    sheet_desc: 'Publish your Google Sheet as CSV. The page fetches latest data on each load.',
-    sheet_lbl: 'CSV URL',
-    sheet_ph: 'https://docs.google.com/spreadsheets/d/.../pub?...&output=csv',
-    sheet_howto: '<strong>How to get the CSV URL:</strong><br>1. Google Sheets → File → Share → Publish to web<br>2. Select "Locations sheet" + "Comma-separated values (.csv)"<br>3. Click Publish and paste the URL above',
+    sheet_title: '⚙️ Google Sheets API Status',
+    sheet_desc: 'A Netlify Function fetches the Google Sheets CSV. The real spreadsheet URL only lives in Netlify environment variables and is not exposed to the frontend.',
+    sheet_howto: '<strong>Setup:</strong><br>1. Google Sheets → File → Share → Publish to web<br>2. Select "Locations sheet" + "Comma-separated values (.csv)"<br>3. Store the CSV URL in Netlify env var <code>GOOGLE_SHEET_CSV_URL</code> and redeploy',
     sheet_netlify: '<strong>Set up Netlify form notifications:</strong><br>1. Netlify Dashboard → Forms → find <code>suggest-edit</code> and <code>add-location</code><br>2. Settings → Form notifications → add your Email',
     sheet_ok: n => `✅ Loaded ${n} entries`,
     sheet_err: e => `❌ Load failed: ${e}`,
     sheet_loading: 'Loading…',
-    sheet_cleared: 'Cleared, using built-in data',
-    sheet_save: 'Save & Load',
-    sheet_clear: 'Clear',
+    sheet_cleared: 'Using built-in data',
+    sheet_save: 'Reload',
+    sheet_clear: 'Use Built-in Data',
   }
   // Add 'th': {...} here for Thai support in the future
 };
@@ -1115,21 +1108,18 @@ async function verifyAdminPassword(){
 // SHEET MODAL (admin only)
 // ═══════════════════════════════════════════════════
 function openSheetModal(){
-  document.getElementById('sheet-url-input').value=localStorage.getItem('sheet_url')||'';
   document.getElementById('sheet-status').textContent='';
   document.getElementById('sheet-modal').classList.add('open');
 }
 function closeSheetModal(){document.getElementById('sheet-modal').classList.remove('open')}
 async function saveSheet(){
-  const url=document.getElementById('sheet-url-input').value.trim();
-  if(!url){clearSheet();return}
   const status=document.getElementById('sheet-status');
   status.className='sheet-status';status.textContent=t('sheet_loading');
   try{
-    const resp=await fetch(url);if(!resp.ok)throw new Error(resp.status);
+    const resp=await fetch(LOCATIONS_API);if(!resp.ok)throw new Error(resp.status);
     const parsed=parseCSV(await resp.text());
     if(!parsed||!parsed.length)throw new Error('empty');
-    localStorage.setItem('sheet_url',url);data=parsed;
+    data=parsed;
     status.className='sheet-status ok';status.textContent=t('sheet_ok',data.length);
     rebuild();setTimeout(closeSheetModal,1200);
   }catch(e){
@@ -1137,17 +1127,15 @@ async function saveSheet(){
   }
 }
 function clearSheet(){
-  localStorage.removeItem('sheet_url');data=EMBEDDED;
-  document.getElementById('sheet-url-input').value='';
+  data=EMBEDDED;
   document.getElementById('sheet-status').className='sheet-status';
   document.getElementById('sheet-status').textContent=t('sheet_cleared');
   rebuild();
 }
 async function tryLoadSheet(){
-  const url=localStorage.getItem('sheet_url');if(!url)return;
   const bar=document.createElement('div');bar.className='loading-bar';document.body.appendChild(bar);
   try{
-    const resp=await fetch(url);if(!resp.ok)throw new Error();
+    const resp=await fetch(LOCATIONS_API);if(!resp.ok)throw new Error();
     const parsed=parseCSV(await resp.text());
     if(parsed&&parsed.length)data=parsed;
   }catch(e){}

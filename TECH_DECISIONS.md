@@ -59,30 +59,34 @@ git push → Netlify webhook → bash build.sh → inject secrets → publish
 
 ---
 
-## 資料來源：Google Sheets CSV
+## 資料來源：Google Sheets CSV + Netlify Function Proxy
 
-**架構：** Google Sheets → 發佈至網路（CSV）→ 前端 `fetch` 讀取
+**架構：** Google Sheets → 發佈至網路（CSV）→ Netlify Function `/api/locations` 代抓 → 前端讀取站內 API
 
 **資料流：**
 ```
 Google Sheets（人工編輯）
     ↓  File → Share → Publish to web → CSV
-Public CSV URL（CORS open）
-    ↓  fetch() on page load
+CSV URL 存在 Netlify env var: GOOGLE_SHEET_CSV_URL
+    ↓  Netlify Function fetch（server-side）
+/api/locations
+    ↓  frontend fetch('/api/locations') on page load
 index.html（自訂 CSV parser 解析）
     ↓
-Leaflet markers + card list
+Google Maps markers + card list
 ```
 
 **選用理由：**
-- Google Sheets CSV export 天然支援 CORS，前端可直接 fetch，不需 proxy
+- 前端不保存、不顯示真實 Google Spreadsheet / CSV URL
+- Netlify Function 與現有 Netlify 部署同平台，無需另建伺服器
 - 非技術用戶友善：管理員在熟悉的試算表界面更新資料即可
-- 免費，無 API key
+- 免費，無 Google Sheets API key；只需在 Netlify Dashboard 設定 `GOOGLE_SHEET_CSV_URL`
 
 **限制：**
 - 單向同步（Sheets → 網頁），網頁不寫回 Sheets
 - 更新需手動重新整理網頁（非 WebSocket 即時推送）
 - CSV 大小建議 < 1MB（本專案 26 筆遠低於上限）
+- Sheet 仍需「發佈至網路」產生 CSV URL；若未來要完全不公開 Sheet，可改用 Google Sheets API + Service Account
 
 ---
 

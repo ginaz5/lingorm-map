@@ -3,6 +3,7 @@
   publish = "."
 
 [build.environment]
-  # No extra env needed here — set ADMIN_PASSWORD in Netlify Dashboard:
+  # Set runtime secrets in Netlify Dashboard:
   # Site Settings → Environment Variables → Add variable
-  # Key: ADMIN_PASSWORD  Value: your chosen password
+  # Required: GOOGLE_MAPS_KEY, GOOGLE_MAP_ID, GOOGLE_SHEET_CSV_URL
+  # Optional: ADMIN_PASSWORD
