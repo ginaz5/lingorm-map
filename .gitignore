@@ -8,3 +8,6 @@
 # 編輯器
 .vscode/
 .idea/
+
+# Local Netlify folder
+.netlify
