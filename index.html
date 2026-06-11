@@ -121,8 +121,6 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 .popup-name{font-size:14px;font-weight:700;margin-bottom:4px}
 .popup-alt{font-size:12px;color:var(--text-muted);margin-bottom:6px}
 .popup-notes{font-size:12px;color:var(--text-muted);line-height:1.5;margin:6px 0 8px}
-.popup-maplink{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--accent);text-decoration:none}
-.popup-maplink:hover{text-decoration:underline}
 /* Mobile */
 .tab-bar{display:none;height:var(--tab-h);flex-shrink:0;background:var(--surface);
   border-top:1px solid var(--border);box-shadow:0 -1px 4px rgba(0,0,0,.1);z-index:300}
@@ -504,7 +502,6 @@ const T = {
     status: {Verified:'✅ 已驗證','Needs Review':'⚠️ 待確認','Could Not Find':'❌ 找不到'},
     badge:  {Verified:'已驗證',   'Needs Review':'待確認',   'Could Not Find':'找不到'},
     count: (n,t) => `顯示 ${n} / ${t} 個地點`,
-    maps: '在 Google Maps 開啟',
     approx: '📍 座標為估算位置',
     edit_btn_verify: '幫助驗證',
     edit_btn_edit: '建議修改',
@@ -584,7 +581,6 @@ const T = {
     status: {Verified:'✅ Verified','Needs Review':'⚠️ Needs Review','Could Not Find':'❌ Not Found'},
     badge:  {Verified:'Verified', 'Needs Review':'Needs Review','Could Not Find':'Not Found'},
     count: (n,t) => `${n} / ${t} locations`,
-    maps: 'Open in Google Maps',
     approx: '📍 Coordinates are approximate',
     edit_btn_verify: 'Help verify',
     edit_btn_edit: 'Suggest edit',
@@ -751,7 +747,6 @@ function buildPopupContent(i){
   const name=lang==='zh'?row[C.ZH]:row[C.EN];
   const notes=lang==='zh'?row[C.NOTES_ZH]:row[C.NOTES_EN];
   const cat=lang==='zh'?row[C.CAT_ZH]:row[C.CAT_EN];
-  const mapsUrl='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(row[C.MAPS].replace(/\+/g,' '));
   return `<div style="min-width:200px;max-width:260px">
     <div class="popup-name">${row[C.ICON]} ${name}</div>
     ${row[C.ALT]?`<div class="popup-alt">${row[C.ALT]}</div>`:''}
@@ -760,7 +755,6 @@ function buildPopupContent(i){
       <span class="badge ${getBadgeClass(row[C.STATUS])}">${tobj('badge',row[C.STATUS])}</span>
     </div>
     <div class="popup-notes">${notes}</div>
-    <a class="popup-maplink" href="${mapsUrl}" target="_blank">🗺 ${t('maps')}</a>
   </div>`;
 }
 function buildMarkers(){
@@ -828,7 +822,6 @@ function renderList(){
     const notes=lang==='zh'?row[C.NOTES_ZH]:row[C.NOTES_EN];
     const cat=lang==='zh'?row[C.CAT_ZH]:row[C.CAT_EN];
     const st=row[C.STATUS];
-    const mapsUrl='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(row[C.MAPS].replace(/\+/g,' '));
     const needsHelp=st==='Needs Review'||st==='Could Not Find';
     return `<div class="loc-card${activeIdx===i?' active':''}" id="card-${i}" onclick="activateCard(${i})">
       <div class="card-head">
