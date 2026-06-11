@@ -34,15 +34,24 @@
 
 ## 🔲 部署後測試
 
-- [ ] 地圖正常載入（不出現「This page can't load Google Maps correctly」）
-- [ ] Light / Dark / Auto 三段主題切換，地圖顏色同步
-- [ ] 點擊 marker 開啟 InfoWindow，內容正確
-- [ ] 點擊卡片，地圖 pan 到對應地點並開啟 InfoWindow
+- [x] 地圖正常載入
+- [x] Light / Dark / Auto 三段主題切換，地圖顏色同步
+- [x] 點擊 marker 開啟 InfoWindow，內容正確
+- [x] 點擊卡片，地圖 pan 到對應地點並開啟 InfoWindow
 - [ ] 語言切換（中文 ↔ 英文），InfoWindow 內容同步
 - [ ] 手機版 tab 切換（地圖 ↔ 清單）正常
 - [ ] 「建議修改」表單送出 → Netlify Forms 收到
 - [ ] 「新增地點」表單送出 → Netlify Forms 收到
 - [ ] Netlify Forms 通知 email 已設定
+
+---
+
+## ✅ UI 修改（2026-06-11）
+
+- [x] 移除 card 的「在 Google Maps 開啟」連結
+- [x] 移除 header subtitle「鄺玲玲曼谷踩點地圖」
+- [x] colorScheme 改用 string literal（`'DARK'/'LIGHT'`），修正 light mode 切換
+- [x] 新增地點表單：單一地點名稱欄、單一說明欄、移除 Emoji/經緯度、地圖欄改為 Google Maps 連結
 
 ---
 

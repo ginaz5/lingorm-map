@@ -6,10 +6,6 @@
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <title>Lingorm Bangkok Map</title>
-<!-- TODO: 替換成你的 API Key 和 Map ID（Google Cloud Console 取得） -->
-<script async
-  src="https://maps.googleapis.com/maps/api/js?key=__GOOGLE_MAPS_KEY__&map_ids=__GOOGLE_MAP_ID__&libraries=marker&callback=initMapCallback&loading=async">
-</script>
 <style>
 :root {
   --bg:#f5f5f7; --surface:#fff; --surface2:#f0f0f5; --border:#e0e0e8;
@@ -1176,6 +1172,10 @@ checkAdminHash();
 window.addEventListener('hashchange',checkAdminHash);
 window.addEventListener('resize',()=>{if(map)google.maps.event.trigger(map,'resize')});
 // initMapCallback() is called by the Google Maps script after it loads async
+</script>
+<!-- Maps script placed AFTER inline script to guarantee initMapCallback is defined first -->
+<script async
+  src="https://maps.googleapis.com/maps/api/js?key=__GOOGLE_MAPS_KEY__&map_ids=__GOOGLE_MAP_ID__&libraries=marker&callback=initMapCallback&loading=async">
 </script>
 </body>
 </html>
