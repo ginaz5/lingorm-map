@@ -87,6 +87,7 @@ Google Maps markers + card list
 - 更新需手動重新整理網頁（非 WebSocket 即時推送）
 - CSV 大小建議 < 1MB（本專案 26 筆遠低於上限）
 - Sheet 仍需「發佈至網路」產生 CSV URL；若未來要完全不公開 Sheet，可改用 Google Sheets API + Service Account
+- CSV 必須包含 app schema 欄位：`Name_EN`, `Name_ZH`, `Alt_Name`, `Category_EN`, `Category_ZH`, `Notes_EN`, `Notes_ZH`, `Icon`, `Lat`, `Lng`, `Maps_Query`, `Status`, `Duplicate_Group`, `Source`, `Coords_Approx`。若欄位不符，前端會保留內建資料，避免顯示空白卡片。
 
 ---
 

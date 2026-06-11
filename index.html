@@ -715,6 +715,7 @@ function parseCSV(text){
   const keys=["Name_EN","Name_ZH","Alt_Name","Category_EN","Category_ZH",
               "Notes_EN","Notes_ZH","Icon","Lat","Lng",
               "Maps_Query","Status","Duplicate_Group","Source","Coords_Approx"];
+  if(!keys.every(k=>idx[k]!==undefined))return null;
   return rows.slice(1).filter(r=>r.join('').trim()).map(r=>
     keys.map(k=>(idx[k]!==undefined?r[idx[k]]||'':'').trim()));
 }
