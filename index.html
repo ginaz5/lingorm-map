@@ -6,224 +6,18 @@
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <title>Lingorm Bangkok Map</title>
-<style>
-:root {
-  --bg:#f5f5f7; --surface:#fff; --surface2:#f0f0f5; --border:#e0e0e8;
-  --text:#1a1a2e; --text-muted:#666680;
-  --accent:#6c3dff; --accent-soft:#ede8ff;
-  --verified:#2e7d32; --v-bg:#e8f5e9;
-  --review:#e65100; --r-bg:#fff3e0;
-  --notfound:#b71c1c; --nf-bg:#ffebee;
-  --card-hover:#f5f0ff;
-  --header-h:52px; --tab-h:56px;
-  --shadow:0 1px 4px rgba(0,0,0,.10);
-  --shadow-md:0 4px 16px rgba(0,0,0,.12);
-  --success:#1b5e20; --success-bg:#e8f5e9;
-  --src:#185FA5; --src-bg:#E6F1FB; --src-border:#B5D4F4;
-}
-[data-theme="dark"] {
-  --bg:#0f0f1a; --surface:#1a1a2e; --surface2:#12122a; --border:#2a2a4a;
-  --text:#e8e8f5; --text-muted:#8080aa;
-  --accent:#9d6dff; --accent-soft:#1e1440;
-  --verified:#66bb6a; --v-bg:#0d2c0f;
-  --review:#ffa726; --r-bg:#2c1a00;
-  --notfound:#ef5350; --nf-bg:#2c0a0a;
-  --card-hover:#1f1540;
-  --shadow:0 1px 4px rgba(0,0,0,.4);
-  --shadow-md:0 4px 20px rgba(0,0,0,.5);
-  --success:#66bb6a; --success-bg:#0d2c0f;
-  --src:#85B7EB; --src-bg:#042C53; --src-border:#0C447C;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC',sans-serif;
-  background:var(--bg);color:var(--text);display:flex;flex-direction:column;transition:background .2s,color .2s}
-a{color:var(--accent)}
-/* Header */
-header{height:var(--header-h);flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 12px;gap:8px;box-shadow:var(--shadow);z-index:500;position:relative}
-.logo{font-size:17px;font-weight:700;color:var(--accent);white-space:nowrap}
-.logo-sub{font-size:12px;color:var(--text-muted);white-space:nowrap;display:none}
-@media(min-width:480px){.logo-sub{display:block}}
-.hdr-spacer{flex:1}
-.hdr-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);
-  padding:6px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;
-  white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:4px}
-.hdr-btn:hover{border-color:var(--accent);color:var(--accent)}
-.icon-btn{padding:6px 8px;font-size:16px}
-.btn-add{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn-add:hover{opacity:.85;color:#fff;border-color:var(--accent)}
-/* Layout */
-.app-body{flex:1;display:flex;overflow:hidden}
-.panel{width:360px;min-width:300px;flex-shrink:0;background:var(--surface);
-  border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-#map-wrap{flex:1;position:relative;overflow:hidden}
-#map{width:100%;height:100%}
-/* Filters */
-.filters{padding:10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:7px;flex-shrink:0}
-.search-wrap{position:relative}
-.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;fill:var(--text-muted);pointer-events:none}
-.search-input{width:100%;background:var(--surface2);border:1px solid var(--border);
-  border-radius:8px;padding:8px 10px 8px 32px;color:var(--text);font-size:14px;outline:none;transition:border-color .15s}
-.search-input:focus{border-color:var(--accent)}
-.search-input::placeholder{color:var(--text-muted)}
-.filter-row{display:flex;gap:6px}
-.filter-sel{flex:1;background:var(--surface2);border:1px solid var(--border);
-  border-radius:8px;padding:7px 8px;color:var(--text);font-size:13px;outline:none;cursor:pointer}
-.filter-sel:focus{border-color:var(--accent)}
-.result-info{font-size:11px;color:var(--text-muted);padding:0 2px}
-/* Cards */
-.loc-list{overflow-y:auto;flex:1;padding:8px;display:flex;flex-direction:column;gap:6px}
-.loc-list::-webkit-scrollbar{width:4px}
-.loc-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.loc-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;
-  padding:10px 12px;cursor:pointer;transition:background .12s,border-color .12s,box-shadow .12s;
-  border-left:3px solid transparent;position:relative}
-.loc-card:hover{background:var(--card-hover)}
-.loc-card.active{background:var(--card-hover);border-color:var(--accent);border-left-color:var(--accent);box-shadow:var(--shadow-md)}
-.card-head{display:flex;align-items:flex-start;gap:8px}
-.card-icon{font-size:20px;line-height:1;flex-shrink:0;margin-top:1px}
-.card-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.3}
-.card-alt{font-size:11px;color:var(--text-muted);margin-top:2px}
-.badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;border:1px solid;white-space:nowrap}
-.b-cat{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
-.b-verified{color:var(--verified);border-color:var(--verified);background:var(--v-bg)}
-.b-review{color:var(--review);border-color:var(--review);background:var(--r-bg)}
-.b-notfound{color:var(--notfound);border-color:var(--notfound);background:var(--nf-bg)}
-.b-dup{color:#795548;border-color:#795548;background:#efebe9}
-[data-theme="dark"] .b-dup{color:#bcaaa4;border-color:#5d4037;background:#1a0f0a}
-.card-notes{font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
-.card-maplink{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--accent);text-decoration:none;font-weight:500}
-.card-maplink:hover{text-decoration:underline}
-.approx-tag{font-size:10px;color:var(--review);margin-top:4px}
-.src-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.src-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;
-  border:1px solid var(--src-border);background:var(--src-bg);color:var(--src);
-  text-decoration:none;white-space:nowrap;cursor:pointer;transition:border-color .12s}
-.src-tag:hover{border-color:var(--src)}
-.src-tag-plain{cursor:default}
-.card-edit-btn{font-size:11px;color:var(--text-muted);background:none;border:1px solid var(--border);
-  border-radius:6px;padding:3px 7px;cursor:pointer;white-space:nowrap;transition:all .12s;flex-shrink:0}
-.card-edit-btn:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
-.card-edit-btn.verify-hint{color:var(--review);border-color:var(--review);background:var(--r-bg)}
-.card-edit-btn.verify-hint:hover{color:#fff;background:var(--review);border-color:var(--review)}
-/* Map legend */
-.map-legend{position:absolute;bottom:24px;right:8px;z-index:400;background:var(--surface);
-  border:1px solid var(--border);border-radius:8px;padding:8px 10px;box-shadow:var(--shadow-md);font-size:11px}
-.leg-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
-.leg-row:last-child{margin-bottom:0}
-.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-/* Google Maps InfoWindow */
-.gm-style .gm-style-iw-c{background:var(--surface)!important;border:1px solid var(--border)!important;
-  border-radius:10px!important;box-shadow:var(--shadow-md)!important;padding:0!important}
-.gm-style .gm-style-iw-d{overflow:hidden!important;padding:12px 14px!important}
-.gm-style .gm-style-iw-t::after,.gm-style .gm-style-iw-tc::after{background:var(--surface)!important}
-button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
-/* Popup content (shared classes used in InfoWindow HTML) */
-.leaflet-popup-content-wrapper{background:var(--surface)!important;color:var(--text)!important;
-  border:1px solid var(--border)!important;border-radius:10px!important;box-shadow:var(--shadow-md)!important}
-.leaflet-popup-tip{background:var(--surface)!important}
-.popup-name{font-size:14px;font-weight:700;margin-bottom:4px}
-.popup-alt{font-size:12px;color:var(--text-muted);margin-bottom:6px}
-.popup-notes{font-size:12px;color:var(--text-muted);line-height:1.5;margin:6px 0 8px}
-/* Mobile */
-.tab-bar{display:none;height:var(--tab-h);flex-shrink:0;background:var(--surface);
-  border-top:1px solid var(--border);box-shadow:0 -1px 4px rgba(0,0,0,.1);z-index:300}
-.tab-btn{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--text-muted);
-  font-weight:600;padding:6px 0;transition:color .15s}
-.tab-btn.active{color:var(--accent)}
-.tab-btn svg{width:22px;height:22px;fill:currentColor}
-@media(max-width:700px){
-  .panel{width:100%;border-right:none}
-  .app-body{flex-direction:column}
-  .tab-bar{display:flex}
-  .panel[data-mobile-tab="map"]{display:none}
-  #map-wrap[data-mobile-tab="list"]{display:none}
-  .logo-sub{display:none}
-}
-/* Modals (shared) */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
-  z-index:1000;align-items:center;justify-content:center;padding:16px}
-.modal-overlay.open{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;
-  padding:22px 22px 18px;width:100%;max-width:500px;box-shadow:var(--shadow-md);
-  max-height:90vh;display:flex;flex-direction:column}
-.modal-sm{max-width:380px}
-.modal-header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.modal-title{font-size:16px;font-weight:700;flex:1}
-.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);padding:0 4px;line-height:1}
-.modal-close:hover{color:var(--text)}
-.modal-desc{font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.5}
-.modal-body{overflow-y:auto;flex:1;padding-right:2px}
-.modal-body::-webkit-scrollbar{width:4px}
-.modal-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.form-row{margin-bottom:13px}
-.form-label{font-size:12px;font-weight:600;display:block;margin-bottom:5px;color:var(--text-muted)}
-.lbl-opt{font-weight:400}
-.form-input,.form-textarea,.form-select{width:100%;background:var(--surface2);border:1px solid var(--border);
-  border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;
-  outline:none;transition:border-color .15s;font-family:inherit}
-.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--accent)}
-.form-input::placeholder,.form-textarea::placeholder{color:var(--text-muted)}
-.form-textarea{resize:vertical;min-height:60px;line-height:1.5}
-.form-select{cursor:pointer}
-.form-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.form-hint{font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4}
-.form-divider{border:none;border-top:1px solid var(--border);margin:14px 0}
-.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;
-  padding-top:14px;border-top:1px solid var(--border);flex-shrink:0}
-.btn-primary{background:var(--accent);color:#fff;border:none;padding:9px 20px;
-  border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s}
-.btn-primary:hover{opacity:.85}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed}
-.btn-ghost{background:none;border:1px solid var(--border);color:var(--text);
-  padding:9px 16px;border-radius:8px;cursor:pointer;font-size:13px}
-.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
-/* Status radio pills */
-.status-opts{display:flex;gap:6px;flex-wrap:wrap}
-.status-opt{display:none}
-.status-opt+label{padding:5px 12px;border-radius:20px;border:1px solid var(--border);
-  font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;background:var(--surface2);color:var(--text-muted)}
-.status-opt:checked+label{border-width:2px}
-#so-verified:checked+label,#ns-verified:checked+label{color:var(--verified);border-color:var(--verified);background:var(--v-bg)}
-#so-review:checked+label,#ns-review:checked+label{color:var(--review);border-color:var(--review);background:var(--r-bg)}
-#so-notfound:checked+label,#ns-notfound:checked+label{color:var(--notfound);border-color:var(--notfound);background:var(--nf-bg)}
-/* Feedback */
-.submit-feedback{font-size:13px;padding:10px 12px;border-radius:8px;margin-top:10px;display:none;line-height:1.4}
-.submit-feedback.ok{display:block;background:var(--success-bg);color:var(--success);border:1px solid var(--verified)}
-.submit-feedback.err{display:block;background:var(--nf-bg);color:var(--notfound);border:1px solid var(--notfound)}
-/* Sheet status */
-.sheet-status{font-size:11px;padding:4px 0}
-.sheet-status.ok{color:var(--verified)}
-.sheet-status.err{color:var(--notfound)}
-/* Loading bar */
-.loading-bar{position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,var(--accent) 0%,#c084fc 100%);
-  z-index:1000;animation:loading 1.2s ease-in-out infinite}
-@keyframes loading{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
-/* Empty state */
-.empty{text-align:center;color:var(--text-muted);padding:40px 20px}
-.empty-icon{font-size:32px;margin-bottom:8px}
-/* Pending banner */
-.pending-banner{font-size:12px;background:var(--r-bg);color:var(--review);
-  border-bottom:1px solid var(--review);padding:7px 14px;
-  display:flex;align-items:center;gap:6px;flex-shrink:0}
-</style>
+<link rel="stylesheet" href="./styles.css"/>
 </head>
 <body>
 
 <!-- Netlify Forms detection -->
-<form name="suggest-edit" data-netlify="true" netlify-honeypot="bot-field" style="display:none">
+<form class="netlify-form-probe" name="suggest-edit" data-netlify="true" netlify-honeypot="bot-field">
   <input name="bot-field"/><input name="location_name"/><input name="location_index"/>
   <input name="suggested_status"/><input name="maps_query"/><input name="lat"/><input name="lng"/>
   <textarea name="notes_zh"></textarea><textarea name="notes_en"></textarea>
   <textarea name="reason"></textarea><input name="submitter"/>
 </form>
-<form name="add-location" data-netlify="true" netlify-honeypot="bot-field" style="display:none">
+<form class="netlify-form-probe" name="add-location" data-netlify="true" netlify-honeypot="bot-field">
   <input name="bot-field"/><input name="name_zh"/><input name="name_en"/><input name="alt_name"/>
   <input name="icon"/><input name="category_zh"/><input name="category_en"/>
   <input name="lat"/><input name="lng"/><input name="maps_query"/>
@@ -243,7 +37,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 </header>
 
 <!-- Pending banner -->
-<div class="pending-banner" id="pending-banner" style="display:none">
+<div class="pending-banner" id="pending-banner">
   <span>⏳</span><span data-i18n="pending_notice"></span>
 </div>
 
@@ -266,9 +60,9 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
   <div id="map-wrap" data-mobile-tab="list">
     <div id="map"></div>
     <div class="map-legend">
-      <div class="leg-row"><div class="leg-dot" style="background:#2e7d32"></div><span data-i18n="leg_verified"></span></div>
-      <div class="leg-row"><div class="leg-dot" style="background:#e65100"></div><span data-i18n="leg_review"></span></div>
-      <div class="leg-row"><div class="leg-dot" style="background:#b71c1c"></div><span data-i18n="leg_notfound"></span></div>
+      <div class="leg-row"><div class="leg-dot verified"></div><span data-i18n="leg_verified"></span></div>
+      <div class="leg-row"><div class="leg-dot review"></div><span data-i18n="leg_review"></span></div>
+      <div class="leg-row"><div class="leg-dot notfound"></div><span data-i18n="leg_notfound"></span></div>
     </div>
   </div>
 </div>
@@ -296,7 +90,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
     <div class="modal-body">
       <div class="form-row">
         <label class="form-label" data-i18n="edit_lbl_location"></label>
-        <input class="form-input" id="edit-location-name" readonly style="opacity:.6;cursor:default"/>
+        <input class="form-input form-input-readonly" id="edit-location-name" readonly/>
         <input type="hidden" id="edit-location-index"/>
       </div>
       <div class="form-row">
@@ -331,7 +125,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
           <input class="form-input" id="edit-lng" type="number" step="any" placeholder="100.5344"/>
         </div>
       </div>
-      <div class="form-hint" style="margin-top:-6px;margin-bottom:10px" data-i18n="edit_hint_coords"></div>
+      <div class="form-hint coords-hint" data-i18n="edit_hint_coords"></div>
       <div class="form-row">
         <label class="form-label">
           <span data-i18n="edit_lbl_notes_zh"></span> <span class="lbl-opt" data-i18n="opt"></span>
@@ -376,7 +170,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
     <p class="modal-desc" data-i18n="add_desc"></p>
     <div class="modal-body">
       <div class="form-row">
-        <label class="form-label"><span data-i18n="add_lbl_name"></span><span style="color:var(--notfound)"> *</span></label>
+        <label class="form-label"><span data-i18n="add_lbl_name"></span><span class="required-mark"> *</span></label>
         <input class="form-input" id="add-name" data-i18n-ph="add_ph_name"/>
       </div>
       <div class="form-row">
@@ -384,7 +178,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
         <select class="form-select" id="add-cat"></select>
       </div>
       <div class="form-row">
-        <label class="form-label"><span data-i18n="add_lbl_maps"></span><span style="color:var(--notfound)"> *</span></label>
+        <label class="form-label"><span data-i18n="add_lbl_maps"></span><span class="required-mark"> *</span></label>
         <input class="form-input" id="add-maps" data-i18n-ph="add_ph_maps" type="url"/>
         <div class="form-hint" data-i18n="add_hint_maps"></div>
       </div>
@@ -450,7 +244,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 
 <!-- MODAL: SHEET SETTINGS (admin only) -->
 <div class="modal-overlay" id="sheet-modal" onclick="if(event.target===this)closeSheetModal()">
-  <div class="modal" style="max-width:480px">
+  <div class="modal modal-sheet">
     <div class="modal-header">
       <span class="modal-title" data-i18n="sheet_title"></span>
       <button class="modal-close" onclick="closeSheetModal()">✕</button>
@@ -458,9 +252,9 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
     <p class="modal-desc" data-i18n="sheet_desc"></p>
     <div class="modal-body">
       <div class="sheet-status" id="sheet-status"></div>
-      <div data-i18n-html="sheet_howto" style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-top:4px"></div>
+      <div class="sheet-help sheet-help-spaced" data-i18n-html="sheet_howto"></div>
       <hr class="form-divider"/>
-      <div data-i18n-html="sheet_netlify" style="font-size:12px;color:var(--text-muted);line-height:1.7"></div>
+      <div class="sheet-help" data-i18n-html="sheet_netlify"></div>
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="clearSheet()" data-i18n="sheet_clear"></button>
@@ -748,9 +542,8 @@ function updateMapTheme(){
   map.setOptions({colorScheme:getEffectiveTheme()==='dark'?'DARK':'LIGHT'});
 }
 function makeMarkerContent(status){
-  const c={Verified:'#2e7d32','Needs Review':'#e65100','Could Not Find':'#b71c1c'}[status]||'#e65100';
   const el=document.createElement('div');
-  el.style.cssText=`width:14px;height:14px;border-radius:50%;background:${c};border:2px solid rgba(255,255,255,.85);box-shadow:0 2px 6px rgba(0,0,0,.4)`;
+  el.className=`marker-dot ${getBadgeClass(status).replace('b-','marker-')}`;
   return el;
 }
 function buildPopupContent(i){
@@ -758,10 +551,10 @@ function buildPopupContent(i){
   const name=lang==='zh'?row[C.ZH]:row[C.EN];
   const notes=lang==='zh'?row[C.NOTES_ZH]:row[C.NOTES_EN];
   const cat=lang==='zh'?row[C.CAT_ZH]:row[C.CAT_EN];
-  return `<div style="min-width:200px;max-width:260px">
+  return `<div class="popup-content">
     <div class="popup-name">${row[C.ICON]} ${name}</div>
     ${row[C.ALT]?`<div class="popup-alt">${row[C.ALT]}</div>`:''}
-    <div class="badges" style="margin-bottom:6px">
+    <div class="badges popup-badges">
       <span class="badge b-cat">${cat}</span>
       <span class="badge ${getBadgeClass(row[C.STATUS])}">${tobj('badge',row[C.STATUS])}</span>
     </div>
@@ -877,7 +670,7 @@ function renderList(){
     return `<div class="loc-card${activeIdx===i?' active':''}" id="card-${i}" onclick="activateCard(${i})">
       <div class="card-head">
         <div class="card-icon">${row[C.ICON]}</div>
-        <div style="flex:1;min-width:0">
+        <div class="card-title-wrap">
           <div class="card-name">${name}</div>
           ${row[C.ALT]?`<div class="card-alt">${row[C.ALT]}</div>`:''}
         </div>
@@ -1107,7 +900,7 @@ function resetFeedback(fbId,btnId,btnLabel){
 function recordPending(){localStorage.setItem('has_pending','1');showPendingBanner()}
 function showPendingBanner(){
   if(localStorage.getItem('has_pending')==='1')
-    document.getElementById('pending-banner').style.display='flex';
+    document.getElementById('pending-banner').classList.add('is-visible');
 }
 
 // ═══════════════════════════════════════════════════
