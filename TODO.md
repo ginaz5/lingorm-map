@@ -8,7 +8,7 @@
 
 - [x] 地圖從 Leaflet + CartoDB 遷移至 Google Maps JS API
 - [x] AdvancedMarkerElement + InfoWindow + colorScheme 深色主題
-- [x] build.sh 延伸：注入 `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` / `ADMIN_PASSWORD`
+- [x] build.sh 延伸：驗證 `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` / `GOOGLE_SHEET_CSV_URL`，並注入 `ADMIN_PASSWORD`
 - [x] `.env.example` + `.gitignore`
 - [x] TECH_DECISIONS.md 更新
 - [x] git init + 初始 commit + push 至 GitHub (`ginaz5/lingorm-map`)
@@ -18,8 +18,8 @@
 ## ✅ Netlify 部署
 
 - [x] **連接 GitHub repo** (`ginaz5/lingorm-map`, branch: `main`)
-- [x] **設定 Netlify 環境變數**（`GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` / `ADMIN_PASSWORD`）
-- [x] **部署成功** — build log 確認 `✅ Google Maps key injected.` / `✅ Google Map ID injected.`
+- [x] **設定 Netlify 環境變數**（`GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` / `GOOGLE_SHEET_CSV_URL` / `ADMIN_PASSWORD`）
+- [x] **部署成功** — build log 確認 Google Maps config 與 Sheet CSV URL 已設定
 - [x] **Netlify domain**：https://lingorm-map.netlify.app
 
 ---

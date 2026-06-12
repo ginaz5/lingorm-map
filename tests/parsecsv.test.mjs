@@ -32,6 +32,7 @@ test('parseCSV returns rows when required app headers are present', async () => 
     '',
     'KKday',
     'FALSE',
+    '',
   ]]);
 });
 

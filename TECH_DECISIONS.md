@@ -54,7 +54,7 @@ Google Maps JS API 的 key 存在於 script URL，無法在純靜態網站完全
 
 **部署流程：**
 ```
-git push → Netlify webhook → bash build.sh → inject secrets → publish
+git push → Netlify webhook → bash build.sh → validate env + inject admin hash → publish
 ```
 
 ---
@@ -187,7 +187,7 @@ const CATEGORIES = [
 lingorm_bangkok_v2/       ← GitHub repo root
 ├── index.html            # 整個 app（單檔，無外部依賴除 CDN）
 ├── netlify.toml          # Netlify build 設定
-├── build.sh              # Build script：inject ADMIN_HASH → index.html
+├── build.sh              # Build script：validate env + inject ADMIN_HASH → index.html
 ├── TECH_DECISIONS.md     # 本文件
 └── Lingorm_Bangkok_v2.xlsx  # 資料來源（匯入 Google Sheets 後棄用）
 ```

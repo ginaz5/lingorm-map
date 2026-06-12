@@ -83,6 +83,20 @@ http://localhost:8888
 
 3. 測試 API：
 
+先確認 Google Maps runtime config：
+
+```text
+http://localhost:8888/api/config
+```
+
+預期：
+
+```json
+{"googleMapsKey":"...","googleMapId":"..."}
+```
+
+再確認 location CSV proxy：
+
 ```text
 http://localhost:8888/api/locations
 ```
@@ -97,6 +111,18 @@ Name_EN,Name_ZH,Alt_Name,Category_EN,Category_ZH,Notes_EN,Notes_ZH,Icon,Lat,Lng,
 ```
 
 如果看到 Google Sheets HTML、登入頁、或錯誤 JSON，代表 `GOOGLE_SHEET_CSV_URL` 設定或 Sheet 發佈方式需要修正。
+
+如果地圖顯示「這個網頁並未正確載入 Google 地圖」，請到 Google Cloud Console 的 Maps API key restriction 加入本機 referrer：
+
+```text
+http://localhost:8888/*
+```
+
+若你使用不同 port，也要加入對應 port，例如：
+
+```text
+http://localhost:8889/*
+```
 
 4. 測試網站首頁：
 
@@ -170,6 +196,22 @@ http://localhost:8888/api/locations
 ```
 
 確認 API 回傳內容。
+
+### 地圖顯示 Google Maps 載入錯誤
+
+可能原因：
+
+- `/api/config` 沒有回傳 `googleMapsKey` / `googleMapId`
+- `.env` 沒有設定 `GOOGLE_MAPS_KEY` 或 `GOOGLE_MAP_ID`
+- Google Cloud Console 的 API key HTTP referrer restriction 沒有允許 `http://localhost:8888/*`
+
+先打開：
+
+```text
+http://localhost:8888/api/config
+```
+
+如果 config 正常，再檢查 Google Cloud Console 的 key restriction。
 
 ### 直接開 index.html 看起來正常，可以算通過嗎？
 

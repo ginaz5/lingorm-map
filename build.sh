@@ -1,7 +1,7 @@
 #!/bin/bash
 # Lingorm Bangkok Map — Netlify build script
-# Injects browser-required values into index.html at deploy time.
-# Server-only values are validated here but read by Netlify Functions at runtime.
+# Validates deploy environment and injects admin-only HTML values.
+# Runtime config is read by Netlify Functions.
 #
 # Required env vars (set in Netlify Dashboard → Environment Variables):
 #   GOOGLE_MAPS_KEY   — Google Maps JS API key
@@ -11,22 +11,20 @@
 
 set -e
 
-# ── Google Maps Key ──────────────────────────────────────────
+# ── Google Maps Key (Function runtime) ───────────────────────
 if [ -z "$GOOGLE_MAPS_KEY" ]; then
   echo "❌  GOOGLE_MAPS_KEY not set — map will not load."
   exit 1
 else
-  perl -0pi -e 's/__GOOGLE_MAPS_KEY__/$ENV{GOOGLE_MAPS_KEY}/g' index.html
-  echo "✅ Google Maps key injected."
+  echo "✅ Google Maps key configured for /api/config."
 fi
 
-# ── Google Map ID ────────────────────────────────────────────
+# ── Google Map ID (Function runtime) ─────────────────────────
 if [ -z "$GOOGLE_MAP_ID" ]; then
   echo "❌  GOOGLE_MAP_ID not set — dark mode and markers will not work."
   exit 1
 else
-  perl -0pi -e 's/__GOOGLE_MAP_ID__/$ENV{GOOGLE_MAP_ID}/g' index.html
-  echo "✅ Google Map ID injected."
+  echo "✅ Google Map ID configured for /api/config."
 fi
 
 # ── Admin Password (optional) ────────────────────────────────
