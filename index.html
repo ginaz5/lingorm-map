@@ -521,17 +521,19 @@ function parseCSV(text){
     return rows.slice(1).filter(r=>r.join('').trim()).map(r=>keys.map(k=>read(r,k)));
   }
 
-  const publishedKeys=["Location Name","Thai / Alt Name","Google Maps Link","Category",
+  const publishedKeys=["Location Name","Thai / Alt Name","Category",
                        "Notes","Source URL","Verification Status","Duplicate Group"];
   if(!present(publishedKeys))return null;
 
   const iconByCat={
-    "Restaurant":"🍽","Cafe":"☕","Hotel":"🏨","Bar / Club":"🍸","Spa":"♨️",
+    "Restaurant":"🍽","Cafe":"☕","Cafe / Beverage":"🧋","Cafe / Juice Bar":"🥤",
+    "Hotel":"🏨","Bar":"🍸","Bar / Club":"🍸","Bar / Rooftop Club":"🏖️","Spa":"♨️",
     "Shopping":"🛍","Activity":"🎯","Filming Location":"🎬",
     "Nature / Day-trip":"🌿","Street Food":"🍜","Neighbourhood":"🏘️"
   };
   const zhByCat={
-    "Restaurant":"餐廳","Cafe":"咖啡廳","Hotel":"酒店","Bar / Club":"酒吧 / 俱樂部","Spa":"Spa",
+    "Restaurant":"餐廳","Cafe":"咖啡廳","Cafe / Beverage":"咖啡廳 / 飲品","Cafe / Juice Bar":"咖啡廳 / 果汁",
+    "Hotel":"酒店","Bar":"酒吧","Bar / Club":"酒吧 / 俱樂部","Bar / Rooftop Club":"酒吧 / 天台俱樂部","Spa":"Spa",
     "Shopping":"購物","Activity":"活動","Filming Location":"拍攝場地",
     "Nature / Day-trip":"自然 / 一日遊","Street Food":"街頭小吃","Neighbourhood":"街區"
   };
@@ -561,17 +563,18 @@ function parseCSV(text){
     const cat=read(r,"Category");
     const notes=read(r,"Notes");
     const sourceUrl=read(r,"Source URL");
+    const maps=read(r,"Google Maps URL")||read(r,"Google Maps Link");
     return [
       name,name,read(r,"Thai / Alt Name"),
       cat,zhByCat[cat]||cat,
       notes,notes,
-      iconByCat[cat]||"📍",
-      "","",
-      mapsQuery(name,read(r,"Google Maps Link")),
+      read(r,"Icon")||iconByCat[cat]||"📍",
+      read(r,"Lat"),read(r,"Lng"),
+      mapsQuery(name,maps),
       normalizeStatus(read(r,"Verification Status")),
       read(r,"Duplicate Group"),
       sourceLabel(sourceUrl),
-      "TRUE",
+      read(r,"Coordinates Approx")||"TRUE",
       sourceUrl
     ];
   });

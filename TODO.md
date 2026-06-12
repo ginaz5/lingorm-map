@@ -69,10 +69,10 @@
 
 ## 🔲 Spreadsheet Canonical Schema
 
-- [ ] 以 Google Spreadsheet header 作為 app canonical schema，而不是以 embedded data / positional array 為主
-- [ ] 重新整理 spreadsheet：保留一列一地點，移除或分離 `Source note` 這類非地點資料
-- [ ] 補齊必要欄位：`Lat`、`Lng`、`Google Maps URL`、`Icon`、`Coordinates Approx`
-- [ ] 確認現有欄位命名：`Location Name`、`Thai / Alt Name`、`Category`、`Notes`、`Source URL`、`Verification Status`、`Duplicate Group`
+- [x] 以 Google Spreadsheet header 作為 app canonical schema，而不是以 embedded data / positional array 為主
+- [x] 重新整理 spreadsheet：保留一列一地點，移除或分離 `Source note` 這類非地點資料
+- [x] 補齊必要欄位：`Lat`、`Lng`、`Google Maps URL`、`Icon`、`Coordinates Approx`
+- [x] 確認現有欄位命名：`Location Name`、`Thai / Alt Name`、`Category`、`Notes`、`Source URL`、`Verification Status`、`Duplicate Group`
 - [ ] 前端 parser 改以 spreadsheet header 直接產生 location object（例如 `location.lat`），降低欄位順序耦合
 - [ ] Spreadsheet 座標補齊後，移除 `hydrateSheetRows()` 對 embedded data 的座標 fallback
 - [ ] 全部地點都能從 spreadsheet render card + marker 後，將 `EMBEDDED` 改為空 fallback 或移除內建地點資料

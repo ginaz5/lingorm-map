@@ -39,9 +39,9 @@ test('parseCSV returns rows when required app headers are present', async () => 
 test('parseCSV maps published spreadsheet headers to app rows', async () => {
   const parseCSV = await loadParseCSV();
   const csv = [
-    'Location Name,Thai / Alt Name,Google Maps Link,Category,Notes,Source URL,Verification Status,Duplicate Group',
-    'The Siam Hotel,,📍 Open in Maps,Hotel,Luxury hotel,https://example.com,Verified,',
-    '⚠️ Douban source,,,Source note,Login-only source note,https://example.com/source,Not extracted,',
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,Verified,,13.7608,100.5089,🏨,FALSE',
+    '⚠️ Douban source,,,Source note,Login-only source note,https://example.com/source,Not extracted,,,,,',
   ].join('\n');
 
   assert.deepEqual(parseCSV(csv), [[
@@ -53,13 +53,13 @@ test('parseCSV maps published spreadsheet headers to app rows', async () => {
     'Luxury hotel',
     'Luxury hotel',
     '🏨',
-    '',
-    '',
-    'The Siam Hotel Bangkok',
+    '13.7608',
+    '100.5089',
+    'https://maps.example/the-siam',
     'Verified',
     '',
     'Source',
-    'TRUE',
+    'FALSE',
     'https://example.com',
   ]]);
 });
