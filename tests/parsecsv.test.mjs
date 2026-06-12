@@ -36,12 +36,30 @@ test('parseCSV returns rows when required app headers are present', async () => 
   ]]);
 });
 
-test('parseCSV rejects incompatible Google Sheets display headers', async () => {
+test('parseCSV maps published spreadsheet headers to app rows', async () => {
   const parseCSV = await loadParseCSV();
   const csv = [
     'Location Name,Thai / Alt Name,Google Maps Link,Category,Notes,Source URL,Verification Status,Duplicate Group',
     'The Siam Hotel,,📍 Open in Maps,Hotel,Luxury hotel,https://example.com,Verified,',
+    '⚠️ Douban source,,,Source note,Login-only source note,https://example.com/source,Not extracted,',
   ].join('\n');
 
-  assert.equal(parseCSV(csv), null);
+  assert.deepEqual(parseCSV(csv), [[
+    'The Siam Hotel',
+    'The Siam Hotel',
+    '',
+    'Hotel',
+    '酒店',
+    'Luxury hotel',
+    'Luxury hotel',
+    '🏨',
+    '',
+    '',
+    'The Siam Hotel Bangkok',
+    'Verified',
+    '',
+    'Source',
+    'TRUE',
+    'https://example.com',
+  ]]);
 });

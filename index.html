@@ -508,16 +508,93 @@ function parseCSV(text){
   }
   if(field||row.length){row.push(field);rows.push(row)}
   if(rows.length<2)return null;
-  const headers=rows[0].map(h=>h.trim());
+  const headers=rows[0].map(h=>h.replace(/^\uFEFF/,'').trim());
   const idx={};headers.forEach((h,i)=>idx[h]=i);
   const keys=["Name_EN","Name_ZH","Alt_Name","Category_EN","Category_ZH",
               "Notes_EN","Notes_ZH","Icon","Lat","Lng",
               "Maps_Query","Status","Duplicate_Group","Source","Coords_Approx","Source_URL"];
+  const read=(r,k)=>(idx[k]!==undefined?r[idx[k]]||'':'').trim();
+  const present=ks=>ks.every(k=>idx[k]!==undefined);
   // Source_URL is optional — only fail validation if core keys are missing
   const coreKeys=keys.slice(0,15);
-  if(!coreKeys.every(k=>idx[k]!==undefined))return null;
-  return rows.slice(1).filter(r=>r.join('').trim()).map(r=>
-    keys.map(k=>(idx[k]!==undefined?r[idx[k]]||'':'').trim()));
+  if(present(coreKeys)){
+    return rows.slice(1).filter(r=>r.join('').trim()).map(r=>keys.map(k=>read(r,k)));
+  }
+
+  const publishedKeys=["Location Name","Thai / Alt Name","Google Maps Link","Category",
+                       "Notes","Source URL","Verification Status","Duplicate Group"];
+  if(!present(publishedKeys))return null;
+
+  const iconByCat={
+    "Restaurant":"🍽","Cafe":"☕","Hotel":"🏨","Bar / Club":"🍸","Spa":"♨️",
+    "Shopping":"🛍","Activity":"🎯","Filming Location":"🎬",
+    "Nature / Day-trip":"🌿","Street Food":"🍜","Neighbourhood":"🏘️"
+  };
+  const zhByCat={
+    "Restaurant":"餐廳","Cafe":"咖啡廳","Hotel":"酒店","Bar / Club":"酒吧 / 俱樂部","Spa":"Spa",
+    "Shopping":"購物","Activity":"活動","Filming Location":"拍攝場地",
+    "Nature / Day-trip":"自然 / 一日遊","Street Food":"街頭小吃","Neighbourhood":"街區"
+  };
+  const normalizeStatus=s=>{
+    const raw=s.trim();
+    if(raw==="Verified"||raw==="Needs Review"||raw==="Could Not Find")return raw;
+    if(/verified/i.test(raw))return "Verified";
+    if(/could not find|not found/i.test(raw))return "Could Not Find";
+    return "Needs Review";
+  };
+  const sourceLabel=url=>{
+    if(!url)return "";
+    const host=(url.match(/^https?:\/\/([^/]+)/i)||[])[1]||"";
+    if(/kkday/i.test(host))return "KKday";
+    if(/trip\.com/i.test(host))return "Trip.com";
+    if(/threads/i.test(host))return "Threads";
+    if(/instagram/i.test(host))return "Instagram";
+    if(/youtube|youtu\.be/i.test(host))return "YouTube";
+    return "Source";
+  };
+  const mapsQuery=(name,maps)=>{
+    if(maps&&!/open in maps/i.test(maps)&&!/^📍/.test(maps))return maps;
+    return name?`${name} Bangkok`:"";
+  };
+  return rows.slice(1).filter(r=>r.join('').trim()&&!/^source note$/i.test(read(r,"Category"))).map(r=>{
+    const name=read(r,"Location Name");
+    const cat=read(r,"Category");
+    const notes=read(r,"Notes");
+    const sourceUrl=read(r,"Source URL");
+    return [
+      name,name,read(r,"Thai / Alt Name"),
+      cat,zhByCat[cat]||cat,
+      notes,notes,
+      iconByCat[cat]||"📍",
+      "","",
+      mapsQuery(name,read(r,"Google Maps Link")),
+      normalizeStatus(read(r,"Verification Status")),
+      read(r,"Duplicate Group"),
+      sourceLabel(sourceUrl),
+      "TRUE",
+      sourceUrl
+    ];
+  });
+}
+
+function hydrateSheetRows(rows){
+  const normalizeName=s=>(s||"").toLowerCase()
+    .replace(/\([^)]*\)/g," ")
+    .replace(/\bshop\b/g," ")
+    .replace(/[^a-z0-9]+/g," ")
+    .trim();
+  const embeddedByName=new Map(EMBEDDED.map(r=>[normalizeName(r[C.EN]),r]));
+  return rows.map(row=>{
+    if(row[C.LAT]&&row[C.LNG])return row;
+    const match=embeddedByName.get(normalizeName(row[C.EN]));
+    if(!match)return row;
+    const hydrated=[...row];
+    if(!hydrated[C.LAT])hydrated[C.LAT]=String(match[C.LAT]||"");
+    if(!hydrated[C.LNG])hydrated[C.LNG]=String(match[C.LNG]||"");
+    if(!hydrated[C.MAPS])hydrated[C.MAPS]=String(match[C.MAPS]||"");
+    if(!hydrated[C.ICON])hydrated[C.ICON]=String(match[C.ICON]||"📍");
+    return hydrated;
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -957,7 +1034,7 @@ async function saveSheet(){
     const resp=await fetch(LOCATIONS_API);if(!resp.ok)throw new Error(resp.status);
     const parsed=parseCSV(await resp.text());
     if(!parsed||!parsed.length)throw new Error('empty');
-    data=parsed;
+    data=hydrateSheetRows(parsed);
     status.className='sheet-status ok';status.textContent=t('sheet_ok',data.length);
     rebuild();setTimeout(closeSheetModal,1200);
   }catch(e){
@@ -975,7 +1052,7 @@ async function tryLoadSheet(){
   try{
     const resp=await fetch(LOCATIONS_API);if(!resp.ok)throw new Error();
     const parsed=parseCSV(await resp.text());
-    if(parsed&&parsed.length)data=parsed;
+    if(parsed&&parsed.length)data=hydrateSheetRows(parsed);
   }catch(e){}
   bar.remove();rebuild();
 }
