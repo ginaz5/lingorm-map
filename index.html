@@ -854,9 +854,11 @@ function renderSources(row){
       const url=`https://www.threads.net/@${handleMatch[1]}`;
       return `<a class="src-tag" href="${url}" target="_blank" onclick="event.stopPropagation()">${token}</a>`;
     }
-    // KKday / Trip.com etc — use Source_URL if available, else plain tag
-    if(srcUrl){
-      return `<a class="src-tag" href="${srcUrl}" target="_blank" onclick="event.stopPropagation()">${token}</a>`;
+    // KKday / Trip.com etc — use Source_URL if available, else platform fallback
+    const PLATFORM_URLS={'KKday':'https://www.kkday.com','Trip.com':'https://www.trip.com'};
+    const url=srcUrl||PLATFORM_URLS[token]||'';
+    if(url){
+      return `<a class="src-tag" href="${url}" target="_blank" onclick="event.stopPropagation()">${token}</a>`;
     }
     return `<span class="src-tag src-tag-plain">${token}</span>`;
   });
