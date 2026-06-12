@@ -641,10 +641,10 @@ function renderSources(row){
   if(!src)return '';
   const tokens=src.split('+').map(s=>s.trim()).filter(Boolean);
   const tags=tokens.map(token=>{
-    // Match "@handle" or "Threads @handle"
+    // Match "@handle" or "Threads @handle" — link to specific post (srcUrl) if available, else profile
     const handleMatch=token.match(/@(\S+)$/);
     if(handleMatch){
-      const url=`https://www.threads.net/@${handleMatch[1]}`;
+      const url=srcUrl||`https://www.threads.net/@${handleMatch[1]}`;
       return `<a class="src-tag" href="${url}" target="_blank" onclick="event.stopPropagation()">${token}</a>`;
     }
     // KKday / Trip.com etc — use Source_URL if available, else platform fallback
