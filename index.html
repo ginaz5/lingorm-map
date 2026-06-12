@@ -560,14 +560,16 @@ function parseCSV(text){
   };
   return rows.slice(1).filter(r=>r.join('').trim()&&!/^source note$/i.test(read(r,"Category"))).map(r=>{
     const name=read(r,"Location Name");
+    const nameZh=read(r,"Location Name ZH")||name;
     const cat=read(r,"Category");
     const notes=read(r,"Notes");
+    const notesZh=read(r,"Notes ZH")||notes;
     const sourceUrl=read(r,"Source URL");
     const maps=read(r,"Google Maps URL")||read(r,"Google Maps Link");
     return [
-      name,name,read(r,"Thai / Alt Name"),
+      name,nameZh,read(r,"Thai / Alt Name"),
       cat,zhByCat[cat]||cat,
-      notes,notes,
+      notes,notesZh,
       read(r,"Icon")||iconByCat[cat]||"📍",
       read(r,"Lat"),read(r,"Lng"),
       mapsQuery(name,maps),
