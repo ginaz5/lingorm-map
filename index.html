@@ -62,6 +62,7 @@
     <div class="loc-list" id="loc-list"></div>
   </div>
   <div id="map-wrap" data-mobile-tab="list">
+    <div id="map-loading" class="map-loading"><div class="loading-spinner"></div></div>
     <div id="map"></div>
     <div class="map-legend">
       <div class="leg-row"><div class="leg-dot verified"></div><span data-i18n="leg_verified"></span></div>
@@ -671,7 +672,7 @@ function parseCSV(text) {
 // ═══════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════
-let data=[], visIdx=[], activeIdx=-1;
+let data=[], visIdx=[], activeIdx=-1, isLoading=true;
 
 // ═══════════════════════════════════════════════════
 // MAP (Google Maps JS API)
@@ -738,6 +739,7 @@ function buildMarkers(){
 
 // Called by Google Maps script after it loads
 window.initMapCallback=function(){
+  document.getElementById('map-loading').classList.add('is-hidden');
   map=new google.maps.Map(document.getElementById('map'),{
     center:{lat:13.82,lng:100.52},zoom:11,
     mapId:googleMapId,
@@ -762,6 +764,7 @@ async function loadGoogleMapsScript(){
     document.body.appendChild(script);
   }catch(e){
     console.error('Google Maps config failed',e);
+    document.getElementById('map-loading').classList.add('is-hidden');
   }
 }
 
@@ -791,7 +794,7 @@ function applyFilters(){
     if((nameHit||notesHit)&&catHit&&stHit)visIdx.push(i);
   });
   renderList();
-  document.getElementById('result-info').textContent=t('count',visIdx.length,data.length);
+  document.getElementById('result-info').textContent=isLoading?'':t('count',visIdx.length,data.length);
 }
 function renderSources(row){
   const src=row.src||'';
@@ -825,6 +828,7 @@ function renderSources(row){
 }
 function renderList(){
   const list=document.getElementById('loc-list');
+  if(isLoading){list.innerHTML=`<div class="empty"><div class="loading-spinner"></div>${t('sheet_loading')}</div>`;return}
   if(!visIdx.length){list.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div>${t('empty')}</div>`;return}
   list.innerHTML=visIdx.map(i=>{
     const row=data[i];
@@ -1161,7 +1165,8 @@ function openSheetModal(){
 function closeSheetModal(){document.getElementById('sheet-modal').classList.remove('open')}
 async function saveSheet(){
   const status=document.getElementById('sheet-status');
-  status.className='sheet-status';status.textContent=t('sheet_loading');
+  status.className='sheet-status';
+  status.innerHTML=`<div class="loading-spinner loading-spinner--sm"></div>${t('sheet_loading')}`;
   try{
     const resp=await fetch(LOCATIONS_API);if(!resp.ok)throw new Error(resp.status);
     const parsed=parseCSV(await resp.text());
@@ -1180,7 +1185,7 @@ async function tryLoadSheet(){
     const parsed=parseCSV(await resp.text());
     if(parsed&&parsed.length)data=parsed;
   }catch(e){}
-  bar.remove();rebuild();
+  isLoading=false;bar.remove();rebuild();
 }
 
 function rebuild(){if(map)buildMarkers();buildCatFilter();applyFilters()}

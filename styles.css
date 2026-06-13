@@ -227,6 +227,16 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 /* Empty state */
 .empty{text-align:center;color:var(--text-muted);padding:40px 20px}
 .empty-icon{font-size:32px;margin-bottom:8px}
+/* Loading spinner */
+.loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+.loading-spinner--sm{width:14px;height:14px;border-width:2px;display:inline-block;
+  vertical-align:middle;margin:0 6px 0 0}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Map loading overlay */
+.map-loading{position:absolute;inset:0;z-index:200;background:var(--bg);
+  display:flex;align-items:center;justify-content:center}
+.map-loading.is-hidden{display:none}
 /* Pending banner */
 .pending-banner{display:none;font-size:12px;background:var(--r-bg);color:var(--review);
   border-bottom:1px solid var(--review);padding:7px 14px;
