@@ -176,6 +176,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 .success-view h3{font-size:20px;margin:0 0 8px;color:var(--text)}
 .success-view p{font-size:14px;line-height:1.6;color:var(--text-muted);margin:0;max-width:320px}
 .form-row{margin-bottom:13px}
+.form-row-hidden{display:none}
 .form-label{font-size:12px;font-weight:600;display:block;margin-bottom:5px;color:var(--text-muted)}
 .lbl-opt{font-weight:400}
 .required-mark{color:var(--notfound)}

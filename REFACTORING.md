@@ -72,36 +72,22 @@ on success; callers own their post-submit behaviour:
 - `submitAdd` passes `showAddSuccess` directly
 - `submitEdit` passes an inline callback that sets the feedback element to ok-state and auto-closes the modal
 
-### ⬜ Extract `rebuildSelect(sel, html)` helper
+### ✅ Extract `rebuildSelect(sel, html)` helper
 **Scope:** `index.html` (`buildStatusFilter`, `buildCatFilter`)
 
-Both functions repeat the same "save current value → rebuild innerHTML → restore value" pattern. Extract:
+Extracted `rebuildSelect(sel, html)` — saves current value, sets `innerHTML`, restores value.
+Both `buildStatusFilter` and `buildCatFilter` now delegate to it.
 
-```js
-function rebuildSelect(sel, html) {
-  const prev = sel.value;
-  sel.innerHTML = html;
-  sel.value = prev;
-}
-```
-
-### ⬜ Collapse `updateLangUI` into one DOM pass
+### ✅ Collapse `updateLangUI` into one DOM pass
 **Scope:** `index.html`
 
-Currently makes three separate `querySelectorAll` calls (`[data-i18n]`, `[data-i18n-html]`, `[data-i18n-ph]`). Can be merged into one loop that branches on which attribute is present.
+Single `querySelectorAll('[data-i18n],[data-i18n-html],[data-i18n-ph]')` call; loop branches on
+which attribute is present to set `textContent`, `innerHTML`, or `placeholder`.
 
-### ⬜ Add `console.warn` to `tryLoadSheet` catch block
+### ✅ Add `console.warn` to `tryLoadSheet` catch block
 **Scope:** `index.html`
 
-```js
-catch(e) {}  // silent — impossible to debug sheet load failures
-```
-
-Change to:
-
-```js
-catch(e) { console.warn('Sheet load failed', e); }
-```
+`catch(e){}` → `catch(e){console.warn('Sheet load failed',e);}`
 
 ---
 

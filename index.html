@@ -192,7 +192,7 @@
           <label class="form-label"><span data-i18n="add_lbl_notes"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
           <textarea class="form-textarea" id="add-notes" rows="2" data-i18n-ph="add_ph_notes"></textarea>
         </div>
-        <div class="form-row">
+        <div class="form-row form-row-hidden">
           <label class="form-label" data-i18n="add_lbl_status"></label>
           <div class="status-opts">
             <input class="status-opt" type="radio" name="new-status" id="ns-verified" value="Verified"/>
@@ -888,44 +888,38 @@ function toggleLang(){
   if(infoWindow&&activeIdx>=0&&markers[activeIdx]){infoWindow.setContent(buildPopupContent(activeIdx));}
 }
 
+function rebuildSelect(sel,html){
+  const prev=sel.value;
+  sel.innerHTML=html;
+  sel.value=prev;
+}
+
 function updateLangUI(){
-  // data-i18n: textContent
-  document.querySelectorAll('[data-i18n]').forEach(el=>{
-    const v=t(el.dataset.i18n);
-    if(v!==el.dataset.i18n)el.textContent=v;
+  document.querySelectorAll('[data-i18n],[data-i18n-html],[data-i18n-ph]').forEach(el=>{
+    if(el.dataset.i18n){const v=t(el.dataset.i18n);if(v!==el.dataset.i18n)el.textContent=v;}
+    else if(el.dataset.i18nHtml){const v=t(el.dataset.i18nHtml);if(v!==el.dataset.i18nHtml)el.innerHTML=v;}
+    else if(el.dataset.i18nPh){const v=t(el.dataset.i18nPh);if(v!==el.dataset.i18nPh)el.placeholder=v;}
   });
-  // data-i18n-html: innerHTML
-  document.querySelectorAll('[data-i18n-html]').forEach(el=>{
-    const v=t(el.dataset.i18nHtml);
-    if(v!==el.dataset.i18nHtml)el.innerHTML=v;
-  });
-  // data-i18n-ph: placeholder
-  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
-    const v=t(el.dataset.i18nPh);
-    if(v!==el.dataset.i18nPh)el.placeholder=v;
-  });
-  // lang button
   document.getElementById('lang-btn').textContent=t('lang_btn');
-  // status filter rebuild
   buildStatusFilter();
 }
 
 function buildStatusFilter(){
-  const sf=document.getElementById('status-filter');
-  const prev=sf.value;
-  sf.innerHTML=`<option value="">${t('all_status')}</option>`+
-    Object.entries(t('status')).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
-  sf.value=prev;
+  rebuildSelect(
+    document.getElementById('status-filter'),
+    `<option value="">${t('all_status')}</option>`+
+    Object.entries(t('status')).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')
+  );
 }
 
 function buildCatFilter(){
-  const sel=document.getElementById('cat-filter');
-  const prev=sel.value;
   const cats=new Set();
   data.forEach(r=>cats.add(lang==='zh'?r.catZh:r.catEn));
-  sel.innerHTML=`<option value="">${t('all_cat')}</option>`+
-    [...cats].sort().map(c=>`<option value="${c}">${c}</option>`).join('');
-  sel.value=prev;
+  rebuildSelect(
+    document.getElementById('cat-filter'),
+    `<option value="">${t('all_cat')}</option>`+
+    [...cats].sort().map(c=>`<option value="${c}">${c}</option>`).join('')
+  );
 }
 
 function buildCatDropdown(){
@@ -1184,7 +1178,7 @@ async function tryLoadSheet(){
     const resp=await fetch(LOCATIONS_API);if(!resp.ok)throw new Error();
     const parsed=parseCSV(await resp.text());
     if(parsed&&parsed.length)data=parsed;
-  }catch(e){}
+  }catch(e){console.warn('Sheet load failed',e);}
   isLoading=false;bar.remove();rebuild();
 }
 
