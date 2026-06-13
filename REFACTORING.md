@@ -93,31 +93,27 @@ which attribute is present to set `textContent`, `innerHTML`, or `placeholder`.
 
 ## Low Priority
 
-### ⬜ Replace inline `onclick` handlers with `addEventListener`
+### ✅ Replace inline `onclick` handlers with `addEventListener`
 **Scope:** `index.html` (HTML template section)
 
-`onclick="openAddModal()"`, `onclick="cycleTheme()"`, etc. couple HTML and JS. Moving to `addEventListener` in an init block decouples them and makes JS-only testing easier.
+Removed all `onclick`/`onkeydown` attributes from static HTML (header, tab bar, modal overlays,
+modal close/cancel/submit buttons, admin password input). Added `id="add-btn"` to the header add
+button. All wired via `addEventListener` in a dedicated block at the bottom of the init section.
+Runtime-generated card/popup `onclick`s in JS template literals are out of scope.
 
-### ⬜ Move `ADD_LOCATION_INPUT_IDS` to local scope
+### ✅ Move `ADD_LOCATION_INPUT_IDS` to local scope
 **Scope:** `index.html`
 
-Declared at module level but only used inside `openAddModal`. Move inside the function.
+Inlined the array literal directly into the `.forEach()` call inside `openAddModal`. Removed the
+module-level `const`.
 
-### ⬜ Simplify `switchTab` attribute logic
+### ✅ Simplify `switchTab` attribute logic
 **Scope:** `index.html`
 
-```js
-// Current — asymmetric ternaries are easy to misread
-document.getElementById('panel').setAttribute('data-mobile-tab', tab === 'map' ? 'map' : 'list');
-document.getElementById('map-wrap').setAttribute('data-mobile-tab', tab === 'list' ? 'list' : 'map');
+Introduced `const isMap=tab==='map'` and made both `setAttribute` calls and both `classList.toggle`
+calls symmetric on `isMap`.
 
-// Target — explicit and symmetric
-const isMap = tab === 'map';
-panel.setAttribute('data-mobile-tab', isMap ? 'map' : 'list');
-mapWrap.setAttribute('data-mobile-tab', isMap ? 'map' : 'list');
-```
-
-### ⬜ Cache repeated `getElementById` calls in `verifyAdminPassword`
+### ✅ Cache repeated `getElementById` calls in `verifyAdminPassword`
 **Scope:** `index.html`
 
-`admin-feedback` and `admin-pwd` are looked up multiple times in the same function. Cache at the top of the function.
+`admin-feedback` and `admin-pwd` cached as `fb` and `pwdEl` at the top of the function.

@@ -29,12 +29,12 @@
 <header>
   <span class="logo">🗺 Lingorm BKK</span>
   <div class="hdr-spacer"></div>
-  <button class="hdr-btn btn-add" onclick="openAddModal()">
+  <button class="hdr-btn btn-add" id="add-btn">
     <span>＋</span><span data-i18n="add_loc"></span>
   </button>
-  <button class="hdr-btn" id="locate-btn" onclick="locateMe()">📍 <span data-i18n="locate_btn_label"></span></button>
-  <button class="hdr-btn" id="lang-btn" onclick="toggleLang()"></button>
-  <button class="hdr-btn icon-btn" id="theme-btn" onclick="cycleTheme()">🌙</button>
+  <button class="hdr-btn" id="locate-btn">📍 <span data-i18n="locate_btn_label"></span></button>
+  <button class="hdr-btn" id="lang-btn"></button>
+  <button class="hdr-btn icon-btn" id="theme-btn">🌙</button>
 </header>
 
 <!-- Pending banner -->
@@ -74,22 +74,22 @@
 
 <!-- MOBILE TAB BAR -->
 <div class="tab-bar">
-  <button class="tab-btn" id="tab-map" onclick="switchTab('map')">
+  <button class="tab-btn" id="tab-map">
     <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
     <span data-i18n="tab_map"></span>
   </button>
-  <button class="tab-btn active" id="tab-list" onclick="switchTab('list')">
+  <button class="tab-btn active" id="tab-list">
     <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
     <span data-i18n="tab_list"></span>
   </button>
 </div>
 
 <!-- MODAL: SUGGEST EDIT -->
-<div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
+<div class="modal-overlay" id="edit-modal">
   <div class="modal">
     <div class="modal-header">
       <span class="modal-title" data-i18n="edit_title"></span>
-      <button class="modal-close" onclick="closeEditModal()">✕</button>
+      <button class="modal-close">✕</button>
     </div>
     <p class="modal-desc" data-i18n="edit_desc"></p>
     <div class="modal-body">
@@ -147,18 +147,18 @@
       <div class="submit-feedback" id="edit-feedback"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeEditModal()" data-i18n="cancel"></button>
-      <button class="btn-primary" id="edit-submit-btn" onclick="submitEdit()" data-i18n="edit_submit"></button>
+      <button class="btn-ghost" data-i18n="cancel"></button>
+      <button class="btn-primary" id="edit-submit-btn" data-i18n="edit_submit"></button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: ADD LOCATION -->
-<div class="modal-overlay" id="add-modal" onclick="if(event.target===this)closeAddModal()">
+<div class="modal-overlay" id="add-modal">
   <div class="modal">
     <div class="modal-header">
       <span class="modal-title" data-i18n="add_title"></span>
-      <button class="modal-close" onclick="closeAddModal()">✕</button>
+      <button class="modal-close">✕</button>
     </div>
     <p class="modal-desc" id="add-modal-desc" data-i18n="add_desc"></p>
     <div class="modal-body">
@@ -213,42 +213,41 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" id="add-cancel-btn" onclick="closeAddModal()" data-i18n="cancel"></button>
-      <button class="btn-primary" id="add-submit-btn" onclick="submitAdd()" data-i18n="add_submit"></button>
-      <button class="btn-primary" id="add-done-btn" onclick="closeAddModal()" data-i18n="done"></button>
+      <button class="btn-ghost" id="add-cancel-btn" data-i18n="cancel"></button>
+      <button class="btn-primary" id="add-submit-btn" data-i18n="add_submit"></button>
+      <button class="btn-primary" id="add-done-btn" data-i18n="done"></button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: ADMIN AUTH -->
-<div class="modal-overlay" id="admin-auth-modal" onclick="if(event.target===this)closeAdminAuth()">
+<div class="modal-overlay" id="admin-auth-modal">
   <div class="modal modal-sm">
     <div class="modal-header">
       <span class="modal-title" data-i18n="admin_title"></span>
-      <button class="modal-close" onclick="closeAdminAuth()">✕</button>
+      <button class="modal-close">✕</button>
     </div>
     <p class="modal-desc" data-i18n="admin_desc"></p>
     <div class="modal-body">
       <div class="form-row">
         <label class="form-label" data-i18n="admin_lbl"></label>
-        <input class="form-input" id="admin-pwd" type="password" data-i18n-ph="admin_ph"
-          onkeydown="if(event.key==='Enter')verifyAdminPassword()"/>
+        <input class="form-input" id="admin-pwd" type="password" data-i18n-ph="admin_ph"/>
       </div>
       <div class="submit-feedback" id="admin-feedback"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeAdminAuth()" data-i18n="cancel"></button>
-      <button class="btn-primary" onclick="verifyAdminPassword()" data-i18n="admin_btn"></button>
+      <button class="btn-ghost" data-i18n="cancel"></button>
+      <button class="btn-primary" data-i18n="admin_btn"></button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: SHEET SETTINGS (admin only) -->
-<div class="modal-overlay" id="sheet-modal" onclick="if(event.target===this)closeSheetModal()">
+<div class="modal-overlay" id="sheet-modal">
   <div class="modal modal-sheet">
     <div class="modal-header">
       <span class="modal-title" data-i18n="sheet_title"></span>
-      <button class="modal-close" onclick="closeSheetModal()">✕</button>
+      <button class="modal-close">✕</button>
     </div>
     <p class="modal-desc" data-i18n="sheet_desc"></p>
     <div class="modal-body">
@@ -258,8 +257,8 @@
       <div class="sheet-help" data-i18n-html="sheet_netlify"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeSheetModal()" data-i18n="cancel"></button>
-      <button class="btn-primary" onclick="saveSheet()" data-i18n="sheet_save"></button>
+      <button class="btn-ghost" data-i18n="cancel"></button>
+      <button class="btn-primary" data-i18n="sheet_save"></button>
     </div>
   </div>
 </div>
@@ -941,11 +940,12 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>
 // MOBILE TABS
 // ═══════════════════════════════════════════════════
 function switchTab(tab){
-  document.getElementById('panel').setAttribute('data-mobile-tab',tab==='map'?'map':'list');
-  document.getElementById('map-wrap').setAttribute('data-mobile-tab',tab==='list'?'list':'map');
-  document.getElementById('tab-map').classList.toggle('active',tab==='map');
-  document.getElementById('tab-list').classList.toggle('active',tab==='list');
-  if(tab==='map'&&map)google.maps.event.trigger(map,'resize');
+  const isMap=tab==='map';
+  document.getElementById('panel').setAttribute('data-mobile-tab',isMap?'map':'list');
+  document.getElementById('map-wrap').setAttribute('data-mobile-tab',isMap?'map':'list');
+  document.getElementById('tab-map').classList.toggle('active',isMap);
+  document.getElementById('tab-list').classList.toggle('active',!isMap);
+  if(isMap&&map)google.maps.event.trigger(map,'resize');
 }
 
 // ═══════════════════════════════════════════════════
@@ -993,10 +993,8 @@ async function submitEdit(){
 // ═══════════════════════════════════════════════════
 // ADD MODAL
 // ═══════════════════════════════════════════════════
-const ADD_LOCATION_INPUT_IDS=['add-name','add-maps','add-notes','add-source','add-submitter'];
-
 function openAddModal(){
-  ADD_LOCATION_INPUT_IDS.forEach(id=>
+  ['add-name','add-maps','add-notes','add-source','add-submitter'].forEach(id=>
     document.getElementById(id).value='');
   document.getElementById('ns-review').checked=true;
   document.getElementById('add-modal').classList.remove('is-success');
@@ -1117,23 +1115,22 @@ function openAdminAuth(){
 function closeAdminAuth(){document.getElementById('admin-auth-modal').classList.remove('open')}
 
 async function verifyAdminPassword(){
+  const fb=document.getElementById('admin-feedback');
+  const pwdEl=document.getElementById('admin-pwd');
   // If build.sh hasn't replaced the placeholder, admin is not configured
   if(ADMIN_HASH==='__ADMIN_HASH__'||ADMIN_HASH===''){
-    const fb=document.getElementById('admin-feedback');
     fb.className='submit-feedback err';fb.textContent=t('admin_not_configured');
     return;
   }
-  const pwd=document.getElementById('admin-pwd').value;
-  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pwd));
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pwdEl.value));
   const hash=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
   if(hash===ADMIN_HASH){
     closeAdminAuth();
     openSheetModal();
   }else{
-    const fb=document.getElementById('admin-feedback');
     fb.className='submit-feedback err';fb.textContent=t('admin_err');
-    document.getElementById('admin-pwd').value='';
-    document.getElementById('admin-pwd').focus();
+    pwdEl.value='';
+    pwdEl.focus();
   }
 }
 
@@ -1227,6 +1224,39 @@ function locateMe(){
 // INIT
 // ═══════════════════════════════════════════════════
 lang=localStorage.getItem('lang')||'zh';
+// ── Static event listeners (replaces inline onclick/onkeydown handlers) ──
+// Header
+document.getElementById('add-btn').addEventListener('click',openAddModal);
+document.getElementById('locate-btn').addEventListener('click',locateMe);
+document.getElementById('lang-btn').addEventListener('click',toggleLang);
+document.getElementById('theme-btn').addEventListener('click',cycleTheme);
+// Mobile tabs
+document.getElementById('tab-map').addEventListener('click',()=>switchTab('map'));
+document.getElementById('tab-list').addEventListener('click',()=>switchTab('list'));
+// Modal backdrops
+document.getElementById('edit-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeEditModal();});
+document.getElementById('add-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAddModal();});
+document.getElementById('admin-auth-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAdminAuth();});
+document.getElementById('sheet-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeSheetModal();});
+// Edit modal buttons
+document.querySelector('#edit-modal .modal-close').addEventListener('click',closeEditModal);
+document.querySelector('#edit-modal .btn-ghost').addEventListener('click',closeEditModal);
+document.getElementById('edit-submit-btn').addEventListener('click',submitEdit);
+// Add modal buttons
+document.querySelector('#add-modal .modal-close').addEventListener('click',closeAddModal);
+document.getElementById('add-cancel-btn').addEventListener('click',closeAddModal);
+document.getElementById('add-submit-btn').addEventListener('click',submitAdd);
+document.getElementById('add-done-btn').addEventListener('click',closeAddModal);
+// Admin auth modal buttons
+document.querySelector('#admin-auth-modal .modal-close').addEventListener('click',closeAdminAuth);
+document.querySelector('#admin-auth-modal .btn-ghost').addEventListener('click',closeAdminAuth);
+document.querySelector('#admin-auth-modal .btn-primary').addEventListener('click',verifyAdminPassword);
+document.getElementById('admin-pwd').addEventListener('keydown',e=>{if(e.key==='Enter')verifyAdminPassword();});
+// Sheet modal buttons
+document.querySelector('#sheet-modal .modal-close').addEventListener('click',closeSheetModal);
+document.querySelector('#sheet-modal .btn-ghost').addEventListener('click',closeSheetModal);
+document.querySelector('#sheet-modal .btn-primary').addEventListener('click',saveSheet);
+
 applyTheme();          // CSS theme only; map colorScheme applied in initMapCallback
 updateLangUI();
 buildCatDropdown();
