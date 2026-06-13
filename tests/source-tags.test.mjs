@@ -1,18 +1,10 @@
+// Switched from regex extraction to direct import (Option B modularisation)
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-async function loadSourceRenderer() {
-  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  const renderMatch = html.match(/function renderSources\(row\)\{[\s\S]*?(?=\nfunction renderList\(\))/);
+import { renderSources } from '../src/render.js';
 
-  assert.ok(renderMatch, 'renderSources function should exist in index.html');
-
-  return Function(`${renderMatch[0]}; return { renderSources };`)();
-}
-
-test('renderSources labels repeated Threads tags by handle', async () => {
-  const { renderSources } = await loadSourceRenderer();
+test('renderSources labels repeated Threads tags by handle', () => {
   const row = {
     src: 'Trip.com + Threads + Threads + Google Maps',
     sourceUrl: [

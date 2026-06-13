@@ -1,22 +1,22 @@
+// Updated for Option B modularisation:
+//   - switchTab extracted from src/ui.js (uses state.map instead of bare map)
+//   - static markup check: split on /<script\b[^>]*>/ to handle <script type="module">
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-async function loadIndexHtml() {
-  return readFile(new URL('../index.html', import.meta.url), 'utf8');
-}
-
 async function loadSwitchTab(deps) {
-  const html = await loadIndexHtml();
-  const switchMatch = html.match(/function switchTab\(tab\)\{[\s\S]*?\n\}/);
-  assert.ok(switchMatch, 'switchTab function should exist');
+  const src = await readFile(new URL('../src/ui.js', import.meta.url), 'utf8');
+  const switchMatch = src.match(/(?:export\s+)?function switchTab\(tab\)\s*\{[\s\S]*?\n\}/);
+  assert.ok(switchMatch, 'switchTab function should exist in src/ui.js');
 
+  const code = switchMatch[0].replace(/\bexport\s+/g, '');
   return Function(
     'document',
-    'map',
+    'state',
     'google',
-    `${switchMatch[0]}; return { switchTab };`,
-  )(deps.document, deps.map, deps.google);
+    `${code}; return { switchTab };`,
+  )(deps.document, deps.state, deps.google);
 }
 
 function makeElement() {
@@ -33,8 +33,9 @@ function makeElement() {
 }
 
 test('static HTML controls are wired without inline event attributes', async () => {
-  const html = await loadIndexHtml();
-  const staticMarkup = html.split('<script>')[0];
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  // Split on any <script ...> tag (including <script type="module">)
+  const staticMarkup = html.split(/<script\b[^>]*>/)[0];
 
   assert.match(staticMarkup, /id="add-btn"/);
   assert.equal(/\son(?:click|keydown)=/i.test(staticMarkup), false);
@@ -50,7 +51,7 @@ test('switchTab keeps panel and map visibility states aligned', async () => {
   let resizeCount = 0;
   const { switchTab } = await loadSwitchTab({
     document: { getElementById: (id) => elements[id] },
-    map: {},
+    state: { map: {} },   // non-null so trigger fires
     google: { maps: { event: { trigger: () => { resizeCount += 1; } } } },
   });
 

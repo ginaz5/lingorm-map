@@ -28,13 +28,12 @@ else
 fi
 
 # ── Admin Password (optional) ────────────────────────────────
+# Hash is now injected at Vite build time via vite.config.js define(__ADMIN_HASH__).
+# build.sh only validates that the env var is present; no perl sed needed.
 if [ -z "$ADMIN_PASSWORD" ]; then
   echo "⚠️  ADMIN_PASSWORD not set — admin login will be disabled."
-  perl -0pi -e 's/__ADMIN_HASH__//g' index.html
 else
-  HASH=$(printf '%s' "$ADMIN_PASSWORD" | sha256sum | awk '{print $1}')
-  ADMIN_HASH="$HASH" perl -0pi -e 's/__ADMIN_HASH__/$ENV{ADMIN_HASH}/g' index.html
-  echo "✅ Admin hash injected (first 8 chars: ${HASH:0:8}...)."
+  echo "✅ Admin password found — Vite will hash it into the bundle."
 fi
 
 # ── Google Sheets CSV URL (Function runtime only) ────────────

@@ -1,19 +1,25 @@
+// Updated for Option B modularisation: reads from src/render.js instead of index.html.
+// Helper functions use state.data (via state object) instead of bare data variable.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 async function loadUiHelpers(deps) {
-  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  const helperMatch = html.match(/function rebuildSelect\(sel,html\)\{[\s\S]*?(?=\nfunction buildCatDropdown\(\))/);
-  assert.ok(helperMatch, 'i18n/select helper block should exist');
+  const src = await readFile(new URL('../src/render.js', import.meta.url), 'utf8');
+  // Capture from rebuildSelect through everything up to (but not including) buildCatDropdown
+  const helperMatch = src.match(
+    /(?:export\s+)?function rebuildSelect\(sel,\s*html\)\s*\{[\s\S]*?(?=\n(?:export\s+)?function buildCatDropdown\(\))/
+  );
+  assert.ok(helperMatch, 'i18n/select helper block should exist in src/render.js');
 
+  const code = helperMatch[0].replace(/\bexport\s+/g, '');
   return Function(
     'document',
     't',
-    'data',
+    'state',
     'lang',
-    `${helperMatch[0]}; return { rebuildSelect, updateLangUI, buildStatusFilter, buildCatFilter };`,
-  )(deps.document, deps.t, deps.data, deps.lang);
+    `${code}; return { rebuildSelect, updateLangUI, buildStatusFilter, buildCatFilter };`,
+  )(deps.document, deps.t, deps.state, deps.lang);
 }
 
 function makeSelect(value = '') {
@@ -49,7 +55,7 @@ test('updateLangUI updates text, HTML, placeholders, and status options in one p
       all_status: 'All Statuses',
       status: { Verified: 'Verified', 'Needs Review': 'Needs Review' },
     })[key],
-    data: [],
+    state: { data: [] },
     lang: 'en',
   });
 
@@ -74,10 +80,12 @@ test('buildCatFilter preserves the selected category while rebuilding options', 
       },
     },
     t: (key) => ({ all_cat: 'All Categories' })[key],
-    data: [
-      { catEn: 'Cafe', catZh: '咖啡廳' },
-      { catEn: 'Hotel', catZh: '飯店' },
-    ],
+    state: {
+      data: [
+        { catEn: 'Cafe', catZh: '咖啡廳' },
+        { catEn: 'Hotel', catZh: '飯店' },
+      ],
+    },
     lang: 'en',
   });
 

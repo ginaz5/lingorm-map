@@ -1,6 +1,6 @@
 [build]
-  command = "bash build.sh"
-  publish = "."
+  command = "bash build.sh && npm run build"
+  publish = "dist"
 
 [build.environment]
   # Set runtime secrets in Netlify Dashboard:
