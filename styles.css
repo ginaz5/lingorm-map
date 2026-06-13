@@ -117,6 +117,9 @@ header{height:var(--header-h);flex-shrink:0;background:var(--surface);border-bot
 .gm-style .gm-style-iw-d{overflow:hidden!important;padding:12px 14px!important}
 .gm-style .gm-style-iw-t::after,.gm-style .gm-style-iw-tc::after{background:var(--surface)!important}
 button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
+/* Remove empty header row that causes top whitespace */
+.gm-style .gm-style-iw-ch{padding-top:0!important;height:0!important}
+.gm-style .gm-style-iw-chr{height:0!important}
 .marker-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.85);
   box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .marker-verified{background:#2f7d4f}
@@ -229,3 +232,22 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
   border-bottom:1px solid var(--review);padding:7px 14px;
   align-items:center;gap:6px;flex-shrink:0}
 .pending-banner.is-visible{display:flex}
+/* Snackbar */
+.snackbar{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(12px);
+  background:#1f3043;color:#fff;font-size:13px;font-weight:500;padding:10px 18px;
+  border-radius:10px;box-shadow:var(--shadow-md);z-index:800;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+.snackbar.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:700px){.snackbar{bottom:calc(var(--tab-h) + 10px)}}
+/* Popup footer: src-tags left, nav button right */
+.popup-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:6px}
+.popup-nav-btn{padding:3px 10px;background:var(--accent);color:var(--on-accent);border:none;
+  border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:3px;transition:opacity .15s;flex-shrink:0}
+.popup-nav-btn:hover{opacity:.85}
+/* User location blue dot */
+.user-location-dot{width:18px;height:18px;border-radius:50%;background:#1a73e8;
+  border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);position:relative}
+.user-location-dot::after{content:'';position:absolute;inset:-7px;border-radius:50%;
+  background:rgba(26,115,232,.22);animation:pulse-ring 2s ease-out infinite}
+@keyframes pulse-ring{0%{transform:scale(.55);opacity:.9}100%{transform:scale(1.8);opacity:0}}

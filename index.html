@@ -32,6 +32,7 @@
   <button class="hdr-btn btn-add" onclick="openAddModal()">
     <span>＋</span><span data-i18n="add_loc"></span>
   </button>
+  <button class="hdr-btn" id="locate-btn" onclick="locateMe()">📍 <span data-i18n="locate_btn_label"></span></button>
   <button class="hdr-btn" id="lang-btn" onclick="toggleLang()"></button>
   <button class="hdr-btn icon-btn" id="theme-btn" onclick="cycleTheme()">🌙</button>
 </header>
@@ -40,6 +41,9 @@
 <div class="pending-banner" id="pending-banner">
   <span>⏳</span><span data-i18n="pending_notice"></span>
 </div>
+
+<!-- SNACKBAR -->
+<div class="snackbar" id="snackbar"></div>
 
 <!-- APP BODY -->
 <div class="app-body">
@@ -171,7 +175,7 @@
     <div class="modal-body">
       <div id="add-form-view">
         <div class="form-row">
-          <label class="form-label"><span data-i18n="add_lbl_name"></span><span class="required-mark"> *</span></label>
+          <label class="form-label"><span data-i18n="add_lbl_name"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
           <input class="form-input" id="add-name" data-i18n-ph="add_ph_name"/>
         </div>
         <div class="form-row">
@@ -361,6 +365,7 @@ const T = {
     // Validation
     err_name_required: '請填寫地點名稱。',
     err_maps_required: '請填寫 Google Maps 連結。',
+    err_maps_invalid: '請貼上有效的 Google Maps 分享連結（例：https://maps.app.goo.gl/...）。',
     // Common
     opt: '（選填）', cancel: '取消', done: '完成',
     st_verified: '✅ 已驗證', st_review: '⚠️ 待確認', st_notfound: '❌ 找不到',
@@ -371,6 +376,13 @@ const T = {
     admin_lbl: '密碼', admin_ph: '請輸入密碼',
     admin_btn: '登入', admin_err: '密碼錯誤',
     admin_not_configured: '尚未設定管理員密碼。請設定 ADMIN_PASSWORD 環境變數後重新部署。',
+    // Navigation & location
+    nav_btn: '🧭 導航到這裡',
+    locate_btn: '📍',
+    locate_btn_label: '定位',
+    locate_snack: '✓ 已定位　點地標上的「導航到這裡」可開啟路線',
+    locate_err: '無法取得位置，請稍後再試。',
+    locate_deny: '請允許位置存取權限後重試。',
     // Sheet modal
     sheet_title: '⚙️ Google Sheets API 狀態',
     sheet_desc: '資料由 Netlify Function 代抓 Google Sheets CSV；實際試算表網址只存在 Netlify 環境變數，不會暴露在前端。',
@@ -440,6 +452,7 @@ const T = {
     // Validation
     err_name_required: 'Please enter the location name.',
     err_maps_required: 'Please enter a Google Maps link.',
+    err_maps_invalid: 'Please paste a valid Google Maps share link (e.g. https://maps.app.goo.gl/...).',
     // Common
     opt: '(optional)', cancel: 'Cancel', done: 'Done',
     st_verified: '✅ Verified', st_review: '⚠️ Needs Review', st_notfound: '❌ Not Found',
@@ -450,6 +463,13 @@ const T = {
     admin_lbl: 'Password', admin_ph: 'Enter password',
     admin_btn: 'Login', admin_err: 'Incorrect password',
     admin_not_configured: 'Admin password not configured. Set ADMIN_PASSWORD env var and redeploy.',
+    // Navigation & location
+    nav_btn: '🧭 Navigate here',
+    locate_btn: '📍',
+    locate_btn_label: 'Locate me',
+    locate_snack: '✓ Located　Tap a marker → "Navigate here" to open directions',
+    locate_err: 'Could not get your location. Please try again.',
+    locate_deny: 'Please allow location access and retry.',
     // Sheet modal
     sheet_title: '⚙️ Google Sheets API Status',
     sheet_desc: 'A Netlify Function fetches the Google Sheets CSV. The real spreadsheet URL only lives in Netlify environment variables and is not exposed to the frontend.',
@@ -467,8 +487,6 @@ function t(k, ...a) { const v = T[lang][k]; return typeof v === 'function' ? v(.
 function tobj(k, s) { return (T[lang][k] || {})[s] || s; }
 
 
-const C={EN:0,ZH:1,ALT:2,CAT_EN:3,CAT_ZH:4,NOTES_EN:5,NOTES_ZH:6,
-         ICON:7,LAT:8,LNG:9,MAPS:10,STATUS:11,DUP:12,SRC:13,APPROX:14,SOURCE_URL:15};
 
 const CATEGORY_ALIASES = {
   "Hotel": {en:"Hotel", zh:"飯店"},
@@ -492,13 +510,9 @@ const CATEGORY_ALIASES = {
 };
 
 function normalizeCategoryRow(row){
-  const normalized=[...row];
-  const alias=CATEGORY_ALIASES[normalized[C.CAT_EN]]||CATEGORY_ALIASES[normalized[C.CAT_ZH]];
-  if(alias){
-    normalized[C.CAT_EN]=alias.en;
-    normalized[C.CAT_ZH]=alias.zh;
-  }
-  return normalized;
+  const alias=CATEGORY_ALIASES[row.catEn]||CATEGORY_ALIASES[row.catZh];
+  if(alias) return {...row, catEn:alias.en, catZh:alias.zh};
+  return row;
 }
 
 function normalizeCategoryRows(rows){
@@ -575,20 +589,36 @@ function mapsQuery(name, maps) {
 }
 
 // Internal sheet format: Name_EN, Name_ZH, Category_EN, … columns
-// Returns row arrays on match, null if headers don't match
+// Returns row objects on match, null if headers don't match
 function parseInternalFormat(rows, idx, read) {
-  const keys = ["Name_EN","Name_ZH","Alt_Name","Category_EN","Category_ZH",
-                "Notes_EN","Notes_ZH","Icon","Lat","Lng",
-                "Maps_Query","Status","Duplicate_Group","Source","Coords_Approx","Source_URL"];
-  const coreKeys = keys.slice(0, 15); // Source_URL is optional
+  const coreKeys = ["Name_EN","Name_ZH","Alt_Name","Category_EN","Category_ZH",
+                    "Notes_EN","Notes_ZH","Icon","Lat","Lng",
+                    "Maps_Query","Status","Duplicate_Group","Source","Coords_Approx"];
   if (!coreKeys.every(k => idx[k] !== undefined)) return null;
   return rows.slice(1)
     .filter(r => r.join('').trim())
-    .map(r => keys.map(k => read(r, k)));
+    .map(r => ({
+      nameEn:   read(r, "Name_EN"),
+      nameZh:   read(r, "Name_ZH"),
+      alt:      read(r, "Alt_Name"),
+      catEn:    read(r, "Category_EN"),
+      catZh:    read(r, "Category_ZH"),
+      notesEn:  read(r, "Notes_EN"),
+      notesZh:  read(r, "Notes_ZH"),
+      icon:     read(r, "Icon"),
+      lat:      read(r, "Lat"),
+      lng:      read(r, "Lng"),
+      maps:     read(r, "Maps_Query"),
+      status:   read(r, "Status"),
+      dup:      read(r, "Duplicate_Group"),
+      src:      read(r, "Source"),
+      approx:   read(r, "Coords_Approx"),
+      sourceUrl:read(r, "Source_URL"),
+    }));
 }
 
 // Published/legacy sheet format: "Location Name", "Category", "Verification Status", … columns
-// Returns row arrays on match, null if headers don't match
+// Returns row objects on match, null if headers don't match
 function parsePublishedFormat(rows, idx, read) {
   const required = ["Location Name","Thai / Alt Name","Category",
                     "Notes","Source URL","Verification Status","Duplicate Group"];
@@ -604,19 +634,24 @@ function parsePublishedFormat(rows, idx, read) {
       const sourceUrl = read(r, "Source URL");
       const tags      = normalizeSourceTags(read(r, "Source Tags"));
       const maps      = read(r, "Google Maps URL") || read(r, "Google Maps Link");
-      return [
-        name, nameZh, read(r, "Thai / Alt Name"),
-        cat, ZH_BY_CAT[cat] || cat,
-        notes, notesZh,
-        read(r, "Icon") || ICON_BY_CAT[cat] || "📍",
-        read(r, "Lat"), read(r, "Lng"),
-        mapsQuery(name, maps),
-        normalizeStatus(read(r, "Verification Status")),
-        read(r, "Duplicate Group"),
-        tags || sourceLabel(sourceUrl),
-        read(r, "Coordinates Approx") || "TRUE",
-        sourceUrl
-      ];
+      return {
+        nameEn:   name,
+        nameZh,
+        alt:      read(r, "Thai / Alt Name"),
+        catEn:    cat,
+        catZh:    ZH_BY_CAT[cat] || cat,
+        notesEn:  notes,
+        notesZh,
+        icon:     read(r, "Icon") || ICON_BY_CAT[cat] || "📍",
+        lat:      read(r, "Lat"),
+        lng:      read(r, "Lng"),
+        maps:     mapsQuery(name, maps),
+        status:   normalizeStatus(read(r, "Verification Status")),
+        dup:      read(r, "Duplicate Group"),
+        src:      tags || sourceLabel(sourceUrl),
+        approx:   read(r, "Coordinates Approx") || "TRUE",
+        sourceUrl,
+      };
     });
 }
 
@@ -645,6 +680,7 @@ let map = null;
 let infoWindow = null;
 let googleMapId = null;
 const markers = [];
+let userLocationMarker = null;
 
 function getEffectiveTheme(){
   const s=localStorage.getItem('theme')||'auto';
@@ -661,30 +697,34 @@ function makeMarkerContent(status){
 }
 function buildPopupContent(i){
   const row=data[i];
-  const name=lang==='zh'?row[C.ZH]:row[C.EN];
-  const notes=lang==='zh'?row[C.NOTES_ZH]:row[C.NOTES_EN];
-  const cat=lang==='zh'?row[C.CAT_ZH]:row[C.CAT_EN];
+  const name=lang==='zh'?row.nameZh:row.nameEn;
+  const notes=lang==='zh'?row.notesZh:row.notesEn;
+  const cat=lang==='zh'?row.catZh:row.catEn;
   const approx=isApproximateCoords(row);
+  const hasCoords = parseFloat(row.lat) && parseFloat(row.lng);
   return `<div class="popup-content">
-    <div class="popup-name">${row[C.ICON]} ${name}</div>
-    ${row[C.ALT]?`<div class="popup-alt">${row[C.ALT]}</div>`:''}
+    <div class="popup-name">${row.icon} ${name}</div>
+    ${row.alt?`<div class="popup-alt">${row.alt}</div>`:''}
     <div class="badges popup-badges">
       <span class="badge b-cat">${cat}</span>
-      <span class="badge ${getBadgeClass(row[C.STATUS])}">${tobj('badge',row[C.STATUS])}</span>
+      <span class="badge ${getBadgeClass(row.status)}">${tobj('badge',row.status)}</span>
     </div>
     <div class="popup-notes">${notes}</div>
     ${approx?`<div class="approx-tag">${t('approx')}</div>`:''}
-    ${renderSources(row)}
+    <div class="popup-footer">
+      ${renderSources(row)}
+      ${hasCoords?`<button class="popup-nav-btn" onclick="openNavigation(${i})">${t('nav_btn')}</button>`:''}
+    </div>
   </div>`;
 }
 function buildMarkers(){
   if(!map)return;
   markers.forEach(m=>{if(m)m.map=null});markers.length=0;
   data.forEach((row,i)=>{
-    const lat=parseFloat(row[C.LAT]),lng=parseFloat(row[C.LNG]);
+    const lat=parseFloat(row.lat),lng=parseFloat(row.lng);
     if(!lat||!lng)return;
     const m=new google.maps.marker.AdvancedMarkerElement({
-      map,position:{lat,lng},content:makeMarkerContent(row[C.STATUS])
+      map,position:{lat,lng},content:makeMarkerContent(row.status)
     });
     m.addListener('click',()=>{
       infoWindow.setContent(buildPopupContent(i));
@@ -734,7 +774,7 @@ function getBadgeClass(s){
   return 'b-review';
 }
 function isApproximateCoords(row){
-  return /^(true|yes|1|approx|approximate)$/i.test(String(row[C.APPROX]||'').trim());
+  return /^(true|yes|1|approx|approximate)$/i.test(String(row.approx||'').trim());
 }
 function applyFilters(){
   const q=document.getElementById('search').value.toLowerCase();
@@ -742,20 +782,20 @@ function applyFilters(){
   const st=document.getElementById('status-filter').value;
   visIdx=[];
   data.forEach((row,i)=>{
-    const nameHit=(row[C.EN]+row[C.ZH]+row[C.ALT]).toLowerCase().includes(q);
-    const notesHit=(row[C.NOTES_EN]+row[C.NOTES_ZH]).toLowerCase().includes(q);
+    const nameHit=(row.nameEn+row.nameZh+row.alt).toLowerCase().includes(q);
+    const notesHit=(row.notesEn+row.notesZh).toLowerCase().includes(q);
     // cat filter: compare against both zh and en to handle sheet-loaded data
-    const catVal=lang==='zh'?row[C.CAT_ZH]:row[C.CAT_EN];
+    const catVal=lang==='zh'?row.catZh:row.catEn;
     const catHit=!cat||catVal===cat;
-    const stHit=!st||row[C.STATUS]===st;
+    const stHit=!st||row.status===st;
     if((nameHit||notesHit)&&catHit&&stHit)visIdx.push(i);
   });
   renderList();
   document.getElementById('result-info').textContent=t('count',visIdx.length,data.length);
 }
 function renderSources(row){
-  const src=row[C.SRC]||'';
-  const srcUrl=row[C.SOURCE_URL]||'';
+  const src=row.src||'';
+  const srcUrl=row.sourceUrl||'';
   if(!src)return '';
   const tokens=src.split(/\s*[+,]\s*/).map(s=>s.trim()).filter(Boolean);
   const urls=srcUrl.split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean);
@@ -788,24 +828,24 @@ function renderList(){
   if(!visIdx.length){list.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div>${t('empty')}</div>`;return}
   list.innerHTML=visIdx.map(i=>{
     const row=data[i];
-    const name=lang==='zh'?row[C.ZH]:row[C.EN];
-    const notes=lang==='zh'?row[C.NOTES_ZH]:row[C.NOTES_EN];
-    const cat=lang==='zh'?row[C.CAT_ZH]:row[C.CAT_EN];
-    const st=row[C.STATUS];
+    const name=lang==='zh'?row.nameZh:row.nameEn;
+    const notes=lang==='zh'?row.notesZh:row.notesEn;
+    const cat=lang==='zh'?row.catZh:row.catEn;
+    const st=row.status;
     const needsHelp=st==='Needs Review'||st==='Could Not Find';
     const approx=isApproximateCoords(row);
     return `<div class="loc-card${activeIdx===i?' active':''}" id="card-${i}" onclick="activateCard(${i})">
       <div class="card-head">
-        <div class="card-icon">${row[C.ICON]}</div>
+        <div class="card-icon">${row.icon}</div>
         <div class="card-title-wrap">
           <div class="card-name">${name}</div>
-          ${row[C.ALT]?`<div class="card-alt">${row[C.ALT]}</div>`:''}
+          ${row.alt?`<div class="card-alt">${row.alt}</div>`:''}
         </div>
       </div>
       <div class="badges">
         <span class="badge b-cat">${cat}</span>
         <span class="badge ${getBadgeClass(st)}">${tobj('badge',st)}</span>
-        ${row[C.DUP]?`<span class="badge b-dup">${row[C.DUP]}</span>`:''}
+        ${row.dup?`<span class="badge b-dup">${row.dup}</span>`:''}
       </div>
       <div class="card-notes">${notes}</div>
       ${approx?`<div class="approx-tag">${t('approx')}</div>`:''}
@@ -823,7 +863,7 @@ function renderList(){
 function activateCard(i){
   activeIdx=i;
   const row=data[i];
-  const lat=parseFloat(row[C.LAT]),lng=parseFloat(row[C.LNG]);
+  const lat=parseFloat(row.lat),lng=parseFloat(row.lng);
   if(lat&&lng&&map){
     map.panTo({lat,lng});map.setZoom(15);
     if(markers[i]){infoWindow.setContent(buildPopupContent(i));infoWindow.open({anchor:markers[i],map});}
@@ -878,7 +918,7 @@ function buildCatFilter(){
   const sel=document.getElementById('cat-filter');
   const prev=sel.value;
   const cats=new Set();
-  data.forEach(r=>cats.add(lang==='zh'?r[C.CAT_ZH]:r[C.CAT_EN]));
+  data.forEach(r=>cats.add(lang==='zh'?r.catZh:r.catEn));
   sel.innerHTML=`<option value="">${t('all_cat')}</option>`+
     [...cats].sort().map(c=>`<option value="${c}">${c}</option>`).join('');
   sel.value=prev;
@@ -927,14 +967,14 @@ function switchTab(tab){
 // ═══════════════════════════════════════════════════
 function openEditModal(i){
   const row=data[i];
-  const name=lang==='zh'?row[C.ZH]:row[C.EN];
-  document.getElementById('edit-location-name').value=`${row[C.ICON]} ${name}`;
+  const name=lang==='zh'?row.nameZh:row.nameEn;
+  document.getElementById('edit-location-name').value=`${row.icon} ${name}`;
   document.getElementById('edit-location-index').value=i;
-  document.getElementById('edit-maps').value=row[C.MAPS].replace(/\+/g,' ');
-  document.getElementById('edit-lat').value=row[C.LAT]||'';
-  document.getElementById('edit-lng').value=row[C.LNG]||'';
+  document.getElementById('edit-maps').value=row.maps.replace(/\+/g,' ');
+  document.getElementById('edit-lat').value=row.lat||'';
+  document.getElementById('edit-lng').value=row.lng||'';
   ['edit-notes-zh','edit-notes-en','edit-reason','edit-submitter'].forEach(id=>document.getElementById(id).value='');
-  const st=row[C.STATUS];
+  const st=row.status;
   document.getElementById('so-verified').checked=st==='Verified';
   document.getElementById('so-review').checked=st==='Needs Review';
   document.getElementById('so-notfound').checked=st==='Could Not Find';
@@ -947,7 +987,7 @@ async function submitEdit(){
   const row=data[idx];
   await doNetlifySubmit('edit-submit-btn','edit-feedback',t('edit_submit'),{
     'form-name':'suggest-edit','bot-field':'',
-    location_name:`${row[C.ZH]} / ${row[C.EN]}`,
+    location_name:`${row.nameZh} / ${row.nameEn}`,
     location_index:idx,
     suggested_status:document.querySelector('input[name="suggest-status"]:checked')?.value||'',
     maps_query:document.getElementById('edit-maps').value.trim(),
@@ -978,9 +1018,21 @@ function showAddSuccess(){
   document.getElementById('add-modal').classList.add('is-success');
   resetFeedback('add-feedback','add-submit-btn',t('add_submit'));
 }
+function isGoogleMapsUrl(url){
+  try{
+    const u=new URL(url);
+    if(!/^https?:$/.test(u.protocol))return false;
+    const host=u.hostname.toLowerCase();
+    const path=u.pathname.toLowerCase();
+    if(host==='maps.app.goo.gl'||host==='maps.google.com')return true;
+    if(host==='goo.gl')return path.startsWith('/maps/');
+    if(host==='www.google.com')return path.startsWith('/maps');
+    return false;
+  }catch(e){return false}
+}
 function validateAddLocation(name,maps){
-  if(!name)return 'err_name_required';
   if(!maps)return 'err_maps_required';
+  if(!isGoogleMapsUrl(maps))return 'err_maps_invalid';
   return '';
 }
 function buildAddLocationPayload(){
@@ -1136,6 +1188,57 @@ async function tryLoadSheet(){
 }
 
 function rebuild(){if(map)buildMarkers();buildCatFilter();applyFilters()}
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION — open Google Maps directions
+// ═══════════════════════════════════════════════════
+function openNavigation(i){
+  const row=data[i];
+  const name=lang==='zh'?row.nameZh:row.nameEn;
+  const lat=parseFloat(row.lat),lng=parseFloat(row.lng);
+  const url='https://www.google.com/maps/dir/?api=1'
+    +'&destination='+lat+','+lng
+    +'&destination_place_name='+encodeURIComponent(name)
+    +'&travelmode=transit';
+  window.open(url,'_blank');
+}
+
+// ═══════════════════════════════════════════════════
+// SNACKBAR
+// ═══════════════════════════════════════════════════
+let snackTimer=null;
+function showSnackbar(msg,duration=4000){
+  const el=document.getElementById('snackbar');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(snackTimer);
+  snackTimer=setTimeout(()=>el.classList.remove('show'),duration);
+}
+
+// ═══════════════════════════════════════════════════
+// USER LOCATION — show blue dot on map
+// ═══════════════════════════════════════════════════
+function locateMe(){
+  if(!map){return;}
+  if(!navigator.geolocation){alert(t('locate_err'));return;}
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const lat=pos.coords.latitude,lng=pos.coords.longitude;
+      if(userLocationMarker)userLocationMarker.map=null;
+      const el=document.createElement('div');
+      el.className='user-location-dot';
+      userLocationMarker=new google.maps.marker.AdvancedMarkerElement({
+        map,position:{lat,lng},content:el,zIndex:999
+      });
+      map.panTo({lat,lng});
+      showSnackbar(t('locate_snack'));
+    },
+    err=>{
+      if(err.code===1)alert(t('locate_deny'));
+      else alert(t('locate_err'));
+    },
+    {enableHighAccuracy:true,timeout:8000}
+  );
+}
 
 // ═══════════════════════════════════════════════════
 // INIT

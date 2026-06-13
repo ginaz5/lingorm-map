@@ -25,6 +25,13 @@ function getAddLocationPayloadKeys(html) {
   return [...keyMatches].map((match) => match[1] || match[2]);
 }
 
+function getAddLocationValidators(html) {
+  const validatorsMatch = html.match(/function isGoogleMapsUrl\(url\)\{[\s\S]*?(?=\nfunction buildAddLocationPayload\(\))/);
+  assert.ok(validatorsMatch, 'add-location validation functions should exist');
+
+  return Function(`${validatorsMatch[0]}; return { isGoogleMapsUrl, validateAddLocation };`)();
+}
+
 test('add-location Netlify detection form declares every submitted field', async () => {
   const html = await loadIndexHtml();
   const detectionFields = getHiddenFormFieldNames(html, 'add-location');
@@ -61,4 +68,18 @@ test('add-location modal has localized success view copy', async () => {
   assert.match(html, /data-i18n="done"/);
   assert.match(html, /add_success_title:\s*'感謝您的地點貢獻'/);
   assert.match(html, /add_success_title:\s*'Thanks for contributing a location'/);
+});
+
+test('add-location validation only accepts real Google Maps URL hosts', async () => {
+  const html = await loadIndexHtml();
+  const { validateAddLocation } = getAddLocationValidators(html);
+
+  assert.equal(validateAddLocation('', ''), 'err_maps_required');
+  assert.equal(validateAddLocation('', 'https://maps.app.goo.gl/abc'), '');
+  assert.equal(validateAddLocation('', 'https://goo.gl/maps/abc'), '');
+  assert.equal(validateAddLocation('', 'https://www.google.com/maps/place/Bangkok'), '');
+  assert.equal(validateAddLocation('', 'https://maps.google.com/?q=Bangkok'), '');
+  assert.equal(validateAddLocation('', 'https://maps.app.goo.glevil/abc'), 'err_maps_invalid');
+  assert.equal(validateAddLocation('', 'https://maps.google.com.evil/?q=Bangkok'), 'err_maps_invalid');
+  assert.equal(validateAddLocation('', 'https://example.com/maps'), 'err_maps_invalid');
 });

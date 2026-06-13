@@ -36,13 +36,15 @@ Hoisted closure-trapped helpers to module level (no longer recreated per call):
 
 `parseCSV` already calls `normalizeCategoryRows()` before returning. `saveSheet` and `tryLoadSheet` were wrapping the result in a second `normalizeCategoryRows()` call. Fixed to `data = parsed`.
 
-### ⬜ Replace positional array data model with objects
-**Scope:** `index.html` (pervasive — touches every `row[C.XYZ]` access)
+### ✅ Replace positional array data model with objects
+**Scope:** `index.html` (pervasive — touches every `row[C.XYZ]` access), `tests/parsecsv.test.mjs`
 
-Current: `row[C.EN]`, `row[C.LAT]`, `row[C.STATUS]` — fragile, opaque.
-Target: `row.nameEn`, `row.lat`, `row.status` — or a `toLocObject(row)` adapter as a stepping stone.
-
-**Risk:** High blast radius — touches `renderList`, `buildPopupContent`, `activateCard`, `buildMarkers`, `applyFilters`, `renderSources`, modals, and both CSV parsers. Do in one focused PR.
+Removed `const C` index map. Parsers (`parseInternalFormat`, `parsePublishedFormat`) now return objects
+with named fields: `nameEn`, `nameZh`, `alt`, `catEn`, `catZh`, `notesEn`, `notesZh`, `icon`, `lat`,
+`lng`, `maps`, `status`, `dup`, `src`, `approx`, `sourceUrl`. `normalizeCategoryRow` updated to spread
+and override rather than mutating a copied array. All 21 `row[C.X]` callsites replaced. Tests updated
+to pass objects to `isApproximateCoords` and use named fields in `parseCSV` `deepEqual` assertions.
+All 27 tests pass.
 
 ---
 

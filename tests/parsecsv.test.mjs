@@ -3,13 +3,13 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 // Extract the full CSV parser block + its dependencies from index.html.
-// Dependencies: const C, CATEGORY_ALIASES, normalizeCategoryRow/Rows
+// Dependencies: CATEGORY_ALIASES, normalizeCategoryRow/Rows
 // CSV parser block: everything from the "// CSV PARSER" banner to the "// STATE" banner
 async function loadParsers() {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 
-  const deps = html.match(/const C=\{[\s\S]*?function normalizeCategoryRows\(rows\)\{[\s\S]*?\n\}/);
-  assert.ok(deps, 'C / normalizeCategoryRows block not found in index.html');
+  const deps = html.match(/const CATEGORY_ALIASES[\s\S]*?function normalizeCategoryRows\(rows\)\{[\s\S]*?\n\}/);
+  assert.ok(deps, 'CATEGORY_ALIASES / normalizeCategoryRows block not found in index.html');
 
   const csvBlock = html.match(/\/\/ CSV PARSER[\s\S]*?(?=\/\/ ═{10,}\n\/\/ STATE)/);
   assert.ok(csvBlock, 'CSV PARSER section not found in index.html');
@@ -146,23 +146,17 @@ test('mapsQuery: empty name + empty maps returns empty string', async () => {
 
 // ─── isApproximateCoords ────────────────────────────────────────────────────
 
-const C_APPROX = 14; // C.APPROX index
-
 test('isApproximateCoords: TRUE / true / yes / 1 / approx are approximate', async () => {
   const { isApproximateCoords } = await loadParsers();
   for (const val of ['TRUE', 'true', 'yes', '1', 'approx', 'approximate', 'APPROX']) {
-    const row = Array(15).fill('');
-    row[C_APPROX] = val;
-    assert.equal(isApproximateCoords(row), true, `expected true for "${val}"`);
+    assert.equal(isApproximateCoords({ approx: val }), true, `expected true for "${val}"`);
   }
 });
 
 test('isApproximateCoords: FALSE / empty / 0 are not approximate', async () => {
   const { isApproximateCoords } = await loadParsers();
   for (const val of ['FALSE', 'false', '0', '']) {
-    const row = Array(15).fill('');
-    row[C_APPROX] = val;
-    assert.equal(isApproximateCoords(row), false, `expected false for "${val}"`);
+    assert.equal(isApproximateCoords({ approx: val }), false, `expected false for "${val}"`);
   }
 });
 
@@ -175,13 +169,13 @@ test('parseCSV: internal format — maps Category_ZH alias (Hotel → 飯店)', 
     'The Siam Hotel,暹羅精品酒店,,Hotel,酒店,English notes,中文說明,🏨,13.7608,100.5089,The+Siam+Hotel+Bangkok,Verified,,KKday,FALSE',
   ].join('\n');
 
-  assert.deepEqual(parseCSV(csv), [[
-    'The Siam Hotel', '暹羅精品酒店', '',
-    'Hotel', '飯店',
-    'English notes', '中文說明', '🏨',
-    '13.7608', '100.5089', 'The+Siam+Hotel+Bangkok',
-    'Verified', '', 'KKday', 'FALSE', '',
-  ]]);
+  assert.deepEqual(parseCSV(csv), [{
+    nameEn: 'The Siam Hotel', nameZh: '暹羅精品酒店', alt: '',
+    catEn: 'Hotel', catZh: '飯店',
+    notesEn: 'English notes', notesZh: '中文說明', icon: '🏨',
+    lat: '13.7608', lng: '100.5089', maps: 'The+Siam+Hotel+Bangkok',
+    status: 'Verified', dup: '', src: 'KKday', approx: 'FALSE', sourceUrl: '',
+  }]);
 });
 
 test('parseCSV: published format — maps category, fills icon, normalizes status', async () => {
@@ -192,13 +186,13 @@ test('parseCSV: published format — maps category, fills icon, normalizes statu
     '⚠️ Douban source,,,Source note,Login-only source note,https://example.com/source,Not extracted,,,,,',
   ].join('\n');
 
-  assert.deepEqual(parseCSV(csv), [[
-    'The Siam Hotel', '暹羅精品酒店', '',
-    'Hotel', '飯店',
-    'Luxury hotel', '河畔精品酒店', '🏨',
-    '13.7608', '100.5089', 'https://maps.example/the-siam',
-    'Verified', '', 'KKday + Threads', 'FALSE', 'https://example.com',
-  ]]);
+  assert.deepEqual(parseCSV(csv), [{
+    nameEn: 'The Siam Hotel', nameZh: '暹羅精品酒店', alt: '',
+    catEn: 'Hotel', catZh: '飯店',
+    notesEn: 'Luxury hotel', notesZh: '河畔精品酒店', icon: '🏨',
+    lat: '13.7608', lng: '100.5089', maps: 'https://maps.example/the-siam',
+    status: 'Verified', dup: '', src: 'KKday + Threads', approx: 'FALSE', sourceUrl: 'https://example.com',
+  }]);
 });
 
 test('parseCSV: published format — preserves repeated source tags for URL mapping', async () => {
@@ -209,8 +203,8 @@ test('parseCSV: published format — preserves repeated source tags for URL mapp
   ].join('\n');
 
   const [row] = parseCSV(csv);
-  assert.equal(row[13], 'Trip.com + Threads + Threads + Google Maps');
-  assert.equal(row[15], 'https://trip.example/post, https://threads.example/a, https://threads.example/b, https://maps.example/place');
+  assert.equal(row.src, 'Trip.com + Threads + Threads + Google Maps');
+  assert.equal(row.sourceUrl, 'https://trip.example/post, https://threads.example/a, https://threads.example/b, https://maps.example/place');
 });
 
 test('parseCSV: published format — URL-only source tag falls back to sourceLabel', async () => {
@@ -221,7 +215,7 @@ test('parseCSV: published format — URL-only source tag falls back to sourceLab
   ].join('\n');
 
   const [row] = parseCSV(csv);
-  assert.equal(row[13], 'Trip.com');
+  assert.equal(row.src, 'Trip.com');
 });
 
 test('parseCSV: returns null for unrecognized headers', async () => {
@@ -245,5 +239,5 @@ test('parseCSV: BOM at start of file is stripped from first header', async () =>
   ].join('\n');
   const result = parseCSV(csv);
   assert.ok(result, 'should parse successfully despite BOM');
-  assert.equal(result[0][0], 'Cafe A');
+  assert.equal(result[0].nameEn, 'Cafe A');
 });
