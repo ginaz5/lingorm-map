@@ -13,6 +13,10 @@
 - [x] TECH_DECISIONS.md 更新
 - [x] git init + 初始 commit + push 至 GitHub (`ginaz5/lingorm-map`)
 - [x] 2026-06-13：將 `lingorm_pending_updates.md` 的 5 筆新增地點與 3 筆現有地點修正同步至 Google Sheet `Lingorm_Bangkok_Locations`
+- [x] 2026-06-13：將 00K 粉紅麵店確認資訊同步至 Google Sheet row 12（更新為 `Nai Uan Yentafo @ Amarin`）
+- [x] 2026-06-13：新增 Google Sheet `Source Tags` 欄位，前端支援多來源 tags 顯示與多來源 CSV 解析
+- [x] 2026-06-13：修正重複 Threads 來源顯示，改以 `Threads @handle` 區分多個 Threads URL
+- [x] 2026-06-13：修正 URL 誤填進 `Source Tags` 時的顯示防呆，避免 tag 顯示完整連結
 
 ---
 
@@ -74,6 +78,7 @@
 - [x] 重新整理 spreadsheet：保留一列一地點，移除或分離 `Source note` 這類非地點資料
 - [x] 補齊必要欄位：`Lat`、`Lng`、`Google Maps URL`、`Icon`、`Coordinates Approx`
 - [x] 確認現有欄位命名：`Location Name`、`Thai / Alt Name`、`Category`、`Notes`、`Source URL`、`Verification Status`、`Duplicate Group`
+- [x] 新增 `Source Tags` 欄位，讓同一地點可標記多個來源平台（例如 `KKday, Threads`）
 - [ ] 前端 parser 改以 spreadsheet header 直接產生 location object（例如 `location.lat`），降低欄位順序耦合
 - [ ] Spreadsheet 座標補齊後，移除 `hydrateSheetRows()` 對 embedded data 的座標 fallback
 - [ ] 全部地點都能從 spreadsheet render card + marker 後，將 `EMBEDDED` 改為空 fallback 或移除內建地點資料

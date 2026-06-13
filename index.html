@@ -22,7 +22,7 @@
   <input name="icon"/><input name="category_zh"/><input name="category_en"/>
   <input name="lat"/><input name="lng"/><input name="maps_query"/>
   <textarea name="notes_zh"></textarea><textarea name="notes_en"></textarea>
-  <input name="source_url"/><input name="submitter"/>
+  <input name="status"/><input name="source_url"/><input name="submitter"/>
 </form>
 
 <!-- HEADER -->
@@ -554,6 +554,11 @@ function parseCSV(text){
     if(/youtube|youtu\.be/i.test(host))return "YouTube";
     return "Source";
   };
+  const normalizeSourceTags=tags=>{
+    return tags.split(',').map(s=>s.trim())
+      .filter(s=>s&&!/^https?:\/\//i.test(s))
+      .join(' + ');
+  };
   const mapsQuery=(name,maps)=>{
     if(maps&&!/open in maps/i.test(maps)&&!/^📍/.test(maps))return maps;
     return name?`${name} Bangkok`:"";
@@ -565,6 +570,7 @@ function parseCSV(text){
     const notes=read(r,"Notes");
     const notesZh=read(r,"Notes ZH")||notes;
     const sourceUrl=read(r,"Source URL");
+    const sourceTags=normalizeSourceTags(read(r,"Source Tags"));
     const maps=read(r,"Google Maps URL")||read(r,"Google Maps Link");
     return [
       name,nameZh,read(r,"Thai / Alt Name"),
@@ -575,7 +581,7 @@ function parseCSV(text){
       mapsQuery(name,maps),
       normalizeStatus(read(r,"Verification Status")),
       read(r,"Duplicate Group"),
-      sourceLabel(sourceUrl),
+      sourceTags||sourceLabel(sourceUrl),
       read(r,"Coordinates Approx")||"TRUE",
       sourceUrl
     ];
@@ -721,19 +727,27 @@ function renderSources(row){
   const src=row[C.SRC]||'';
   const srcUrl=row[C.SOURCE_URL]||'';
   if(!src)return '';
-  const tokens=src.split('+').map(s=>s.trim()).filter(Boolean);
-  const tags=tokens.map(token=>{
+  const tokens=src.split(/\s*[+,]\s*/).map(s=>s.trim()).filter(Boolean);
+  const urls=srcUrl.split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean);
+  const tags=tokens.map((token,idx)=>{
+    const labelFor=(label,url)=>{
+      if(label==='Threads'){
+        const handle=(url.match(/threads\.(?:com|net)\/@([^/?#]+)/i)||[])[1];
+        if(handle)return `Threads @${handle}`;
+      }
+      return label;
+    };
     // Match "@handle" or "Threads @handle" — link to specific post (srcUrl) if available, else profile
     const handleMatch=token.match(/@(\S+)$/);
     if(handleMatch){
-      const url=srcUrl||`https://www.threads.net/@${handleMatch[1]}`;
+      const url=urls[idx]||urls[0]||`https://www.threads.net/@${handleMatch[1]}`;
       return `<a class="src-tag" href="${url}" target="_blank" onclick="event.stopPropagation()">${token}</a>`;
     }
     // KKday / Trip.com etc — use Source_URL if available, else platform fallback
-    const PLATFORM_URLS={'KKday':'https://www.kkday.com','Trip.com':'https://www.trip.com'};
-    const url=srcUrl||PLATFORM_URLS[token]||'';
+    const PLATFORM_URLS={'KKday':'https://www.kkday.com','Trip.com':'https://www.trip.com','Threads':'https://www.threads.net','Douban':'https://www.douban.com','Google Maps':'https://maps.google.com'};
+    const url=urls[idx]||urls[0]||PLATFORM_URLS[token]||'';
     if(url){
-      return `<a class="src-tag" href="${url}" target="_blank" onclick="event.stopPropagation()">${token}</a>`;
+      return `<a class="src-tag" href="${url}" target="_blank" onclick="event.stopPropagation()">${labelFor(token,url)}</a>`;
     }
     return `<span class="src-tag src-tag-plain">${token}</span>`;
   });
@@ -917,25 +931,29 @@ async function submitEdit(){
 // ═══════════════════════════════════════════════════
 // ADD MODAL
 // ═══════════════════════════════════════════════════
+const ADD_LOCATION_INPUT_IDS=['add-name','add-maps','add-notes','add-source','add-submitter'];
+
 function openAddModal(){
-  ['add-name','add-maps','add-notes','add-source','add-submitter'].forEach(id=>
+  ADD_LOCATION_INPUT_IDS.forEach(id=>
     document.getElementById(id).value='');
   document.getElementById('ns-review').checked=true;
   resetFeedback('add-feedback','add-submit-btn',t('add_submit'));
   document.getElementById('add-modal').classList.add('open');
 }
 function closeAddModal(){document.getElementById('add-modal').classList.remove('open')}
-async function submitAdd(){
+function validateAddLocation(name,maps){
+  if(!name)return 'err_name_required';
+  if(!maps)return 'err_maps_required';
+  return '';
+}
+function buildAddLocationPayload(){
   const name=document.getElementById('add-name').value.trim();
   const maps=document.getElementById('add-maps').value.trim();
-  const fb=document.getElementById('add-feedback');
-  if(!name){fb.className='submit-feedback err';fb.textContent=t('err_name_required');return}
-  if(!maps){fb.className='submit-feedback err';fb.textContent=t('err_maps_required');return}
   const catSel=document.getElementById('add-cat');
   const catIdx=catSel.selectedIndex;
   const catObj=CATEGORIES[catIdx]||{zh:'',en:catSel.value};
   const notes=document.getElementById('add-notes').value.trim();
-  await doNetlifySubmit('add-submit-btn','add-feedback',t('add_submit'),{
+  return {
     'form-name':'add-location','bot-field':'',
     name_zh:lang==='zh'?name:'',name_en:lang==='en'?name:'',
     alt_name:'',icon:'',
@@ -946,7 +964,15 @@ async function submitAdd(){
     status:document.querySelector('input[name="new-status"]:checked')?.value||'Needs Review',
     source_url:document.getElementById('add-source').value.trim(),
     submitter:document.getElementById('add-submitter').value.trim(),
-  },'add-modal');
+  };
+}
+async function submitAdd(){
+  const name=document.getElementById('add-name').value.trim();
+  const maps=document.getElementById('add-maps').value.trim();
+  const fb=document.getElementById('add-feedback');
+  const errorKey=validateAddLocation(name,maps);
+  if(errorKey){fb.className='submit-feedback err';fb.textContent=t(errorKey);return}
+  await doNetlifySubmit('add-submit-btn','add-feedback',t('add_submit'),buildAddLocationPayload(),'add-modal');
 }
 
 // ═══════════════════════════════════════════════════

@@ -2,10 +2,12 @@
 
 ## Status
 
-- 2026-06-13: 已同步至 Google Sheet `Lingorm_Bangkok_Locations`。
-- 新增地點寫入 `Bangkok Locations!A31:N35`。
-- 現有地點已更新：Ekamai Mookata row 7、Dear December Cafe row 14、Ternajachob Cafe row 18。
-- 已同步記錄至 `TODO.md`。
+| Timestamp | 事項 |
+|---|---|
+| 2026-06-13 ~14:00 | 已同步至 Google Sheet `Lingorm_Bangkok_Locations`；新增地點寫入 `Bangkok Locations!A31:N35`；更新 Ekamai Mookata row 7、Dear December Cafe row 14、Ternajachob Cafe row 18；已同步至 `TODO.md` |
+| 2026-06-13 ~15:30 | 00K 粉紅麵店確認為 Nai Uan Yentafo @ Amarin，需更新試算表現有 row（原名 "00K's Pink Noodle Shop"） |
+| 2026-06-13 ~16:00 | 已同步 00K 粉紅麵店更新至 Google Sheet `Bangkok Locations` row 12；已同步至 `TODO.md` |
+| 2026-06-13 ~16:xx | 00K 同款炸雞確認為 บังดีไก่หาดใหญ่（Bang Di Kai Hat Yai），需更新試算表現有 row（原名 "00K's Fried Chicken Shop"） |
 
 ## 新增地點（5 筆）
 
@@ -142,3 +144,40 @@
 | Duplicate Group | Group C | **（清空）** |
 | Coordinates Approx | TRUE | 仍 TRUE（建議更新座標至 13.7208, 100.5850） |
 | Notes | （末加入）| Address confirmed via Douban: 392 Ekkamai 24 Alley, Khlong Tan Nua, Watthana, Bangkok 10110. |
+
+---
+
+## 00K's Pink Noodle Shop — 店名確認，全面更新
+
+| 欄位 | 舊值 | 新值 |
+|---|---|---|
+| Location Name | 00K's Pink Noodle Shop | **Nai Uan Yentafo @ Amarin** |
+| Thai / Alt Name | （空） | **นายอ๋วน เย็นตาโฟ** |
+| Google Maps URL | （舊搜尋 URL） | **https://maps.app.goo.gl/R9qneM6JiMYHs5J17** |
+| Verification Status | Could Not Find | **Needs Review** |
+| Lat | 13.7563 | **13.7436535** |
+| Lng | 100.5018 | **100.5413896** |
+| Coordinates Approx | TRUE | **FALSE** |
+| Notes | Fermented-tofu-broth noodles... | Yen ta fo (pink noodles) shop at Amarin Plaza area; fermented-tofu broth (豆腐乳). 00K's (Kling) favourite. Confirmed name via Google Maps. |
+| Location Name ZH | 00K 的粉紅麵店 | **Nai Uan 粉紅麵（Amarin）** |
+| Notes ZH | 粉紅色豆腐乳湯底麵... | 位於 Amarin 商圈的粉紅色豆腐乳湯底麵店（เย็นตาโฟ），為 00K（Kling）最愛，店名已確認。 |
+
+---
+
+## 00K's Fried Chicken Shop — 店名確認，全面更新
+
+> 注意：原本 Group D（與 CH3 炸雞視為同處），確認後座標在 Phra Khanong 區，與 CH3 相距約 5.4 km，建議解除 Group D 關聯並個別確認。
+
+| 欄位 | 舊值 | 新值 |
+|---|---|---|
+| Location Name | 00K's Fried Chicken Shop | **Bang Di Kai Hat Yai** |
+| Thai / Alt Name | （空） | **บังดีไก่หาดใหญ่** |
+| Google Maps URL | （舊搜尋 URL） | **https://maps.app.goo.gl/ywySqKduJ7qY2VEp7** |
+| Verification Status | Needs Review | **Needs Review**（維持，仍需確認是否仍在營業） |
+| Duplicate Group | Group D | **（建議清空，與 CH3 炸雞非同一地點）** |
+| Lat | 13.7603 | **13.7177298** |
+| Lng | 100.5476 | **100.5728747** |
+| Coordinates Approx | TRUE | **FALSE** |
+| Notes | Opens ~3 pm... | Hat Yai-style fried chicken shop (บังดีไก่หาดใหญ่); 00K's favourite. Opens ~15:00. Confirm current operating status before visiting. |
+| Location Name ZH | 00K 的炸雞店 | **Bang Di 哈帝炸雞** |
+| Notes ZH | ... | 哈帝風格炸雞店，為 00K 最愛，約下午 3 點開始營業。前往前請先確認是否仍在營業。 |

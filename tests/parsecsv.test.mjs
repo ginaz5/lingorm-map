@@ -39,8 +39,8 @@ test('parseCSV returns rows when required app headers are present', async () => 
 test('parseCSV maps published spreadsheet headers to app rows', async () => {
   const parseCSV = await loadParseCSV();
   const csv = [
-    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
-    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店',
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,"KKday, Threads",Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店',
     '⚠️ Douban source,,,Source note,Login-only source note,https://example.com/source,Not extracted,,,,,',
   ].join('\n');
 
@@ -58,8 +58,33 @@ test('parseCSV maps published spreadsheet headers to app rows', async () => {
     'https://maps.example/the-siam',
     'Verified',
     '',
-    'Source',
+    'KKday + Threads',
     'FALSE',
     'https://example.com',
   ]]);
+});
+
+test('parseCSV preserves repeated source tags for one-to-one URL mapping', async () => {
+  const parseCSV = await loadParseCSV();
+  const csv = [
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
+    "Dear December Cafe,P'Booky Cafe,https://maps.example/dear,Cafe,English notes,\"https://trip.example/post, https://threads.example/a, https://threads.example/b, https://maps.example/place\",\"Trip.com, Threads, Threads, Google Maps\",Verified,Group A,13.6756573,100.6446636,☕,FALSE,Dear December 咖啡廳,中文說明",
+  ].join('\n');
+
+  const [row] = parseCSV(csv);
+
+  assert.equal(row[13], 'Trip.com + Threads + Threads + Google Maps');
+  assert.equal(row[15], 'https://trip.example/post, https://threads.example/a, https://threads.example/b, https://maps.example/place');
+});
+
+test('parseCSV ignores URL-shaped source tags and falls back to source URL label', async () => {
+  const parseCSV = await loadParseCSV();
+  const csv = [
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
+    "Dear December Cafe,P'Booky Cafe,https://maps.example/dear,Cafe,English notes,https://tw.trip.com/moments/detail/bangkok-191-140507082/,https://tw.trip.com/moments/detail/bangkok-191-140507082/,Verified,Group A,13.6756573,100.6446636,☕,FALSE,Dear December 咖啡廳,中文說明",
+  ].join('\n');
+
+  const [row] = parseCSV(csv);
+
+  assert.equal(row[13], 'Trip.com');
 });
