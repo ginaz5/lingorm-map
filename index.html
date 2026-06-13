@@ -133,18 +133,6 @@
       <div class="form-hint coords-hint" data-i18n="edit_hint_coords"></div>
       <div class="form-row">
         <label class="form-label">
-          <span data-i18n="edit_lbl_notes_zh"></span> <span class="lbl-opt" data-i18n="opt"></span>
-        </label>
-        <textarea class="form-textarea" id="edit-notes-zh" rows="2" data-i18n-ph="edit_ph_notes_zh"></textarea>
-      </div>
-      <div class="form-row">
-        <label class="form-label">
-          <span data-i18n="edit_lbl_notes_en"></span> <span class="lbl-opt" data-i18n="opt"></span>
-        </label>
-        <textarea class="form-textarea" id="edit-notes-en" rows="2" data-i18n-ph="edit_ph_notes_en"></textarea>
-      </div>
-      <div class="form-row">
-        <label class="form-label">
           <span data-i18n="edit_lbl_reason"></span> <span class="lbl-opt" data-i18n="opt"></span>
         </label>
         <textarea class="form-textarea" id="edit-reason" rows="2" data-i18n-ph="edit_ph_reason"></textarea>
@@ -355,7 +343,7 @@ const T = {
     add_ph_maps: '例：https://maps.app.goo.gl/...',
     add_hint_maps: '在 Google Maps 找到地點後，點選「分享」複製連結',
     add_lbl_notes: '簡短說明',
-    add_ph_notes: '例：玲玲在 IG 直播中推薦的餐廳，招牌是...',
+    add_ph_notes: '例：lingorm 綜藝出現過的餐廳，位於商場二樓',
     add_lbl_status: '狀態',
     add_lbl_source: '來源連結',
     add_lbl_source_opt: '（選填，例如 IG 貼文、YT 影片網址）',
@@ -442,7 +430,7 @@ const T = {
     add_ph_maps: 'e.g. https://maps.app.goo.gl/...',
     add_hint_maps: 'Find the location on Google Maps, tap "Share" to copy the link',
     add_lbl_notes: 'Notes',
-    add_ph_notes: "e.g. Spotted in Lingorm's IG livestream...",
+    add_ph_notes: "e.g. Restaurant featured in a Lingorm variety show, 2nd floor of a mall",
     add_lbl_status: 'Status',
     add_lbl_source: 'Source link',
     add_lbl_source_opt: '(optional, e.g. IG post, YouTube URL)',
@@ -971,7 +959,7 @@ function openEditModal(i){
   document.getElementById('edit-maps').value=row.maps.replace(/\+/g,' ');
   document.getElementById('edit-lat').value=row.lat||'';
   document.getElementById('edit-lng').value=row.lng||'';
-  ['edit-notes-zh','edit-notes-en','edit-reason','edit-submitter'].forEach(id=>document.getElementById(id).value='');
+  ['edit-reason','edit-submitter'].forEach(id=>document.getElementById(id).value='');
   const st=row.status;
   document.getElementById('so-verified').checked=st==='Verified';
   document.getElementById('so-review').checked=st==='Needs Review';
@@ -992,8 +980,8 @@ async function submitEdit(){
     maps_query:document.getElementById('edit-maps').value.trim(),
     lat:document.getElementById('edit-lat').value.trim(),
     lng:document.getElementById('edit-lng').value.trim(),
-    notes_zh:document.getElementById('edit-notes-zh').value.trim(),
-    notes_en:document.getElementById('edit-notes-en').value.trim(),
+    notes_zh:document.getElementById('edit-reason').value.trim(),
+    notes_en:document.getElementById('edit-reason').value.trim(),
     reason:document.getElementById('edit-reason').value.trim(),
     submitter:document.getElementById('edit-submitter').value.trim(),
   },()=>{
