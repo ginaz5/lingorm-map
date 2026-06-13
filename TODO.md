@@ -12,6 +12,7 @@
 - [x] `.env.example` + `.gitignore`
 - [x] TECH_DECISIONS.md 更新
 - [x] git init + 初始 commit + push 至 GitHub (`ginaz5/lingorm-map`)
+- [x] 2026-06-13：將 `lingorm_pending_updates.md` 的 5 筆新增地點與 3 筆現有地點修正同步至 Google Sheet `Lingorm_Bangkok_Locations`
 
 ---
 
