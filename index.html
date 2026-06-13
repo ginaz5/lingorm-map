@@ -285,6 +285,7 @@ const LOCATIONS_API = '/api/locations';
 const CATEGORIES = [
   {zh:'餐廳',       en:'Restaurant',         icon:'🍽'},
   {zh:'咖啡廳',     en:'Cafe',               icon:'☕'},
+  {zh:'飲料',       en:'Beverages',          icon:'🥤'},
   {zh:'飯店',       en:'Hotel',              icon:'🏨'},
   {zh:'酒吧/天台俱樂部', en:'Bar / Rooftop Club', icon:'🍸'},
   {zh:'街頭小吃',   en:'Street Food',        icon:'🍢'},
@@ -517,6 +518,13 @@ const CATEGORY_ALIASES = {
   "Bar / Rooftop Club": {en:"Bar / Rooftop Club", zh:"酒吧/天台俱樂部"},
   "酒吧 / 天台俱樂部": {en:"Bar / Rooftop Club", zh:"酒吧/天台俱樂部"},
   "酒吧/天台俱樂部": {en:"Bar / Rooftop Club", zh:"酒吧/天台俱樂部"},
+  "Cafe / Juice Bar":  {en:"Beverages", zh:"飲料"},
+  "Cafe / Beverage":   {en:"Beverages", zh:"飲料"},
+  "Beverages":         {en:"Beverages", zh:"飲料"},
+  "咖啡廳 / 果汁":      {en:"Beverages", zh:"飲料"},
+  "咖啡廳/果汁":        {en:"Beverages", zh:"飲料"},
+  "咖啡廳 / 飲品":      {en:"Beverages", zh:"飲料"},
+  "咖啡廳/飲品":        {en:"Beverages", zh:"飲料"},
 };
 
 function normalizeCategoryRow(row){
@@ -572,7 +580,7 @@ function parseCSV(text){
     "Nature / Day-trip":"🌿","Street Food":"🍜","Neighbourhood":"🏘️"
   };
   const zhByCat={
-    "Restaurant":"餐廳","Cafe":"咖啡廳","Cafe / Beverage":"咖啡廳 / 飲品","Cafe / Juice Bar":"咖啡廳 / 果汁",
+    "Restaurant":"餐廳","Cafe":"咖啡廳","Cafe / Beverage":"飲料","Cafe / Juice Bar":"飲料","Beverages":"飲料",
     "Hotel":"飯店","Bar":"酒吧/天台俱樂部","Bar / Club":"酒吧/天台俱樂部","Bar / Rooftop Club":"酒吧/天台俱樂部","Spa":"Spa",
     "Shopping":"購物","Activity":"活動","Filming Location":"拍攝場地",
     "Nature / Day-trip":"自然 / 一日遊","Street Food":"街頭小吃","Neighbourhood":"街區"
