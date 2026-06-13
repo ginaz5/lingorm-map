@@ -32,6 +32,20 @@ function getAddLocationValidators(html) {
   return Function(`${validatorsMatch[0]}; return { isGoogleMapsUrl, validateAddLocation };`)();
 }
 
+function getNetlifySubmitFunctions(html, deps) {
+  const submitMatch = html.match(/function shouldMockNetlifySubmit\(\)\{[\s\S]*?(?=\nfunction resetFeedback\()/);
+  assert.ok(submitMatch, 'Netlify submit functions should exist');
+
+  return Function(
+    'location',
+    'document',
+    'recordPending',
+    't',
+    'console',
+    `${submitMatch[0]}; return { shouldMockNetlifySubmit, doNetlifySubmit };`,
+  )(deps.location, deps.document, deps.recordPending, deps.t, deps.console);
+}
+
 test('add-location Netlify detection form declares every submitted field', async () => {
   const html = await loadIndexHtml();
   const detectionFields = getHiddenFormFieldNames(html, 'add-location');
@@ -82,4 +96,40 @@ test('add-location validation only accepts real Google Maps URL hosts', async ()
   assert.equal(validateAddLocation('', 'https://maps.app.goo.glevil/abc'), 'err_maps_invalid');
   assert.equal(validateAddLocation('', 'https://maps.google.com.evil/?q=Bangkok'), 'err_maps_invalid');
   assert.equal(validateAddLocation('', 'https://example.com/maps'), 'err_maps_invalid');
+});
+
+test('Netlify submit local mock records pending and delegates success handling', async () => {
+  const html = await loadIndexHtml();
+  const elements = {
+    submit: { disabled: false, textContent: '' },
+    feedback: { className: 'old', textContent: 'old' },
+  };
+  let pendingCount = 0;
+  const { doNetlifySubmit } = getNetlifySubmitFunctions(html, {
+    location: { hostname: 'localhost' },
+    document: { getElementById: (id) => elements[id] },
+    recordPending: () => { pendingCount += 1; },
+    t: (key) => ({ submitting: 'Submitting...' }[key] || key),
+    console: { info: () => {} },
+  });
+
+  let successFeedback = null;
+  await doNetlifySubmit(
+    'submit',
+    'feedback',
+    'Submit',
+    { 'form-name': 'add-location' },
+    (fb) => {
+      successFeedback = fb;
+      fb.className = 'submit-feedback ok';
+      fb.textContent = 'ok';
+    },
+  );
+
+  assert.equal(pendingCount, 1);
+  assert.equal(successFeedback, elements.feedback);
+  assert.equal(elements.submit.disabled, true);
+  assert.equal(elements.submit.textContent, 'Submitting...');
+  assert.equal(elements.feedback.className, 'submit-feedback ok');
+  assert.equal(elements.feedback.textContent, 'ok');
 });

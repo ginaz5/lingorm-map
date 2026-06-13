@@ -64,19 +64,13 @@ Rewrote `loadParsers()` to extract the full CSV parser section by banner marker 
 
 All 27 passing.
 
-### ⬜ `doNetlifySubmit` — extract success callback instead of branching on `modalId`
+### ✅ `doNetlifySubmit` — extract success callback instead of branching on `modalId`
 **Scope:** `index.html`
 
-```js
-// Current: generic function knows too much about specific modals
-if (modalId === 'add-modal') showAddSuccess();
-else { /* edit flow */ }
-
-// Target: pass onSuccess callback
-async function doNetlifySubmit(btnId, fbId, btnLabel, payload, onSuccess)
-```
-
-Callers own their success behaviour; `doNetlifySubmit` stays generic.
+Replaced `modalId` parameter with `onSuccess` callback. `doNetlifySubmit` now calls `onSuccess(fb)`
+on success; callers own their post-submit behaviour:
+- `submitAdd` passes `showAddSuccess` directly
+- `submitEdit` passes an inline callback that sets the feedback element to ok-state and auto-closes the modal
 
 ### ⬜ Extract `rebuildSelect(sel, html)` helper
 **Scope:** `index.html` (`buildStatusFilter`, `buildCatFilter`)

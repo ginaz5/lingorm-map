@@ -985,6 +985,7 @@ function closeEditModal(){document.getElementById('edit-modal').classList.remove
 async function submitEdit(){
   const idx=parseInt(document.getElementById('edit-location-index').value);
   const row=data[idx];
+  const editFb=document.getElementById('edit-feedback');
   await doNetlifySubmit('edit-submit-btn','edit-feedback',t('edit_submit'),{
     'form-name':'suggest-edit','bot-field':'',
     location_name:`${row.nameZh} / ${row.nameEn}`,
@@ -997,7 +998,10 @@ async function submitEdit(){
     notes_en:document.getElementById('edit-notes-en').value.trim(),
     reason:document.getElementById('edit-reason').value.trim(),
     submitter:document.getElementById('edit-submitter').value.trim(),
-  },'edit-modal');
+  },()=>{
+    editFb.className='submit-feedback ok';editFb.textContent=t('submit_ok');
+    setTimeout(()=>document.getElementById('edit-modal')?.classList.remove('open'),2200);
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -1061,7 +1065,7 @@ async function submitAdd(){
   const fb=document.getElementById('add-feedback');
   const errorKey=validateAddLocation(name,maps);
   if(errorKey){fb.className='submit-feedback err';fb.textContent=t(errorKey);return}
-  await doNetlifySubmit('add-submit-btn','add-feedback',t('add_submit'),buildAddLocationPayload(),'add-modal');
+  await doNetlifySubmit('add-submit-btn','add-feedback',t('add_submit'),buildAddLocationPayload(),showAddSuccess);
 }
 
 // ═══════════════════════════════════════════════════
@@ -1070,7 +1074,7 @@ async function submitAdd(){
 function shouldMockNetlifySubmit(){
   return ['localhost','127.0.0.1','[::1]'].includes(location.hostname);
 }
-async function doNetlifySubmit(btnId,fbId,btnLabel,payload,modalId){
+async function doNetlifySubmit(btnId,fbId,btnLabel,payload,onSuccess){
   const btn=document.getElementById(btnId);
   const fb=document.getElementById(fbId);
   btn.disabled=true;btn.textContent=t('submitting');
@@ -1078,11 +1082,7 @@ async function doNetlifySubmit(btnId,fbId,btnLabel,payload,modalId){
   if(shouldMockNetlifySubmit()){
     console.info('[local Netlify Forms mock]',payload['form-name'],payload);
     recordPending();
-    if(modalId==='add-modal')showAddSuccess();
-    else{
-      fb.className='submit-feedback ok';fb.textContent=t('submit_ok');
-      setTimeout(()=>document.getElementById(modalId)?.classList.remove('open'),2200);
-    }
+    onSuccess(fb);
     return;
   }
   try{
@@ -1091,11 +1091,7 @@ async function doNetlifySubmit(btnId,fbId,btnLabel,payload,modalId){
       body:new URLSearchParams(payload).toString()});
     if(resp.ok){
       recordPending();
-      if(modalId==='add-modal')showAddSuccess();
-      else{
-        fb.className='submit-feedback ok';fb.textContent=t('submit_ok');
-        setTimeout(()=>document.getElementById(modalId)?.classList.remove('open'),2200);
-      }
+      onSuccess(fb);
     }else{throw new Error(resp.status)}
   }catch(e){
     fb.className='submit-feedback err';fb.textContent=t('submit_err');
