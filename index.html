@@ -167,54 +167,62 @@
       <span class="modal-title" data-i18n="add_title"></span>
       <button class="modal-close" onclick="closeAddModal()">✕</button>
     </div>
-    <p class="modal-desc" data-i18n="add_desc"></p>
+    <p class="modal-desc" id="add-modal-desc" data-i18n="add_desc"></p>
     <div class="modal-body">
-      <div class="form-row">
-        <label class="form-label"><span data-i18n="add_lbl_name"></span><span class="required-mark"> *</span></label>
-        <input class="form-input" id="add-name" data-i18n-ph="add_ph_name"/>
-      </div>
-      <div class="form-row">
-        <label class="form-label" data-i18n="add_lbl_cat"></label>
-        <select class="form-select" id="add-cat"></select>
-      </div>
-      <div class="form-row">
-        <label class="form-label"><span data-i18n="add_lbl_maps"></span><span class="required-mark"> *</span></label>
-        <input class="form-input" id="add-maps" data-i18n-ph="add_ph_maps" type="url"/>
-        <div class="form-hint" data-i18n="add_hint_maps"></div>
-      </div>
-      <div class="form-row">
-        <label class="form-label"><span data-i18n="add_lbl_notes"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
-        <textarea class="form-textarea" id="add-notes" rows="2" data-i18n-ph="add_ph_notes"></textarea>
-      </div>
-      <div class="form-row">
-        <label class="form-label" data-i18n="add_lbl_status"></label>
-        <div class="status-opts">
-          <input class="status-opt" type="radio" name="new-status" id="ns-verified" value="Verified"/>
-          <label for="ns-verified" data-i18n="st_verified"></label>
-          <input class="status-opt" type="radio" name="new-status" id="ns-review" value="Needs Review" checked/>
-          <label for="ns-review" data-i18n="st_review"></label>
-          <input class="status-opt" type="radio" name="new-status" id="ns-notfound" value="Could Not Find"/>
-          <label for="ns-notfound" data-i18n="st_notfound"></label>
+      <div id="add-form-view">
+        <div class="form-row">
+          <label class="form-label"><span data-i18n="add_lbl_name"></span><span class="required-mark"> *</span></label>
+          <input class="form-input" id="add-name" data-i18n-ph="add_ph_name"/>
         </div>
+        <div class="form-row">
+          <label class="form-label" data-i18n="add_lbl_cat"></label>
+          <select class="form-select" id="add-cat"></select>
+        </div>
+        <div class="form-row">
+          <label class="form-label"><span data-i18n="add_lbl_maps"></span><span class="required-mark"> *</span></label>
+          <input class="form-input" id="add-maps" data-i18n-ph="add_ph_maps" type="url"/>
+          <div class="form-hint" data-i18n="add_hint_maps"></div>
+        </div>
+        <div class="form-row">
+          <label class="form-label"><span data-i18n="add_lbl_notes"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
+          <textarea class="form-textarea" id="add-notes" rows="2" data-i18n-ph="add_ph_notes"></textarea>
+        </div>
+        <div class="form-row">
+          <label class="form-label" data-i18n="add_lbl_status"></label>
+          <div class="status-opts">
+            <input class="status-opt" type="radio" name="new-status" id="ns-verified" value="Verified"/>
+            <label for="ns-verified" data-i18n="st_verified"></label>
+            <input class="status-opt" type="radio" name="new-status" id="ns-review" value="Needs Review" checked/>
+            <label for="ns-review" data-i18n="st_review"></label>
+            <input class="status-opt" type="radio" name="new-status" id="ns-notfound" value="Could Not Find"/>
+            <label for="ns-notfound" data-i18n="st_notfound"></label>
+          </div>
+        </div>
+        <hr class="form-divider"/>
+        <div class="form-row">
+          <label class="form-label">
+            <span data-i18n="add_lbl_source"></span> <span class="lbl-opt" data-i18n="add_lbl_source_opt"></span>
+          </label>
+          <input class="form-input" id="add-source" type="url" placeholder="https://www.instagram.com/p/..."/>
+        </div>
+        <div class="form-row">
+          <label class="form-label">
+            <span data-i18n="add_lbl_submitter"></span> <span class="lbl-opt" data-i18n="opt"></span>
+          </label>
+          <input class="form-input" id="add-submitter" data-i18n-ph="ph_submitter"/>
+        </div>
+        <div class="submit-feedback" id="add-feedback"></div>
       </div>
-      <hr class="form-divider"/>
-      <div class="form-row">
-        <label class="form-label">
-          <span data-i18n="add_lbl_source"></span> <span class="lbl-opt" data-i18n="add_lbl_source_opt"></span>
-        </label>
-        <input class="form-input" id="add-source" type="url" placeholder="https://www.instagram.com/p/..."/>
+      <div class="success-view" id="add-success-view">
+        <div class="success-icon">✓</div>
+        <h3 data-i18n="add_success_title"></h3>
+        <p data-i18n="add_success_desc"></p>
       </div>
-      <div class="form-row">
-        <label class="form-label">
-          <span data-i18n="add_lbl_submitter"></span> <span class="lbl-opt" data-i18n="opt"></span>
-        </label>
-        <input class="form-input" id="add-submitter" data-i18n-ph="ph_submitter"/>
-      </div>
-      <div class="submit-feedback" id="add-feedback"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeAddModal()" data-i18n="cancel"></button>
+      <button class="btn-ghost" id="add-cancel-btn" onclick="closeAddModal()" data-i18n="cancel"></button>
       <button class="btn-primary" id="add-submit-btn" onclick="submitAdd()" data-i18n="add_submit"></button>
+      <button class="btn-primary" id="add-done-btn" onclick="closeAddModal()" data-i18n="done"></button>
     </div>
   </div>
 </div>
@@ -277,8 +285,8 @@ const LOCATIONS_API = '/api/locations';
 const CATEGORIES = [
   {zh:'餐廳',       en:'Restaurant',         icon:'🍽'},
   {zh:'咖啡廳',     en:'Cafe',               icon:'☕'},
-  {zh:'酒店',       en:'Hotel',              icon:'🏨'},
-  {zh:'酒吧 / 俱樂部', en:'Bar / Club',      icon:'🍸'},
+  {zh:'飯店',       en:'Hotel',              icon:'🏨'},
+  {zh:'酒吧/天台俱樂部', en:'Bar / Rooftop Club', icon:'🍸'},
   {zh:'街頭小吃',   en:'Street Food',        icon:'🍢'},
   {zh:'Spa',        en:'Spa',                icon:'♨️'},
   {zh:'購物',       en:'Shopping',           icon:'🛍'},
@@ -348,11 +356,13 @@ const T = {
     add_lbl_source_opt: '（選填，例如 IG 貼文、YT 影片網址）',
     add_lbl_submitter: '你的名字 / 聯絡方式',
     add_submit: '送出',
+    add_success_title: '感謝您的地點貢獻',
+    add_success_desc: '我們已收到您的建議，管理員審核後會加入地圖。',
     // Validation
     err_name_required: '請填寫地點名稱。',
     err_maps_required: '請填寫 Google Maps 連結。',
     // Common
-    opt: '（選填）', cancel: '取消',
+    opt: '（選填）', cancel: '取消', done: '完成',
     st_verified: '✅ 已驗證', st_review: '⚠️ 待確認', st_notfound: '❌ 找不到',
     ph_submitter: '例：@your_ig',
     // Admin auth
@@ -427,11 +437,13 @@ const T = {
     add_lbl_source_opt: '(optional, e.g. IG post, YouTube URL)',
     add_lbl_submitter: 'Your name / contact',
     add_submit: 'Submit',
+    add_success_title: 'Thanks for contributing a location',
+    add_success_desc: "We've received your suggestion. An admin will review it before adding it to the map.",
     // Validation
     err_name_required: 'Please enter the location name.',
     err_maps_required: 'Please enter a Google Maps link.',
     // Common
-    opt: '(optional)', cancel: 'Cancel',
+    opt: '(optional)', cancel: 'Cancel', done: 'Done',
     st_verified: '✅ Verified', st_review: '⚠️ Needs Review', st_notfound: '❌ Not Found',
     ph_submitter: 'e.g. @your_ig',
     // Admin auth
@@ -462,8 +474,8 @@ function tobj(k, s) { return (T[lang][k] || {})[s] || s; }
 // EMBEDDED DATA
 // ═══════════════════════════════════════════════════
 const EMBEDDED = [
-  ["The Siam Hotel","暹羅精品酒店","","Hotel","酒店","Luxury boutique hotel with Art Deco design and private pool villas on the Chao Phraya. KKday Lingorm luxury itinerary. Reserve ahead.","曼谷頂級精品酒店，Art Deco 設計風格，設私人泳池 Villa。KKday 玲玲奢華行程主打住宿。建議提前預訂。","🏨",13.7608,100.5089,"The+Siam+Hotel+Bangkok","Verified","","KKday","FALSE",""],
-  ["InterContinental Khao Yai Resort","考艾洲際度假酒店","","Hotel","酒店","Orient Express-inspired train-themed resort. ~2.5 hrs from Bangkok. Lingorm's travel show.","以老式火車為主題設計的度假酒店。距曼谷約 2.5 小時。玲玲旅遊節目中出現。","🏨",14.4422,101.372,"InterContinental+Khao+Yai+Resort+Thailand","Verified","","KKday","TRUE",""],
+  ["The Siam Hotel","暹羅精品酒店","","Hotel","飯店","Luxury boutique hotel with Art Deco design and private pool villas on the Chao Phraya. KKday Lingorm luxury itinerary. Reserve ahead.","曼谷頂級精品酒店，Art Deco 設計風格，設私人泳池 Villa。KKday 玲玲奢華行程主打住宿。建議提前預訂。","🏨",13.7608,100.5089,"The+Siam+Hotel+Bangkok","Verified","","KKday","FALSE",""],
+  ["InterContinental Khao Yai Resort","考艾洲際度假酒店","","Hotel","飯店","Orient Express-inspired train-themed resort. ~2.5 hrs from Bangkok. Lingorm's travel show.","以老式火車為主題設計的度假酒店。距曼谷約 2.5 小時。玲玲旅遊節目中出現。","🏨",14.4422,101.372,"InterContinental+Khao+Yai+Resort+Thailand","Verified","","KKday","TRUE",""],
   ["Ministry of Crab Bangkok","蟹之省曼谷店","","Restaurant","餐廳","Famous Sri Lankan giant crab restaurant. Lingorm's luxury pick. Reserve ahead.","斯里蘭卡巨蟹名店，辣味/蒜香/胡椒/牛油多種烹調。玲玲奢華行程推薦，需預訂。","🦀",13.7262,100.5155,"Ministry+of+Crab+Bangkok","Verified","","KKday","TRUE",""],
   ["Everyday MooKrata","Everyday 燒烤火鍋","Everyday MooKrata & Lobster City","Restaurant","餐廳","Mookata (Thai BBQ hot pot) with river views. KKday Lingorm trendy pick.","可邊賞河景邊享用泰式烤烘火鍋。KKday 玲玲同款潮流餐廳。","🍖",13.735,100.51,"Everyday+MooKrata+Bangkok","Needs Review","","KKday","TRUE",""],
   ["Lobster City","Lobster City 蝦肉飯","","Restaurant","餐廳","Famous for high-value shrimp rice. Long queues — go off-peak.","招牌鮮甜蝦肉飯 CP 值超高，常有長龍，建議避開繁忙時段。","🦐",13.73,100.52,"Lobster+City+Bangkok","Needs Review","","KKday","TRUE",""],
@@ -479,10 +491,10 @@ const EMBEDDED = [
   ["Chagô","Chagô 飲品店","ชาโก้","Cafe","咖啡廳","Photogenic drink brand on Lingorm's map.","上鏡感十足的人氣飲品店，出現在玲玲地圖及 @my_go_go_d 貼文。","🧋",13.746,100.535,"Chago+ชาโก้+Bangkok","Needs Review","","Trip.com + @my_go_go_d","TRUE",""],
   ["Oh! Juice","Oh! Juice 鮮果汁","Ocean N Earth juice bar","Cafe","咖啡廳","Lingorm ordered 'Ocean N Earth' (avocado+coconut+banana), 280-340 THB.","玲玲點「Ocean N Earth」（牛油果+椰子+香蕉），280–340 泰銖。","🥤",13.74,100.56,"Oh+Juice+Bangkok","Needs Review","Group B","KKday + @my_go_go_d","TRUE",""],
   ["Ternajachob Cafe","Ternajachob 咖啡廳","Thai drama 'Our Secret' filming location","Cafe","咖啡廳","Filming location for Thai drama 'Our Secret'. Fan pilgrimage.","泰劇《我們的秘密》拍攝場地。玲玲粉絲朝聖必去。","🎬",13.755,100.53,"Ternajachob+Cafe+Bangkok","Needs Review","","KKday","TRUE",""],
-  ["32 Bar","32 Bar","Talat Noi","Bar / Club","酒吧 / 俱樂部","Bar in Talat Noi where Lingorm's group had chocolate drinks.","位於 Talat Noi 的酒吧，玲玲一行人在此喝巧克力飲品。","🍫",13.7348,100.514,"32+Bar+Talat+Noi+Bangkok","Needs Review","","Threads @nightviper74","TRUE",""],
+  ["32 Bar","32 Bar","Talat Noi","Bar / Rooftop Club","酒吧/天台俱樂部","Bar in Talat Noi where Lingorm's group had chocolate drinks.","位於 Talat Noi 的酒吧，玲玲一行人在此喝巧克力飲品。","🍫",13.7348,100.514,"32+Bar+Talat+Noi+Bangkok","Needs Review","","Threads @nightviper74","TRUE",""],
   ["Sook Sabai Onsen & Spa","舒適泰日式溫泉 SPA","","Spa","Spa","Japanese onsen + Thai massage in private rooms. Lingorm's luxury relaxation pick.","結合日式溫泉與泰式按摩，提供高隱私度的包廂。玲玲奢華行程推薦的放鬆環節。","♨️",13.76,100.57,"Sook+Sabai+Onsen+Spa+Bangkok","Verified","","KKday","TRUE",""],
   ["Maison Charoenkrung","Maison Charoenkrung","Fashion boutique","Shopping","購物","Fashion boutique on Charoenkrung road associated with Lingorm's style.","石龍軍路上的時尚精品店，與玲玲相關服裝風格有關聯。","👗",13.7268,100.5139,"Maison+Charoenkrung+Bangkok","Needs Review","","Threads @nightviper74","TRUE",""],
-  ["Tribe Sky Beach Club","Tribe 天空沙灘俱樂部","Rooftop at Emsphere Mall","Bar / Club","酒吧 / 俱樂部","Rooftop beach club atop Emsphere mall. Infinity pool, cocktails, city sunset.","Emsphere 商場頂層天台沙灘俱樂部，無邊際泳池、雞尾酒、城市日落。","🏖️",13.7313,100.5694,"Tribe+Sky+Beach+Club+Emsphere+Bangkok","Verified","","KKday","FALSE",""],
+  ["Tribe Sky Beach Club","Tribe 天空沙灘俱樂部","Rooftop at Emsphere Mall","Bar / Rooftop Club","酒吧/天台俱樂部","Rooftop beach club atop Emsphere mall. Infinity pool, cocktails, city sunset.","Emsphere 商場頂層天台沙灘俱樂部，無邊際泳池、雞尾酒、城市日落。","🏖️",13.7313,100.5694,"Tribe+Sky+Beach+Club+Emsphere+Bangkok","Verified","","KKday","FALSE",""],
   ["SkyRise Adventures","SkyRise 高空歷險","Central Westville rooftop","Activity","活動","High-altitude rope course atop Central Westville mall.","Central Westville 商場頂層高空繩網設施，考驗膽量。","🧗",13.8637,100.4295,"SkyRise+Adventures+Central+Westville+Bangkok","Needs Review","","KKday","TRUE",""],
   ["Tue Kha Tang","豬肘凍","ตือ ข้า ตัง (approx)","Street Food","街頭小吃","Pork knuckle jelly from Lingorm's TV show. Location unconfirmed.","玲玲節目中品嚐的豬肘凍。確切位置未確認，建議在 Talat Noi 一帶尋找。","🥩",13.735,100.515,"pork+knuckle+jelly+Talat+Noi+Bangkok","Needs Review","","KKday","TRUE",""],
   ["Talat Noi","Talat Noi 老街區","Historic riverside quarter","Neighbourhood","街區","Historic Chinese-influenced riverside quarter. Lingorm visited. Great for walking.","曼谷歷史華人聚居區，玲玲一行人曾到訪。適合步行探索街頭藝術、老商店。","🏘️",13.7348,100.514,"Talat+Noi+Bangkok","Verified","","Threads @nightviper74","FALSE",""],
@@ -492,6 +504,34 @@ const EMBEDDED = [
 
 const C={EN:0,ZH:1,ALT:2,CAT_EN:3,CAT_ZH:4,NOTES_EN:5,NOTES_ZH:6,
          ICON:7,LAT:8,LNG:9,MAPS:10,STATUS:11,DUP:12,SRC:13,APPROX:14,SOURCE_URL:15};
+
+const CATEGORY_ALIASES = {
+  "Hotel": {en:"Hotel", zh:"飯店"},
+  "酒店": {en:"Hotel", zh:"飯店"},
+  "飯店": {en:"Hotel", zh:"飯店"},
+  "Bar": {en:"Bar / Rooftop Club", zh:"酒吧/天台俱樂部"},
+  "酒吧": {en:"Bar / Rooftop Club", zh:"酒吧/天台俱樂部"},
+  "Bar / Club": {en:"Bar / Rooftop Club", zh:"酒吧/天台俱樂部"},
+  "酒吧 / 俱樂部": {en:"Bar / Rooftop Club", zh:"酒吧/天台俱樂部"},
+  "酒吧/俱樂部": {en:"Bar / Rooftop Club", zh:"酒吧/天台俱樂部"},
+  "Bar / Rooftop Club": {en:"Bar / Rooftop Club", zh:"酒吧/天台俱樂部"},
+  "酒吧 / 天台俱樂部": {en:"Bar / Rooftop Club", zh:"酒吧/天台俱樂部"},
+  "酒吧/天台俱樂部": {en:"Bar / Rooftop Club", zh:"酒吧/天台俱樂部"},
+};
+
+function normalizeCategoryRow(row){
+  const normalized=[...row];
+  const alias=CATEGORY_ALIASES[normalized[C.CAT_EN]]||CATEGORY_ALIASES[normalized[C.CAT_ZH]];
+  if(alias){
+    normalized[C.CAT_EN]=alias.en;
+    normalized[C.CAT_ZH]=alias.zh;
+  }
+  return normalized;
+}
+
+function normalizeCategoryRows(rows){
+  return rows.map(normalizeCategoryRow);
+}
 
 // ═══════════════════════════════════════════════════
 // CSV PARSER
@@ -518,7 +558,7 @@ function parseCSV(text){
   // Source_URL is optional — only fail validation if core keys are missing
   const coreKeys=keys.slice(0,15);
   if(present(coreKeys)){
-    return rows.slice(1).filter(r=>r.join('').trim()).map(r=>keys.map(k=>read(r,k)));
+    return normalizeCategoryRows(rows.slice(1).filter(r=>r.join('').trim()).map(r=>keys.map(k=>read(r,k))));
   }
 
   const publishedKeys=["Location Name","Thai / Alt Name","Category",
@@ -533,7 +573,7 @@ function parseCSV(text){
   };
   const zhByCat={
     "Restaurant":"餐廳","Cafe":"咖啡廳","Cafe / Beverage":"咖啡廳 / 飲品","Cafe / Juice Bar":"咖啡廳 / 果汁",
-    "Hotel":"酒店","Bar":"酒吧","Bar / Club":"酒吧 / 俱樂部","Bar / Rooftop Club":"酒吧 / 天台俱樂部","Spa":"Spa",
+    "Hotel":"飯店","Bar":"酒吧/天台俱樂部","Bar / Club":"酒吧/天台俱樂部","Bar / Rooftop Club":"酒吧/天台俱樂部","Spa":"Spa",
     "Shopping":"購物","Activity":"活動","Filming Location":"拍攝場地",
     "Nature / Day-trip":"自然 / 一日遊","Street Food":"街頭小吃","Neighbourhood":"街區"
   };
@@ -563,10 +603,10 @@ function parseCSV(text){
     if(maps&&!/open in maps/i.test(maps)&&!/^📍/.test(maps))return maps;
     return name?`${name} Bangkok`:"";
   };
-  return rows.slice(1).filter(r=>r.join('').trim()&&!/^source note$/i.test(read(r,"Category"))).map(r=>{
+  return normalizeCategoryRows(rows.slice(1).filter(r=>r.join('').trim()&&!/^source note$/i.test(read(r,"Category"))).map(r=>{
     const name=read(r,"Location Name");
     const nameZh=read(r,"Location Name ZH")||name;
-    const cat=read(r,"Category");
+    const cat=(CATEGORY_ALIASES[read(r,"Category")]||{en:read(r,"Category")}).en;
     const notes=read(r,"Notes");
     const notesZh=read(r,"Notes ZH")||notes;
     const sourceUrl=read(r,"Source URL");
@@ -585,7 +625,7 @@ function parseCSV(text){
       read(r,"Coordinates Approx")||"TRUE",
       sourceUrl
     ];
-  });
+  }));
 }
 
 function hydrateSheetRows(rows){
@@ -596,22 +636,22 @@ function hydrateSheetRows(rows){
     .trim();
   const embeddedByName=new Map(EMBEDDED.map(r=>[normalizeName(r[C.EN]),r]));
   return rows.map(row=>{
-    if(row[C.LAT]&&row[C.LNG])return row;
+    if(row[C.LAT]&&row[C.LNG])return normalizeCategoryRow(row);
     const match=embeddedByName.get(normalizeName(row[C.EN]));
-    if(!match)return row;
+    if(!match)return normalizeCategoryRow(row);
     const hydrated=[...row];
     if(!hydrated[C.LAT])hydrated[C.LAT]=String(match[C.LAT]||"");
     if(!hydrated[C.LNG])hydrated[C.LNG]=String(match[C.LNG]||"");
     if(!hydrated[C.MAPS])hydrated[C.MAPS]=String(match[C.MAPS]||"");
     if(!hydrated[C.ICON])hydrated[C.ICON]=String(match[C.ICON]||"📍");
-    return hydrated;
+    return normalizeCategoryRow(hydrated);
   });
 }
 
 // ═══════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════
-let data=EMBEDDED, visIdx=[], activeIdx=-1;
+let data=normalizeCategoryRows(EMBEDDED), visIdx=[], activeIdx=-1;
 
 // ═══════════════════════════════════════════════════
 // MAP (Google Maps JS API)
@@ -937,10 +977,15 @@ function openAddModal(){
   ADD_LOCATION_INPUT_IDS.forEach(id=>
     document.getElementById(id).value='');
   document.getElementById('ns-review').checked=true;
+  document.getElementById('add-modal').classList.remove('is-success');
   resetFeedback('add-feedback','add-submit-btn',t('add_submit'));
   document.getElementById('add-modal').classList.add('open');
 }
-function closeAddModal(){document.getElementById('add-modal').classList.remove('open')}
+function closeAddModal(){document.getElementById('add-modal').classList.remove('open','is-success')}
+function showAddSuccess(){
+  document.getElementById('add-modal').classList.add('is-success');
+  resetFeedback('add-feedback','add-submit-btn',t('add_submit'));
+}
 function validateAddLocation(name,maps){
   if(!name)return 'err_name_required';
   if(!maps)return 'err_maps_required';
@@ -978,19 +1023,35 @@ async function submitAdd(){
 // ═══════════════════════════════════════════════════
 // NETLIFY SUBMIT
 // ═══════════════════════════════════════════════════
+function shouldMockNetlifySubmit(){
+  return ['localhost','127.0.0.1','[::1]'].includes(location.hostname);
+}
 async function doNetlifySubmit(btnId,fbId,btnLabel,payload,modalId){
   const btn=document.getElementById(btnId);
   const fb=document.getElementById(fbId);
   btn.disabled=true;btn.textContent=t('submitting');
   fb.className='submit-feedback';fb.textContent='';
+  if(shouldMockNetlifySubmit()){
+    console.info('[local Netlify Forms mock]',payload['form-name'],payload);
+    recordPending();
+    if(modalId==='add-modal')showAddSuccess();
+    else{
+      fb.className='submit-feedback ok';fb.textContent=t('submit_ok');
+      setTimeout(()=>document.getElementById(modalId)?.classList.remove('open'),2200);
+    }
+    return;
+  }
   try{
     const resp=await fetch('/',{method:'POST',
       headers:{'Content-Type':'application/x-www-form-urlencoded'},
       body:new URLSearchParams(payload).toString()});
     if(resp.ok){
-      fb.className='submit-feedback ok';fb.textContent=t('submit_ok');
       recordPending();
-      setTimeout(()=>document.getElementById(modalId)?.classList.remove('open'),2200);
+      if(modalId==='add-modal')showAddSuccess();
+      else{
+        fb.className='submit-feedback ok';fb.textContent=t('submit_ok');
+        setTimeout(()=>document.getElementById(modalId)?.classList.remove('open'),2200);
+      }
     }else{throw new Error(resp.status)}
   }catch(e){
     fb.className='submit-feedback err';fb.textContent=t('submit_err');
@@ -1073,7 +1134,7 @@ async function saveSheet(){
   }
 }
 function clearSheet(){
-  data=EMBEDDED;
+  data=normalizeCategoryRows(EMBEDDED);
   document.getElementById('sheet-status').className='sheet-status';
   document.getElementById('sheet-status').textContent=t('sheet_cleared');
   rebuild();

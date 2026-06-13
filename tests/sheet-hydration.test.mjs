@@ -6,13 +6,15 @@ async function loadHydrator() {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const embeddedMatch = html.match(/const EMBEDDED = \[[\s\S]*?\n\];/);
   const cMatch = html.match(/const C=\{[\s\S]*?\};/);
+  const categoryMatch = html.match(/const CATEGORY_ALIASES = \{[\s\S]*?function normalizeCategoryRows\(rows\)\{[\s\S]*?\n\}/);
   const hydrateMatch = html.match(/function hydrateSheetRows\(rows\)\{[\s\S]*?\n\}/);
 
   assert.ok(embeddedMatch, 'EMBEDDED data should exist in index.html');
   assert.ok(cMatch, 'column indexes should exist in index.html');
+  assert.ok(categoryMatch, 'category normalization helpers should exist in index.html');
   assert.ok(hydrateMatch, 'hydrateSheetRows function should exist in index.html');
 
-  return Function(`${embeddedMatch[0]}\n${cMatch[0]}\n${hydrateMatch[0]}; return {C, hydrateSheetRows};`)();
+  return Function(`${embeddedMatch[0]}\n${cMatch[0]}\n${categoryMatch[0]}\n${hydrateMatch[0]}; return {C, hydrateSheetRows};`)();
 }
 
 test('hydrateSheetRows fills missing coordinates from embedded rows by location name', async () => {

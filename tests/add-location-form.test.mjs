@@ -34,3 +34,31 @@ test('add-location Netlify detection form declares every submitted field', async
 
   assert.deepEqual(missingFields, []);
 });
+
+test('Netlify form submit mock is limited to local development hosts', async () => {
+  const html = await loadIndexHtml();
+  const mockMatch = html.match(/function shouldMockNetlifySubmit\(\)\{[\s\S]*?\n\}/);
+  assert.ok(mockMatch, 'shouldMockNetlifySubmit function should exist');
+
+  const shouldMockFor = (hostname) => Function(
+    'location',
+    `${mockMatch[0]}; return shouldMockNetlifySubmit();`,
+  )({ hostname });
+
+  assert.equal(shouldMockFor('localhost'), true);
+  assert.equal(shouldMockFor('127.0.0.1'), true);
+  assert.equal(shouldMockFor('[::1]'), true);
+  assert.equal(shouldMockFor('lingorm-map.netlify.app'), false);
+});
+
+test('add-location modal has localized success view copy', async () => {
+  const html = await loadIndexHtml();
+
+  assert.match(html, /id="add-form-view"/);
+  assert.match(html, /id="add-success-view"/);
+  assert.match(html, /data-i18n="add_success_title"/);
+  assert.match(html, /data-i18n="add_success_desc"/);
+  assert.match(html, /data-i18n="done"/);
+  assert.match(html, /add_success_title:\s*'感謝您的地點貢獻'/);
+  assert.match(html, /add_success_title:\s*'Thanks for contributing a location'/);
+});

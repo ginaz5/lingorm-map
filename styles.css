@@ -160,6 +160,18 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 .modal-body{overflow-y:auto;flex:1;padding-right:2px}
 .modal-body::-webkit-scrollbar{width:4px}
 .modal-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#add-success-view,#add-done-btn{display:none}
+#add-modal.is-success #add-form-view,#add-modal.is-success #add-modal-desc,
+#add-modal.is-success #add-cancel-btn,#add-modal.is-success #add-submit-btn{display:none}
+#add-modal.is-success #add-success-view{display:flex}
+#add-modal.is-success #add-done-btn{display:inline-flex}
+.success-view{min-height:260px;align-items:center;justify-content:center;text-align:center;
+  flex-direction:column;padding:24px 8px}
+.success-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;background:var(--verified);color:#fff;font-size:30px;font-weight:700;
+  margin-bottom:18px}
+.success-view h3{font-size:20px;margin:0 0 8px;color:var(--text)}
+.success-view p{font-size:14px;line-height:1.6;color:var(--text-muted);margin:0;max-width:320px}
 .form-row{margin-bottom:13px}
 .form-label{font-size:12px;font-weight:600;display:block;margin-bottom:5px;color:var(--text-muted)}
 .lbl-opt{font-weight:400}

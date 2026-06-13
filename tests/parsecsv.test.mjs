@@ -4,9 +4,11 @@ import test from 'node:test';
 
 async function loadParseCSV() {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const depsMatch = html.match(/const C=\{[\s\S]*?function normalizeCategoryRows\(rows\)\{[\s\S]*?\n\}/);
   const match = html.match(/function parseCSV\(text\)\{[\s\S]*?\n\}/);
+  assert.ok(depsMatch, 'parseCSV dependencies should exist in index.html');
   assert.ok(match, 'parseCSV function should exist in index.html');
-  return Function(`${match[0]}; return parseCSV;`)();
+  return Function(`${depsMatch[0]}\n${match[0]}; return parseCSV;`)();
 }
 
 test('parseCSV returns rows when required app headers are present', async () => {
@@ -21,7 +23,7 @@ test('parseCSV returns rows when required app headers are present', async () => 
     '暹羅精品酒店',
     '',
     'Hotel',
-    '酒店',
+    '飯店',
     'English notes',
     '中文說明',
     '🏨',
@@ -49,7 +51,7 @@ test('parseCSV maps published spreadsheet headers to app rows', async () => {
     '暹羅精品酒店',
     '',
     'Hotel',
-    '酒店',
+    '飯店',
     'Luxury hotel',
     '河畔精品酒店',
     '🏨',
