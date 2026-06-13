@@ -508,96 +508,128 @@ function normalizeCategoryRows(rows){
 // ═══════════════════════════════════════════════════
 // CSV PARSER
 // ═══════════════════════════════════════════════════
-function parseCSV(text){
-  const rows=[];let row=[];let field='';let inQ=false;
-  for(let i=0;i<text.length;i++){
-    const ch=text[i],nx=text[i+1];
-    if(inQ){if(ch==='"'&&nx==='"'){field+='"';i++}else if(ch==='"'){inQ=false}else{field+=ch}}
-    else{if(ch==='"'){inQ=true}else if(ch===','){row.push(field);field=''}
-      else if(ch==='\r'&&nx==='\n'){row.push(field);rows.push(row);row=[];field='';i++}
-      else if(ch==='\n'||ch==='\r'){row.push(field);rows.push(row);row=[];field=''}
-      else{field+=ch}}
-  }
-  if(field||row.length){row.push(field);rows.push(row)}
-  if(rows.length<2)return null;
-  const headers=rows[0].map(h=>h.replace(/^\uFEFF/,'').trim());
-  const idx={};headers.forEach((h,i)=>idx[h]=i);
-  const keys=["Name_EN","Name_ZH","Alt_Name","Category_EN","Category_ZH",
-              "Notes_EN","Notes_ZH","Icon","Lat","Lng",
-              "Maps_Query","Status","Duplicate_Group","Source","Coords_Approx","Source_URL"];
-  const read=(r,k)=>(idx[k]!==undefined?r[idx[k]]||'':'').trim();
-  const present=ks=>ks.every(k=>idx[k]!==undefined);
-  // Source_URL is optional — only fail validation if core keys are missing
-  const coreKeys=keys.slice(0,15);
-  if(present(coreKeys)){
-    return normalizeCategoryRows(rows.slice(1).filter(r=>r.join('').trim()).map(r=>keys.map(k=>read(r,k))));
-  }
 
-  const publishedKeys=["Location Name","Thai / Alt Name","Category",
-                       "Notes","Source URL","Verification Status","Duplicate Group"];
-  if(!present(publishedKeys))return null;
+// Tokenize RFC 4180-ish CSV text into a 2D array of strings
+function tokenizeCSV(text) {
+  const rows = []; let row = []; let field = ''; let inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i], nx = text[i + 1];
+    if (inQ) {
+      if (ch === '"' && nx === '"') { field += '"'; i++; }
+      else if (ch === '"') { inQ = false; }
+      else { field += ch; }
+    } else {
+      if (ch === '"') { inQ = true; }
+      else if (ch === ',') { row.push(field); field = ''; }
+      else if (ch === '\r' && nx === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++; }
+      else if (ch === '\n' || ch === '\r') { row.push(field); rows.push(row); row = []; field = ''; }
+      else { field += ch; }
+    }
+  }
+  if (field || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
 
-  const iconByCat={
-    "Restaurant":"🍽","Cafe":"☕","Cafe / Beverage":"🧋","Cafe / Juice Bar":"🥤",
-    "Hotel":"🏨","Bar":"🍸","Bar / Club":"🍸","Bar / Rooftop Club":"🏖️","Spa":"♨️",
-    "Shopping":"🛍","Activity":"🎯","Filming Location":"🎬",
-    "Nature / Day-trip":"🌿","Street Food":"🍜","Neighbourhood":"🏘️"
-  };
-  const zhByCat={
-    "Restaurant":"餐廳","Cafe":"咖啡廳","Cafe / Beverage":"飲料","Cafe / Juice Bar":"飲料","Beverages":"飲料",
-    "Hotel":"飯店","Bar":"酒吧/天台俱樂部","Bar / Club":"酒吧/天台俱樂部","Bar / Rooftop Club":"酒吧/天台俱樂部","Spa":"Spa",
-    "Shopping":"購物","Activity":"活動","Filming Location":"拍攝場地",
-    "Nature / Day-trip":"自然 / 一日遊","Street Food":"街頭小吃","Neighbourhood":"街區"
-  };
-  const normalizeStatus=s=>{
-    const raw=s.trim();
-    if(raw==="Verified"||raw==="Needs Review"||raw==="Could Not Find")return raw;
-    if(/verified/i.test(raw))return "Verified";
-    if(/could not find|not found/i.test(raw))return "Could Not Find";
-    return "Needs Review";
-  };
-  const sourceLabel=url=>{
-    if(!url)return "";
-    const host=(url.match(/^https?:\/\/([^/]+)/i)||[])[1]||"";
-    if(/kkday/i.test(host))return "KKday";
-    if(/trip\.com/i.test(host))return "Trip.com";
-    if(/threads/i.test(host))return "Threads";
-    if(/instagram/i.test(host))return "Instagram";
-    if(/youtube|youtu\.be/i.test(host))return "YouTube";
-    return "Source";
-  };
-  const normalizeSourceTags=tags=>{
-    return tags.split(',').map(s=>s.trim())
-      .filter(s=>s&&!/^https?:\/\//i.test(s))
-      .join(' + ');
-  };
-  const mapsQuery=(name,maps)=>{
-    if(maps&&!/open in maps/i.test(maps)&&!/^📍/.test(maps))return maps;
-    return name?`${name} Bangkok`:"";
-  };
-  return normalizeCategoryRows(rows.slice(1).filter(r=>r.join('').trim()&&!/^source note$/i.test(read(r,"Category"))).map(r=>{
-    const name=read(r,"Location Name");
-    const nameZh=read(r,"Location Name ZH")||name;
-    const cat=(CATEGORY_ALIASES[read(r,"Category")]||{en:read(r,"Category")}).en;
-    const notes=read(r,"Notes");
-    const notesZh=read(r,"Notes ZH")||notes;
-    const sourceUrl=read(r,"Source URL");
-    const sourceTags=normalizeSourceTags(read(r,"Source Tags"));
-    const maps=read(r,"Google Maps URL")||read(r,"Google Maps Link");
-    return [
-      name,nameZh,read(r,"Thai / Alt Name"),
-      cat,zhByCat[cat]||cat,
-      notes,notesZh,
-      read(r,"Icon")||iconByCat[cat]||"📍",
-      read(r,"Lat"),read(r,"Lng"),
-      mapsQuery(name,maps),
-      normalizeStatus(read(r,"Verification Status")),
-      read(r,"Duplicate Group"),
-      sourceTags||sourceLabel(sourceUrl),
-      read(r,"Coordinates Approx")||"TRUE",
-      sourceUrl
-    ];
-  }));
+// Lookup tables used when parsing the published/legacy sheet format
+const ICON_BY_CAT = {
+  "Restaurant":"🍽","Cafe":"☕","Cafe / Beverage":"🧋","Cafe / Juice Bar":"🥤",
+  "Hotel":"🏨","Bar":"🍸","Bar / Club":"🍸","Bar / Rooftop Club":"🏖️","Spa":"♨️",
+  "Shopping":"🛍","Activity":"🎯","Filming Location":"🎬",
+  "Nature / Day-trip":"🌿","Street Food":"🍜","Neighbourhood":"🏘️"
+};
+const ZH_BY_CAT = {
+  "Restaurant":"餐廳","Cafe":"咖啡廳","Cafe / Beverage":"飲料","Cafe / Juice Bar":"飲料","Beverages":"飲料",
+  "Hotel":"飯店","Bar":"酒吧/天台俱樂部","Bar / Club":"酒吧/天台俱樂部","Bar / Rooftop Club":"酒吧/天台俱樂部","Spa":"Spa",
+  "Shopping":"購物","Activity":"活動","Filming Location":"拍攝場地",
+  "Nature / Day-trip":"自然 / 一日遊","Street Food":"街頭小吃","Neighbourhood":"街區"
+};
+
+function normalizeStatus(s) {
+  const raw = s.trim();
+  if (raw === "Verified" || raw === "Needs Review" || raw === "Could Not Find") return raw;
+  if (/verified/i.test(raw)) return "Verified";
+  if (/could not find|not found/i.test(raw)) return "Could Not Find";
+  return "Needs Review";
+}
+
+function sourceLabel(url) {
+  if (!url) return "";
+  const host = (url.match(/^https?:\/\/([^/]+)/i) || [])[1] || "";
+  if (/kkday/i.test(host)) return "KKday";
+  if (/trip\.com/i.test(host)) return "Trip.com";
+  if (/threads/i.test(host)) return "Threads";
+  if (/instagram/i.test(host)) return "Instagram";
+  if (/youtube|youtu\.be/i.test(host)) return "YouTube";
+  return "Source";
+}
+
+function normalizeSourceTags(tags) {
+  return tags.split(',').map(s => s.trim())
+    .filter(s => s && !/^https?:\/\//i.test(s))
+    .join(' + ');
+}
+
+function mapsQuery(name, maps) {
+  if (maps && !/open in maps/i.test(maps) && !/^📍/.test(maps)) return maps;
+  return name ? `${name} Bangkok` : "";
+}
+
+// Internal sheet format: Name_EN, Name_ZH, Category_EN, … columns
+// Returns row arrays on match, null if headers don't match
+function parseInternalFormat(rows, idx, read) {
+  const keys = ["Name_EN","Name_ZH","Alt_Name","Category_EN","Category_ZH",
+                "Notes_EN","Notes_ZH","Icon","Lat","Lng",
+                "Maps_Query","Status","Duplicate_Group","Source","Coords_Approx","Source_URL"];
+  const coreKeys = keys.slice(0, 15); // Source_URL is optional
+  if (!coreKeys.every(k => idx[k] !== undefined)) return null;
+  return rows.slice(1)
+    .filter(r => r.join('').trim())
+    .map(r => keys.map(k => read(r, k)));
+}
+
+// Published/legacy sheet format: "Location Name", "Category", "Verification Status", … columns
+// Returns row arrays on match, null if headers don't match
+function parsePublishedFormat(rows, idx, read) {
+  const required = ["Location Name","Thai / Alt Name","Category",
+                    "Notes","Source URL","Verification Status","Duplicate Group"];
+  if (!required.every(k => idx[k] !== undefined)) return null;
+  return rows.slice(1)
+    .filter(r => r.join('').trim() && !/^source note$/i.test(read(r, "Category")))
+    .map(r => {
+      const name      = read(r, "Location Name");
+      const nameZh    = read(r, "Location Name ZH") || name;
+      const cat       = (CATEGORY_ALIASES[read(r, "Category")] || {en: read(r, "Category")}).en;
+      const notes     = read(r, "Notes");
+      const notesZh   = read(r, "Notes ZH") || notes;
+      const sourceUrl = read(r, "Source URL");
+      const tags      = normalizeSourceTags(read(r, "Source Tags"));
+      const maps      = read(r, "Google Maps URL") || read(r, "Google Maps Link");
+      return [
+        name, nameZh, read(r, "Thai / Alt Name"),
+        cat, ZH_BY_CAT[cat] || cat,
+        notes, notesZh,
+        read(r, "Icon") || ICON_BY_CAT[cat] || "📍",
+        read(r, "Lat"), read(r, "Lng"),
+        mapsQuery(name, maps),
+        normalizeStatus(read(r, "Verification Status")),
+        read(r, "Duplicate Group"),
+        tags || sourceLabel(sourceUrl),
+        read(r, "Coordinates Approx") || "TRUE",
+        sourceUrl
+      ];
+    });
+}
+
+function parseCSV(text) {
+  const rows = tokenizeCSV(text);
+  if (rows.length < 2) return null;
+  const headers = rows[0].map(h => h.replace(/^\uFEFF/, '').trim());
+  const idx = {};
+  headers.forEach((h, i) => idx[h] = i);
+  const read = (r, k) => (idx[k] !== undefined ? r[idx[k]] || '' : '').trim();
+  const parsed = parseInternalFormat(rows, idx, read)
+             ?? parsePublishedFormat(rows, idx, read);
+  return parsed ? normalizeCategoryRows(parsed) : null;
 }
 
 
@@ -632,6 +664,7 @@ function buildPopupContent(i){
   const name=lang==='zh'?row[C.ZH]:row[C.EN];
   const notes=lang==='zh'?row[C.NOTES_ZH]:row[C.NOTES_EN];
   const cat=lang==='zh'?row[C.CAT_ZH]:row[C.CAT_EN];
+  const approx=isApproximateCoords(row);
   return `<div class="popup-content">
     <div class="popup-name">${row[C.ICON]} ${name}</div>
     ${row[C.ALT]?`<div class="popup-alt">${row[C.ALT]}</div>`:''}
@@ -640,6 +673,7 @@ function buildPopupContent(i){
       <span class="badge ${getBadgeClass(row[C.STATUS])}">${tobj('badge',row[C.STATUS])}</span>
     </div>
     <div class="popup-notes">${notes}</div>
+    ${approx?`<div class="approx-tag">${t('approx')}</div>`:''}
     ${renderSources(row)}
   </div>`;
 }
@@ -699,6 +733,9 @@ function getBadgeClass(s){
   if(s==='Could Not Find')return 'b-notfound';
   return 'b-review';
 }
+function isApproximateCoords(row){
+  return /^(true|yes|1|approx|approximate)$/i.test(String(row[C.APPROX]||'').trim());
+}
 function applyFilters(){
   const q=document.getElementById('search').value.toLowerCase();
   const cat=document.getElementById('cat-filter').value;
@@ -756,6 +793,7 @@ function renderList(){
     const cat=lang==='zh'?row[C.CAT_ZH]:row[C.CAT_EN];
     const st=row[C.STATUS];
     const needsHelp=st==='Needs Review'||st==='Could Not Find';
+    const approx=isApproximateCoords(row);
     return `<div class="loc-card${activeIdx===i?' active':''}" id="card-${i}" onclick="activateCard(${i})">
       <div class="card-head">
         <div class="card-icon">${row[C.ICON]}</div>
@@ -770,6 +808,7 @@ function renderList(){
         ${row[C.DUP]?`<span class="badge b-dup">${row[C.DUP]}</span>`:''}
       </div>
       <div class="card-notes">${notes}</div>
+      ${approx?`<div class="approx-tag">${t('approx')}</div>`:''}
       ${renderSources(row)}
       <div class="card-footer">
         <span></span>
@@ -1079,7 +1118,7 @@ async function saveSheet(){
     const resp=await fetch(LOCATIONS_API);if(!resp.ok)throw new Error(resp.status);
     const parsed=parseCSV(await resp.text());
     if(!parsed||!parsed.length)throw new Error('empty');
-    data=normalizeCategoryRows(parsed);
+    data=parsed;
     status.className='sheet-status ok';status.textContent=t('sheet_ok',data.length);
     rebuild();setTimeout(closeSheetModal,1200);
   }catch(e){
@@ -1091,7 +1130,7 @@ async function tryLoadSheet(){
   try{
     const resp=await fetch(LOCATIONS_API);if(!resp.ok)throw new Error();
     const parsed=parseCSV(await resp.text());
-    if(parsed&&parsed.length)data=normalizeCategoryRows(parsed);
+    if(parsed&&parsed.length)data=parsed;
   }catch(e){}
   bar.remove();rebuild();
 }
