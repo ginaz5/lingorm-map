@@ -120,8 +120,9 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 /* Remove empty header row that causes top whitespace */
 .gm-style .gm-style-iw-ch{padding-top:0!important;height:0!important}
 .gm-style .gm-style-iw-chr{height:0!important}
-.marker-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.85);
-  box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.marker-dot{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.9);
+  box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;
+  font-size:14px;line-height:1}
 .marker-verified{background:#2f7d4f}
 .marker-review{background:#c2772a}
 .marker-notfound{background:#b1452f}

@@ -13,9 +13,10 @@ export function updateMapTheme() {
 // ═══════════════════════════════════════════════════
 // MARKERS
 // ═══════════════════════════════════════════════════
-export function makeMarkerContent(status) {
+export function makeMarkerContent(status, icon) {
   const el = document.createElement('div');
   el.className = `marker-dot ${getBadgeClass(status).replace('b-', 'marker-')}`;
+  el.textContent = icon || '📍';
   return el;
 }
 
@@ -27,7 +28,7 @@ export function buildMarkers() {
     const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
     if (!lat || !lng) return;
     const m = new google.maps.marker.AdvancedMarkerElement({
-      map: state.map, position: { lat, lng }, content: makeMarkerContent(row.status),
+      map: state.map, position: { lat, lng }, content: makeMarkerContent(row.status, row.icon),
     });
     m.addListener('click', () => {
       state.infoWindow.setContent(buildPopupContent(i));
