@@ -22,9 +22,18 @@ export function openEditModal(i) {
   document.getElementById('edit-lng').value = row.lng || '';
   ['edit-reason', 'edit-submitter'].forEach(id => document.getElementById(id).value = '');
   const st = row.status;
-  document.getElementById('so-verified').checked = st === 'Verified';
-  document.getElementById('so-review').checked = st === 'Needs Review';
-  document.getElementById('so-notfound').checked = st === 'Could Not Find';
+  const STATUS_OPTS = [
+    { id: 'so-verified', val: 'Verified' },
+    { id: 'so-review',   val: 'Needs Review' },
+    { id: 'so-notfound', val: 'Could Not Find' },
+  ];
+  let defaultSet = false;
+  STATUS_OPTS.forEach(({ id, val }) => {
+    const hide = val === st;
+    document.querySelector(`label[for="${id}"]`).style.display = hide ? 'none' : '';
+    document.getElementById(id).checked = !hide && !defaultSet;
+    if (!hide && !defaultSet) defaultSet = true;
+  });
   resetFeedback('edit-feedback', 'edit-submit-btn', t('edit_submit'));
   document.getElementById('edit-modal').classList.add('open');
 }
