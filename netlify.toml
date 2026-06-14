@@ -2,6 +2,10 @@
   command = "bash build.sh && npm run build"
   publish = "dist"
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 [build.environment]
   # Set runtime secrets in Netlify Dashboard:
   # Site Settings → Environment Variables → Add variable

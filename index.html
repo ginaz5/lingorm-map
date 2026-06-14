@@ -229,10 +229,12 @@
     </div>
     <p class="modal-desc" data-i18n="admin_desc"></p>
     <div class="modal-body">
-      <div class="form-row">
-        <label class="form-label" data-i18n="admin_lbl"></label>
-        <input class="form-input" id="admin-pwd" type="password" data-i18n-ph="admin_ph"/>
-      </div>
+      <form onsubmit="return false;">
+        <div class="form-row">
+          <label class="form-label" data-i18n="admin_lbl"></label>
+          <input class="form-input" id="admin-pwd" type="password" data-i18n-ph="admin_ph"/>
+        </div>
+      </form>
       <div class="submit-feedback" id="admin-feedback"></div>
     </div>
     <div class="modal-footer">
