@@ -8,13 +8,13 @@
 
 ## Features
 
-- Interactive Google Maps with custom markers (verified / needs review / not found)
+- Interactive map with emoji category markers (colored by status: verified / needs review / not found)
 - Card list with search, category, and status filters
 - zh / en bilingual UI with one-click toggle
 - Light / dark / auto theme
-- Community contributions via Netlify Forms (suggest edit, add location)
-- Admin panel (password-protected) for reloading sheet data
-- Mobile-responsive with map / list tab switching
+- Community contributions via Netlify Forms (suggest edit, add location, report issue)
+- Mobile-responsive with map / list tab switching and scroll
+- Google Maps primary; HERE Maps fallback if Google Maps is unavailable
 
 ---
 
@@ -22,12 +22,12 @@
 
 | Layer | Choice |
 |-------|--------|
-| Map | Google Maps JS API — `AdvancedMarkerElement`, `colorScheme` |
-| Data | Google Sheets → published CSV → Netlify Function proxy |
-| Forms | Netlify Forms (suggest-edit, add-location) |
+| Map | Google Maps JS API (`AdvancedMarkerElement`, `colorScheme`) with HERE Maps fallback |
+| Data | Google Sheets → published CSV → Netlify Function proxy (`/api/locations`) |
+| Forms | Netlify Forms (`suggest-edit`, `add-location`, `issue-report`) |
 | Build | Vite 6, ES modules in `src/` |
 | Deploy | Netlify (GitHub auto-deploy) |
-| Tests | Node.js built-in `node:test` |
+| Tests | Node.js built-in `node:test` — 58 tests |
 
 ---
 
@@ -45,16 +45,16 @@ lingorm_bangkok_map/
 │   ├── render.js           # Card list, popup content, filter helpers
 │   ├── ui.js               # Theme, tab switch, snackbar, locate me, toggleLang
 │   ├── submit.js           # Netlify Forms submit, pending banner
-│   ├── forms.js            # Edit / add / admin / sheet modals
-│   └── map.js              # Google Maps init, markers, loadGoogleMapsScript
+│   ├── forms.js            # Edit / add / issue modals
+│   └── map.js              # Map init (Google + HERE), markers, loadMapScript
 ├── netlify/
 │   └── functions/
 │       ├── config.mjs      # /api/config — returns Maps key + map ID
 │       └── locations.mjs   # /api/locations — proxies Google Sheets CSV
-├── tests/                  # node:test test suite (49 tests)
-├── vite.config.js          # Vite config — defines __ADMIN_HASH__ at build time
+├── tests/                  # node:test test suite (58 tests)
+├── vite.config.js          # Vite build config
 ├── build.sh                # Netlify pre-build: validates env vars
-├── netlify.toml            # build command + publish dir
+├── netlify.toml            # build command, publish dir, functions dir, /api/* redirect
 └── TECH_DECISIONS.md       # Architecture decision records
 ```
 
@@ -79,7 +79,6 @@ Create `.env` in the project root (not committed):
 GOOGLE_MAPS_KEY=your_google_maps_key
 GOOGLE_MAP_ID=your_google_map_id
 GOOGLE_SHEET_CSV_URL=your_published_csv_url
-ADMIN_PASSWORD=your_admin_password   # optional
 ```
 
 ### Run locally
@@ -88,7 +87,7 @@ ADMIN_PASSWORD=your_admin_password   # optional
 netlify dev        # http://localhost:8888
 ```
 
-This runs Vite + Netlify Functions together. Do **not** open `index.html` directly in the browser — the Netlify Functions (`/api/config`, `/api/locations`) won't be available.
+This runs Vite + Netlify Functions together. Do **not** open `index.html` directly — the Netlify Functions (`/api/config`, `/api/locations`) won't be available.
 
 ### Unit tests
 
@@ -96,15 +95,13 @@ This runs Vite + Netlify Functions together. Do **not** open `index.html` direct
 node --test tests/*.test.mjs
 ```
 
-Expected: 49 pass, 0 fail.
+Expected: 58 pass, 0 fail.
 
 ### Production build (verify before deploy)
 
 ```bash
 npm run build      # outputs to dist/
 ```
-
-Vite reads `ADMIN_PASSWORD` from the environment and bakes its SHA-256 hash into the bundle as `__ADMIN_HASH__`.
 
 ---
 
@@ -119,11 +116,14 @@ Required Netlify environment variables (Dashboard → Site Settings → Environm
 | `GOOGLE_MAPS_KEY` | ✅ | Google Maps JS API key |
 | `GOOGLE_MAP_ID` | ✅ | Map ID for dark mode + AdvancedMarkerElement |
 | `GOOGLE_SHEET_CSV_URL` | ✅ | Published CSV URL for `/api/locations` |
-| `ADMIN_PASSWORD` | optional | Enables admin panel; omit to disable |
+
+### Netlify Forms
+
+Enable form detection in Netlify Dashboard → **Forms → Enable form detection**, then redeploy. Forms: `suggest-edit`, `add-location`, `issue-report`.
 
 ### Google Maps key protection
 
-The Maps key is delivered to the browser via `/api/config` (Netlify Function), which means it still appears in network requests. Protect it with:
+The Maps key is delivered via `/api/config` (Netlify Function). Protect it with:
 
 1. **HTTP Referrer restriction** in Cloud Console → Credentials (allow `https://lingorm-map.netlify.app/*`)
 2. **Daily quota cap** — Maps JS API → Quotas → Map loads/day = 900
@@ -133,7 +133,7 @@ The Maps key is delivered to the browser via `/api/config` (Netlify Function), w
 
 ## Data Schema
 
-The Google Sheet must be published as CSV with one of these header sets:
+The Google Sheet must be published as CSV. Two formats are auto-detected:
 
 **Internal format (recommended):**
 
@@ -143,7 +143,7 @@ Notes_EN, Notes_ZH, Icon, Lat, Lng, Maps_Query,
 Status, Duplicate_Group, Source, Coords_Approx
 ```
 
-**Published/legacy format** (auto-detected):
+**Published/legacy format:**
 
 ```
 Location Name, Thai / Alt Name, Category, Notes,
@@ -154,39 +154,46 @@ Source URL, Verification Status, Duplicate Group, ...
 
 ---
 
-## Admin Panel
+## Map Markers
 
-Visit `/#admin` to open the password prompt. On success, the Sheet modal lets you reload location data from the CSV without redeploying.
+Markers are 28px emoji circles colored by status:
 
-Admin password is never stored in plaintext — `build.sh` + Vite hash `ADMIN_PASSWORD` with SHA-256 at build time; the browser compares using `SubtleCrypto`.
+| Status | Color |
+|--------|-------|
+| Verified | Green `#2f7d4f` |
+| Needs Review | Orange `#c2772a` |
+| Could Not Find | Red `#b1452f` (hidden from public list) |
+
+The emoji comes from `row.icon` (set per category: 🍽 🏨 ☕ etc.). Falls back to 📍 if missing.
 
 ---
 
 ## Contributing Locations
 
-Use the **新增地點 / Add Location** button or the **建議修改 / Suggest edit** button on any card. Submissions go to Netlify Forms and are reviewed by the admin before appearing on the map.
+Use **新增地點 / Add Location** or **建議修改 / Suggest edit** on any card. Submissions go to Netlify Forms and are reviewed before appearing on the map.
 
 ---
 
 ## Running Tests
 
-Tests use Node.js built-in `node:test` — no test framework to install.
-
 ```bash
 node --test tests/*.test.mjs
 ```
-
-Test files:
 
 | File | What it covers |
 |------|---------------|
 | `parsecsv.test.mjs` | CSV tokenizer, parser, status normalizer, source helpers |
 | `source-tags.test.mjs` | `renderSources` — Threads handle extraction, platform URL mapping |
 | `i18n-ui.test.mjs` | `updateLangUI`, `buildCatFilter`, `rebuildSelect` |
-| `ui-events.test.mjs` | Static markup has no inline `onclick`; `switchTab` state alignment |
+| `ui-events.test.mjs` | No inline `onclick`; `switchTab` state alignment |
 | `add-location-form.test.mjs` | Netlify form field parity, URL validator, submit mock |
+| `edit-submit.test.mjs` | `submitEdit` payload correctness |
+| `issue-report.test.mjs` | Issue report form field parity, UI copy |
 | `google-maps-loader.test.mjs` | No hardcoded API key placeholders; runtime config fetch |
+| `here-map-layer.test.mjs` | HERE Maps base layer selection (dark/light fallback) |
 | `no-maplink-ui.test.mjs` | No legacy "Open in Maps" links in HTML |
+| `public-notfound.test.mjs` | "Could Not Find" locations hidden from public list + markers |
 | `styles-extraction.test.mjs` | External CSS linked; no inline presentational styles |
+| `theme-mode.test.mjs` | Theme toggle supports only light/dark |
 | `config-function.test.mjs` | `/api/config` Netlify Function |
 | `locations-function.test.mjs` | `/api/locations` Netlify Function |
