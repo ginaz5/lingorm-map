@@ -160,7 +160,8 @@ export function activateCard(i) {
   const card = document.getElementById('card-' + i);
   if (card) {
     card.classList.add('active');
-    requestAnimationFrame(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+    const raf = typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame : (cb) => cb();
+    raf(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
   }
 }
 

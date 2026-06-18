@@ -102,12 +102,6 @@ export const T = {
     opt: '（選填）', cancel: '取消', done: '完成',
     st_verified: '✅ 已驗證', st_review: '⚠️ 待確認', st_notfound: '❌ 找不到',
     ph_submitter: '例：@your_ig',
-    // Admin auth
-    admin_title: '🔐 管理員登入',
-    admin_desc: '輸入管理員密碼以進入設定頁面。',
-    admin_lbl: '密碼', admin_ph: '請輸入密碼',
-    admin_btn: '登入', admin_err: '密碼錯誤',
-    admin_not_configured: '尚未設定管理員密碼。請設定 ADMIN_PASSWORD 環境變數後重新部署。',
     // Navigation & location
     nav_btn: '🧭 導航到這裡',
     locate_btn: '📍',
@@ -115,15 +109,7 @@ export const T = {
     locate_snack: '✓ 已定位　點地標上的「導航到這裡」可開啟路線',
     locate_err: '無法取得位置，請稍後再試。',
     locate_deny: '請允許位置存取權限後重試。',
-    // Sheet modal
-    sheet_title: '⚙️ Google Sheets API 狀態',
-    sheet_desc: '資料由 Netlify Function 代抓 Google Sheets CSV；實際試算表網址只存在 Netlify 環境變數，不會暴露在前端。',
-    sheet_howto: '<strong>設定方式：</strong><br>1. Google Sheets → 檔案 → 分享 → 發佈至網路<br>2. 選擇「Locations 工作表」+「逗號分隔值 (.csv)」<br>3. 將 CSV URL 存到 Netlify 環境變數 <code>GOOGLE_SHEET_CSV_URL</code> 並重新部署',
-    sheet_netlify: '<strong>設定 Netlify 表單通知（接收共編建議）：</strong><br>1. Netlify Dashboard → Forms → 找到 <code>suggest-edit</code>、<code>add-location</code> 和 <code>issue-report</code><br>2. Settings → Form notifications → 加入你的 Email',
-    sheet_ok: n => `✅ 已載入 ${n} 筆資料`,
-    sheet_err: e => `❌ 載入失敗：${e}`,
     sheet_loading: '載入中…',
-    sheet_save: '重新載入',
   },
   en: {
     hdr_sub: 'Lingorm Bangkok Location Map',
@@ -199,12 +185,6 @@ export const T = {
     opt: '(optional)', cancel: 'Cancel', done: 'Done',
     st_verified: '✅ Verified', st_review: '⚠️ Needs Review', st_notfound: '❌ Not Found',
     ph_submitter: 'e.g. @your_ig',
-    // Admin auth
-    admin_title: '🔐 Admin Login',
-    admin_desc: 'Enter the admin password to access settings.',
-    admin_lbl: 'Password', admin_ph: 'Enter password',
-    admin_btn: 'Login', admin_err: 'Incorrect password',
-    admin_not_configured: 'Admin password not configured. Set ADMIN_PASSWORD env var and redeploy.',
     // Navigation & location
     nav_btn: '🧭 Navigate here',
     locate_btn: '📍',
@@ -212,15 +192,7 @@ export const T = {
     locate_snack: '✓ Located　Tap a marker → "Navigate here" to open directions',
     locate_err: 'Could not get your location. Please try again.',
     locate_deny: 'Please allow location access and retry.',
-    // Sheet modal
-    sheet_title: '⚙️ Google Sheets API Status',
-    sheet_desc: 'A Netlify Function fetches the Google Sheets CSV. The real spreadsheet URL only lives in Netlify environment variables and is not exposed to the frontend.',
-    sheet_howto: '<strong>Setup:</strong><br>1. Google Sheets → File → Share → Publish to web<br>2. Select "Locations sheet" + "Comma-separated values (.csv)"<br>3. Store the CSV URL in Netlify env var <code>GOOGLE_SHEET_CSV_URL</code> and redeploy',
-    sheet_netlify: '<strong>Set up Netlify form notifications:</strong><br>1. Netlify Dashboard → Forms → find <code>suggest-edit</code>, <code>add-location</code>, and <code>issue-report</code><br>2. Settings → Form notifications → add your Email',
-    sheet_ok: n => `✅ Loaded ${n} entries`,
-    sheet_err: e => `❌ Load failed: ${e}`,
     sheet_loading: 'Loading…',
-    sheet_save: 'Reload',
   }
   // Add 'th': {...} here for Thai support in the future
 };

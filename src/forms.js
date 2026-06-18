@@ -1,7 +1,7 @@
 import { lang, t, CATEGORIES } from './i18n.js';
 import { state } from './state.js';
 import { parseCSV } from './csv-parser.js';
-import { doNetlifySubmit, resetFeedback, shouldMockNetlifySubmit } from './submit.js';
+import { doNetlifySubmit, resetFeedback } from './submit.js';
 
 const LOCATIONS_API = '/api/locations';
 

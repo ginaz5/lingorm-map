@@ -19,7 +19,6 @@ export const state = {
 
   // Google Maps-specific
   infoWindow: null,
-  googleMapId: null,
   googleErrorObserver: null,
 
   // HERE Maps-specific

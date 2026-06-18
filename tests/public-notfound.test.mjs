@@ -151,6 +151,7 @@ test('activateCard centers HERE map and opens info bubble', async () => {
 
   try {
     state.activeIdx = -1;
+    state.provider = 'here';
     state.data = [makeLocation('Verified', 'Visible verified')];
     state.map = {
       setCenter: (position) => centers.push(position),
@@ -178,6 +179,7 @@ test('activateCard centers HERE map and opens info bubble', async () => {
     globalThis.window = previousWindow;
     globalThis.H = previousHere;
     state.activeIdx = -1;
+    state.provider = null;
     state.data = [];
     state.map = null;
     state.hereUi = null;

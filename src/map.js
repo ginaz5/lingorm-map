@@ -120,7 +120,6 @@ async function loadHereScripts() {
 // ═══════════════════════════════════════════════════
 function initWithGoogle(cfg) {
   state.provider = 'google';
-  state.googleMapId = cfg.googleMapId;
   document.getElementById('map-loading').classList.add('is-hidden');
 
   state.map = new google.maps.Map(document.getElementById('map'), {
