@@ -1,4 +1,4 @@
-# Lingorm Bangkok Map
+# Lingorm Map
 
 鄺玲玲曼谷踩點地圖 — An interactive map of Bangkok locations spotted in Lingorm's content. Built as a vanilla JS + Vite static site, deployed on Netlify.
 

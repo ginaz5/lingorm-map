@@ -16,7 +16,7 @@ import {
   openSheetModal, closeSheetModal, saveSheet, tryLoadSheet,
 } from './forms.js';
 import { showPendingBanner } from './submit.js';
-import { initMap, loadHereMapsScript, updateMapTheme, buildMarkers } from './map.js';
+import { initMap, loadMapScript, updateMapTheme, buildMarkers } from './map.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -136,7 +136,11 @@ document.querySelector('#sheet-modal .btn-ghost').addEventListener('click', clos
 document.querySelector('#sheet-modal .btn-primary').addEventListener('click', () => saveSheet(rebuild));
 
 // Map resize on window resize
-window.addEventListener('resize', () => { if (state.map) state.map.getViewPort().resize(); });
+window.addEventListener('resize', () => {
+  if (!state.map) return;
+  if (state.provider === 'google') google.maps.event.trigger(state.map, 'resize');
+  else state.map.getViewPort().resize();
+});
 
 // Admin hash in URL
 window.addEventListener('hashchange', checkAdminHash);
@@ -151,4 +155,4 @@ applyFilters();       // render initial (loading) state
 showPendingBanner();
 tryLoadSheet(rebuild);  // loads data; rebuild() triggers buildMarkers + renderList
 checkAdminHash();
-loadHereMapsScript(); // loads HERE Maps scripts async, then calls initMap()
+loadMapScript(); // tries Google Maps first, falls back to HERE if unavailable

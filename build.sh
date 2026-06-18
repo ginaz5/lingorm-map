@@ -1,5 +1,5 @@
 #!/bin/bash
-# Lingorm Bangkok Map — Netlify build script
+# Lingorm Map — Netlify build script
 # Validates deploy environment and injects admin-only HTML values.
 # Runtime config is read by Netlify Functions.
 #

@@ -4,12 +4,20 @@ export default async function getConfig(req) {
   }
 
   const hereApiKey = globalThis.Netlify?.env?.get('HERE_API_KEY');
+  const googleMapsKey = globalThis.Netlify?.env?.get('GOOGLE_MAPS_KEY');
+  const googleMapId = globalThis.Netlify?.env?.get('GOOGLE_MAP_ID');
 
   if (!hereApiKey) {
     return json({ error: 'HERE_API_KEY is required' }, 500);
   }
 
-  return json({ hereApiKey }, 200, 'public, max-age=300');
+  const result = { hereApiKey };
+  if (googleMapsKey && googleMapId) {
+    result.googleMapsKey = googleMapsKey;
+    result.googleMapId = googleMapId;
+  }
+
+  return json(result, 200, 'public, max-age=300');
 }
 
 function json(body, status, cacheControl = 'no-store') {

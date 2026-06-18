@@ -1,4 +1,4 @@
-# Lingorm Bangkok Map — 技術選型紀錄
+# Lingorm Map — 技術選型紀錄
 
 > 記錄本專案的架構決策與選型理由，方便日後維護或交接。
 

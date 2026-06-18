@@ -23,7 +23,10 @@ export function switchTab(tab) {
   document.getElementById('map-wrap').setAttribute('data-mobile-tab', isMap ? 'map' : 'list');
   document.getElementById('tab-map').classList.toggle('active', isMap);
   document.getElementById('tab-list').classList.toggle('active', !isMap);
-  if (isMap && state.map) state.map.getViewPort().resize();
+  if (isMap && state.map) {
+    if (state.provider === 'google') google.maps.event.trigger(state.map, 'resize');
+    else state.map.getViewPort().resize();
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -59,16 +62,25 @@ export function locateMe() {
   navigator.geolocation.getCurrentPosition(
     pos => {
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      // Remove existing user marker
       if (state.userLocationMarker) {
-        state.map.removeObject(state.userLocationMarker);
+        if (state.provider === 'google') state.userLocationMarker.map = null;
+        else state.map.removeObject(state.userLocationMarker);
         state.userLocationMarker = null;
       }
       const el = document.createElement('div');
       el.className = 'user-location-dot';
-      const domIcon = new H.map.DomIcon(el);
-      state.userLocationMarker = new H.map.DomMarker({ lat, lng }, { icon: domIcon, zIndex: 999 });
-      state.map.addObject(state.userLocationMarker);
-      state.map.setCenter({ lat, lng });
+      if (state.provider === 'google') {
+        state.userLocationMarker = new google.maps.marker.AdvancedMarkerElement({
+          map: state.map, position: { lat, lng }, content: el, zIndex: 999,
+        });
+        state.map.panTo({ lat, lng });
+      } else {
+        const domIcon = new H.map.DomIcon(el);
+        state.userLocationMarker = new H.map.DomMarker({ lat, lng }, { icon: domIcon, zIndex: 999 });
+        state.map.addObject(state.userLocationMarker);
+        state.map.setCenter({ lat, lng });
+      }
       showSnackbar(t('locate_snack'));
     },
     err => {
@@ -88,7 +100,9 @@ export function toggleLang() {
   buildCatFilter();
   buildCatDropdown();
   applyFilters();
-  if (state.infoBubble && state.activeIdx >= 0) {
-    state.infoBubble.setContent(buildPopupContent(state.activeIdx));
+  if (state.activeIdx >= 0) {
+    const html = buildPopupContent(state.activeIdx);
+    if (state.provider === 'google' && state.infoWindow) state.infoWindow.setContent(html);
+    else if (state.provider === 'here' && state.infoBubble) state.infoBubble.setContent(html);
   }
 }

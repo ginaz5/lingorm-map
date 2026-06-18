@@ -11,11 +11,22 @@ export const state = {
   // Index of the currently active/highlighted card
   activeIdx: -1,
 
-  // HERE Maps objects — set in initMap
+  // Active map provider: 'google' | 'here' | null
+  provider: null,
+
+  // Shared map object (google.maps.Map or H.Map)
   map: null,
+
+  // Google Maps-specific
+  infoWindow: null,
+  googleMapId: null,
+  googleErrorObserver: null,
+
+  // HERE Maps-specific
   hereUi: null,
   hereLayers: null,
   infoBubble: null,
+
   // Sparse array: markers[i] corresponds to data[i]
   markers: [],
   // Blue-dot marker for the user's GPS position

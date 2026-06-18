@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>Lingorm Bangkok Map</title>
+<title>Lingorm Map</title>
+<link rel="icon" type="image/svg+xml" href="./favicon.svg"/>
 <link rel="stylesheet" href="./styles.css"/>
 </head>
 <body>
@@ -31,7 +32,7 @@
 
 <!-- HEADER -->
 <header>
-  <span class="logo">🗺 Lingorm BKK</span>
+  <span class="logo">🗺 Lingorm Map</span>
   <div class="hdr-spacer"></div>
   <button class="hdr-btn btn-add" id="add-btn">
     <span>＋</span><span data-i18n="add_loc"></span>
@@ -85,11 +86,21 @@
     <div class="loc-list" id="loc-list"></div>
   </div>
   <div id="map-wrap" data-mobile-tab="list">
-    <div id="map-loading" class="map-loading"><div class="loading-spinner"></div></div>
+    <div id="map-loading" class="map-loading">
+      <div>
+        <div class="loading-spinner"></div>
+        <p id="map-loading-msg" class="map-loading-msg"></p>
+      </div>
+    </div>
     <div id="map"></div>
     <div class="map-legend">
       <div class="leg-row"><div class="leg-dot verified"></div><span data-i18n="leg_verified"></span></div>
       <div class="leg-row"><div class="leg-dot review"></div><span data-i18n="leg_review"></span></div>
+      <div class="leg-divider"></div>
+      <div class="leg-row" id="map-provider-badge">
+        <div class="leg-dot" id="provider-dot"></div>
+        <span id="provider-label" class="provider-label"></span>
+      </div>
     </div>
   </div>
 </div>

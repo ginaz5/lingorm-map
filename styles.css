@@ -120,6 +120,9 @@ header{height:var(--header-h);flex-shrink:0;background:var(--surface);border-bot
 .leg-dot.verified{background:#2f7d4f}
 .leg-dot.review{background:#c2772a}
 .leg-dot.notfound{background:#b1452f}
+.leg-divider{border-top:1px solid var(--border);margin:5px 0}
+.provider-label{color:var(--text-muted)}
+.map-loading-msg{font-size:12px;color:var(--text-muted);text-align:center;margin:0}
 /* Google Maps InfoWindow */
 .gm-style .gm-style-iw-c{background:var(--surface)!important;border:1px solid var(--border)!important;
   border-radius:10px!important;box-shadow:var(--shadow-md)!important;padding:0!important}

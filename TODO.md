@@ -1,4 +1,4 @@
-# Lingorm Bangkok Map — 部署 TODO
+# Lingorm Map — 部署 TODO
 
 > 追蹤從開發到上線的剩餘步驟。完成一項打一個 ✅。
 
