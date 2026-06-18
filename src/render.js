@@ -1,5 +1,6 @@
 import { lang, t, tobj, CATEGORIES } from './i18n.js';
 import { state } from './state.js';
+import { switchTab } from './ui.js';
 
 // ═══════════════════════════════════════════════════
 // BADGE / STATUS HELPERS
@@ -135,6 +136,7 @@ export function activateCard(i) {
   const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
 
   if (lat && lng && state.map) {
+    if (window.innerWidth <= 700) switchTab('map');
     if (state.provider === 'google') {
       state.map.panTo({ lat, lng });
       state.map.setZoom(15);
