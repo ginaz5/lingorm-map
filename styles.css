@@ -153,7 +153,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 .tab-btn svg{width:22px;height:22px;fill:currentColor}
 @media(max-width:700px){
   header{gap:6px}
-  .panel{width:100%;border-right:none}
+  .panel{width:100%;border-right:none;flex:1;min-height:0}
   .app-body{flex-direction:column}
   .tab-bar{display:flex}
   .panel[data-mobile-tab="map"]{display:none}
