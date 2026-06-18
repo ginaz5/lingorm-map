@@ -133,23 +133,35 @@ export function activateCard(i) {
   state.activeIdx = i;
   const row = state.data[i];
   const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+
   if (lat && lng && state.map) {
-    state.map.setCenter({lat, lng});
-    state.map.setZoom(15);
-    if (state.markers[i] && state.hereUi) {
-      if (state.infoBubble) {
-        state.hereUi.removeBubble(state.infoBubble);
-        state.infoBubble = null;
+    if (state.provider === 'google') {
+      state.map.panTo({ lat, lng });
+      state.map.setZoom(15);
+      if (state.markers[i] && state.infoWindow) {
+        state.infoWindow.setContent(buildPopupContent(i));
+        state.infoWindow.open({ anchor: state.markers[i], map: state.map });
       }
-      state.infoBubble = new H.ui.InfoBubble({ lat, lng }, {
-        content: buildPopupContent(i),
-      });
-      state.hereUi.addBubble(state.infoBubble);
+    } else if (state.provider === 'here') {
+      state.map.setCenter({ lat, lng });
+      state.map.setZoom(15);
+      if (state.markers[i] && state.hereUi) {
+        if (state.infoBubble) {
+          state.hereUi.removeBubble(state.infoBubble);
+          state.infoBubble = null;
+        }
+        state.infoBubble = new H.ui.InfoBubble({ lat, lng }, { content: buildPopupContent(i) });
+        state.hereUi.addBubble(state.infoBubble);
+      }
     }
   }
+
   document.querySelectorAll('.loc-card').forEach(c => c.classList.remove('active'));
   const card = document.getElementById('card-' + i);
-  if (card) { card.classList.add('active'); card.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+  if (card) {
+    card.classList.add('active');
+    requestAnimationFrame(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+  }
 }
 
 export function applyFilters() {

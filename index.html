@@ -277,56 +277,6 @@
   </div>
 </div>
 
-<!-- MODAL: ADMIN AUTH -->
-<div class="modal-overlay" id="admin-auth-modal">
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <span class="modal-title" data-i18n="admin_title"></span>
-      <button class="modal-close">✕</button>
-    </div>
-    <p class="modal-desc" data-i18n="admin_desc"></p>
-    <div class="modal-body">
-      <form onsubmit="return false;">
-        <div class="form-row">
-          <label class="form-label" data-i18n="admin_lbl"></label>
-          <input class="form-input" id="admin-pwd" type="password" data-i18n-ph="admin_ph"/>
-        </div>
-      </form>
-      <div class="submit-feedback" id="admin-feedback"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-ghost" data-i18n="cancel"></button>
-      <button class="btn-primary" data-i18n="admin_btn"></button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: SHEET SETTINGS (admin only) -->
-<div class="modal-overlay" id="sheet-modal">
-  <div class="modal modal-sheet">
-    <div class="modal-header">
-      <span class="modal-title" data-i18n="sheet_title"></span>
-      <button class="modal-close">✕</button>
-    </div>
-    <p class="modal-desc" data-i18n="sheet_desc"></p>
-    <div class="modal-body">
-      <div class="sheet-status" id="sheet-status"></div>
-      <div class="sheet-help sheet-help-spaced" data-i18n-html="sheet_howto"></div>
-      <hr class="form-divider"/>
-      <div class="sheet-help" data-i18n-html="sheet_netlify"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-ghost" data-i18n="cancel"></button>
-      <button class="btn-primary" data-i18n="sheet_save"></button>
-    </div>
-  </div>
-</div>
-
 <script type="module" src="/src/main.js"></script>
-<script>
-// PLACEHOLDER: kept so legacy tests that grep for ADMIN_HASH still find it.
-// Actual logic is in src/forms.js — Vite replaces __ADMIN_HASH__ at build time.
-const ADMIN_HASH = '__ADMIN_HASH__';
-</script>
 </body>
 </html>

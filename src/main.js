@@ -12,8 +12,7 @@ import {
   openEditModal, closeEditModal, submitEdit,
   openAddModal, closeAddModal, submitAdd,
   openIssueModal, closeIssueModal, submitIssueReport,
-  checkAdminHash, closeAdminAuth, verifyAdminPassword,
-  openSheetModal, closeSheetModal, saveSheet, tryLoadSheet,
+  tryLoadSheet,
 } from './forms.js';
 import { showPendingBanner } from './submit.js';
 import { initMap, loadMapScript, updateMapTheme, buildMarkers } from './map.js';
@@ -76,6 +75,7 @@ function runMobileAction(event) {
 window.activateCard = activateCard;
 window.openEditModal = openEditModal;
 window.openNavigation = openNavigation;
+window.applyFilters = applyFilters;
 
 
 // ═══════════════════════════════════════════════════
@@ -105,8 +105,6 @@ document.getElementById('tab-list').addEventListener('click', () => switchTab('l
 document.getElementById('edit-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeEditModal(); });
 document.getElementById('add-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAddModal(); });
 document.getElementById('issue-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeIssueModal(); });
-document.getElementById('admin-auth-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAdminAuth(); });
-document.getElementById('sheet-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeSheetModal(); });
 
 // Edit modal
 document.querySelector('#edit-modal .modal-close').addEventListener('click', closeEditModal);
@@ -124,26 +122,12 @@ document.querySelector('#issue-modal .modal-close').addEventListener('click', cl
 document.getElementById('issue-cancel-btn').addEventListener('click', closeIssueModal);
 document.getElementById('issue-submit-btn').addEventListener('click', submitIssueReport);
 
-// Admin auth modal
-document.querySelector('#admin-auth-modal .modal-close').addEventListener('click', closeAdminAuth);
-document.querySelector('#admin-auth-modal .btn-ghost').addEventListener('click', closeAdminAuth);
-document.querySelector('#admin-auth-modal .btn-primary').addEventListener('click', verifyAdminPassword);
-document.getElementById('admin-pwd').addEventListener('keydown', e => { if (e.key === 'Enter') verifyAdminPassword(); });
-
-// Sheet modal
-document.querySelector('#sheet-modal .modal-close').addEventListener('click', closeSheetModal);
-document.querySelector('#sheet-modal .btn-ghost').addEventListener('click', closeSheetModal);
-document.querySelector('#sheet-modal .btn-primary').addEventListener('click', () => saveSheet(rebuild));
-
 // Map resize on window resize
 window.addEventListener('resize', () => {
   if (!state.map) return;
   if (state.provider === 'google') google.maps.event.trigger(state.map, 'resize');
   else state.map.getViewPort().resize();
 });
-
-// Admin hash in URL
-window.addEventListener('hashchange', checkAdminHash);
 
 // ─── Boot sequence ───────────────────────────────
 applyTheme();
@@ -154,5 +138,4 @@ buildStatusFilter();
 applyFilters();       // render initial (loading) state
 showPendingBanner();
 tryLoadSheet(rebuild);  // loads data; rebuild() triggers buildMarkers + renderList
-checkAdminHash();
 loadMapScript(); // tries Google Maps first, falls back to HERE if unavailable

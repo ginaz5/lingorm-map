@@ -3,10 +3,6 @@ import { state } from './state.js';
 import { parseCSV } from './csv-parser.js';
 import { doNetlifySubmit, resetFeedback, shouldMockNetlifySubmit } from './submit.js';
 
-// __ADMIN_HASH__ is replaced by Vite define at build time.
-// In Node.js test context, typeof returns 'undefined' (no ReferenceError).
-const ADMIN_HASH = typeof __ADMIN_HASH__ !== 'undefined' ? __ADMIN_HASH__ : '';
-
 const LOCATIONS_API = '/api/locations';
 
 // ═══════════════════════════════════════════════════
@@ -172,74 +168,6 @@ export async function submitIssueReport() {
   });
 }
 
-// ═══════════════════════════════════════════════════
-// ADMIN AUTH
-// ═══════════════════════════════════════════════════
-export function checkAdminHash() {
-  if (location.hash === '#admin') {
-    history.replaceState(null, '', location.pathname);
-    openAdminAuth();
-  }
-}
-
-export function openAdminAuth() {
-  document.getElementById('admin-pwd').value = '';
-  const fb = document.getElementById('admin-feedback');
-  fb.className = 'submit-feedback'; fb.textContent = '';
-  document.getElementById('admin-auth-modal').classList.add('open');
-  setTimeout(() => document.getElementById('admin-pwd').focus(), 100);
-}
-
-export function closeAdminAuth() {
-  document.getElementById('admin-auth-modal').classList.remove('open');
-}
-
-export async function verifyAdminPassword() {
-  const fb = document.getElementById('admin-feedback');
-  const pwdEl = document.getElementById('admin-pwd');
-  if (ADMIN_HASH === '__ADMIN_HASH__' || ADMIN_HASH === '') {
-    fb.className = 'submit-feedback err'; fb.textContent = t('admin_not_configured');
-    return;
-  }
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwdEl.value));
-  const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  if (hash === ADMIN_HASH) {
-    closeAdminAuth();
-    openSheetModal();
-  } else {
-    fb.className = 'submit-feedback err'; fb.textContent = t('admin_err');
-    pwdEl.value = ''; pwdEl.focus();
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// SHEET MODAL (admin only)
-// ═══════════════════════════════════════════════════
-export function openSheetModal() {
-  document.getElementById('sheet-status').textContent = '';
-  document.getElementById('sheet-modal').classList.add('open');
-}
-
-export function closeSheetModal() {
-  document.getElementById('sheet-modal').classList.remove('open');
-}
-
-// `rebuild` is passed as a callback to avoid forms.js → main.js circular dep
-export async function saveSheet(rebuild) {
-  const status = document.getElementById('sheet-status');
-  status.className = 'sheet-status';
-  status.innerHTML = `<div class="loading-spinner loading-spinner--sm"></div>${t('sheet_loading')}`;
-  try {
-    const resp = await fetch(LOCATIONS_API); if (!resp.ok) throw new Error(resp.status);
-    const parsed = parseCSV(await resp.text());
-    if (!parsed || !parsed.length) throw new Error('empty');
-    state.data = parsed;
-    status.className = 'sheet-status ok'; status.textContent = t('sheet_ok', state.data.length);
-    rebuild(); setTimeout(closeSheetModal, 1200);
-  } catch (e) {
-    status.className = 'sheet-status err'; status.textContent = t('sheet_err', e.message);
-  }
-}
 
 export async function tryLoadSheet(rebuild) {
   const bar = document.createElement('div'); bar.className = 'loading-bar'; document.body.appendChild(bar);
