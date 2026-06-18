@@ -67,28 +67,31 @@ test('map markers skip Could Not Find locations', async () => {
 
   const createdMarkers = [];
   const previousDocument = globalThis.document;
-  const previousGoogle = globalThis.google;
+  const previousHere = globalThis.H;
   globalThis.document = {
     createElement: () => ({ className: '', textContent: '' }),
   };
-  globalThis.google = {
-    maps: {
-      marker: {
-        AdvancedMarkerElement: class {
-          constructor(options) {
-            Object.assign(this, options);
-            createdMarkers.push(this);
-          }
+  globalThis.H = {
+    map: {
+      DomIcon: class {
+        constructor(element) {
+          this.element = element;
+        }
+      },
+      DomMarker: class {
+        constructor(position, options) {
+          this.position = position;
+          this.options = options;
+          createdMarkers.push(this);
+        }
 
-          addListener() {}
-        },
+        addEventListener() {}
       },
     },
   };
 
   try {
-    state.map = {};
-    state.infoWindow = { setContent() {}, open() {} };
+    state.map = { addObject() {}, removeObject() {} };
     state.markers = [];
     state.data = [
       makeLocation('Verified', 'Visible verified'),
@@ -102,10 +105,83 @@ test('map markers skip Could Not Find locations', async () => {
     assert.equal(state.markers[1], undefined);
   } finally {
     globalThis.document = previousDocument;
-    globalThis.google = previousGoogle;
+    globalThis.H = previousHere;
     state.map = null;
-    state.infoWindow = null;
     state.markers = [];
     state.data = [];
+  }
+});
+
+test('activateCard centers HERE map and opens info bubble', async () => {
+  const { state } = await import('../src/state.js');
+  const { activateCard } = await import('../src/render.js');
+
+  const previousDocument = globalThis.document;
+  const previousWindow = globalThis.window;
+  const previousHere = globalThis.H;
+  const centers = [];
+  const zooms = [];
+  const bubbles = [];
+  const activeClassOps = [];
+  const cardClassOps = [];
+
+  globalThis.document = {
+    querySelectorAll: () => [
+      { classList: { remove: (name) => activeClassOps.push(['remove', name]) } },
+    ],
+    getElementById: (id) => {
+      if (id !== 'card-0') return null;
+      return {
+        classList: { add: (name) => cardClassOps.push(['add', name]) },
+        scrollIntoView() {},
+      };
+    },
+  };
+  globalThis.window = { innerWidth: 1024 };
+  globalThis.H = {
+    ui: {
+      InfoBubble: class {
+        constructor(position, options) {
+          this.position = position;
+          this.options = options;
+        }
+      },
+    },
+  };
+
+  try {
+    state.activeIdx = -1;
+    state.data = [makeLocation('Verified', 'Visible verified')];
+    state.map = {
+      setCenter: (position) => centers.push(position),
+      setZoom: (zoom) => zooms.push(zoom),
+    };
+    state.hereUi = {
+      addBubble: (bubble) => bubbles.push(bubble),
+      removeBubble: () => {},
+    };
+    state.infoBubble = null;
+    state.markers = [{ id: 'marker-0' }];
+
+    activateCard(0);
+
+    assert.equal(state.activeIdx, 0);
+    assert.deepEqual(centers, [{ lat: 13.7, lng: 100.5 }]);
+    assert.deepEqual(zooms, [15]);
+    assert.equal(bubbles.length, 1);
+    assert.deepEqual(bubbles[0].position, { lat: 13.7, lng: 100.5 });
+    assert.match(bubbles[0].options.content, /Visible verified/);
+    assert.deepEqual(activeClassOps, [['remove', 'active']]);
+    assert.deepEqual(cardClassOps, [['add', 'active']]);
+  } finally {
+    globalThis.document = previousDocument;
+    globalThis.window = previousWindow;
+    globalThis.H = previousHere;
+    state.activeIdx = -1;
+    state.data = [];
+    state.map = null;
+    state.hereUi = null;
+    state.infoBubble = null;
+    state.markers = [];
   }
 });

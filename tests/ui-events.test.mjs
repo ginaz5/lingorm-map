@@ -14,9 +14,8 @@ async function loadSwitchTab(deps) {
   return Function(
     'document',
     'state',
-    'google',
     `${code}; return { switchTab };`,
-  )(deps.document, deps.state, deps.google);
+  )(deps.document, deps.state);
 }
 
 function makeElement() {
@@ -66,8 +65,13 @@ test('switchTab keeps panel and map visibility states aligned', async () => {
   let resizeCount = 0;
   const { switchTab } = await loadSwitchTab({
     document: { getElementById: (id) => elements[id] },
-    state: { map: {} },   // non-null so trigger fires
-    google: { maps: { event: { trigger: () => { resizeCount += 1; } } } },
+    state: {
+      map: {
+        getViewPort: () => ({
+          resize: () => { resizeCount += 1; },
+        }),
+      },
+    },
   });
 
   switchTab('map');

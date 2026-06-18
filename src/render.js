@@ -56,7 +56,7 @@ export function renderSources(row) {
 }
 
 // ═══════════════════════════════════════════════════
-// POPUP CONTENT (used by map.js for InfoWindow)
+// POPUP CONTENT (used by HERE map bubbles)
 // ═══════════════════════════════════════════════════
 export function buildPopupContent(i) {
   const row = state.data[i];
@@ -134,11 +134,17 @@ export function activateCard(i) {
   const row = state.data[i];
   const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
   if (lat && lng && state.map) {
-    state.map.panTo({lat, lng});
+    state.map.setCenter({lat, lng});
     state.map.setZoom(15);
-    if (state.markers[i]) {
-      state.infoWindow.setContent(buildPopupContent(i));
-      state.infoWindow.open({anchor: state.markers[i], map: state.map});
+    if (state.markers[i] && state.hereUi) {
+      if (state.infoBubble) {
+        state.hereUi.removeBubble(state.infoBubble);
+        state.infoBubble = null;
+      }
+      state.infoBubble = new H.ui.InfoBubble({ lat, lng }, {
+        content: buildPopupContent(i),
+      });
+      state.hereUi.addBubble(state.infoBubble);
     }
   }
   document.querySelectorAll('.loc-card').forEach(c => c.classList.remove('active'));

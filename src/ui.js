@@ -23,7 +23,7 @@ export function switchTab(tab) {
   document.getElementById('map-wrap').setAttribute('data-mobile-tab', isMap ? 'map' : 'list');
   document.getElementById('tab-map').classList.toggle('active', isMap);
   document.getElementById('tab-list').classList.toggle('active', !isMap);
-  if (isMap && state.map) google.maps.event.trigger(state.map, 'resize');
+  if (isMap && state.map) state.map.getViewPort().resize();
 }
 
 // ═══════════════════════════════════════════════════
@@ -59,13 +59,16 @@ export function locateMe() {
   navigator.geolocation.getCurrentPosition(
     pos => {
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
-      if (state.userLocationMarker) state.userLocationMarker.map = null;
+      if (state.userLocationMarker) {
+        state.map.removeObject(state.userLocationMarker);
+        state.userLocationMarker = null;
+      }
       const el = document.createElement('div');
       el.className = 'user-location-dot';
-      state.userLocationMarker = new google.maps.marker.AdvancedMarkerElement({
-        map: state.map, position: { lat, lng }, content: el, zIndex: 999,
-      });
-      state.map.panTo({ lat, lng });
+      const domIcon = new H.map.DomIcon(el);
+      state.userLocationMarker = new H.map.DomMarker({ lat, lng }, { icon: domIcon, zIndex: 999 });
+      state.map.addObject(state.userLocationMarker);
+      state.map.setCenter({ lat, lng });
       showSnackbar(t('locate_snack'));
     },
     err => {
@@ -85,7 +88,7 @@ export function toggleLang() {
   buildCatFilter();
   buildCatDropdown();
   applyFilters();
-  if (state.infoWindow && state.activeIdx >= 0 && state.markers[state.activeIdx]) {
-    state.infoWindow.setContent(buildPopupContent(state.activeIdx));
+  if (state.infoBubble && state.activeIdx >= 0) {
+    state.infoBubble.setContent(buildPopupContent(state.activeIdx));
   }
 }

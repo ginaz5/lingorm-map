@@ -16,7 +16,7 @@ import {
   openSheetModal, closeSheetModal, saveSheet, tryLoadSheet,
 } from './forms.js';
 import { showPendingBanner } from './submit.js';
-import { initMap, loadGoogleMapsScript, updateMapTheme, buildMarkers } from './map.js';
+import { initMap, loadHereMapsScript, updateMapTheme, buildMarkers } from './map.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -77,12 +77,6 @@ window.activateCard = activateCard;
 window.openEditModal = openEditModal;
 window.openNavigation = openNavigation;
 
-// Called by the Google Maps script loader via callback=initMapCallback
-window.initMapCallback = () => {
-  initMap();
-  // Now that map is ready, apply theme colorScheme
-  updateMapTheme();
-};
 
 // ═══════════════════════════════════════════════════
 // INIT
@@ -142,7 +136,7 @@ document.querySelector('#sheet-modal .btn-ghost').addEventListener('click', clos
 document.querySelector('#sheet-modal .btn-primary').addEventListener('click', () => saveSheet(rebuild));
 
 // Map resize on window resize
-window.addEventListener('resize', () => { if (state.map) google.maps.event.trigger(state.map, 'resize'); });
+window.addEventListener('resize', () => { if (state.map) state.map.getViewPort().resize(); });
 
 // Admin hash in URL
 window.addEventListener('hashchange', checkAdminHash);
@@ -157,4 +151,4 @@ applyFilters();       // render initial (loading) state
 showPendingBanner();
 tryLoadSheet(rebuild);  // loads data; rebuild() triggers buildMarkers + renderList
 checkAdminHash();
-loadGoogleMapsScript(); // loads Maps async; initMapCallback() called on completion
+loadHereMapsScript(); // loads HERE Maps scripts async, then calls initMap()

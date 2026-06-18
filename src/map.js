@@ -6,8 +6,17 @@ import { buildPopupContent, activateCard, getBadgeClass, isPublicLocation } from
 // MAP THEME
 // ═══════════════════════════════════════════════════
 export function updateMapTheme() {
-  if (!state.map) return;
-  state.map.setOptions({ colorScheme: getEffectiveTheme() === 'dark' ? 'DARK' : 'LIGHT' });
+  if (!state.map || !state.hereLayers) return;
+  const layer = getHereBaseLayer(state.hereLayers, getEffectiveTheme());
+  state.map.setBaseLayer(layer);
+}
+
+export function getHereBaseLayer(layers, theme) {
+  const normalVectorLayers = layers?.vector?.normal;
+  if (theme === 'dark') {
+    return normalVectorLayers?.mapnight || normalVectorLayers?.map;
+  }
+  return normalVectorLayers?.map;
 }
 
 // ═══════════════════════════════════════════════════
@@ -22,56 +31,90 @@ export function makeMarkerContent(status, icon) {
 
 export function buildMarkers() {
   if (!state.map) return;
-  state.markers.forEach(m => { if (m) m.map = null; });
+  state.markers.forEach(m => { if (m) state.map.removeObject(m); });
   state.markers.length = 0;
   state.data.forEach((row, i) => {
     const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
     if (!isPublicLocation(row)) return;
     if (!lat || !lng) return;
-    const m = new google.maps.marker.AdvancedMarkerElement({
-      map: state.map, position: { lat, lng }, content: makeMarkerContent(row.status, row.icon),
-    });
-    m.addListener('click', () => {
-      state.infoWindow.setContent(buildPopupContent(i));
-      state.infoWindow.open({ anchor: m, map: state.map });
+    const el = makeMarkerContent(row.status, row.icon);
+    const domIcon = new H.map.DomIcon(el);
+    const m = new H.map.DomMarker({ lat, lng }, { icon: domIcon });
+    m.addEventListener('tap', () => {
+      // Close existing bubble
+      if (state.infoBubble) {
+        state.hereUi.removeBubble(state.infoBubble);
+        state.infoBubble = null;
+      }
+      state.infoBubble = new H.ui.InfoBubble({ lat, lng }, {
+        content: buildPopupContent(i),
+      });
+      state.hereUi.addBubble(state.infoBubble);
       activateCard(i);
       if (window.innerWidth <= 700) switchTab('list');
     });
+    state.map.addObject(m);
     state.markers[i] = m;
   });
 }
 
 // ═══════════════════════════════════════════════════
-// GOOGLE MAPS INIT
+// HERE MAPS INIT
 // ═══════════════════════════════════════════════════
-
-// initMapCallback is assigned to window in main.js after all imports resolve
-export function initMap() {
-  document.getElementById('map-loading').classList.add('is-hidden');
-  state.map = new google.maps.Map(document.getElementById('map'), {
-    center: { lat: 13.82, lng: 100.52 }, zoom: 11,
-    mapId: state.googleMapId,
-    colorScheme: getEffectiveTheme() === 'dark' ? 'DARK' : 'LIGHT',
-    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_CENTER },
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src; s.async = false;
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
   });
-  state.infoWindow = new google.maps.InfoWindow();
+}
+
+export function initMap(apiKey) {
+  document.getElementById('map-loading').classList.add('is-hidden');
+
+  const platform = new H.service.Platform({ apikey: apiKey });
+  const layers = platform.createDefaultLayers();
+  state.hereLayers = layers;
+
+  const baseLayer = getHereBaseLayer(layers, getEffectiveTheme());
+
+  state.map = new H.Map(
+    document.getElementById('map'),
+    baseLayer,
+    { zoom: 11, center: { lat: 13.82, lng: 100.52 } }
+  );
+
+  // Enable map interaction (pan, zoom)
+  new H.mapevents.Behavior(new H.mapevents.MapEvents(state.map));
+
+  // Default UI (zoom controls, scale bar)
+  state.hereUi = H.ui.UI.createDefault(state.map, layers);
+
   buildMarkers();
 }
 
-export async function loadGoogleMapsScript() {
+export async function loadHereMapsScript() {
   try {
-    const resp = await fetch('/api/config'); if (!resp.ok) throw new Error(resp.status);
+    const resp = await fetch('/api/config');
+    if (!resp.ok) throw new Error(resp.status);
     const cfg = await resp.json();
-    state.googleMapId = cfg.googleMapId;
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = 'https://maps.googleapis.com/maps/api/js?key='
-      + encodeURIComponent(cfg.googleMapsKey)
-      + '&map_ids=' + encodeURIComponent(cfg.googleMapId)
-      + '&libraries=marker&callback=initMapCallback&loading=async';
-    document.body.appendChild(script);
+
+    // Inject HERE CSS
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://js.api.here.com/v3/3.1/mapsjs-ui.css';
+    document.head.appendChild(link);
+
+    // Load HERE scripts in dependency order
+    await loadScript('https://js.api.here.com/v3/3.1/mapsjs-core.js');
+    await loadScript('https://js.api.here.com/v3/3.1/mapsjs-service.js');
+    await loadScript('https://js.api.here.com/v3/3.1/mapsjs-ui.js');
+    await loadScript('https://js.api.here.com/v3/3.1/mapsjs-mapevents.js');
+
+    initMap(cfg.hereApiKey);
   } catch (e) {
-    console.error('Google Maps config failed', e);
+    console.error('HERE Maps config failed', e);
     document.getElementById('map-loading').classList.add('is-hidden');
   }
 }
