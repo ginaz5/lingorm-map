@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getEffectiveTheme, switchTab } from './ui.js';
+import { getEffectiveTheme } from './ui.js';
 import { buildPopupContent, activateCard, getBadgeClass, isPublicLocation } from './render.js';
 
 // ═══════════════════════════════════════════════════
@@ -70,7 +70,6 @@ export function buildMarkers() {
         state.infoWindow.setContent(buildPopupContent(i));
         state.infoWindow.open({ anchor: m, map: state.map });
         activateCard(i);
-        if (window.innerWidth <= 700) switchTab('list');
       });
       state.markers[i] = m;
     } else {
@@ -84,7 +83,6 @@ export function buildMarkers() {
         state.infoBubble = new H.ui.InfoBubble({ lat, lng }, { content: buildPopupContent(i) });
         state.hereUi.addBubble(state.infoBubble);
         activateCard(i);
-        if (window.innerWidth <= 700) switchTab('list');
       });
       state.map.addObject(m);
       state.markers[i] = m;
