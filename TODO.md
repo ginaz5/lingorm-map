@@ -28,6 +28,8 @@
 
 ## 🔲 部署後測試（待確認）
 
+- [ ] Netlify env var `HERE_API_KEY` 已設定
+- [ ] HERE Maps fallback 可正常載入（暫時移除 Google keys 測試）
 - [ ] 語言切換（中文 ↔ 英文），InfoWindow 內容同步
 - [ ] 「建議修改」表單送出 → Netlify Forms 收到
 - [ ] 「新增地點」表單送出 → Netlify Forms 收到

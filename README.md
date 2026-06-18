@@ -73,13 +73,16 @@ netlify login && netlify link
 
 ### Environment variables
 
-Create `.env` in the project root (not committed):
+Create `.env` in the project root (not committed — copy from `.env.example`):
 
 ```
-GOOGLE_MAPS_KEY=your_google_maps_key
-GOOGLE_MAP_ID=your_google_map_id
-GOOGLE_SHEET_CSV_URL=your_published_csv_url
+HERE_API_KEY=your_here_api_key          # required — fallback map provider
+GOOGLE_MAPS_KEY=your_google_maps_key    # optional — primary map provider
+GOOGLE_MAP_ID=your_google_map_id        # optional — required if using Google Maps
+GOOGLE_SHEET_CSV_URL=your_csv_url       # required — location data
 ```
+
+Get a HERE API key at [developer.here.com](https://developer.here.com) → Projects → REST → Create API key (free tier: 250k map transactions/month).
 
 ### Run locally
 
@@ -113,9 +116,12 @@ Required Netlify environment variables (Dashboard → Site Settings → Environm
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `GOOGLE_MAPS_KEY` | ✅ | Google Maps JS API key |
-| `GOOGLE_MAP_ID` | ✅ | Map ID for dark mode + AdvancedMarkerElement |
+| `HERE_API_KEY` | ✅ | HERE Maps JS API key (fallback provider) |
+| `GOOGLE_MAPS_KEY` | optional | Google Maps JS API key (primary provider) |
+| `GOOGLE_MAP_ID` | optional | Map ID for dark mode + AdvancedMarkerElement |
 | `GOOGLE_SHEET_CSV_URL` | ✅ | Published CSV URL for `/api/locations` |
+
+If `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` are omitted, the map loads HERE Maps directly. If both Google and HERE keys are present, Google Maps is used as primary with HERE as fallback.
 
 ### Netlify Forms
 

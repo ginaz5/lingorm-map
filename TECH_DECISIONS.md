@@ -30,11 +30,23 @@ loadMapScript()
 
 **Key 安全策略：**
 
-Google Maps JS API key 透過 Netlify Function `/api/config` 在 runtime 傳遞，不 hardcode 於 HTML。三層保護：
+兩個 provider 的 key 都透過 Netlify Function `/api/config` 在 runtime 傳遞，不 hardcode 於 HTML。
 
+Google Maps 三層保護：
 1. **HTTP Referrer 白名單**（Cloud Console → Credentials）：限制 key 僅接受 `https://lingorm-map.netlify.app/*` ✅
 2. **API Quota 硬停**（Maps JS API → Quotas）：`Map loads per day` = 900 ✅
 3. **Budget Alert**（Billing → Budgets & alerts）：$5 觸發 email 通知 ✅
+
+HERE Maps：免費方案 250,000 map transactions/月，無需信用卡，在 [developer.here.com](https://developer.here.com) 建立 project → REST API key。
+
+**Netlify env vars：**
+
+| Variable | Required | 說明 |
+|----------|----------|------|
+| `HERE_API_KEY` | ✅ | HERE Maps JS API key（fallback，必須） |
+| `GOOGLE_MAPS_KEY` | optional | Google Maps JS API key（primary） |
+| `GOOGLE_MAP_ID` | optional | Map ID（dark mode + AdvancedMarkerElement） |
+| `GOOGLE_SHEET_CSV_URL` | ✅ | Google Sheets 發佈的 CSV URL |
 
 ---
 
