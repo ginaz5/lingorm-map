@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW" data-theme="auto">
+<html lang="zh-TW" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
@@ -24,6 +24,10 @@
   <textarea name="notes_zh"></textarea><textarea name="notes_en"></textarea>
   <input name="status"/><input name="source_url"/><input name="submitter"/>
 </form>
+<form class="netlify-form-probe" name="issue-report" data-netlify="true" netlify-honeypot="bot-field">
+  <input name="bot-field"/><textarea name="message"></textarea>
+  <input name="page_url"/><input name="contact"/>
+</form>
 
 <!-- HEADER -->
 <header>
@@ -32,9 +36,28 @@
   <button class="hdr-btn btn-add" id="add-btn">
     <span>＋</span><span data-i18n="add_loc"></span>
   </button>
-  <button class="hdr-btn" id="locate-btn">📍 <span data-i18n="locate_btn_label"></span></button>
-  <button class="hdr-btn" id="lang-btn"></button>
-  <button class="hdr-btn icon-btn" id="theme-btn">🌙</button>
+  <button class="hdr-btn hdr-secondary" id="issue-btn">⚠️ <span data-i18n="issue_btn"></span></button>
+  <button class="hdr-btn hdr-secondary" id="locate-btn">📍 <span data-i18n="locate_btn_label"></span></button>
+  <button class="hdr-btn hdr-secondary" id="lang-btn"></button>
+  <button class="hdr-btn hdr-secondary icon-btn" id="theme-btn">🌙</button>
+  <div class="mobile-actions">
+    <button class="hdr-btn icon-btn mobile-actions-btn" id="mobile-actions-btn" type="button"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="mobile-actions-menu">⋯</button>
+    <div class="mobile-actions-menu" id="mobile-actions-menu" role="menu" hidden>
+      <button type="button" class="mobile-action-item" data-mobile-action="issue" role="menuitem">
+        <span>⚠️</span><span data-i18n="issue_btn"></span>
+      </button>
+      <button type="button" class="mobile-action-item" data-mobile-action="locate" role="menuitem">
+        <span>📍</span><span data-i18n="locate_btn_label"></span>
+      </button>
+      <button type="button" class="mobile-action-item" data-mobile-action="lang" role="menuitem">
+        <span data-i18n="lang_btn"></span>
+      </button>
+      <button type="button" class="mobile-action-item" data-mobile-action="theme" role="menuitem">
+        <span id="mobile-theme-icon">🌙</span><span data-i18n="theme_btn"></span>
+      </button>
+    </div>
+  </div>
 </header>
 
 <!-- Pending banner -->
@@ -67,7 +90,6 @@
     <div class="map-legend">
       <div class="leg-row"><div class="leg-dot verified"></div><span data-i18n="leg_verified"></span></div>
       <div class="leg-row"><div class="leg-dot review"></div><span data-i18n="leg_review"></span></div>
-      <div class="leg-row"><div class="leg-dot notfound"></div><span data-i18n="leg_notfound"></span></div>
     </div>
   </div>
 </div>
@@ -105,8 +127,6 @@
           <label for="so-verified" data-i18n="st_verified"></label>
           <input class="status-opt" type="radio" name="suggest-status" id="so-review" value="Needs Review" checked/>
           <label for="so-review" data-i18n="st_review"></label>
-          <input class="status-opt" type="radio" name="suggest-status" id="so-notfound" value="Could Not Find"/>
-          <label for="so-notfound" data-i18n="st_notfound"></label>
         </div>
       </div>
       <div class="form-row">
@@ -187,8 +207,6 @@
             <label for="ns-verified" data-i18n="st_verified"></label>
             <input class="status-opt" type="radio" name="new-status" id="ns-review" value="Needs Review" checked/>
             <label for="ns-review" data-i18n="st_review"></label>
-            <input class="status-opt" type="radio" name="new-status" id="ns-notfound" value="Could Not Find"/>
-            <label for="ns-notfound" data-i18n="st_notfound"></label>
           </div>
         </div>
         <hr class="form-divider"/>
@@ -216,6 +234,34 @@
       <button class="btn-ghost" id="add-cancel-btn" data-i18n="cancel"></button>
       <button class="btn-primary" id="add-submit-btn" data-i18n="add_submit"></button>
       <button class="btn-primary" id="add-done-btn" data-i18n="done"></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ISSUE REPORT -->
+<div class="modal-overlay" id="issue-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" data-i18n="issue_title"></span>
+      <button class="modal-close">✕</button>
+    </div>
+    <p class="modal-desc" data-i18n="issue_desc"></p>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="form-label"><span data-i18n="issue_lbl_message"></span><span class="required-mark"> *</span></label>
+        <textarea class="form-textarea" id="issue-message" rows="4" data-i18n-ph="issue_ph_message"></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label">
+          <span data-i18n="issue_lbl_contact"></span> <span class="lbl-opt" data-i18n="opt"></span>
+        </label>
+        <input class="form-input" id="issue-contact" data-i18n-ph="ph_submitter"/>
+      </div>
+      <div class="submit-feedback" id="issue-feedback"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" id="issue-cancel-btn" data-i18n="cancel"></button>
+      <button class="btn-primary" id="issue-submit-btn" data-i18n="issue_submit"></button>
     </div>
   </div>
 </div>

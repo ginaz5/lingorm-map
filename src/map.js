@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { getEffectiveTheme, switchTab } from './ui.js';
-import { buildPopupContent, activateCard, getBadgeClass } from './render.js';
+import { buildPopupContent, activateCard, getBadgeClass, isPublicLocation } from './render.js';
 
 // ═══════════════════════════════════════════════════
 // MAP THEME
@@ -26,6 +26,7 @@ export function buildMarkers() {
   state.markers.length = 0;
   state.data.forEach((row, i) => {
     const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+    if (!isPublicLocation(row)) return;
     if (!lat || !lng) return;
     const m = new google.maps.marker.AdvancedMarkerElement({
       map: state.map, position: { lat, lng }, content: makeMarkerContent(row.status, row.icon),

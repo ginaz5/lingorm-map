@@ -38,7 +38,22 @@ test('static HTML controls are wired without inline event attributes', async () 
   const staticMarkup = html.split(/<script\b[^>]*>/)[0];
 
   assert.match(staticMarkup, /id="add-btn"/);
+  assert.match(staticMarkup, /id="issue-btn"/);
   assert.equal(/\son(?:click|keydown)=/i.test(staticMarkup), false);
+});
+
+test('mobile header exposes secondary actions through an overflow menu', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const mainSrc = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');
+
+  assert.match(html, /id="mobile-actions-btn"/);
+  assert.match(html, /id="mobile-actions-menu"/);
+  assert.match(html, /data-mobile-action="issue"/);
+  assert.match(html, /data-mobile-action="locate"/);
+  assert.match(html, /data-mobile-action="lang"/);
+  assert.match(html, /data-mobile-action="theme"/);
+  assert.match(mainSrc, /mobile-actions-btn/);
+  assert.match(mainSrc, /data-mobile-action/);
 });
 
 test('switchTab keeps panel and map visibility states aligned', async () => {

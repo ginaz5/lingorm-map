@@ -10,6 +10,10 @@ export function getBadgeClass(s) {
   return 'b-review';
 }
 
+export function isPublicLocation(row) {
+  return row.status !== 'Could Not Find';
+}
+
 export function isApproximateCoords(row) {
   return /^(true|yes|1|approx|approximate)$/i.test(String(row.approx || '').trim());
 }
@@ -96,7 +100,7 @@ export function renderList() {
     const notes = lang === 'zh' ? row.notesZh : row.notesEn;
     const cat = lang === 'zh' ? row.catZh : row.catEn;
     const st = row.status;
-    const needsHelp = st === 'Needs Review' || st === 'Could Not Find';
+    const needsHelp = st === 'Needs Review';
     const approx = isApproximateCoords(row);
     return `<div class="loc-card${state.activeIdx === i ? ' active' : ''}" id="card-${i}" onclick="activateCard(${i})">
       <div class="card-head">
@@ -153,10 +157,12 @@ export function applyFilters() {
     const catVal = lang === 'zh' ? row.catZh : row.catEn;
     const catHit = !cat || catVal === cat;
     const stHit = !st || row.status === st;
+    if (!isPublicLocation(row)) return;
     if ((nameHit || notesHit) && catHit && stHit) state.visIdx.push(i);
   });
   renderList();
-  document.getElementById('result-info').textContent = state.isLoading ? '' : t('count', state.visIdx.length, state.data.length);
+  const publicTotal = state.data.filter(isPublicLocation).length;
+  document.getElementById('result-info').textContent = state.isLoading ? '' : t('count', state.visIdx.length, publicTotal);
 }
 
 // ═══════════════════════════════════════════════════
@@ -179,10 +185,11 @@ export function updateLangUI() {
 }
 
 export function buildStatusFilter() {
+  const publicStatuses = Object.entries(t('status')).filter(([status]) => status !== 'Could Not Find');
   rebuildSelect(
     document.getElementById('status-filter'),
     `<option value="">${t('all_status')}</option>` +
-    Object.entries(t('status')).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')
+    publicStatuses.map(([k, v]) => `<option value="${k}">${v}</option>`).join('')
   );
 }
 

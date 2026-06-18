@@ -31,6 +31,7 @@ export const T = {
   zh: {
     hdr_sub: '鄺玲玲曼谷踩點地圖',
     lang_btn: '🌐 EN',
+    theme_btn: '主題',
     add_loc: '新增地點',
     search_ph: '搜尋地點…',
     all_cat: '全部類別',
@@ -84,10 +85,19 @@ export const T = {
     add_submit: '送出',
     add_success_title: '感謝您的地點貢獻',
     add_success_desc: '我們已收到您的建議，管理員審核後會加入地圖。',
+    // Issue report modal
+    issue_btn: '問題回報',
+    issue_title: '問題回報',
+    issue_desc: '回報資料錯誤、地圖問題或網站操作異常。',
+    issue_lbl_message: '問題描述',
+    issue_ph_message: '請描述你遇到的問題，或貼上相關地點名稱。',
+    issue_lbl_contact: '你的名字 / 聯絡方式',
+    issue_submit: '送出回報',
     // Validation
     err_name_required: '請填寫地點名稱。',
     err_maps_required: '請填寫 Google Maps 連結。',
     err_maps_invalid: '請貼上有效的 Google Maps 分享連結（例：https://maps.app.goo.gl/...）。',
+    err_issue_required: '請填寫問題描述。',
     // Common
     opt: '（選填）', cancel: '取消', done: '完成',
     st_verified: '✅ 已驗證', st_review: '⚠️ 待確認', st_notfound: '❌ 找不到',
@@ -109,7 +119,7 @@ export const T = {
     sheet_title: '⚙️ Google Sheets API 狀態',
     sheet_desc: '資料由 Netlify Function 代抓 Google Sheets CSV；實際試算表網址只存在 Netlify 環境變數，不會暴露在前端。',
     sheet_howto: '<strong>設定方式：</strong><br>1. Google Sheets → 檔案 → 分享 → 發佈至網路<br>2. 選擇「Locations 工作表」+「逗號分隔值 (.csv)」<br>3. 將 CSV URL 存到 Netlify 環境變數 <code>GOOGLE_SHEET_CSV_URL</code> 並重新部署',
-    sheet_netlify: '<strong>設定 Netlify 表單通知（接收共編建議）：</strong><br>1. Netlify Dashboard → Forms → 找到 <code>suggest-edit</code> 和 <code>add-location</code><br>2. Settings → Form notifications → 加入你的 Email',
+    sheet_netlify: '<strong>設定 Netlify 表單通知（接收共編建議）：</strong><br>1. Netlify Dashboard → Forms → 找到 <code>suggest-edit</code>、<code>add-location</code> 和 <code>issue-report</code><br>2. Settings → Form notifications → 加入你的 Email',
     sheet_ok: n => `✅ 已載入 ${n} 筆資料`,
     sheet_err: e => `❌ 載入失敗：${e}`,
     sheet_loading: '載入中…',
@@ -118,6 +128,7 @@ export const T = {
   en: {
     hdr_sub: 'Lingorm Bangkok Location Map',
     lang_btn: '🌐 中文',
+    theme_btn: 'Theme',
     add_loc: 'Add Location',
     search_ph: 'Search locations…',
     all_cat: 'All Categories',
@@ -171,10 +182,19 @@ export const T = {
     add_submit: 'Submit',
     add_success_title: 'Thanks for contributing a location',
     add_success_desc: "We've received your suggestion. An admin will review it before adding it to the map.",
+    // Issue report modal
+    issue_btn: 'Report Issue',
+    issue_title: 'Report an issue',
+    issue_desc: 'Report incorrect data, map problems, or site issues.',
+    issue_lbl_message: 'Issue details',
+    issue_ph_message: 'Describe what happened, or include the related location name.',
+    issue_lbl_contact: 'Your name / contact',
+    issue_submit: 'Send report',
     // Validation
     err_name_required: 'Please enter the location name.',
     err_maps_required: 'Please enter a Google Maps link.',
     err_maps_invalid: 'Please paste a valid Google Maps share link (e.g. https://maps.app.goo.gl/...).',
+    err_issue_required: 'Please describe the issue.',
     // Common
     opt: '(optional)', cancel: 'Cancel', done: 'Done',
     st_verified: '✅ Verified', st_review: '⚠️ Needs Review', st_notfound: '❌ Not Found',
@@ -196,7 +216,7 @@ export const T = {
     sheet_title: '⚙️ Google Sheets API Status',
     sheet_desc: 'A Netlify Function fetches the Google Sheets CSV. The real spreadsheet URL only lives in Netlify environment variables and is not exposed to the frontend.',
     sheet_howto: '<strong>Setup:</strong><br>1. Google Sheets → File → Share → Publish to web<br>2. Select "Locations sheet" + "Comma-separated values (.csv)"<br>3. Store the CSV URL in Netlify env var <code>GOOGLE_SHEET_CSV_URL</code> and redeploy',
-    sheet_netlify: '<strong>Set up Netlify form notifications:</strong><br>1. Netlify Dashboard → Forms → find <code>suggest-edit</code> and <code>add-location</code><br>2. Settings → Form notifications → add your Email',
+    sheet_netlify: '<strong>Set up Netlify form notifications:</strong><br>1. Netlify Dashboard → Forms → find <code>suggest-edit</code>, <code>add-location</code>, and <code>issue-report</code><br>2. Settings → Form notifications → add your Email',
     sheet_ok: n => `✅ Loaded ${n} entries`,
     sheet_err: e => `❌ Load failed: ${e}`,
     sheet_loading: 'Loading…',

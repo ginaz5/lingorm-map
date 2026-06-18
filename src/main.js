@@ -11,9 +11,9 @@ import {
 import {
   openEditModal, closeEditModal, submitEdit,
   openAddModal, closeAddModal, submitAdd,
+  openIssueModal, closeIssueModal, submitIssueReport,
   checkAdminHash, closeAdminAuth, verifyAdminPassword,
   openSheetModal, closeSheetModal, saveSheet, tryLoadSheet,
-  showAddSuccess,
 } from './forms.js';
 import { showPendingBanner } from './submit.js';
 import { initMap, loadGoogleMapsScript, updateMapTheme, buildMarkers } from './map.js';
@@ -31,15 +31,42 @@ function rebuild() {
 // THEME
 // ═══════════════════════════════════════════════════
 function cycleTheme() {
-  const cur = localStorage.getItem('theme') || 'auto';
-  localStorage.setItem('theme', cur === 'auto' ? 'light' : cur === 'light' ? 'dark' : 'auto');
+  const next = getEffectiveTheme() === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme', next);
   applyTheme();
 }
 
 function applyTheme() {
-  document.documentElement.setAttribute('data-theme', getEffectiveTheme());
-  document.getElementById('theme-btn').textContent = THEME_ICONS[localStorage.getItem('theme') || 'auto'];
+  const theme = getEffectiveTheme();
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-btn').textContent = THEME_ICONS[theme];
+  document.getElementById('mobile-theme-icon').textContent = THEME_ICONS[theme];
   updateMapTheme();
+}
+
+function closeMobileActions() {
+  const btn = document.getElementById('mobile-actions-btn');
+  const menu = document.getElementById('mobile-actions-menu');
+  btn.setAttribute('aria-expanded', 'false');
+  menu.hidden = true;
+}
+
+function toggleMobileActions(event) {
+  event.stopPropagation();
+  const btn = document.getElementById('mobile-actions-btn');
+  const menu = document.getElementById('mobile-actions-menu');
+  const isOpen = !menu.hidden;
+  menu.hidden = isOpen;
+  btn.setAttribute('aria-expanded', String(!isOpen));
+}
+
+function runMobileAction(event) {
+  const action = event.currentTarget.dataset.mobileAction;
+  closeMobileActions();
+  if (action === 'issue') openIssueModal();
+  else if (action === 'locate') locateMe();
+  else if (action === 'lang') toggleLang();
+  else if (action === 'theme') cycleTheme();
 }
 
 // ═══════════════════════════════════════════════════
@@ -65,9 +92,16 @@ setLang(localStorage.getItem('lang') || 'zh');
 
 // Static event listeners
 document.getElementById('add-btn').addEventListener('click', openAddModal);
+document.getElementById('issue-btn').addEventListener('click', openIssueModal);
 document.getElementById('locate-btn').addEventListener('click', locateMe);
 document.getElementById('lang-btn').addEventListener('click', toggleLang);
 document.getElementById('theme-btn').addEventListener('click', cycleTheme);
+document.getElementById('mobile-actions-btn').addEventListener('click', toggleMobileActions);
+document.querySelectorAll('[data-mobile-action]').forEach(btn => {
+  btn.addEventListener('click', runMobileAction);
+});
+document.addEventListener('click', closeMobileActions);
+document.getElementById('mobile-actions-menu').addEventListener('click', e => e.stopPropagation());
 
 // Mobile tabs
 document.getElementById('tab-map').addEventListener('click', () => switchTab('map'));
@@ -76,6 +110,7 @@ document.getElementById('tab-list').addEventListener('click', () => switchTab('l
 // Modal backdrops (click outside = close)
 document.getElementById('edit-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeEditModal(); });
 document.getElementById('add-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAddModal(); });
+document.getElementById('issue-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeIssueModal(); });
 document.getElementById('admin-auth-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAdminAuth(); });
 document.getElementById('sheet-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeSheetModal(); });
 
@@ -90,6 +125,11 @@ document.getElementById('add-cancel-btn').addEventListener('click', closeAddModa
 document.getElementById('add-submit-btn').addEventListener('click', submitAdd);
 document.getElementById('add-done-btn').addEventListener('click', closeAddModal);
 
+// Issue report modal
+document.querySelector('#issue-modal .modal-close').addEventListener('click', closeIssueModal);
+document.getElementById('issue-cancel-btn').addEventListener('click', closeIssueModal);
+document.getElementById('issue-submit-btn').addEventListener('click', submitIssueReport);
+
 // Admin auth modal
 document.querySelector('#admin-auth-modal .modal-close').addEventListener('click', closeAdminAuth);
 document.querySelector('#admin-auth-modal .btn-ghost').addEventListener('click', closeAdminAuth);
@@ -100,11 +140,6 @@ document.getElementById('admin-pwd').addEventListener('keydown', e => { if (e.ke
 document.querySelector('#sheet-modal .modal-close').addEventListener('click', closeSheetModal);
 document.querySelector('#sheet-modal .btn-ghost').addEventListener('click', closeSheetModal);
 document.querySelector('#sheet-modal .btn-primary').addEventListener('click', () => saveSheet(rebuild));
-
-// System media query: re-apply theme when OS dark mode changes
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-  if ((localStorage.getItem('theme') || 'auto') === 'auto') applyTheme();
-});
 
 // Map resize on window resize
 window.addEventListener('resize', () => { if (state.map) google.maps.event.trigger(state.map, 'resize'); });

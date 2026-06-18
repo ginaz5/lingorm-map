@@ -8,13 +8,10 @@ import {
 // ═══════════════════════════════════════════════════
 // THEME
 // ═══════════════════════════════════════════════════
-export const THEME_ICONS = { light: '☀️', dark: '🌙', auto: '🌓' };
+export const THEME_ICONS = { light: '☀️', dark: '🌙' };
 
 export function getEffectiveTheme() {
-  const s = localStorage.getItem('theme') || 'auto';
-  return s === 'auto'
-    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-    : s;
+  return localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
 }
 
 // ═══════════════════════════════════════════════════

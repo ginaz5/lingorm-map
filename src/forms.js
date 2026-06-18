@@ -25,7 +25,6 @@ export function openEditModal(i) {
   const STATUS_OPTS = [
     { id: 'so-verified', val: 'Verified' },
     { id: 'so-review',   val: 'Needs Review' },
-    { id: 'so-notfound', val: 'Could Not Find' },
   ];
   let defaultSet = false;
   STATUS_OPTS.forEach(({ id, val }) => {
@@ -132,6 +131,45 @@ export async function submitAdd() {
   const errorKey = validateAddLocation(name, maps);
   if (errorKey) { fb.className = 'submit-feedback err'; fb.textContent = t(errorKey); return; }
   await doNetlifySubmit('add-submit-btn', 'add-feedback', t('add_submit'), buildAddLocationPayload(), showAddSuccess);
+}
+
+// ═══════════════════════════════════════════════════
+// ISSUE REPORT MODAL
+// ═══════════════════════════════════════════════════
+export function openIssueModal() {
+  ['issue-message', 'issue-contact'].forEach(id => document.getElementById(id).value = '');
+  resetFeedback('issue-feedback', 'issue-submit-btn', t('issue_submit'));
+  document.getElementById('issue-modal').classList.add('open');
+}
+
+export function closeIssueModal() {
+  document.getElementById('issue-modal').classList.remove('open');
+}
+
+export function validateIssueReport(message) {
+  return message.trim() ? '' : 'err_issue_required';
+}
+
+export function buildIssueReportPayload() {
+  return {
+    'form-name': 'issue-report',
+    'bot-field': '',
+    message: document.getElementById('issue-message').value.trim(),
+    page_url: location.href,
+    contact: document.getElementById('issue-contact').value.trim(),
+  };
+}
+
+export async function submitIssueReport() {
+  const message = document.getElementById('issue-message').value;
+  const fb = document.getElementById('issue-feedback');
+  const errorKey = validateIssueReport(message);
+  if (errorKey) { fb.className = 'submit-feedback err'; fb.textContent = t(errorKey); return; }
+
+  await doNetlifySubmit('issue-submit-btn', 'issue-feedback', t('issue_submit'), buildIssueReportPayload(), () => {
+    fb.className = 'submit-feedback ok'; fb.textContent = t('submit_ok');
+    setTimeout(closeIssueModal, 2200);
+  });
 }
 
 // ═══════════════════════════════════════════════════

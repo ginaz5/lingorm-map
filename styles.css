@@ -45,6 +45,15 @@ header{height:var(--header-h);flex-shrink:0;background:var(--surface);border-bot
 .icon-btn{padding:6px 8px;font-size:16px}
 .btn-add{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .btn-add:hover{opacity:.85;color:var(--on-accent);border-color:var(--accent)}
+.mobile-actions{display:none;position:relative}
+.mobile-actions-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:168px;
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  box-shadow:var(--shadow-md);padding:6px;z-index:700}
+.mobile-actions-menu[hidden]{display:none}
+.mobile-action-item{width:100%;background:none;border:none;color:var(--text);cursor:pointer;
+  display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:6px;
+  font-size:13px;font-weight:600;text-align:left;white-space:nowrap}
+.mobile-action-item:hover{background:var(--surface2);color:var(--accent)}
 /* Layout */
 .app-body{flex:1;display:flex;overflow:hidden}
 .panel{width:360px;min-width:300px;flex-shrink:0;background:var(--surface);
@@ -140,12 +149,17 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 .tab-btn.active{color:var(--accent)}
 .tab-btn svg{width:22px;height:22px;fill:currentColor}
 @media(max-width:700px){
+  header{gap:6px}
   .panel{width:100%;border-right:none}
   .app-body{flex-direction:column}
   .tab-bar{display:flex}
   .panel[data-mobile-tab="map"]{display:none}
   #map-wrap[data-mobile-tab="list"]{display:none}
   .logo-sub{display:none}
+  .logo{font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .hdr-secondary{display:none}
+  .mobile-actions{display:block}
+  .btn-add{padding:6px 9px}
 }
 /* Modals (shared) */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
