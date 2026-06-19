@@ -30,7 +30,7 @@ export function setLang(l) {
 export const T = {
   zh: {
     hdr_sub: '鄺玲玲曼谷踩點地圖',
-    lang_btn: '🌐 EN',
+    lang_btn: 'EN',
     theme_btn: '主題',
     add_loc: '新增地點',
     search_ph: '搜尋地點…',
@@ -103,7 +103,8 @@ export const T = {
     st_verified: '✅ 已驗證', st_review: '⚠️ 待確認', st_notfound: '❌ 找不到',
     ph_submitter: '例：@your_ig',
     // Navigation & location
-    nav_btn: '🧭 導航到這裡',
+    nav_btn: '導航',
+    open_maps_btn: 'Maps',
     locate_btn: '📍',
     locate_btn_label: '定位',
     locate_snack: '✓ 已定位　點地標上的「導航到這裡」可開啟路線',
@@ -113,7 +114,7 @@ export const T = {
   },
   en: {
     hdr_sub: 'Lingorm Bangkok Location Map',
-    lang_btn: '🌐 中文',
+    lang_btn: '中文',
     theme_btn: 'Theme',
     add_loc: 'Add Location',
     search_ph: 'Search locations…',
@@ -186,7 +187,8 @@ export const T = {
     st_verified: '✅ Verified', st_review: '⚠️ Needs Review', st_notfound: '❌ Not Found',
     ph_submitter: 'e.g. @your_ig',
     // Navigation & location
-    nav_btn: '🧭 Navigate here',
+    nav_btn: 'Navigate',
+    open_maps_btn: 'Maps',
     locate_btn: '📍',
     locate_btn_label: 'Locate me',
     locate_snack: '✓ Located　Tap a marker → "Navigate here" to open directions',

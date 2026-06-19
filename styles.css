@@ -268,12 +268,17 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
   opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
 .snackbar.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:700px){.snackbar{bottom:calc(var(--tab-h) + 10px)}}
-/* Popup footer: src-tags left, nav button right */
+/* Popup footer: src-tag left, buttons right — always single row */
 .popup-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:6px}
-.popup-nav-btn{padding:3px 10px;background:var(--accent);color:var(--on-accent);border:none;
-  border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;
-  display:inline-flex;align-items:center;gap:3px;transition:opacity .15s;flex-shrink:0}
-.popup-nav-btn:hover{opacity:.85}
+.popup-btn-group{display:flex;flex-direction:row;gap:5px;flex-shrink:0}
+.popup-nav-btn,.popup-maps-btn{padding:4px 9px;border-radius:20px;font-size:11px;font-weight:600;
+  cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;
+  gap:4px;transition:opacity .15s}
+.popup-nav-btn{background:var(--accent);color:var(--on-accent);border:none}
+.popup-maps-btn{background:none;color:var(--text-muted);border:1px solid var(--border)}
+.popup-nav-btn:hover,.popup-maps-btn:hover{opacity:.75}
+/* Mobile: hide button text, icon only */
+@media(max-width:700px){.popup-btn-label{display:none}}
 /* User location blue dot */
 .user-location-dot{width:18px;height:18px;border-radius:50%;background:#1a73e8;
   border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);position:relative}

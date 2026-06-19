@@ -6,7 +6,7 @@ import {
 } from './render.js';
 import {
   THEME_ICONS, getEffectiveTheme, switchTab,
-  showSnackbar, locateMe, openNavigation, toggleLang,
+  showSnackbar, locateMe, openNavigation, openInGoogleMaps, toggleLang,
 } from './ui.js';
 import {
   openEditModal, closeEditModal, submitEdit,
@@ -75,6 +75,7 @@ function runMobileAction(event) {
 window.activateCard = activateCard;
 window.openEditModal = openEditModal;
 window.openNavigation = openNavigation;
+window.openInGoogleMaps = openInGoogleMaps;
 window.applyFilters = applyFilters;
 
 

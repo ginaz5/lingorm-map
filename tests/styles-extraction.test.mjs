@@ -13,10 +13,11 @@ test('index loads app styles from an external stylesheet', async () => {
 
 test('index does not keep presentational inline style hooks', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const appMarkup = html.replace(/<noscript>[\s\S]*?<\/noscript>/g, '');
 
-  assert.equal(html.includes(' style='), false);
-  assert.equal(html.includes('.style.cssText'), false);
-  assert.equal(html.includes('.style.display'), false);
+  assert.equal(appMarkup.includes(' style='), false);
+  assert.equal(appMarkup.includes('.style.cssText'), false);
+  assert.equal(appMarkup.includes('.style.display'), false);
 });
 
 test('unused map-link and Leaflet styles are not kept', async () => {

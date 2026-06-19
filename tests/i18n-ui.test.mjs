@@ -33,10 +33,10 @@ test('updateLangUI updates text, HTML, placeholders, and status options in one p
   const textEl = { dataset: { i18n: 'label' }, textContent: '' };
   const htmlEl = { dataset: { i18nHtml: 'markup' }, innerHTML: '' };
   const placeholderEl = { dataset: { i18nPh: 'hint' }, placeholder: '' };
-  const langBtn = { textContent: '' };
+  const langBtnLabel = { textContent: '' };
   const statusFilter = makeSelect('Needs Review');
   const byId = new Map([
-    ['lang-btn', langBtn],
+    ['lang-btn-label', langBtnLabel],
     ['status-filter', statusFilter],
   ]);
   const { updateLangUI } = await loadUiHelpers({
@@ -64,7 +64,7 @@ test('updateLangUI updates text, HTML, placeholders, and status options in one p
   assert.equal(textEl.textContent, 'Label');
   assert.equal(htmlEl.innerHTML, '<strong>Markup</strong>');
   assert.equal(placeholderEl.placeholder, 'Hint');
-  assert.equal(langBtn.textContent, 'Language');
+  assert.equal(langBtnLabel.textContent, 'Language');
   assert.equal(statusFilter.value, 'Needs Review');
   assert.match(statusFilter.innerHTML, /<option value="">All Statuses<\/option>/);
 });

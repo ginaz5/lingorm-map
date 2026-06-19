@@ -53,6 +53,18 @@ export function openNavigation(i) {
   window.open(url, '_blank');
 }
 
+export function openInGoogleMaps(i) {
+  const row = state.data[i];
+  let url;
+  if (row.mapsQuery) {
+    url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(row.mapsQuery);
+  } else {
+    const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+    url = 'https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng;
+  }
+  window.open(url, '_blank');
+}
+
 // ═══════════════════════════════════════════════════
 // USER LOCATION
 // ═══════════════════════════════════════════════════

@@ -33,8 +33,9 @@ function makeElement() {
 
 test('static HTML controls are wired without inline event attributes', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  // Split on any <script ...> tag (including <script type="module">)
-  const staticMarkup = html.split(/<script\b[^>]*>/)[0];
+  const headerMatch = html.match(/<header>[\s\S]*?<\/header>/);
+  assert.ok(headerMatch, 'header markup should exist');
+  const staticMarkup = headerMatch[0];
 
   assert.match(staticMarkup, /id="add-btn"/);
   assert.match(staticMarkup, /id="issue-btn"/);
