@@ -1,5 +1,17 @@
 import { t } from './i18n.js';
 
+/** @param {string} id @returns {HTMLElement} */
+function requiredElement(id) {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Missing required element #${id}`);
+  return el;
+}
+
+/** @param {string} id @returns {HTMLButtonElement} */
+function requiredButton(id) {
+  return /** @type {HTMLButtonElement} */ (requiredElement(id));
+}
+
 // ═══════════════════════════════════════════════════
 // NETLIFY FORM SUBMIT
 // ═══════════════════════════════════════════════════
@@ -7,9 +19,19 @@ export function shouldMockNetlifySubmit() {
   return ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 }
 
+/**
+ * @param {string} btnId
+ * @param {string} fbId
+ * @param {string} btnLabel
+ * @param {Record<string,string>} payload
+ * @param {(feedback: HTMLElement) => void} onSuccess
+ * @returns {Promise<void>}
+ */
 export async function doNetlifySubmit(btnId, fbId, btnLabel, payload, onSuccess) {
-  const btn = document.getElementById(btnId);
+  const btn = /** @type {HTMLButtonElement|null} */ (document.getElementById(btnId));
   const fb = document.getElementById(fbId);
+  if (!btn) throw new Error(`Missing required element #${btnId}`);
+  if (!fb) throw new Error(`Missing required element #${fbId}`);
   btn.disabled = true; btn.textContent = t('submitting');
   fb.className = 'submit-feedback'; fb.textContent = '';
   if (shouldMockNetlifySubmit()) {
@@ -27,17 +49,18 @@ export async function doNetlifySubmit(btnId, fbId, btnLabel, payload, onSuccess)
     if (resp.ok) {
       recordPending();
       onSuccess(fb);
-    } else { throw new Error(resp.status); }
+    } else { throw new Error(String(resp.status)); }
   } catch (e) {
     fb.className = 'submit-feedback err'; fb.textContent = t('submit_err');
     btn.disabled = false; btn.textContent = btnLabel;
   }
 }
 
+/** @param {string} fbId @param {string} btnId @param {string} btnLabel */
 export function resetFeedback(fbId, btnId, btnLabel) {
-  const fb = document.getElementById(fbId);
+  const fb = requiredElement(fbId);
   fb.className = 'submit-feedback'; fb.textContent = '';
-  const btn = document.getElementById(btnId);
+  const btn = requiredButton(btnId);
   btn.disabled = false; btn.textContent = btnLabel;
 }
 
@@ -51,5 +74,5 @@ export function recordPending() {
 
 export function showPendingBanner() {
   if (localStorage.getItem('has_pending') === '1')
-    document.getElementById('pending-banner').classList.add('is-visible');
+    requiredElement('pending-banner').classList.add('is-visible');
 }

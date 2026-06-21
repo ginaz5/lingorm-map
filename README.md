@@ -1,6 +1,6 @@
 # Lingorm Map
 
-Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted in Lingorm's content. Built as a vanilla JS + Vite static site, deployed on Netlify.
+Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted in Lingorm's content. Built as a vanilla JavaScript + Vite static site, deployed on Netlify. TypeScript is used only as a development-time, no-emit `checkJs`/JSDoc checker; the application remains JavaScript.
 
 🌐 **Live:** https://lingorm-map.netlify.app
 
@@ -136,9 +136,9 @@ graph LR
 | Data | Google Sheets → published CSV → Netlify Function proxy (`/api/locations`) |
 | Forms | Netlify Forms (`suggest-edit`, `add-location`, `issue-report`) |
 | Analytics | Google Tag Manager (GTM-NVNXGP44) → GA4 (G-31MF79LHFM) |
-| Build | Vite 6, ES modules in `src/` |
+| Build / check | Vite 6 + TS `checkJs` (no emit), ES modules in `src/` |
 | Deploy | Netlify (GitHub auto-deploy) |
-| Tests | Node.js built-in `node:test` — 64 tests |
+| Tests | Node.js built-in `node:test` — 68 tests |
 
 ---
 
@@ -162,11 +162,12 @@ lingorm_bangkok_map/
 │   └── functions/
 │       ├── config.mjs      # /api/config — returns Maps key + map ID
 │       └── locations.mjs   # /api/locations — proxies Google Sheets CSV
-├── tests/                  # node:test test suite (58 tests)
+├── tests/                  # node:test test suite (68 tests)
+├── jsconfig.json           # Strict incremental TypeScript checkJs configuration
 ├── vite.config.js          # Vite build config
 ├── build.sh                # Netlify pre-build: validates env vars
 ├── netlify.toml            # build command, publish dir, functions dir, /api/* redirect
-└── TECH_DECISIONS.md       # Architecture decision records
+└── note/TECH_DECISIONS.md  # Architecture decision records
 ```
 
 ---
@@ -203,17 +204,27 @@ netlify dev        # http://localhost:8888
 
 This runs Vite + Netlify Functions together. Do **not** open `index.html` directly — the Netlify Functions (`/api/config`, `/api/locations`) won't be available.
 
+### Static type checking
+
+```bash
+npm run typecheck
+```
+
+The project stays in `.js` files and Vite remains responsible for production output. TypeScript runs only in development with `noEmit`, using strict `checkJs` and JSDoc contracts. The initial primary scope is `state.js`, `csv-parser.js`, `map.js`, and `forms.js`; TypeScript also follows their imported module boundaries, where narrow annotations and strict DOM-null fixes may be required. Coverage will expand incrementally rather than through a wholesale TypeScript migration.
+
 ### Unit tests
 
 ```bash
 node --test tests/*.test.mjs
 ```
 
-Expected: 58 pass, 0 fail.
+Expected: 68 pass, 0 fail.
 
-### Production build (verify before deploy)
+### Pre-deploy verification
 
 ```bash
+npm run typecheck
+node --test tests/*.test.mjs
 npm run build      # outputs to dist/
 ```
 
@@ -309,6 +320,7 @@ node --test tests/*.test.mjs
 | `ui-events.test.mjs` | No inline `onclick`; `switchTab` state alignment |
 | `add-location-form.test.mjs` | Netlify form field parity, URL validator, submit mock |
 | `edit-submit.test.mjs` | `submitEdit` payload correctness |
+| `favorites.test.mjs` | Favorite state persistence and rendering behavior |
 | `issue-report.test.mjs` | Issue report form field parity, UI copy |
 | `google-maps-loader.test.mjs` | No hardcoded API key placeholders; runtime config fetch |
 | `here-map-layer.test.mjs` | HERE Maps base layer selection (dark/light fallback) |
@@ -316,5 +328,6 @@ node --test tests/*.test.mjs
 | `public-notfound.test.mjs` | "Could Not Find" locations hidden from public list + markers |
 | `styles-extraction.test.mjs` | External CSS linked; no inline presentational styles |
 | `theme-mode.test.mjs` | Theme toggle supports only light/dark |
+| `typecheck-config.test.mjs` | Strict no-emit `checkJs` command, scope, and dependency configuration |
 | `config-function.test.mjs` | `/api/config` Netlify Function |
 | `locations-function.test.mjs` | `/api/locations` Netlify Function |

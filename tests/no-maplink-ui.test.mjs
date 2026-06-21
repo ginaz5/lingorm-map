@@ -8,3 +8,10 @@ test('index UI does not render Google Maps open links', async () => {
   assert.equal(html.includes('popup-maplink'), false);
   assert.equal(html.includes("${t('maps')}"), false);
 });
+
+test('Google Maps navigation reads the parsed maps field', async () => {
+  const source = await readFile(new URL('../src/ui.js', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(source, /\brow\.mapsQuery\b/);
+  assert.match(source, /\brow\.maps\b/);
+});

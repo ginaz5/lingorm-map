@@ -201,3 +201,24 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 | 流量超過 quota（>900次/日） | 調高 Cloud Console quota，或升級 Vercel（key 存環境變數） |
 | 更多地點（>200 筆） | 考慮虛擬捲動（virtual scroll） |
 | 泰文支援 | `i18n.js` 加 `th` key，lang toggle 加第三段 |
+
+---
+
+## JavaScript 靜態型別檢查：TypeScript checkJs + JSDoc
+
+**決策：** 保留現有 `.js` ES modules 與 Vite runtime/build 流程；TypeScript 只作為開發期靜態檢查器，以 strict、no-emit `checkJs` 搭配 JSDoc 描述應用程式資料契約，不進行整體 `.ts` 遷移。
+
+**初始範圍：**
+- 主要檢查 `src/state.js`、`src/csv-parser.js`、`src/map.js`、`src/forms.js`
+- TypeScript 會沿著上述檔案的 ES module imports 檢查相依邊界；必要時只補窄範圍 JSDoc 或 DOM null safety，不重新設計被匯入模組
+- 後續模組依維護需求逐步納入，不要求一次覆蓋全部程式碼
+
+**選用理由：**
+- 不改變瀏覽器實際執行的 JavaScript，也不讓 TypeScript 取代 Vite emit production assets
+- 先在 CSV 資料、shared state、地圖與表單等高風險邊界取得 strict 檢查效益
+- JSDoc contract 可直接貼近既有程式碼，降低大規模副檔名、import 與建置流程遷移成本
+- `npm run typecheck` 可在測試與 build 前快速攔截資料 shape、callback、DOM nullable 等問題
+
+**限制：** Google Maps 與 HERE Maps SDK 是執行時動態載入，目前只在 ambient declaration 將其 global boundary 標為 `any`。這代表第三方 SDK 內部 API 不在本階段的嚴格型別保證內；應用程式自行擁有的資料與函式邊界仍以 JSDoc 嚴格檢查。若日後需要更完整 SDK 型別，再個別引入官方或維護良好的 declarations。
+
+**擴充方式：** 每次納入新模組時，同步補足其 public JSDoc contract、imported boundaries 與測試，維持 `npm run typecheck`、完整 node tests、`npm run build` 依序通過後才提交。

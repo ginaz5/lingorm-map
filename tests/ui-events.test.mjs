@@ -14,8 +14,17 @@ async function loadSwitchTab(deps) {
   return Function(
     'document',
     'state',
+    'requiredElement',
     `${code}; return { switchTab };`,
-  )(deps.document, deps.state);
+  )(
+    deps.document,
+    deps.state,
+    (id) => {
+      const el = deps.document.getElementById(id);
+      if (!el) throw new Error(`Missing required element #${id}`);
+      return el;
+    },
+  );
 }
 
 function makeElement() {

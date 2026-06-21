@@ -1,12 +1,41 @@
 // ═══════════════════════════════════════════════════
 // SLUG / ID HELPER
 // ═══════════════════════════════════════════════════
+/** @typedef {'Verified'|'Needs Review'|'Could Not Find'} LocationStatus */
+/**
+ * @typedef {Object} LocationRow
+ * @property {string} id
+ * @property {string} nameEn
+ * @property {string} nameZh
+ * @property {string} alt
+ * @property {string} catEn
+ * @property {string} catZh
+ * @property {string} notesEn
+ * @property {string} notesZh
+ * @property {string} icon
+ * @property {string} lat
+ * @property {string} lng
+ * @property {string} maps
+ * @property {LocationStatus} status
+ * @property {string} dup
+ * @property {string} src
+ * @property {string} approx
+ * @property {string} sourceUrl
+ */
+/** @typedef {{en: string, zh: string}} CategoryAlias */
+/** @typedef {(row: string[], key: string) => string} ReadCell */
+
+/**
+ * @param {unknown} s
+ * @returns {string}
+ */
 export const slugify = (s) =>
   String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 // ═══════════════════════════════════════════════════
 // CATEGORY ALIASES — normalise legacy / variant category names during CSV parsing
 // ═══════════════════════════════════════════════════
+/** @type {Record<string, CategoryAlias>} */
 export const CATEGORY_ALIASES = {
   "Hotel": {en:"Hotel", zh:"飯店"},
   "酒店": {en:"Hotel", zh:"飯店"},
@@ -28,12 +57,20 @@ export const CATEGORY_ALIASES = {
   "咖啡廳/飲品":        {en:"Beverages", zh:"飲料"},
 };
 
+/**
+ * @param {LocationRow} row
+ * @returns {LocationRow}
+ */
 export function normalizeCategoryRow(row) {
   const alias = CATEGORY_ALIASES[row.catEn] || CATEGORY_ALIASES[row.catZh];
   if (alias) return { ...row, catEn: alias.en, catZh: alias.zh };
   return row;
 }
 
+/**
+ * @param {LocationRow[]} rows
+ * @returns {LocationRow[]}
+ */
 export function normalizeCategoryRows(rows) {
   return rows.map(normalizeCategoryRow);
 }
@@ -43,8 +80,16 @@ export function normalizeCategoryRows(rows) {
 // ═══════════════════════════════════════════════════
 
 // Tokenize RFC 4180-ish CSV text into a 2D array of strings
+/**
+ * @param {string} text
+ * @returns {string[][]}
+ */
 export function tokenizeCSV(text) {
-  const rows = []; let row = []; let field = ''; let inQ = false;
+  /** @type {string[][]} */
+  const rows = [];
+  /** @type {string[]} */
+  let row = [];
+  let field = ''; let inQ = false;
   for (let i = 0; i < text.length; i++) {
     const ch = text[i], nx = text[i + 1];
     if (inQ) {
@@ -64,6 +109,7 @@ export function tokenizeCSV(text) {
 }
 
 // Lookup tables used when parsing the published/legacy sheet format
+/** @type {Record<string, string>} */
 export const ICON_BY_CAT = {
   "Restaurant":"🍽","Cafe":"☕","Cafe / Beverage":"🧋","Cafe / Juice Bar":"🥤",
   "Hotel":"🏨","Bar":"🍸","Bar / Club":"🍸","Bar / Rooftop Club":"🏖️","Spa":"♨️",
@@ -71,6 +117,7 @@ export const ICON_BY_CAT = {
   "Nature / Day-trip":"🌿","Street Food":"🍜","Neighbourhood":"🏘️"
 };
 
+/** @type {Record<string, string>} */
 export const ZH_BY_CAT = {
   "Restaurant":"餐廳","Cafe":"咖啡廳","Cafe / Beverage":"飲料","Cafe / Juice Bar":"飲料","Beverages":"飲料",
   "Hotel":"飯店","Bar":"酒吧/天台俱樂部","Bar / Club":"酒吧/天台俱樂部","Bar / Rooftop Club":"酒吧/天台俱樂部","Spa":"Spa",
@@ -78,14 +125,22 @@ export const ZH_BY_CAT = {
   "Nature / Day-trip":"自然 / 一日遊","Street Food":"街頭小吃","Neighbourhood":"街區"
 };
 
+/**
+ * @param {string} s
+ * @returns {LocationStatus}
+ */
 export function normalizeStatus(s) {
   const raw = s.trim();
   if (raw === "Verified" || raw === "Needs Review" || raw === "Could Not Find") return raw;
-  if (/verified/i.test(raw)) return "Verified";
   if (/could not find|not found/i.test(raw)) return "Could Not Find";
+  if (/^verified$/i.test(raw)) return "Verified";
   return "Needs Review";
 }
 
+/**
+ * @param {string} url
+ * @returns {string}
+ */
 export function sourceLabel(url) {
   if (!url) return "";
   const host = (url.match(/^https?:\/\/([^/]+)/i) || [])[1] || "";
@@ -97,18 +152,33 @@ export function sourceLabel(url) {
   return "Source";
 }
 
+/**
+ * @param {string} tags
+ * @returns {string}
+ */
 export function normalizeSourceTags(tags) {
   return tags.split(',').map(s => s.trim())
     .filter(s => s && !/^https?:\/\//i.test(s))
     .join(' + ');
 }
 
+/**
+ * @param {string} name
+ * @param {string} maps
+ * @returns {string}
+ */
 export function mapsQuery(name, maps) {
   if (maps && !/open in maps/i.test(maps) && !/^📍/.test(maps)) return maps;
   return name ? `${name} Bangkok` : "";
 }
 
 // Internal sheet format: Name_EN, Name_ZH, Category_EN, … columns
+/**
+ * @param {string[][]} rows
+ * @param {Record<string, number>} idx
+ * @param {ReadCell} read
+ * @returns {LocationRow[] | null}
+ */
 export function parseInternalFormat(rows, idx, read) {
   const coreKeys = ["Name_EN","Name_ZH","Alt_Name","Category_EN","Category_ZH",
                     "Notes_EN","Notes_ZH","Icon","Lat","Lng",
@@ -129,7 +199,7 @@ export function parseInternalFormat(rows, idx, read) {
       lat:      read(r, "Lat"),
       lng:      read(r, "Lng"),
       maps:     read(r, "Maps_Query"),
-      status:   read(r, "Status"),
+      status:   normalizeStatus(read(r, "Status")),
       dup:      read(r, "Duplicate_Group"),
       src:      read(r, "Source"),
       approx:   read(r, "Coords_Approx"),
@@ -138,6 +208,12 @@ export function parseInternalFormat(rows, idx, read) {
 }
 
 // Published/legacy sheet format: "Location Name", "Category", "Verification Status", … columns
+/**
+ * @param {string[][]} rows
+ * @param {Record<string, number>} idx
+ * @param {ReadCell} read
+ * @returns {LocationRow[] | null}
+ */
 export function parsePublishedFormat(rows, idx, read) {
   const required = ["Location Name","Thai / Alt Name","Category",
                     "Notes","Source URL","Verification Status","Duplicate Group"];
@@ -175,12 +251,18 @@ export function parsePublishedFormat(rows, idx, read) {
     });
 }
 
+/**
+ * @param {string} text
+ * @returns {LocationRow[] | null}
+ */
 export function parseCSV(text) {
   const rows = tokenizeCSV(text);
   if (rows.length < 2) return null;
   const headers = rows[0].map(h => h.replace(/^﻿/, '').trim());
+  /** @type {Record<string, number>} */
   const idx = {};
   headers.forEach((h, i) => idx[h] = i);
+  /** @type {ReadCell} */
   const read = (r, k) => (idx[k] !== undefined ? r[idx[k]] || '' : '').trim();
   const parsed = parseInternalFormat(rows, idx, read)
              ?? parsePublishedFormat(rows, idx, read);

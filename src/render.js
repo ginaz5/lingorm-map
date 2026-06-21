@@ -2,7 +2,27 @@ import { lang, t, tobj, CATEGORIES } from './i18n.js';
 import { state } from './state.js';
 import { switchTab } from './ui.js';
 
+/** @typedef {import('./csv-parser.js').LocationRow} LocationRow */
+
+/** @param {string} id @returns {HTMLElement} */
+function requiredElement(id) {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Missing required element #${id}`);
+  return el;
+}
+
+/** @param {string} id @returns {HTMLInputElement} */
+function requiredInput(id) {
+  return /** @type {HTMLInputElement} */ (requiredElement(id));
+}
+
+/** @param {string} id @returns {HTMLSelectElement} */
+function requiredSelect(id) {
+  return /** @type {HTMLSelectElement} */ (requiredElement(id));
+}
+
 const HEART_PATH = "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z";
+/** @param {boolean} active @returns {string} */
 export const heartSVG = (active) =>
   `<svg width="18" height="18" viewBox="0 0 24 24"
     fill="${active ? '#e05252' : 'none'}"
@@ -13,16 +33,19 @@ export const heartSVG = (active) =>
 // ═══════════════════════════════════════════════════
 // BADGE / STATUS HELPERS
 // ═══════════════════════════════════════════════════
+/** @param {string} s @returns {string} */
 export function getBadgeClass(s) {
   if (s === 'Verified') return 'b-verified';
   if (s === 'Could Not Find') return 'b-notfound';
   return 'b-review';
 }
 
+/** @param {LocationRow} row @returns {boolean} */
 export function isPublicLocation(row) {
   return row.status !== 'Could Not Find';
 }
 
+/** @param {LocationRow} row @returns {boolean} */
 export function isApproximateCoords(row) {
   return /^(true|yes|1|approx|approximate)$/i.test(String(row.approx || '').trim());
 }
@@ -30,13 +53,15 @@ export function isApproximateCoords(row) {
 // ═══════════════════════════════════════════════════
 // SOURCE TAGS
 // ═══════════════════════════════════════════════════
+/** @param {LocationRow} row @returns {string} */
 export function renderSources(row) {
   const src = row.src || '';
   const srcUrl = row.sourceUrl || '';
   if (!src) return '';
-  const tokens = src.split(/\s*[+,]\s*/).map(s => s.trim()).filter(Boolean);
-  const urls = srcUrl.split(/\s*,\s*/).map(s => s.trim()).filter(Boolean);
+  const tokens = src.split(/\s*[+,]\s*/).map((/** @type {string} */ s) => s.trim()).filter(Boolean);
+  const urls = srcUrl.split(/\s*,\s*/).map((/** @type {string} */ s) => s.trim()).filter(Boolean);
   const tags = tokens.map((token, idx) => {
+    /** @param {string} label @param {string} url */
     const labelFor = (label, url) => {
       if (label === 'Threads') {
         const handle = (url.match(/threads\.(?:com|net)\/@([^/?#]+)/i) || [])[1];
@@ -50,6 +75,7 @@ export function renderSources(row) {
       const url = urls[idx] || urls[0] || `https://www.threads.net/@${handleMatch[1]}`;
       return `<a class="src-tag" href="${url}" target="_blank" onclick="event.stopPropagation()">${token}</a>`;
     }
+    /** @type {Record<string,string>} */
     const PLATFORM_URLS = {
       'KKday':'https://www.kkday.com','Trip.com':'https://www.trip.com',
       'Threads':'https://www.threads.net','Douban':'https://www.douban.com',
@@ -67,6 +93,7 @@ export function renderSources(row) {
 // ═══════════════════════════════════════════════════
 // POPUP CONTENT (used by HERE map bubbles)
 // ═══════════════════════════════════════════════════
+/** @param {number} i @returns {string} */
 export function buildPopupContent(i) {
   const row = state.data[i];
   const name = lang === 'zh' ? row.nameZh : row.nameEn;
@@ -111,7 +138,7 @@ export function buildPopupContent(i) {
 // CARD LIST
 // ═══════════════════════════════════════════════════
 export function renderList() {
-  const list = document.getElementById('loc-list');
+  const list = requiredElement('loc-list');
   if (state.isLoading) {
     list.innerHTML = `<div class="empty"><div class="loading-spinner"></div>${t('sheet_loading')}</div>`;
     return;
@@ -161,6 +188,7 @@ export function renderList() {
   }).join('');
 }
 
+/** @param {number} i */
 export function activateCard(i) {
   state.activeIdx = i;
   const row = state.data[i];
@@ -193,15 +221,15 @@ export function activateCard(i) {
   const card = document.getElementById('card-' + i);
   if (card) {
     card.classList.add('active');
-    const raf = typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame : (cb) => cb();
+    const raf = typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame : (/** @type {FrameRequestCallback} */ cb) => { cb(0); return 0; };
     raf(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
   }
 }
 
 export function applyFilters() {
-  const q = document.getElementById('search').value.toLowerCase();
-  const cat = document.getElementById('cat-filter').value;
-  const st = document.getElementById('status-filter').value;
+  const q = requiredInput('search').value.toLowerCase();
+  const cat = requiredSelect('cat-filter').value;
+  const st = requiredSelect('status-filter').value;
   state.visIdx = [];
   state.data.forEach((row, i) => {
     const nameHit = (row.nameEn + row.nameZh + row.alt).toLowerCase().includes(q);
@@ -215,12 +243,13 @@ export function applyFilters() {
   });
   renderList();
   const publicTotal = state.data.filter(isPublicLocation).length;
-  document.getElementById('result-info').textContent = state.isLoading ? '' : t('count', state.visIdx.length, publicTotal);
+  requiredElement('result-info').textContent = state.isLoading ? '' : t('count', state.visIdx.length, publicTotal);
 }
 
 // ═══════════════════════════════════════════════════
 // i18n — SELECT HELPERS + UI UPDATER
 // ═══════════════════════════════════════════════════
+/** @param {HTMLSelectElement} sel @param {string} html */
 export function rebuildSelect(sel, html) {
   const prev = sel.value;
   sel.innerHTML = html;
@@ -228,19 +257,24 @@ export function rebuildSelect(sel, html) {
 }
 
 export function updateLangUI() {
-  document.querySelectorAll('[data-i18n],[data-i18n-html],[data-i18n-ph]').forEach(el => {
+  document.querySelectorAll('[data-i18n],[data-i18n-html],[data-i18n-ph]').forEach(rawEl => {
+    const el = /** @type {HTMLElement} */ (rawEl);
     if (el.dataset.i18n) { const v = t(el.dataset.i18n); if (v !== el.dataset.i18n) el.textContent = v; }
     else if (el.dataset.i18nHtml) { const v = t(el.dataset.i18nHtml); if (v !== el.dataset.i18nHtml) el.innerHTML = v; }
-    else if (el.dataset.i18nPh) { const v = t(el.dataset.i18nPh); if (v !== el.dataset.i18nPh) el.placeholder = v; }
+    else if (el.dataset.i18nPh) { const v = t(el.dataset.i18nPh); if (v !== el.dataset.i18nPh) /** @type {HTMLInputElement|HTMLTextAreaElement} */ (el).placeholder = v; }
   });
-  document.getElementById('lang-btn-label').textContent = t('lang_btn');
+  const langBtnLabel = document.getElementById('lang-btn-label');
+  if (!langBtnLabel) throw new Error('Missing required element #lang-btn-label');
+  langBtnLabel.textContent = t('lang_btn');
   buildStatusFilter();
 }
 
 export function buildStatusFilter() {
   const publicStatuses = Object.entries(t('status')).filter(([status]) => status !== 'Could Not Find');
+  const statusFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('status-filter'));
+  if (!statusFilter) throw new Error('Missing required element #status-filter');
   rebuildSelect(
-    document.getElementById('status-filter'),
+    statusFilter,
     `<option value="">${t('all_status')}</option>` +
     publicStatuses.map(([k, v]) => `<option value="${k}">${v}</option>`).join('')
   );
@@ -249,15 +283,17 @@ export function buildStatusFilter() {
 export function buildCatFilter() {
   const cats = new Set();
   state.data.forEach(r => cats.add(lang === 'zh' ? r.catZh : r.catEn));
+  const catFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('cat-filter'));
+  if (!catFilter) throw new Error('Missing required element #cat-filter');
   rebuildSelect(
-    document.getElementById('cat-filter'),
+    catFilter,
     `<option value="">${t('all_cat')}</option>` +
     [...cats].sort().map(c => `<option value="${c}">${c}</option>`).join('')
   );
 }
 
 export function buildCatDropdown() {
-  const sel = document.getElementById('add-cat');
+  const sel = requiredSelect('add-cat');
   const prev = sel.value;
   sel.innerHTML = CATEGORIES.map(c =>
     `<option value="${c.en}">${c.icon} ${lang === 'zh' ? c.zh : c.en}</option>`

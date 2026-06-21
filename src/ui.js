@@ -5,6 +5,13 @@ import {
   applyFilters, buildPopupContent,
 } from './render.js';
 
+/** @param {string} id @returns {HTMLElement} */
+function requiredElement(id) {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Missing required element #${id}`);
+  return el;
+}
+
 // ═══════════════════════════════════════════════════
 // THEME
 // ═══════════════════════════════════════════════════
@@ -17,12 +24,13 @@ export function getEffectiveTheme() {
 // ═══════════════════════════════════════════════════
 // MOBILE TABS
 // ═══════════════════════════════════════════════════
+/** @param {'map'|'list'} tab */
 export function switchTab(tab) {
   const isMap = tab === 'map';
-  document.getElementById('panel').setAttribute('data-mobile-tab', isMap ? 'map' : 'list');
-  document.getElementById('map-wrap').setAttribute('data-mobile-tab', isMap ? 'map' : 'list');
-  document.getElementById('tab-map').classList.toggle('active', isMap);
-  document.getElementById('tab-list').classList.toggle('active', !isMap);
+  requiredElement('panel').setAttribute('data-mobile-tab', isMap ? 'map' : 'list');
+  requiredElement('map-wrap').setAttribute('data-mobile-tab', isMap ? 'map' : 'list');
+  requiredElement('tab-map').classList.toggle('active', isMap);
+  requiredElement('tab-list').classList.toggle('active', !isMap);
   if (isMap && state.map) {
     if (state.provider === 'google') google.maps.event.trigger(state.map, 'resize');
     else state.map.getViewPort().resize();
@@ -32,16 +40,18 @@ export function switchTab(tab) {
 // ═══════════════════════════════════════════════════
 // SNACKBAR
 // ═══════════════════════════════════════════════════
+/** @param {string} msg @param {number} [duration] */
 export function showSnackbar(msg, duration = 4000) {
-  const el = document.getElementById('snackbar');
+  const el = requiredElement('snackbar');
   el.textContent = msg; el.classList.add('show');
-  clearTimeout(state.snackTimer);
+  if (state.snackTimer !== null) clearTimeout(state.snackTimer);
   state.snackTimer = setTimeout(() => el.classList.remove('show'), duration);
 }
 
 // ═══════════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════════
+/** @param {number} i */
 export function openNavigation(i) {
   const row = state.data[i];
   const name = lang === 'zh' ? row.nameZh : row.nameEn;
@@ -53,11 +63,12 @@ export function openNavigation(i) {
   window.open(url, '_blank');
 }
 
+/** @param {number} i */
 export function openInGoogleMaps(i) {
   const row = state.data[i];
   let url;
-  if (row.mapsQuery) {
-    url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(row.mapsQuery);
+  if (row.maps) {
+    url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(row.maps);
   } else {
     const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
     url = 'https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng;

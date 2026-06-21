@@ -13,7 +13,7 @@ The first pass covers:
 - `src/map.js`
 - `src/forms.js`
 
-The remaining JavaScript modules will continue to build and run unchanged and can be enrolled in type checking incrementally.
+TypeScript follows local ES-module imports from those four files. Imported modules may receive narrow JSDoc annotations or strict DOM-null fixes where required for the initial checker program, but they are not independently redesigned. Other JavaScript modules can be enrolled incrementally.
 
 Documentation changes cover:
 

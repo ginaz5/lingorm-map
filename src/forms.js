@@ -5,18 +5,41 @@ import { doNetlifySubmit, resetFeedback } from './submit.js';
 
 const LOCATIONS_API = '/api/locations';
 
+/** @param {string} id @returns {HTMLElement} */
+function requiredElement(id) {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Missing required element #${id}`);
+  return el;
+}
+
+/** @param {string} id @returns {HTMLInputElement|HTMLTextAreaElement} */
+function requiredValueControl(id) {
+  return /** @type {HTMLInputElement|HTMLTextAreaElement} */ (requiredElement(id));
+}
+
+/** @param {string} id @returns {HTMLInputElement} */
+function requiredInput(id) {
+  return /** @type {HTMLInputElement} */ (requiredElement(id));
+}
+
+/** @param {string} id @returns {HTMLSelectElement} */
+function requiredSelect(id) {
+  return /** @type {HTMLSelectElement} */ (requiredElement(id));
+}
+
 // ═══════════════════════════════════════════════════
 // EDIT MODAL
 // ═══════════════════════════════════════════════════
+/** @param {number} i */
 export function openEditModal(i) {
   const row = state.data[i];
   const name = lang === 'zh' ? row.nameZh : row.nameEn;
-  document.getElementById('edit-location-name').value = `${row.icon} ${name}`;
-  document.getElementById('edit-location-index').value = i;
-  document.getElementById('edit-maps').value = row.maps.replace(/\+/g, ' ');
-  document.getElementById('edit-lat').value = row.lat || '';
-  document.getElementById('edit-lng').value = row.lng || '';
-  ['edit-reason', 'edit-submitter'].forEach(id => document.getElementById(id).value = '');
+  requiredValueControl('edit-location-name').value = `${row.icon} ${name}`;
+  requiredValueControl('edit-location-index').value = String(i);
+  requiredValueControl('edit-maps').value = row.maps.replace(/\+/g, ' ');
+  requiredValueControl('edit-lat').value = row.lat || '';
+  requiredValueControl('edit-lng').value = row.lng || '';
+  ['edit-reason', 'edit-submitter'].forEach(id => { requiredValueControl(id).value = ''; });
   const st = row.status;
   const STATUS_OPTS = [
     { id: 'so-verified', val: 'Verified' },
@@ -25,34 +48,37 @@ export function openEditModal(i) {
   let defaultSet = false;
   STATUS_OPTS.forEach(({ id, val }) => {
     const hide = val === st;
-    document.querySelector(`label[for="${id}"]`).style.display = hide ? 'none' : '';
-    document.getElementById(id).checked = !hide && !defaultSet;
+    const label = document.querySelector(`label[for="${id}"]`);
+    if (!label) throw new Error(`Missing required label for #${id}`);
+    /** @type {HTMLElement} */ (label).style.display = hide ? 'none' : '';
+    requiredInput(id).checked = !hide && !defaultSet;
     if (!hide && !defaultSet) defaultSet = true;
   });
   resetFeedback('edit-feedback', 'edit-submit-btn', t('edit_submit'));
-  document.getElementById('edit-modal').classList.add('open');
+  requiredElement('edit-modal').classList.add('open');
 }
 
 export function closeEditModal() {
-  document.getElementById('edit-modal').classList.remove('open');
+  requiredElement('edit-modal').classList.remove('open');
 }
 
 export async function submitEdit() {
-  const idx = parseInt(document.getElementById('edit-location-index').value);
+  const idx = parseInt(requiredValueControl('edit-location-index').value);
   const row = state.data[idx];
-  const editFb = document.getElementById('edit-feedback');
+  const editFb = requiredElement('edit-feedback');
+  const checkedStatus = /** @type {HTMLInputElement|null} */ (document.querySelector('input[name="suggest-status"]:checked'));
   await doNetlifySubmit('edit-submit-btn', 'edit-feedback', t('edit_submit'), {
     'form-name': 'suggest-edit', 'bot-field': '',
     location_name: `${row.nameZh} / ${row.nameEn}`,
-    location_index: idx,
-    suggested_status: document.querySelector('input[name="suggest-status"]:checked')?.value || '',
-    maps_query: document.getElementById('edit-maps').value.trim(),
-    lat: document.getElementById('edit-lat').value.trim(),
-    lng: document.getElementById('edit-lng').value.trim(),
+    location_index: String(idx),
+    suggested_status: checkedStatus?.value || '',
+    maps_query: requiredValueControl('edit-maps').value.trim(),
+    lat: requiredValueControl('edit-lat').value.trim(),
+    lng: requiredValueControl('edit-lng').value.trim(),
     notes_zh: '',
     notes_en: '',
-    reason: document.getElementById('edit-reason').value.trim(),
-    submitter: document.getElementById('edit-submitter').value.trim(),
+    reason: requiredValueControl('edit-reason').value.trim(),
+    submitter: requiredValueControl('edit-submitter').value.trim(),
   }, () => {
     editFb.className = 'submit-feedback ok'; editFb.textContent = t('submit_ok');
     setTimeout(() => document.getElementById('edit-modal')?.classList.remove('open'), 2200);
@@ -64,22 +90,23 @@ export async function submitEdit() {
 // ═══════════════════════════════════════════════════
 export function openAddModal() {
   ['add-name', 'add-maps', 'add-notes', 'add-source', 'add-submitter'].forEach(id =>
-    document.getElementById(id).value = '');
-  document.getElementById('ns-review').checked = true;
-  document.getElementById('add-modal').classList.remove('is-success');
+    requiredValueControl(id).value = '');
+  requiredInput('ns-review').checked = true;
+  requiredElement('add-modal').classList.remove('is-success');
   resetFeedback('add-feedback', 'add-submit-btn', t('add_submit'));
-  document.getElementById('add-modal').classList.add('open');
+  requiredElement('add-modal').classList.add('open');
 }
 
 export function closeAddModal() {
-  document.getElementById('add-modal').classList.remove('open', 'is-success');
+  requiredElement('add-modal').classList.remove('open', 'is-success');
 }
 
 export function showAddSuccess() {
-  document.getElementById('add-modal').classList.add('is-success');
+  requiredElement('add-modal').classList.add('is-success');
   resetFeedback('add-feedback', 'add-submit-btn', t('add_submit'));
 }
 
+/** @param {string} url @returns {boolean} */
 export function isGoogleMapsUrl(url) {
   try {
     const u = new URL(url);
@@ -93,19 +120,22 @@ export function isGoogleMapsUrl(url) {
   } catch (e) { return false; }
 }
 
+/** @param {string} name @param {string} maps @returns {string} */
 export function validateAddLocation(name, maps) {
   if (!maps) return 'err_maps_required';
   if (!isGoogleMapsUrl(maps)) return 'err_maps_invalid';
   return '';
 }
 
+/** @returns {Record<string,string>} */
 export function buildAddLocationPayload() {
-  const name = document.getElementById('add-name').value.trim();
-  const maps = document.getElementById('add-maps').value.trim();
-  const catSel = document.getElementById('add-cat');
+  const name = requiredValueControl('add-name').value.trim();
+  const maps = requiredValueControl('add-maps').value.trim();
+  const catSel = requiredSelect('add-cat');
   const catIdx = catSel.selectedIndex;
   const catObj = CATEGORIES[catIdx] || { zh: '', en: catSel.value };
-  const notes = document.getElementById('add-notes').value.trim();
+  const notes = requiredValueControl('add-notes').value.trim();
+  const checkedStatus = /** @type {HTMLInputElement|null} */ (document.querySelector('input[name="new-status"]:checked'));
   return {
     'form-name': 'add-location', 'bot-field': '',
     name_zh: lang === 'zh' ? name : '', name_en: lang === 'en' ? name : '',
@@ -114,16 +144,16 @@ export function buildAddLocationPayload() {
     lat: '', lng: '',
     maps_query: maps,
     notes_zh: lang === 'zh' ? notes : '', notes_en: lang === 'en' ? notes : '',
-    status: document.querySelector('input[name="new-status"]:checked')?.value || 'Needs Review',
-    source_url: document.getElementById('add-source').value.trim(),
-    submitter: document.getElementById('add-submitter').value.trim(),
+    status: checkedStatus?.value || 'Needs Review',
+    source_url: requiredValueControl('add-source').value.trim(),
+    submitter: requiredValueControl('add-submitter').value.trim(),
   };
 }
 
 export async function submitAdd() {
-  const name = document.getElementById('add-name').value.trim();
-  const maps = document.getElementById('add-maps').value.trim();
-  const fb = document.getElementById('add-feedback');
+  const name = requiredValueControl('add-name').value.trim();
+  const maps = requiredValueControl('add-maps').value.trim();
+  const fb = requiredElement('add-feedback');
   const errorKey = validateAddLocation(name, maps);
   if (errorKey) { fb.className = 'submit-feedback err'; fb.textContent = t(errorKey); return; }
   await doNetlifySubmit('add-submit-btn', 'add-feedback', t('add_submit'), buildAddLocationPayload(), showAddSuccess);
@@ -133,32 +163,34 @@ export async function submitAdd() {
 // ISSUE REPORT MODAL
 // ═══════════════════════════════════════════════════
 export function openIssueModal() {
-  ['issue-message', 'issue-contact'].forEach(id => document.getElementById(id).value = '');
+  ['issue-message', 'issue-contact'].forEach(id => { requiredValueControl(id).value = ''; });
   resetFeedback('issue-feedback', 'issue-submit-btn', t('issue_submit'));
-  document.getElementById('issue-modal').classList.add('open');
+  requiredElement('issue-modal').classList.add('open');
 }
 
 export function closeIssueModal() {
-  document.getElementById('issue-modal').classList.remove('open');
+  requiredElement('issue-modal').classList.remove('open');
 }
 
+/** @param {string} message @returns {string} */
 export function validateIssueReport(message) {
   return message.trim() ? '' : 'err_issue_required';
 }
 
+/** @returns {Record<string,string>} */
 export function buildIssueReportPayload() {
   return {
     'form-name': 'issue-report',
     'bot-field': '',
-    message: document.getElementById('issue-message').value.trim(),
+    message: requiredValueControl('issue-message').value.trim(),
     page_url: location.href,
-    contact: document.getElementById('issue-contact').value.trim(),
+    contact: requiredValueControl('issue-contact').value.trim(),
   };
 }
 
 export async function submitIssueReport() {
-  const message = document.getElementById('issue-message').value;
-  const fb = document.getElementById('issue-feedback');
+  const message = requiredValueControl('issue-message').value;
+  const fb = requiredElement('issue-feedback');
   const errorKey = validateIssueReport(message);
   if (errorKey) { fb.className = 'submit-feedback err'; fb.textContent = t(errorKey); return; }
 
@@ -169,6 +201,7 @@ export async function submitIssueReport() {
 }
 
 
+/** @param {() => void} rebuild @returns {Promise<void>} */
 export async function tryLoadSheet(rebuild) {
   const bar = document.createElement('div'); bar.className = 'loading-bar'; document.body.appendChild(bar);
   try {

@@ -96,3 +96,23 @@ test('buildCatFilter preserves the selected category while rebuilding options', 
   assert.match(catFilter.innerHTML, /<option value="Cafe">Cafe<\/option>/);
   assert.match(catFilter.innerHTML, /<option value="Hotel">Hotel<\/option>/);
 });
+
+test('setLang normalizes unsupported stored languages to zh', async () => {
+  let storedLanguage = '';
+  globalThis.localStorage = {
+    setItem(key, value) {
+      assert.equal(key, 'lang');
+      storedLanguage = value;
+    },
+  };
+
+  try {
+    const i18n = await import('../src/i18n.js?invalid-language-normalization');
+    i18n.setLang('th');
+
+    assert.equal(i18n.lang, 'zh');
+    assert.equal(storedLanguage, 'zh');
+  } finally {
+    delete globalThis.localStorage;
+  }
+});

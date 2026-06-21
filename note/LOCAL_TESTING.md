@@ -54,7 +54,15 @@ ADMIN_PASSWORD=your_admin_password
 
 ## 每次修改後的本機測試流程
 
-1. 跑自動測試：
+1. 跑靜態型別檢查：
+
+```bash
+npm run typecheck
+```
+
+預期 TypeScript 以 strict、no-emit `checkJs` 模式完成且沒有錯誤。專案 runtime 仍是 JavaScript，這一步不會產生編譯檔。
+
+2. 跑自動測試：
 
 ```bash
 node --test tests/*.test.mjs
@@ -63,13 +71,13 @@ node --test tests/*.test.mjs
 預期結果：
 
 ```text
-pass 7
+pass 68
 fail 0
 ```
 
 實際測試數量可能會隨新增測試而增加，重點是 `fail 0`。
 
-2. 啟動 Netlify 本機環境：
+3. 啟動 Netlify 本機環境：
 
 ```bash
 netlify dev
@@ -81,7 +89,7 @@ netlify dev
 http://localhost:8888
 ```
 
-3. 測試 API：
+4. 測試 API：
 
 先確認 Google Maps runtime config：
 
@@ -124,7 +132,7 @@ http://localhost:8888/*
 http://localhost:8889/*
 ```
 
-4. 測試網站首頁：
+5. 測試網站首頁：
 
 ```text
 http://localhost:8888
@@ -145,6 +153,9 @@ http://localhost:8888
 確認本機測試都通過後，再 commit：
 
 ```bash
+npm run typecheck
+node --test tests/*.test.mjs
+npm run build
 git status --short
 git add <changed-files>
 git commit -m "your commit message"

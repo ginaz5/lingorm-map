@@ -2,9 +2,25 @@ import { state } from './state.js';
 import { getEffectiveTheme } from './ui.js';
 import { buildPopupContent, activateCard, getBadgeClass, isPublicLocation } from './render.js';
 
+/** @typedef {'google'|'here'} ActiveMapProvider */
+/**
+ * @typedef {Object} MapConfig
+ * @property {string} [googleMapsKey]
+ * @property {string} [googleMapId]
+ * @property {string} hereApiKey
+ */
+
+/** @param {string} id @returns {HTMLElement} */
+function requiredElement(id) {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Missing required element #${id}`);
+  return el;
+}
+
 // ═══════════════════════════════════════════════════
 // PROVIDER BADGE
 // ═══════════════════════════════════════════════════
+/** @param {ActiveMapProvider} provider */
 export function updateProviderBadge(provider) {
   const dot = document.getElementById('provider-dot');
   const label = document.getElementById('provider-label');
@@ -30,6 +46,7 @@ export function updateMapTheme() {
   }
 }
 
+/** @param {any} layers @param {'light'|'dark'} theme @returns {any} */
 export function getHereBaseLayer(layers, theme) {
   const n = layers?.vector?.normal;
   return theme === 'dark' ? (n?.mapnight || n?.map) : n?.map;
@@ -38,6 +55,7 @@ export function getHereBaseLayer(layers, theme) {
 // ═══════════════════════════════════════════════════
 // MARKERS
 // ═══════════════════════════════════════════════════
+/** @param {string} status @param {string} icon @returns {HTMLDivElement} */
 export function makeMarkerContent(status, icon) {
   const el = document.createElement('div');
   el.className = `marker-dot ${getBadgeClass(status).replace('b-', 'marker-')}`;
@@ -93,11 +111,13 @@ export function buildMarkers() {
 // ═══════════════════════════════════════════════════
 // SCRIPT LOADER
 // ═══════════════════════════════════════════════════
+/** @param {string} src @returns {Promise<void>} */
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = src; s.async = false;
-    s.onload = resolve; s.onerror = reject;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
     document.head.appendChild(s);
   });
 }
@@ -116,11 +136,12 @@ async function loadHereScripts() {
 // ═══════════════════════════════════════════════════
 // GOOGLE MAPS INIT
 // ═══════════════════════════════════════════════════
+/** @param {MapConfig} cfg */
 function initWithGoogle(cfg) {
   state.provider = 'google';
-  document.getElementById('map-loading').classList.add('is-hidden');
+  requiredElement('map-loading').classList.add('is-hidden');
 
-  state.map = new google.maps.Map(document.getElementById('map'), {
+  state.map = new google.maps.Map(requiredElement('map'), {
     center: { lat: 13.82, lng: 100.52 }, zoom: 11,
     mapId: cfg.googleMapId,
     colorScheme: getEffectiveTheme() === 'dark' ? 'DARK' : 'LIGHT',
@@ -129,15 +150,16 @@ function initWithGoogle(cfg) {
   state.infoWindow = new google.maps.InfoWindow();
 
   // Watch for Google quota-exceeded error overlay
-  const mapEl = document.getElementById('map');
-  state.googleErrorObserver = new MutationObserver(() => {
+  const mapEl = requiredElement('map');
+  const observer = new MutationObserver(() => {
     if (mapEl.querySelector('.gm-err-container, .gm-style-pbc')) {
-      state.googleErrorObserver.disconnect();
+      observer.disconnect();
       state.googleErrorObserver = null;
       fallbackToHere(cfg);
     }
   });
-  state.googleErrorObserver.observe(mapEl, { childList: true, subtree: true });
+  state.googleErrorObserver = observer;
+  observer.observe(mapEl, { childList: true, subtree: true });
 
   updateProviderBadge('google');
   buildMarkers();
@@ -146,9 +168,10 @@ function initWithGoogle(cfg) {
 // ═══════════════════════════════════════════════════
 // HERE MAPS INIT
 // ═══════════════════════════════════════════════════
+/** @param {string} apiKey */
 function initWithHere(apiKey) {
   state.provider = 'here';
-  const loadingEl = document.getElementById('map-loading');
+  const loadingEl = requiredElement('map-loading');
   const msgEl = document.getElementById('map-loading-msg');
   loadingEl.classList.add('is-hidden');
   if (msgEl) msgEl.textContent = '';
@@ -158,7 +181,7 @@ function initWithHere(apiKey) {
   state.hereLayers = layers;
 
   state.map = new H.Map(
-    document.getElementById('map'),
+    requiredElement('map'),
     getHereBaseLayer(layers, getEffectiveTheme()),
     { zoom: 11, center: { lat: 13.82, lng: 100.52 } }
   );
@@ -172,6 +195,7 @@ function initWithHere(apiKey) {
 // ═══════════════════════════════════════════════════
 // FALLBACK: Google → HERE
 // ═══════════════════════════════════════════════════
+/** @param {MapConfig} cfg @returns {Promise<void>} */
 async function fallbackToHere(cfg) {
   // Tear down Google state
   if (state.googleErrorObserver) {
@@ -186,11 +210,11 @@ async function fallbackToHere(cfg) {
   state.provider = null;
 
   // Clear map DOM
-  const mapEl = document.getElementById('map');
+  const mapEl = requiredElement('map');
   mapEl.innerHTML = '';
 
   // Show loading with message (Option B: spinner + 一行小字)
-  const loadingEl = document.getElementById('map-loading');
+  const loadingEl = requiredElement('map-loading');
   const msgEl = document.getElementById('map-loading-msg');
   if (msgEl) msgEl.textContent = '地圖載入中，請稍候⋯';
   loadingEl.classList.remove('is-hidden');
@@ -210,8 +234,8 @@ async function fallbackToHere(cfg) {
 export async function loadMapScript() {
   try {
     const resp = await fetch('/api/config');
-    if (!resp.ok) throw new Error(resp.status);
-    const cfg = await resp.json();
+    if (!resp.ok) throw new Error(String(resp.status));
+    const cfg = /** @type {MapConfig} */ (await resp.json());
 
     if (cfg.googleMapsKey && cfg.googleMapId) {
       // Set up auth-failure fallback before injecting script
@@ -243,7 +267,7 @@ export async function loadMapScript() {
     }
   } catch (e) {
     console.error('Map config failed', e);
-    document.getElementById('map-loading').classList.add('is-hidden');
+    requiredElement('map-loading').classList.add('is-hidden');
   }
 }
 

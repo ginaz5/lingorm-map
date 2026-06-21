@@ -3,6 +3,29 @@
 // All modules read/write via this object so ES-module live-binding
 // semantics are not needed for reassignable references.
 // ═══════════════════════════════════════════════════
+/** @typedef {import('./csv-parser.js').LocationRow} LocationRow */
+/** @typedef {'google'|'here'|null} MapProvider */
+/**
+ * @typedef {Object} AppState
+ * @property {LocationRow[]} data
+ * @property {number[]} visIdx
+ * @property {number} activeIdx
+ * @property {MapProvider} provider
+ * @property {any} map
+ * @property {any} infoWindow
+ * @property {MutationObserver|null} googleErrorObserver
+ * @property {any} hereUi
+ * @property {any} hereLayers
+ * @property {any} infoBubble
+ * @property {any[]} markers
+ * @property {any} userLocationMarker
+ * @property {ReturnType<typeof setTimeout>|null} snackTimer
+ * @property {boolean} isLoading
+ * @property {Set<string>} favorites
+ * @property {boolean} favFilterOn
+ */
+
+/** @type {AppState} */
 export const state = {
   // Location data loaded from /api/locations
   data: [],

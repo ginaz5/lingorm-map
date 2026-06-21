@@ -64,6 +64,10 @@ test('normalizeStatus: unknown value defaults to Needs Review', () => {
   assert.equal(normalizeStatus('pending'), 'Needs Review');
 });
 
+test('normalizeStatus: negated verification defaults to Needs Review', () => {
+  assert.equal(normalizeStatus('Not Verified'), 'Needs Review');
+});
+
 // ─── sourceLabel ────────────────────────────────────────────────────────────
 
 test('sourceLabel: known platforms', () => {

@@ -20,11 +20,14 @@ export const CATEGORIES = [
 // ═══════════════════════════════════════════════════
 // i18n
 // ═══════════════════════════════════════════════════
+/** @typedef {'zh'|'en'} Language */
+/** @type {Language} */
 export let lang = 'zh';
 
+/** @param {string} l */
 export function setLang(l) {
-  lang = l;
-  localStorage.setItem('lang', l);
+  lang = l === 'en' ? 'en' : 'zh';
+  localStorage.setItem('lang', lang);
 }
 
 export const T = {
@@ -38,7 +41,7 @@ export const T = {
     all_status: '狀態',
     status: {Verified:'✅ 已驗證','Needs Review':'⚠️ 待確認','Could Not Find':'❌ 找不到'},
     badge:  {Verified:'已驗證',   'Needs Review':'待確認',   'Could Not Find':'找不到'},
-    count: (n,t) => `顯示 ${n} / ${t} 個地點`,
+    count: (/** @type {number} */ n, /** @type {number} */ t) => `顯示 ${n} / ${t} 個地點`,
     approx: '📍 座標為估算位置',
     edit_btn_verify: '幫助驗證',
     edit_btn_edit: '建議修改',
@@ -122,7 +125,7 @@ export const T = {
     all_status: 'All Statuses',
     status: {Verified:'✅ Verified','Needs Review':'⚠️ Needs Review','Could Not Find':'❌ Not Found'},
     badge:  {Verified:'Verified', 'Needs Review':'Needs Review','Could Not Find':'Not Found'},
-    count: (n,t) => `${n} / ${t} locations`,
+    count: (/** @type {number} */ n, /** @type {number} */ t) => `${n} / ${t} locations`,
     approx: '📍 Coordinates are approximate',
     edit_btn_verify: 'Help verify',
     edit_btn_edit: 'Suggest edit',
@@ -199,11 +202,23 @@ export const T = {
   // Add 'th': {...} here for Thai support in the future
 };
 
+/**
+ * @template {string} K
+ * @param {K} k
+ * @param {...(string|number)} a
+ * @returns {K extends 'status'|'badge' ? Record<string,string> : string}
+ */
 export function t(k, ...a) {
-  const v = T[lang][k];
-  return typeof v === 'function' ? v(...a) : (v ?? k);
+  const table = /** @type {Record<string, string|((...args: Array<string|number>) => string)|Record<string,string>>} */ (T[lang]);
+  const v = table[k];
+  return /** @type {K extends 'status'|'badge' ? Record<string,string> : string} */ (
+    typeof v === 'function' ? v(...a) : (v ?? k)
+  );
 }
 
+/** @param {string} k @param {string} s @returns {string} */
 export function tobj(k, s) {
-  return (T[lang][k] || {})[s] || s;
+  const table = /** @type {Record<string, string|((...args: Array<string|number>) => string)|Record<string,string>>} */ (T[lang]);
+  const value = table[k];
+  return (typeof value === 'object' && value ? value[s] : undefined) || s;
 }
