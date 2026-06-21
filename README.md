@@ -34,45 +34,76 @@ On page load, `main.js` kicks off two parallel flows:
 
 ```mermaid
 flowchart TD
-    subgraph Browser
-        MAIN[main.js\nboot + event wiring]
-        STATE[state.js\nshared state]
-        CSV[csv-parser.js]
-        RENDER[render.js\ncard list + filters]
-        MAP[map.js\nmarkers + map init]
-        UI[ui.js\ntheme · tabs · snackbar]
-        FORMS[forms.js\nedit · add · issue modals]
+    subgraph Browser["Browser"]
+        MAIN["main.js\nboot + event wiring"]
+        STATE[("state.js\nshared state")]
+        I18N["i18n.js\ntranslations · CATEGORIES"]
+        CSV["csv-parser.js\npure CSV functions"]
+        RENDER["render.js\ncard list · popup · filters"]
+        MAP["map.js\nmap init · markers"]
+        UI["ui.js\ntheme · tabs · snackbar"]
+        FORMS["forms.js\nedit · add · issue modals"]
+        SUBMIT["submit.js\nNetlify Forms POST"]
+        FAV["favorites.js\nlocal favorites"]
     end
 
-    subgraph Netlify Functions
-        CFG[/api/config\nreturns Maps key + Map ID]
-        LOC[/api/locations\nproxies Sheets CSV]
+    subgraph Netlify_Fn["Netlify Functions"]
+        CFG["/api/config\nreturns Maps key + Map ID"]
+        LOC["/api/locations\nproxies Sheets CSV"]
     end
 
-    GS[(Google Sheets\npublished CSV)]
-    GMAPS[Google Maps JS API]
-    HERE[HERE Maps JS API]
-    NFORMS[Netlify Forms\nsubmission storage]
-    GTM[GTM → GA4\nanalytics]
+    GS[("Google Sheets\npublished CSV")]
+    GMAPS["Google Maps JS API"]
+    HERE["HERE Maps JS API\n(fallback)"]
+    NFORMS[("Netlify Forms\nsubmission storage")]
+    GTM["GTM → GA4\nanalytics"]
 
-    MAIN -->|boot| UI
-    MAIN -->|tryLoadSheet| LOC
-    LOC -->|CSV text| GS
-    LOC -->|raw CSV| CSV
-    CSV -->|rows| STATE
-    STATE -->|data| RENDER
-    STATE -->|data| MAP
+    MAIN -->|"boot"| UI
+    MAIN -->|"boot"| FORMS
+    MAIN -->|"boot"| FAV
+    MAIN -->|"tryLoadSheet"| LOC
+    GS -->|"published CSV"| LOC
+    LOC -->|"raw CSV"| CSV
+    CSV -->|"rows"| STATE
+    STATE -->|"data"| RENDER
+    STATE -->|"data"| MAP
 
-    MAIN -->|loadMapScript| CFG
-    CFG -->|key + mapId| GMAPS
-    GMAPS -->|success| MAP
-    CFG -->|fallback| HERE
-    HERE -->|fallback init| MAP
+    MAIN -->|"loadMapScript"| CFG
+    CFG -->|"key + mapId"| GMAPS
+    GMAPS -->|"success"| MAP
+    CFG -->|"fallback"| HERE
+    HERE -->|"fallback init"| MAP
 
-    MAIN --> FORMS
-    FORMS -->|POST| NFORMS
+    MAIN -->|"opens"| FORMS
+    FORMS -->|"doNetlifySubmit"| SUBMIT
+    SUBMIT -->|"HTTP POST"| NFORMS
 
-    GTM -.->|script tag in index.html| MAIN
+    GTM -.->|"script tag in index.html"| MAIN
+    I18N -.->|"imported by all modules"| MAIN
+```
+
+**Module import graph** (static dependencies):
+
+```mermaid
+graph LR
+    MAIN["main.js"]
+    STATE[("state.js")]
+    I18N["i18n.js"]
+    CSV["csv-parser.js"]
+    RENDER["render.js"]
+    MAP["map.js"]
+    UI["ui.js"]
+    FORMS["forms.js"]
+    SUBMIT["submit.js"]
+    FAV["favorites.js"]
+
+    MAIN --> STATE & I18N & RENDER & UI & FORMS & SUBMIT & MAP & FAV
+    MAP --> STATE & UI & RENDER
+    RENDER --> STATE & I18N & UI
+    UI --> STATE & I18N & RENDER
+    FORMS --> STATE & I18N & CSV & SUBMIT
+    SUBMIT --> I18N
+    FAV --> STATE & RENDER
 ```
 
 ### Module responsibilities
