@@ -91,7 +91,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="filter-row">
         <select class="filter-sel" id="cat-filter" onchange="applyFilters()"></select>
         <select class="filter-sel" id="status-filter" onchange="applyFilters()"></select>
-        <button class="fav-filter-btn" id="fav-filter-btn" aria-pressed="false" title="我的最愛">
+        <button class="fav-filter-btn" id="fav-filter-btn" aria-pressed="false" aria-label="我的最愛">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
       </div>
@@ -287,6 +287,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="modal-footer">
       <button class="btn-ghost" id="issue-cancel-btn" data-i18n="cancel"></button>
       <button class="btn-primary" id="issue-submit-btn" data-i18n="issue_submit"></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: WHAT'S NEW -->
+<div class="modal-overlay" id="whats-new-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title" id="wn-title"></span>
+      <button class="modal-close" id="wn-close-btn" aria-label="關閉">✕</button>
+    </div>
+    <p class="modal-desc" id="wn-desc"></p>
+    <div class="modal-body" id="wn-list"></div>
+    <div class="modal-footer">
+      <button class="btn-primary" id="wn-got-it-btn"></button>
     </div>
   </div>
 </div>

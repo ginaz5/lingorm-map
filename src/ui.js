@@ -4,6 +4,7 @@ import {
   updateLangUI, buildCatFilter, buildCatDropdown,
   applyFilters, buildPopupContent,
 } from './render.js';
+import { updateWhatsNewLangUI } from './whats-new.js';
 
 /** @param {string} id @returns {HTMLElement} */
 function requiredElement(id) {
@@ -120,6 +121,7 @@ export function locateMe() {
 export function toggleLang() {
   setLang(lang === 'zh' ? 'en' : 'zh');
   updateLangUI();
+  updateWhatsNewLangUI();
   buildCatFilter();
   buildCatDropdown();
   applyFilters();

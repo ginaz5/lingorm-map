@@ -33,6 +33,9 @@ function cleanupBrowserState() {
   state.data = [];
   state.visIdx = [];
   state.isLoading = true;
+  state.map = null;
+  state.provider = null;
+  state.markers = [];
 }
 
 test('loadFavorites gives shared URL favorites priority and syncs localStorage', () => {
@@ -111,12 +114,17 @@ test('applyFilters shows only favorited locations when the favorites filter is a
         status: 'Verified', lat: '13.8', lng: '100.6', src: '', sourceUrl: '', dup: '', approx: '',
       },
     ];
+    state.map = { id: 'map' };
+    state.provider = 'google';
+    state.markers = [{ map: state.map }, { map: state.map }];
 
     applyFilters();
 
     assert.deepEqual(state.visIdx, [0]);
     assert.match(elements['loc-list'].innerHTML, /Favorite Cafe/);
     assert.doesNotMatch(elements['loc-list'].innerHTML, /Other Cafe/);
+    assert.equal(state.markers[0].map, state.map);
+    assert.equal(state.markers[1].map, null);
   } finally {
     cleanupBrowserState();
   }

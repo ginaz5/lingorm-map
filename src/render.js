@@ -242,6 +242,18 @@ export function applyFilters() {
     if ((nameHit || notesHit) && catHit && stHit) state.visIdx.push(i);
   });
   renderList();
+  if (state.map) {
+    state.markers.forEach((m, i) => {
+      if (!m) return;
+      const row = state.data[i];
+      const visible = !state.favFilterOn || state.favorites.has(row.id);
+      if (state.provider === 'google') {
+        m.map = visible ? state.map : null;
+      } else {
+        m.setVisibility(visible);
+      }
+    });
+  }
   const publicTotal = state.data.filter(isPublicLocation).length;
   requiredElement('result-info').textContent = state.isLoading ? '' : t('count', state.visIdx.length, publicTotal);
 }

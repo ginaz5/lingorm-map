@@ -103,6 +103,10 @@ export const T = {
     err_issue_required: '請填寫問題描述。',
     // Common
     opt: '（選填）', cancel: '取消', done: '完成',
+    // What's New modal
+    whats_new_title: '✨ 新功能更新',
+    whats_new_desc: (/** @type {number} */ n) => `自上次造訪後，我們新增了 ${n} 項功能`,
+    whats_new_got_it: '我知道了',
     st_verified: '✅ 已驗證', st_review: '⚠️ 待確認', st_notfound: '❌ 找不到',
     ph_submitter: '例：@your_ig',
     // Navigation & location
@@ -187,6 +191,10 @@ export const T = {
     err_issue_required: 'Please describe the issue.',
     // Common
     opt: '(optional)', cancel: 'Cancel', done: 'Done',
+    // What's New modal
+    whats_new_title: "✨ What's new",
+    whats_new_desc: (/** @type {number} */ n) => `${n} new feature${n === 1 ? '' : 's'} since your last visit`,
+    whats_new_got_it: 'Got it',
     st_verified: '✅ Verified', st_review: '⚠️ Needs Review', st_notfound: '❌ Not Found',
     ph_submitter: 'e.g. @your_ig',
     // Navigation & location

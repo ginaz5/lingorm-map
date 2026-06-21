@@ -18,6 +18,7 @@ import { showPendingBanner } from './submit.js';
 import { initMap, loadMapScript, updateMapTheme, buildMarkers } from './map.js';
 import { loadFavorites, toggleFavorite } from './favorites.js';
 import { heartSVG } from './render.js';
+import { checkWhatsNew, closeWhatsNew } from './whats-new.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -137,6 +138,11 @@ document.querySelector('#issue-modal .modal-close').addEventListener('click', cl
 document.getElementById('issue-cancel-btn').addEventListener('click', closeIssueModal);
 document.getElementById('issue-submit-btn').addEventListener('click', submitIssueReport);
 
+// What's New modal
+document.getElementById('whats-new-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeWhatsNew(); });
+document.getElementById('wn-close-btn').addEventListener('click', closeWhatsNew);
+document.getElementById('wn-got-it-btn').addEventListener('click', closeWhatsNew);
+
 // Map resize on window resize
 window.addEventListener('resize', () => {
   if (!state.map) return;
@@ -154,3 +160,4 @@ applyFilters();       // render initial (loading) state
 showPendingBanner();
 tryLoadSheet(rebuild);  // loads data; rebuild() triggers buildMarkers + renderList
 loadMapScript(); // tries Google Maps first, falls back to HERE if unavailable
+checkWhatsNew(); // show What's New modal if there are updates since last visit

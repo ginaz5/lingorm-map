@@ -138,7 +138,7 @@ graph LR
 | Analytics | Google Tag Manager (GTM-NVNXGP44) → GA4 (G-31MF79LHFM) |
 | Build / check | Vite 6 + TS `checkJs` (no emit), ES modules in `src/` |
 | Deploy | Netlify (GitHub auto-deploy) |
-| Tests | Node.js built-in `node:test` — 68 tests |
+| Tests | Node.js built-in `node:test` — 72 tests |
 
 ---
 
