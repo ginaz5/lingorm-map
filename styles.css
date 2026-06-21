@@ -106,6 +106,19 @@ header{height:var(--header-h);flex-shrink:0;background:var(--surface);border-bot
   text-decoration:none;white-space:nowrap;cursor:pointer;transition:border-color .12s}
 .src-tag:hover{border-color:var(--src)}
 .src-tag-plain{cursor:default}
+/* Favorites */
+.fav-btn{background:none;border:none;cursor:pointer;padding:3px;
+  color:var(--text-muted);line-height:1;display:inline-flex;
+  align-items:center;justify-content:center;flex-shrink:0}
+.fav-btn:hover svg{stroke:#e05252}
+.fav-btn.fav-active svg{stroke:#e05252;fill:#e05252}
+.fav-filter-btn{display:inline-flex;align-items:center;justify-content:center;
+  background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+  padding:0 10px;height:32px;cursor:pointer;transition:all .15s;flex-shrink:0;color:var(--text-muted)}
+.fav-filter-btn:hover svg{stroke:var(--accent)}
+.fav-filter-btn.active{border-color:#e05252;background:#fdf0f0}
+.fav-filter-btn.active svg{stroke:#e05252;fill:#e05252}
+[data-theme="dark"] .fav-filter-btn.active{background:#2e1212}
 .card-edit-btn{font-size:11px;color:var(--text-muted);background:none;border:1px solid var(--border);
   border-radius:6px;padding:3px 7px;cursor:pointer;white-space:nowrap;transition:all .12s;flex-shrink:0}
 .card-edit-btn:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
@@ -269,8 +282,8 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 .snackbar.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:700px){.snackbar{bottom:calc(var(--tab-h) + 10px)}}
 /* Popup footer: src-tag left, buttons right — always single row */
-.popup-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:6px}
-.popup-btn-group{display:flex;flex-direction:row;gap:5px;flex-shrink:0}
+.popup-footer{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.popup-actions{display:flex;flex-direction:row;align-items:center;gap:6px;justify-content:flex-end}
 .popup-nav-btn,.popup-maps-btn{padding:4px 9px;border-radius:20px;font-size:11px;font-weight:600;
   cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;
   gap:4px;transition:opacity .15s}

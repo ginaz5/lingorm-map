@@ -2,6 +2,14 @@ import { lang, t, tobj, CATEGORIES } from './i18n.js';
 import { state } from './state.js';
 import { switchTab } from './ui.js';
 
+const HEART_PATH = "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z";
+export const heartSVG = (active) =>
+  `<svg width="18" height="18" viewBox="0 0 24 24"
+    fill="${active ? '#e05252' : 'none'}"
+    stroke="${active ? '#e05252' : 'currentColor'}"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+    aria-hidden="true"><path d="${HEART_PATH}"/></svg>`;
+
 // ═══════════════════════════════════════════════════
 // BADGE / STATUS HELPERS
 // ═══════════════════════════════════════════════════
@@ -77,7 +85,15 @@ export function buildPopupContent(i) {
     ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
     <div class="popup-footer">
       ${renderSources(row)}
-      ${hasCoords ? `<div class="popup-btn-group">
+      <div class="popup-actions">
+        <button class="fav-btn${state.favorites.has(row.id) ? ' fav-active' : ''}"
+          data-fav-id="${row.id}"
+          aria-pressed="${state.favorites.has(row.id)}"
+          aria-label="${state.favorites.has(row.id) ? '移除最愛' : '加入最愛'}"
+          onclick="toggleFavorite('${row.id}')">
+          ${heartSVG(state.favorites.has(row.id))}
+        </button>
+        ${hasCoords ? `
         <button class="popup-nav-btn" onclick="openNavigation(${i})" aria-label="${t('nav_btn')}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 3l-7.5 18-3-7.5L3 11 21 3z"/></svg>
           <span class="popup-btn-label">${t('nav_btn')}</span>
@@ -85,8 +101,8 @@ export function buildPopupContent(i) {
         <button class="popup-maps-btn" onclick="openInGoogleMaps(${i})" aria-label="${t('open_maps_btn')}">
           <svg width="12" height="14" viewBox="0 0 48 56" aria-hidden="true"><path d="M24 2C13.5 2 5 10.5 5 21c0 14 19 33 19 33S43 35 43 21C43 10.5 34.5 2 24 2z" fill="#34A853"/><path d="M24 2 L5 21 L24 21 Z" fill="#EA4335"/><path d="M24 2 L43 21 L24 21 Z" fill="#4285F4"/><path d="M5 21 L24 21 L24 40 Z" fill="#FBBC04"/><circle cx="24" cy="21" r="8" fill="white"/></svg>
           <span class="popup-btn-label">${t('open_maps_btn')}</span>
-        </button>
-      </div>` : ''}
+        </button>` : ''}
+      </div>
     </div>
   </div>`;
 }
@@ -129,7 +145,13 @@ export function renderList() {
       ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
       ${renderSources(row)}
       <div class="card-footer">
-        <span></span>
+        <button class="fav-btn${state.favorites.has(row.id) ? ' fav-active' : ''}"
+          data-fav-id="${row.id}"
+          aria-pressed="${state.favorites.has(row.id)}"
+          aria-label="${state.favorites.has(row.id) ? '移除最愛' : '加入最愛'}"
+          onclick="event.stopPropagation();toggleFavorite('${row.id}')">
+          ${heartSVG(state.favorites.has(row.id))}
+        </button>
         <button class="card-edit-btn${needsHelp ? ' verify-hint' : ''}"
           onclick="event.stopPropagation();openEditModal(${i})">
           ${needsHelp ? t('edit_btn_verify') : t('edit_btn_edit')}
@@ -188,6 +210,7 @@ export function applyFilters() {
     const catHit = !cat || catVal === cat;
     const stHit = !st || row.status === st;
     if (!isPublicLocation(row)) return;
+    if (state.favFilterOn && !state.favorites.has(row.id)) return;
     if ((nameHit || notesHit) && catHit && stHit) state.visIdx.push(i);
   });
   renderList();

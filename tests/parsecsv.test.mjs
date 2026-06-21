@@ -4,7 +4,7 @@ import test from 'node:test';
 
 import {
   tokenizeCSV, normalizeStatus, sourceLabel,
-  normalizeSourceTags, mapsQuery, parseCSV,
+  normalizeSourceTags, mapsQuery, parseCSV, slugify,
 } from '../src/csv-parser.js';
 import { isApproximateCoords } from '../src/render.js';
 
@@ -37,6 +37,11 @@ test('tokenizeCSV: BOM prefix is preserved (parseCSV strips it)', () => {
   const bom = '﻿';
   const rows = tokenizeCSV(`${bom}Name,Value\nFoo,Bar`);
   assert.ok(rows[0][0].startsWith('﻿'));
+});
+
+test('slugify: produces stable location IDs', () => {
+  assert.equal(slugify('The Siam Hotel'), 'the-siam-hotel');
+  assert.equal(slugify('  Cafe & Bar  '), 'cafe-bar');
 });
 
 // ─── normalizeStatus ────────────────────────────────────────────────────────
@@ -132,6 +137,7 @@ test('parseCSV: internal format — maps Category_ZH alias (Hotel → 飯店)', 
   ].join('\n');
 
   assert.deepEqual(parseCSV(csv), [{
+    id: 'the-siam-hotel',
     nameEn: 'The Siam Hotel', nameZh: '暹羅精品酒店', alt: '',
     catEn: 'Hotel', catZh: '飯店',
     notesEn: 'English notes', notesZh: '中文說明', icon: '🏨',
@@ -148,6 +154,7 @@ test('parseCSV: published format — maps category, fills icon, normalizes statu
   ].join('\n');
 
   assert.deepEqual(parseCSV(csv), [{
+    id: 'the-siam-hotel',
     nameEn: 'The Siam Hotel', nameZh: '暹羅精品酒店', alt: '',
     catEn: 'Hotel', catZh: '飯店',
     notesEn: 'Luxury hotel', notesZh: '河畔精品酒店', icon: '🏨',

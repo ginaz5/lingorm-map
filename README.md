@@ -10,11 +10,90 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 
 - Interactive map with emoji category markers (colored by status: verified / needs review / not found)
 - Card list with search, category, and status filters
+- Popup with Navigate + Open in Google Maps buttons (responsive: icon-only on mobile)
 - zh / en bilingual UI with one-click toggle
 - Light / dark / auto theme
 - Community contributions via Netlify Forms (suggest edit, add location, report issue)
 - Mobile-responsive with map / list tab switching and scroll
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
+- Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
+
+---
+
+## Architecture
+
+The app is a static site with two Netlify Functions acting as a thin backend proxy. All state lives in the browser.
+
+### Boot sequence
+
+On page load, `main.js` kicks off two parallel flows:
+
+1. **Data flow** — `tryLoadSheet()` calls `/api/locations`, which proxies the published Google Sheets CSV. The response is tokenised by `csv-parser.js`, normalised into a flat array, and stored in `state.js`. Once loaded, `rebuild()` triggers `render.js` (card list + filters) and `map.js` (place markers).
+
+2. **Map flow** — `loadMapScript()` calls `/api/config` to retrieve the Google Maps API key and Map ID (never exposed client-side directly). It injects the Google Maps JS script; if that fails or the key is absent, it falls back to the HERE Maps JS API. Either way, `initMap()` runs and markers are placed via `buildMarkers()`.
+
+```mermaid
+flowchart TD
+    subgraph Browser
+        MAIN[main.js\nboot + event wiring]
+        STATE[state.js\nshared state]
+        CSV[csv-parser.js]
+        RENDER[render.js\ncard list + filters]
+        MAP[map.js\nmarkers + map init]
+        UI[ui.js\ntheme · tabs · snackbar]
+        FORMS[forms.js\nedit · add · issue modals]
+    end
+
+    subgraph Netlify Functions
+        CFG[/api/config\nreturns Maps key + Map ID]
+        LOC[/api/locations\nproxies Sheets CSV]
+    end
+
+    GS[(Google Sheets\npublished CSV)]
+    GMAPS[Google Maps JS API]
+    HERE[HERE Maps JS API]
+    NFORMS[Netlify Forms\nsubmission storage]
+    GTM[GTM → GA4\nanalytics]
+
+    MAIN -->|boot| UI
+    MAIN -->|tryLoadSheet| LOC
+    LOC -->|CSV text| GS
+    LOC -->|raw CSV| CSV
+    CSV -->|rows| STATE
+    STATE -->|data| RENDER
+    STATE -->|data| MAP
+
+    MAIN -->|loadMapScript| CFG
+    CFG -->|key + mapId| GMAPS
+    GMAPS -->|success| MAP
+    CFG -->|fallback| HERE
+    HERE -->|fallback init| MAP
+
+    MAIN --> FORMS
+    FORMS -->|POST| NFORMS
+
+    GTM -.->|script tag in index.html| MAIN
+```
+
+### Module responsibilities
+
+| Module | Role |
+|--------|------|
+| `main.js` | Entry point — boot sequence, all event listener wiring |
+| `state.js` | Single mutable object shared across modules |
+| `i18n.js` | `CATEGORIES`, translations, `t()` / `tobj()` helpers |
+| `csv-parser.js` | CSV tokeniser + `parseCSV` + `normalizeStatus` (pure functions) |
+| `render.js` | Card list HTML, popup content, filter helpers |
+| `ui.js` | Theme cycle, tab switch, snackbar, locate-me, `toggleLang` |
+| `map.js` | Google / HERE map init, `buildMarkers`, theme sync |
+| `forms.js` | Edit / add / issue modal open–close–validate |
+| `submit.js` | Netlify Forms POST, pending banner |
+
+### Key constraints
+
+- **No secrets in client JS.** The Google Maps key is fetched at runtime from `/api/config` (a Netlify Function that reads `process.env`), never bundled into `dist/`.
+- **HERE as fallback, not primary.** If `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` are absent or the script load fails, the app transparently switches to HERE Maps.
+- **No framework.** Vanilla JS + Vite — no React/Vue/Angular. DOM updates are string-templated HTML re-renders (card list) or direct marker manipulation (map).
 
 ---
 
@@ -25,9 +104,10 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 | Map | Google Maps JS API (`AdvancedMarkerElement`, `colorScheme`) with HERE Maps fallback |
 | Data | Google Sheets → published CSV → Netlify Function proxy (`/api/locations`) |
 | Forms | Netlify Forms (`suggest-edit`, `add-location`, `issue-report`) |
+| Analytics | Google Tag Manager (GTM-NVNXGP44) → GA4 (G-31MF79LHFM) |
 | Build | Vite 6, ES modules in `src/` |
 | Deploy | Netlify (GitHub auto-deploy) |
-| Tests | Node.js built-in `node:test` — 58 tests |
+| Tests | Node.js built-in `node:test` — 64 tests |
 
 ---
 
@@ -43,7 +123,7 @@ lingorm_bangkok_map/
 │   ├── i18n.js             # CATEGORIES, translations (zh/en), t(), tobj()
 │   ├── csv-parser.js       # CSV tokenizer + parseCSV (pure functions)
 │   ├── render.js           # Card list, popup content, filter helpers
-│   ├── ui.js               # Theme, tab switch, snackbar, locate me, toggleLang
+│   ├── ui.js               # Theme, tab switch, snackbar, locate me, navigation, toggleLang
 │   ├── submit.js           # Netlify Forms submit, pending banner
 │   ├── forms.js            # Edit / add / issue modals
 │   └── map.js              # Map init (Google + HERE), markers, loadMapScript
@@ -126,6 +206,10 @@ If `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` are omitted, the map loads HERE Maps dire
 ### Netlify Forms
 
 Enable form detection in Netlify Dashboard → **Forms → Enable form detection**, then redeploy. Forms: `suggest-edit`, `add-location`, `issue-report`.
+
+### Analytics
+
+GTM snippet is embedded in `index.html` (`<head>` + noscript `<body>`). All tracking configuration (GA4 tag, triggers) is managed in the GTM dashboard — no code changes needed to add/modify events.
 
 ### Google Maps key protection
 

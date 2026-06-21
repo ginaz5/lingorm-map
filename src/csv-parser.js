@@ -1,4 +1,10 @@
 // ═══════════════════════════════════════════════════
+// SLUG / ID HELPER
+// ═══════════════════════════════════════════════════
+export const slugify = (s) =>
+  String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+// ═══════════════════════════════════════════════════
 // CATEGORY ALIASES — normalise legacy / variant category names during CSV parsing
 // ═══════════════════════════════════════════════════
 export const CATEGORY_ALIASES = {
@@ -111,6 +117,7 @@ export function parseInternalFormat(rows, idx, read) {
   return rows.slice(1)
     .filter(r => r.join('').trim())
     .map(r => ({
+      id:       slugify(read(r, "Name_EN")),
       nameEn:   read(r, "Name_EN"),
       nameZh:   read(r, "Name_ZH"),
       alt:      read(r, "Alt_Name"),
@@ -147,6 +154,7 @@ export function parsePublishedFormat(rows, idx, read) {
       const tags      = normalizeSourceTags(read(r, "Source Tags"));
       const maps      = read(r, "Google Maps URL") || read(r, "Google Maps Link");
       return {
+        id:       slugify(name),
         nameEn:   name,
         nameZh,
         alt:      read(r, "Thai / Alt Name"),

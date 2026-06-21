@@ -16,6 +16,8 @@ import {
 } from './forms.js';
 import { showPendingBanner } from './submit.js';
 import { initMap, loadMapScript, updateMapTheme, buildMarkers } from './map.js';
+import { loadFavorites, toggleFavorite } from './favorites.js';
+import { heartSVG } from './render.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -77,6 +79,7 @@ window.openEditModal = openEditModal;
 window.openNavigation = openNavigation;
 window.openInGoogleMaps = openInGoogleMaps;
 window.applyFilters = applyFilters;
+window.toggleFavorite = toggleFavorite;
 
 
 // ═══════════════════════════════════════════════════
@@ -85,8 +88,19 @@ window.applyFilters = applyFilters;
 // Restore language preference
 setLang(localStorage.getItem('lang') || 'zh');
 
+// Restore favorites from URL or localStorage
+loadFavorites();
+
 // Static event listeners
 document.getElementById('add-btn').addEventListener('click', openAddModal);
+document.getElementById('fav-filter-btn').addEventListener('click', () => {
+  state.favFilterOn = !state.favFilterOn;
+  const favBtn = document.getElementById('fav-filter-btn');
+  favBtn.classList.toggle('active', state.favFilterOn);
+  favBtn.setAttribute('aria-pressed', String(state.favFilterOn));
+  favBtn.innerHTML = heartSVG(state.favFilterOn);
+  applyFilters();
+});
 document.getElementById('issue-btn').addEventListener('click', openIssueModal);
 document.getElementById('locate-btn').addEventListener('click', locateMe);
 document.getElementById('lang-btn').addEventListener('click', toggleLang);

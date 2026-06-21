@@ -36,4 +36,9 @@ export const state = {
 
   // True until the first sheet load attempt completes
   isLoading: true,
+
+  // Favorites — Set of location id slugs
+  favorites: new Set(),
+  // Whether the "show favorites only" filter is active
+  favFilterOn: false,
 };
