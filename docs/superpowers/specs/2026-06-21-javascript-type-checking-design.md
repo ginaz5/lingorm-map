@@ -58,6 +58,8 @@ node --test tests/*.test.mjs
 npm run build
 ```
 
+The implementation will not be committed until `npm run typecheck` succeeds. The full test suite and production build will also run before that commit so the repository records only a verified implementation state.
+
 ## Documentation
 
 The README will describe the type-checking command, clarify that the project remains JavaScript, and update the tech stack and local-development workflow.
