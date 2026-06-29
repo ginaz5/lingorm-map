@@ -68,7 +68,9 @@ export function openNavigation(i) {
 export function openInGoogleMaps(i) {
   const row = state.data[i];
   let url;
-  if (row.maps) {
+  if (row.maps && /^https?:\/\//i.test(row.maps)) {
+    url = row.maps;
+  } else if (row.maps) {
     url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(row.maps);
   } else {
     const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
