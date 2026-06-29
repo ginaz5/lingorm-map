@@ -134,20 +134,13 @@ test('isApproximateCoords: FALSE / empty / 0 are not approximate', () => {
 
 // ─── parseCSV integration ───────────────────────────────────────────────────
 
-test('parseCSV: internal format — maps Category_ZH alias (Hotel → 飯店)', () => {
+test('parseCSV: unsupported internal format returns null', () => {
   const csv = [
     'Name_EN,Name_ZH,Alt_Name,Category_EN,Category_ZH,Notes_EN,Notes_ZH,Icon,Lat,Lng,Maps_Query,Status,Duplicate_Group,Source,Coords_Approx',
     'The Siam Hotel,暹羅精品酒店,,Hotel,酒店,English notes,中文說明,🏨,13.7608,100.5089,The+Siam+Hotel+Bangkok,Verified,,KKday,FALSE',
   ].join('\n');
 
-  assert.deepEqual(parseCSV(csv), [{
-    id: 'the-siam-hotel',
-    nameEn: 'The Siam Hotel', nameZh: '暹羅精品酒店', alt: '',
-    catEn: 'Hotel', catZh: '飯店',
-    notesEn: 'English notes', notesZh: '中文說明', icon: '🏨',
-    lat: '13.7608', lng: '100.5089', maps: 'The+Siam+Hotel+Bangkok',
-    status: 'Verified', dup: '', src: 'KKday', approx: 'FALSE', sourceUrl: '',
-  }]);
+  assert.equal(parseCSV(csv), null);
 });
 
 test('parseCSV: published format — maps category, fills icon, normalizes status', () => {
@@ -201,8 +194,8 @@ test('parseCSV: returns null for empty / header-only input', () => {
 test('parseCSV: BOM at start of file is stripped from first header', () => {
   const bom = '﻿';
   const csv = [
-    `${bom}Name_EN,Name_ZH,Alt_Name,Category_EN,Category_ZH,Notes_EN,Notes_ZH,Icon,Lat,Lng,Maps_Query,Status,Duplicate_Group,Source,Coords_Approx`,
-    'Cafe A,咖啡廳A,,Cafe,咖啡廳,Notes,備註,☕,13.0,100.0,Cafe+A,Verified,,KKday,FALSE',
+    `${bom}Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH`,
+    'Cafe A,,https://maps.example/cafe-a,Cafe,Notes,https://example.com,KKday,Verified,,13.0,100.0,☕,FALSE,咖啡廳A,備註',
   ].join('\n');
   const result = parseCSV(csv);
   assert.ok(result, 'should parse successfully despite BOM');

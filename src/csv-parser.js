@@ -172,42 +172,7 @@ export function mapsQuery(name, maps) {
   return name ? `${name} Bangkok` : "";
 }
 
-// Internal sheet format: Name_EN, Name_ZH, Category_EN, … columns
-/**
- * @param {string[][]} rows
- * @param {Record<string, number>} idx
- * @param {ReadCell} read
- * @returns {LocationRow[] | null}
- */
-export function parseInternalFormat(rows, idx, read) {
-  const coreKeys = ["Name_EN","Name_ZH","Alt_Name","Category_EN","Category_ZH",
-                    "Notes_EN","Notes_ZH","Icon","Lat","Lng",
-                    "Maps_Query","Status","Duplicate_Group","Source","Coords_Approx"];
-  if (!coreKeys.every(k => idx[k] !== undefined)) return null;
-  return rows.slice(1)
-    .filter(r => r.join('').trim())
-    .map(r => ({
-      id:       slugify(read(r, "Name_EN")),
-      nameEn:   read(r, "Name_EN"),
-      nameZh:   read(r, "Name_ZH"),
-      alt:      read(r, "Alt_Name"),
-      catEn:    read(r, "Category_EN"),
-      catZh:    read(r, "Category_ZH"),
-      notesEn:  read(r, "Notes_EN"),
-      notesZh:  read(r, "Notes_ZH"),
-      icon:     read(r, "Icon"),
-      lat:      read(r, "Lat"),
-      lng:      read(r, "Lng"),
-      maps:     read(r, "Maps_Query"),
-      status:   normalizeStatus(read(r, "Status")),
-      dup:      read(r, "Duplicate_Group"),
-      src:      read(r, "Source"),
-      approx:   read(r, "Coords_Approx"),
-      sourceUrl:read(r, "Source_URL"),
-    }));
-}
-
-// Published/legacy sheet format: "Location Name", "Category", "Verification Status", … columns
+// Sheet format: "Location Name", "Category", "Verification Status", … columns
 /**
  * @param {string[][]} rows
  * @param {Record<string, number>} idx
@@ -264,7 +229,6 @@ export function parseCSV(text) {
   headers.forEach((h, i) => idx[h] = i);
   /** @type {ReadCell} */
   const read = (r, k) => (idx[k] !== undefined ? r[idx[k]] || '' : '').trim();
-  const parsed = parseInternalFormat(rows, idx, read)
-             ?? parsePublishedFormat(rows, idx, read);
+  const parsed = parsePublishedFormat(rows, idx, read);
   return parsed ? normalizeCategoryRows(parsed) : null;
 }

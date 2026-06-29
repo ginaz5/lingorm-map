@@ -265,17 +265,7 @@ The Maps key is delivered via `/api/config` (Netlify Function). Protect it with:
 
 ## Data Schema
 
-The Google Sheet must be published as CSV. Two formats are auto-detected:
-
-**Internal format (recommended):**
-
-```
-Name_EN, Name_ZH, Alt_Name, Category_EN, Category_ZH,
-Notes_EN, Notes_ZH, Icon, Lat, Lng, Maps_Query,
-Status, Duplicate_Group, Source, Coords_Approx
-```
-
-**Published/legacy format:**
+The Google Sheet must be published as CSV with the public sheet schema:
 
 ```
 Location Name, Thai / Alt Name, Category, Notes,
