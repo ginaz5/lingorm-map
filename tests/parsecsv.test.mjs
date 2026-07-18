@@ -191,6 +191,49 @@ test('parseCSV: returns null for empty / header-only input', () => {
   assert.equal(parseCSV('Name_EN,Name_ZH'), null); // header only, no data rows
 });
 
+// ─── Slug-based id (plan §6.3, §13 Phase 2 ID fix) ─────────────────────────
+
+test('parseCSV: prefers Slug column over slugify(name) when present', () => {
+  const csv = [
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH,Slug',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店,the-siam-hotel',
+  ].join('\n');
+  const [row] = parseCSV(csv);
+  assert.equal(row.id, 'the-siam-hotel');
+});
+
+test('parseCSV: rename in Notion does not change id — Slug wins even when it no longer matches slugify(new name)', () => {
+  // Simulates re-exporting after a maintainer renamed the page in Notion:
+  // Name changed, but Slug is frozen at migration time (plan §13 Phase 2)
+  // specifically so localStorage favorites and shared #fav URLs still resolve.
+  const csv = [
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH,Slug',
+    'The Siam Hotel (Renamed),,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店,the-siam-hotel',
+  ].join('\n');
+  const [row] = parseCSV(csv);
+  assert.equal(row.id, 'the-siam-hotel', 'id should stay the pre-rename slug, not slugify(new name)');
+  assert.notEqual(row.id, slugify('The Siam Hotel (Renamed)'));
+  assert.equal(row.nameEn, 'The Siam Hotel (Renamed)', 'display name still updates normally');
+});
+
+test('parseCSV: falls back to slugify(name) when Slug column absent (legacy sheet format)', () => {
+  const csv = [
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店',
+  ].join('\n');
+  const [row] = parseCSV(csv);
+  assert.equal(row.id, slugify('The Siam Hotel'));
+});
+
+test('parseCSV: falls back to slugify(name) when Slug column present but empty for a row', () => {
+  const csv = [
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH,Slug',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店,',
+  ].join('\n');
+  const [row] = parseCSV(csv);
+  assert.equal(row.id, slugify('The Siam Hotel'));
+});
+
 test('parseCSV: BOM at start of file is stripped from first header', () => {
   const bom = '﻿';
   const csv = [

@@ -18,3 +18,9 @@ dist/
 
 # Local Deno / Netlify runtime artifacts
 deno.lock
+
+# One-time Notion migration artifacts (frozen source snapshot + generated
+# transform output — regenerable from scripts/migrate-sheet-to-notion.mjs,
+# not needed for ongoing dev)
+data/migration/
+migration-output/

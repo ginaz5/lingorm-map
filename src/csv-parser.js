@@ -195,7 +195,13 @@ export function parsePublishedFormat(rows, idx, read) {
       const tags      = normalizeSourceTags(read(r, "Source Tags"));
       const maps      = read(r, "Google Maps URL") || read(r, "Google Maps Link");
       return {
-        id:       slugify(name),
+        // Prefer an explicit Slug column when present (Notion export, plan
+        // §6.3/§13 Phase 2) so a Notion page rename doesn't change the
+        // location's id — that would silently break localStorage favorites
+        // and any shared #fav URL (plan §4 debt #5, §14 acceptance #2).
+        // Falls back to slugify(name) for the legacy sheet format, which
+        // has no Slug column and never will.
+        id:       read(r, "Slug") || slugify(name),
         nameEn:   name,
         nameZh,
         alt:      read(r, "Thai / Alt Name"),
