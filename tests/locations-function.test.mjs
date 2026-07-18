@@ -1,14 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
-import locationsHandler from '../netlify/functions/locations.mjs';
+import locationsHandler, {
+  serveNotionSnapshot,
+} from '../netlify/functions/locations.mjs';
+import { parseCSV } from '../src/csv-parser.js';
 
-function withNetlifyEnv(value, fn) {
+function withNetlifyEnv(values, fn) {
   const previous = globalThis.Netlify;
   globalThis.Netlify = {
     env: {
       get(key) {
-        return key === 'GOOGLE_SHEET_CSV_URL' ? value : undefined;
+        return values[key];
       },
     },
   };
@@ -25,7 +29,7 @@ function withNetlifyEnv(value, fn) {
 }
 
 test('returns 500 when GOOGLE_SHEET_CSV_URL is not configured', async () => {
-  await withNetlifyEnv('', async () => {
+  await withNetlifyEnv({}, async () => {
     const response = await locationsHandler(new Request('https://example.test/api/locations'));
 
     assert.equal(response.status, 500);
@@ -45,7 +49,9 @@ test('proxies the configured Google Sheet CSV as text/csv', async () => {
   };
 
   try {
-    await withNetlifyEnv('https://docs.google.com/spreadsheets/d/example/export?format=csv', async () => {
+    await withNetlifyEnv({
+      GOOGLE_SHEET_CSV_URL: 'https://docs.google.com/spreadsheets/d/example/export?format=csv',
+    }, async () => {
       const response = await locationsHandler(new Request('https://example.test/api/locations'));
 
       assert.equal(response.status, 200);
@@ -72,7 +78,10 @@ test('converts a Google Sheets edit URL to a CSV export URL', async () => {
   };
 
   try {
-    await withNetlifyEnv('https://docs.google.com/spreadsheets/d/sheet-id/edit?gid=12345#gid=12345', async () => {
+    await withNetlifyEnv({
+      DATA_SOURCE: 'sheet',
+      GOOGLE_SHEET_CSV_URL: 'https://docs.google.com/spreadsheets/d/sheet-id/edit?gid=12345#gid=12345',
+    }, async () => {
       const response = await locationsHandler(new Request('https://example.test/api/locations'));
 
       assert.equal(response.status, 200);
@@ -92,7 +101,9 @@ test('rejects Google Sheets HTML pages instead of returning them as CSV', async 
     });
 
   try {
-    await withNetlifyEnv('https://docs.google.com/spreadsheets/d/example/edit?usp=sharing', async () => {
+    await withNetlifyEnv({
+      GOOGLE_SHEET_CSV_URL: 'https://docs.google.com/spreadsheets/d/example/edit?usp=sharing',
+    }, async () => {
       const response = await locationsHandler(new Request('https://example.test/api/locations'));
 
       assert.equal(response.status, 502);
@@ -103,4 +114,58 @@ test('rejects Google Sheets HTML pages instead of returning them as CSV', async 
   } finally {
     globalThis.fetch = previousFetch;
   }
+});
+
+test('serves the committed Notion snapshot when DATA_SOURCE=notion', async () => {
+  await withNetlifyEnv({
+    DATA_SOURCE: 'notion',
+  }, async () => {
+    const response = await locationsHandler(new Request('https://example.test/api/locations'));
+    const csv = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-type'), 'text/csv; charset=utf-8');
+    assert.equal(response.headers.get('cache-control'), 'public, max-age=60, stale-while-revalidate=300');
+    assert.match(csv, /"Location Name"/);
+    assert.match(csv, /"Slug"/);
+    assert.equal(parseCSV(csv).length, 98);
+  });
+});
+
+test('does not require the Google Sheet URL when DATA_SOURCE=notion', async () => {
+  await withNetlifyEnv({
+    DATA_SOURCE: 'notion',
+  }, async () => {
+    const response = await locationsHandler(new Request('https://example.test/api/locations'));
+
+    assert.equal(response.status, 200);
+  });
+});
+
+test('returns 503 when the Notion snapshot is missing', async () => {
+  const response = await serveNotionSnapshot('/path/that/does/not/exist.csv');
+
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: 'Notion snapshot is not available' });
+});
+
+test('rejects an invalid Notion snapshot', async () => {
+  const invalidFixture = fileURLToPath(new URL('../package.json', import.meta.url));
+  const response = await serveNotionSnapshot(invalidFixture);
+
+  assert.equal(response.status, 502);
+  assert.deepEqual(await response.json(), {
+    error: 'Notion snapshot is invalid: expected a CSV with Location Name and Slug columns',
+  });
+});
+
+test('rejects an unsupported DATA_SOURCE value', async () => {
+  await withNetlifyEnv({ DATA_SOURCE: 'database' }, async () => {
+    const response = await locationsHandler(new Request('https://example.test/api/locations'));
+
+    assert.equal(response.status, 500);
+    assert.deepEqual(await response.json(), {
+      error: 'DATA_SOURCE must be either "sheet" or "notion"',
+    });
+  });
 });

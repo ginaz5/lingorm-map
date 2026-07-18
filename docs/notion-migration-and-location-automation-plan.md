@@ -31,7 +31,7 @@ The current system is a **static Vite site + two read-only Netlify Functions**. 
 | CSV parser | `src/csv-parser.js` — `parsePublishedFormat()` | Header-based parsing; **requires** columns `Location Name, Thai / Alt Name, Category, Notes, Source URL, Verification Status, Duplicate Group` |
 | Community input | Netlify Forms (`suggest-edit`, `add-location`, `issue-report`) via `src/submit.js` | Write path is **email → human review → manual sheet edit** (documented in `note/TECH_DECISIONS.md`) |
 | Research artifacts | `sources/` — `lingorm_location_updated.md`, `Lingorm_Threads_Locations.md`, `coord_verification_report.md`, `Lingorm_Thailand_Locations.py` | The manual pipeline's working files |
-| Tests | `tests/*.test.mjs`, node:test, 90 tests; `npm run typecheck` (strict `checkJs`) | Parser, functions, forms, UI covered |
+| Tests | `tests/*.test.mjs`, node:test, 106 tests; `npm run typecheck` (strict `checkJs`) | Parser, functions, forms, UI covered |
 
 ### 2.2 CRUD reality
 
@@ -58,7 +58,7 @@ The current system is a **static Vite site + two read-only Netlify Functions**. 
 
 ### 2.5 Secrets & dependencies
 
-- `.env` / Netlify env vars: `GOOGLE_SHEET_CSV_URL` (treated as secret — kept server-side), `GOOGLE_MAPS_KEY`, `GOOGLE_MAP_ID`, `HERE_API_KEY`, optional `ADMIN_PASSWORD` (feature removed in `e33bca5`).
+- `.env` / Netlify env vars: `GOOGLE_SHEET_CSV_URL` (treated as secret — kept server-side), `GOOGLE_MAPS_KEY`, `GOOGLE_MAP_ID`, and `HERE_API_KEY`.
 - External runtime deps: Google Sheets publish-to-web, Google Maps JS API, HERE Maps JS API, Netlify Forms, GTM/GA4.
 
 ### 2.6 API usage boundary — curation-time vs runtime
@@ -355,7 +355,7 @@ flowchart TD
 | **Conflict / dirty data** | Missing required fields, coords outside TH/VN bbox, duplicate slug, HTML in fields → rejected into error report, never written |
 | **Human review flow** | Draft page → status change → next export includes/excludes correctly (`Published` formula test) |
 | **Rollback** | Flip `DATA_SOURCE=sheet` in a preview deploy → old behavior byte-identical (existing `locations-function.test.mjs` extended) |
-| **Existing suite** | All 90 node:test tests + `npm run typecheck` stay green throughout — frontend contract unchanged until Phase 4 |
+| **Existing suite** | All 106 node:test tests + `npm run typecheck` stay green throughout — frontend contract unchanged until Phase 4 |
 
 ---
 
@@ -403,7 +403,7 @@ flowchart TD
 | **Goal** | All ~97 rows in Notion; site still on sheet |
 | **Work items** | `migrate-sheet-to-notion.mjs` (idempotent upsert + cleaning log §10.3); dedup report; full reconciliation diff; `/api/locations` env-switch + Blob read; preview deploy on `DATA_SOURCE=notion`; **ID fix (must ship before cutover):** exporter emits additive `Slug` column; `csv-parser.js` prefers it — `id: read(r, "Slug") || slugify(name)` — so renames in Notion no longer break localStorage favorites or shared `#fav` URLs; migration sets `Slug = slugify(current name)` once, frozen thereafter; validate step rejects duplicate slugs (Notion has no unique constraint) |
 | **Dependencies** | Phase 1 green |
-| **Acceptance** | Reconciliation diff = only intended cleanings; idempotency test (2nd run = 0 writes); preview site visually identical; 90 tests + typecheck green; **rename test:** rename a location in Notion → re-export → its `id` (Slug) unchanged, favorites referencing it still resolve; duplicate-slug input rejected by validator |
+| **Acceptance** | Reconciliation diff = only intended cleanings; idempotency test (2nd run = 0 writes); preview site visually identical; 106 tests + typecheck green; **rename test:** rename a location in Notion → re-export → its `id` (Slug) unchanged, favorites referencing it still resolve; duplicate-slug input rejected by validator |
 | **Risks** | Sheet edited mid-migration (mitigate: freeze announcement + re-run); slug collisions (report shows none expected, verify) |
 | **Agent fit** | **Sonnet/Codex** for scripts; **human** signs off the reconciliation diff |
 
@@ -432,7 +432,7 @@ flowchart TD
 
 ## 14. Acceptance Criteria (program-level)
 
-1. Public site behavior and visuals unchanged after cutover (existing 90-test suite + manual smoke on live URL).
+1. Public site behavior and visuals unchanged after cutover (existing 106-test suite + manual smoke on live URL).
 2. Any sheet-era row is traceable to its Notion page (Slug preserved 1:1); localStorage favorites survive.
 3. A new location goes from pasted fan-post URL to reviewable Notion draft in one command / one workflow dispatch, in < 5 minutes, with deterministic coords.
 4. No automated write ever publishes directly: pipeline output is always `Needs Review`.
@@ -566,7 +566,7 @@ existing test suite staying green. Added 4 new tests to
 `tests/parsecsv.test.mjs` covering: Slug preferred when present, id stays
 frozen across a simulated rename, fallback when Slug column is absent
 (legacy format), fallback when Slug column exists but is empty for a row.
-The full suite stayed green at this checkpoint; later safety regression coverage brings the total to 90 tests.
+The full suite stayed green at this checkpoint; later snapshot and safety regression coverage brings the total to 106 tests.
 
 ### Update (2026-07-18, later same day) — migration safety fixes
 
@@ -574,13 +574,35 @@ The full suite stayed green at this checkpoint; later safety regression coverage
 - Duplicate slugs now stop the migration before payload files are written.
 - `resolve.mjs` flags missing stored or resolved coordinates for review instead of allowing `NaN` comparisons to appear clean.
 - `export-snapshot.mjs` validates credentials only when executed, so its serializers can be imported and tested without secrets.
-- Added 8 regression tests; **90/90 tests pass**, typecheck clean.
+- Added migration safety regression coverage; the later snapshot work brings the full suite to **106/106 passing**, typecheck clean.
 
-### Not done (still open before Phase 2 can be called complete per §13)
+### Update (2026-07-18, Phase 2 snapshot read path and full reconciliation)
 
-1. **`/api/locations` env-switch (`DATA_SOURCE=sheet|notion`) and Blob/committed-file read path** — not implemented; site still reads only the Google Sheet.
-2. **Preview deploy on `DATA_SOURCE=notion`** and a golden parse-equality test re-run at full (98-row) scale — not done; only the 10-row PoC golden test exists (`tests/notion-export-poc.test.mjs`).
-3. **41 rows flagged >150m** and **1 row (`by`) with no Google Place ID** — see the update above; both need a human decision, not automated writes.
+- `/api/locations` now supports `DATA_SOURCE=sheet|notion`. `sheet` keeps the
+  legacy proxy unchanged; `notion` serves the validated, bundled
+  `data/locations.csv` snapshot. The committed-file MVP was chosen over Blobs
+  until the scheduled export job exists, preserving simple versioned rollback.
+- Netlify bundles the snapshot with the function, and `build.sh` validates only
+  the environment required by the selected source.
+- A repaired Notion UI export was converted to the stable 16-column contract.
+  Reconciliation found 36 connector-import text corruptions across 29 rows;
+  all were repaired in Notion and re-read before the final export.
+- The manual converter now rejects incomplete exports as well as duplicate
+  slugs, and the Netlify build validates the stable header contract, exact
+  98-row baseline, nonempty slugs, and uniqueness before deployment.
+- `tests/notion-export-full.test.mjs` validates all 98 rows against the frozen
+  migration source when present. All fields match after the documented
+  cleanings: 56 raw `___epoh___` tags become `Threads`, duplicate/source-tag
+  order is normalized by Notion multi-select, and three rows were deliberately
+  downgraded from `Verified` to `Needs Review`.
+- **106/106 tests pass**, typecheck and production build are clean.
+
+### Still open before production cutover
+
+1. **Preview deploy on `DATA_SOURCE=notion`**, followed by the rollback drill
+   (`DATA_SOURCE=sheet`) required by §13.
+2. **41 rows flagged >150m** and **1 row (`by`) with no Google Place ID** — see
+   the update above; both need a human decision, not automated writes.
 
 ---
 

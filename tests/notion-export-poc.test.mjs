@@ -19,12 +19,17 @@
 // once that integration token exists, to confirm the *script* — not just the
 // manually-verified data — reproduces the same result.
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 import { parseCSV } from '../src/csv-parser.js';
+import {
+  convertNotionCsv,
+  normalizeNotionExportText,
+} from '../scripts/convert-notion-csv.mjs';
 import { CSV_HEADER, csvRow, pageToRow } from '../scripts/export-snapshot.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -127,4 +132,71 @@ test('snapshot exporter maps native page icon and frozen Slug without credential
 
 test('snapshot exporter escapes quotes and commas in CSV output', () => {
   assert.equal(csvRow(['a,b', 'say "hello"']), '"a,b","say ""hello"""');
+});
+
+test('manual Notion CSV export bridge emits the stable snapshot contract', () => {
+  const notionCsv = [
+    'Name,Name ZH,Thai / Alt Name,Google Maps URL,Category,Notes EN,Notes ZH,Source URLs,Source Tags,Status,Lat,Lng,Coordinates Approx,Slug',
+    'The Siam Hotel,暹羅精品酒店,,https://maps.example/the-siam,Hotel,Luxury hotel,河畔精品酒店,https://example.com,KKday,Verified,13.7608,100.5089,No,the-siam-hotel',
+  ].join('\n');
+  const iconCsv = [
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店',
+  ].join('\n');
+
+  const [row] = parseCSV(convertNotionCsv(notionCsv, iconCsv));
+  assert.deepEqual(row, parseCSV(iconCsv)[0]);
+  assert.equal(row.id, 'the-siam-hotel');
+});
+
+test('manual Notion CSV export bridge rejects duplicate slugs', () => {
+  const notionCsv = [
+    'Name,Name ZH,Thai / Alt Name,Google Maps URL,Category,Notes EN,Notes ZH,Source URLs,Source Tags,Status,Lat,Lng,Coordinates Approx,Slug',
+    'The Siam Hotel,暹羅精品酒店,,https://maps.example/the-siam,Hotel,Luxury hotel,河畔精品酒店,https://example.com,KKday,Verified,13.7608,100.5089,No,the-siam-hotel',
+    'Renamed Hotel,暹羅精品酒店,,https://maps.example/the-siam,Hotel,Luxury hotel,河畔精品酒店,https://example.com,KKday,Verified,13.7608,100.5089,No,the-siam-hotel',
+  ].join('\n');
+
+  assert.throws(
+    () => convertNotionCsv(notionCsv, sourceCSV),
+    /Duplicate Slug in Notion CSV: the-siam-hotel/
+  );
+});
+
+test('manual Notion CSV export bridge rejects missing expected slugs', () => {
+  const notionCsv = [
+    'Name,Name ZH,Thai / Alt Name,Google Maps URL,Category,Notes EN,Notes ZH,Source URLs,Source Tags,Status,Lat,Lng,Coordinates Approx,Slug',
+    'Alpha Cafe,Alpha Cafe,,,Cafe,,,,,Verified,13.75,100.5,No,alpha-cafe',
+  ].join('\n');
+  const iconCsv = [
+    'Location Name,Thai / Alt Name,Category,Notes,Source URL,Verification Status,Duplicate Group,Icon',
+    'Alpha Cafe,,Cafe,,,Verified,,☕',
+    'Beta Cafe,,Cafe,,,Verified,,☕',
+  ].join('\n');
+
+  assert.throws(
+    () => convertNotionCsv(notionCsv, iconCsv),
+    /Notion CSV is missing 1 expected Slug\(s\): beta-cafe/
+  );
+});
+
+test('manual Notion CSV export bridge removes deterministic rich-text link artifacts', () => {
+  assert.equal(
+    normalizeNotionExportText(
+      'Trip.com note\nRef:https://http://www.threads.com/@example/post/123'
+    ),
+    'Trip.com note\nRef:https://www.threads.com/@example/post/123'
+  );
+});
+
+test('manual Notion CSV export bridge is importable without a script argv entry', () => {
+  const moduleUrl = pathToFileURL(
+    path.join(__dirname, '..', 'scripts', 'convert-notion-csv.mjs')
+  ).href;
+  const result = spawnSync(process.execPath, [
+    '--input-type=module',
+    '--eval',
+    `await import(${JSON.stringify(moduleUrl)})`,
+  ], { encoding: 'utf8' });
+
+  assert.equal(result.status, 0, result.stderr);
 });

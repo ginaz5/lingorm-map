@@ -42,8 +42,8 @@ netlify link
 ```bash
 GOOGLE_MAPS_KEY=your_google_maps_key
 GOOGLE_MAP_ID=your_google_map_id
+HERE_API_KEY=your_here_api_key
 GOOGLE_SHEET_CSV_URL=your_google_sheet_csv_url
-ADMIN_PASSWORD=your_admin_password
 ```
 
 注意：
@@ -71,7 +71,7 @@ node --test tests/*.test.mjs
 預期結果：
 
 ```text
-pass 68
+pass 106
 fail 0
 ```
 
