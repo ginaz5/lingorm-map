@@ -93,15 +93,27 @@ export async function resolvePlace(query) {
   };
 }
 
-// Resolve + cross-check against a known (name, lat, lng) triple. Returns
-// { resolved, distanceMeters, flagForReview } — flagForReview mirrors the
-// plan's 150m dedupe threshold (§7.1, §9.1).
-export async function resolveAndCheck(name, knownLat, knownLng, queryHint = "") {
-  const resolved = await resolvePlace(queryHint || `${name} Bangkok`);
-  if (!resolved || resolved.lat === null) {
+export function assessResolvedPlace(name, knownLat, knownLng, resolved) {
+  if (!resolved) {
     return { name, resolved: null, distanceMeters: null, flagForReview: true, reason: "no_result" };
   }
-  const distanceMeters = haversineMeters(knownLat, knownLng, resolved.lat, resolved.lng);
+
+  const isCoordinate = (value) =>
+    value !== null && value !== "" && Number.isFinite(Number(value));
+
+  const resolvedLat = Number(resolved.lat);
+  const resolvedLng = Number(resolved.lng);
+  if (!isCoordinate(resolved.lat) || !isCoordinate(resolved.lng)) {
+    return { name, resolved, distanceMeters: null, flagForReview: true, reason: "no_resolved_coords" };
+  }
+
+  const storedLat = Number(knownLat);
+  const storedLng = Number(knownLng);
+  if (!isCoordinate(knownLat) || !isCoordinate(knownLng)) {
+    return { name, resolved, distanceMeters: null, flagForReview: true, reason: "no_stored_coords" };
+  }
+
+  const distanceMeters = haversineMeters(storedLat, storedLng, resolvedLat, resolvedLng);
   return {
     name,
     resolved,
@@ -109,6 +121,14 @@ export async function resolveAndCheck(name, knownLat, knownLng, queryHint = "") 
     flagForReview: distanceMeters > 150,
     reason: distanceMeters > 150 ? "moved_over_150m" : null,
   };
+}
+
+// Resolve + cross-check against a known (name, lat, lng) triple. Returns
+// { resolved, distanceMeters, flagForReview } — flagForReview mirrors the
+// plan's 150m dedupe threshold (§7.1, §9.1).
+export async function resolveAndCheck(name, knownLat, knownLng, queryHint = "") {
+  const resolved = await resolvePlace(queryHint || `${name} Bangkok`);
+  return assessResolvedPlace(name, knownLat, knownLng, resolved);
 }
 
 async function main() {

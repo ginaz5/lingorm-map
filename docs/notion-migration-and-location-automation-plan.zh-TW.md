@@ -31,7 +31,7 @@
 | CSV 解析器 | `src/csv-parser.js` — `parsePublishedFormat()` | 以標頭為基礎解析；**要求**欄位 `Location Name, Thai / Alt Name, Category, Notes, Source URL, Verification Status, Duplicate Group` |
 | 社群輸入 | 透過 `src/submit.js` 的 Netlify Forms（`suggest-edit`、`add-location`、`issue-report`） | 寫入路徑是**email → 人工審核 → 手動編輯 sheet**（記錄於 `note/TECH_DECISIONS.md`） |
 | 研究產出物 | `sources/` —— `lingorm_location_updated.md`、`Lingorm_Threads_Locations.md`、`coord_verification_report.md`、`Lingorm_Thailand_Locations.py` | 手動流程的工作檔案 |
-| 測試 | `tests/*.test.mjs`，node:test，73 個測試；`npm run typecheck`（strict `checkJs`） | 涵蓋解析器、functions、表單、UI |
+| 測試 | `tests/*.test.mjs`，node:test，90 個測試；`npm run typecheck`（strict `checkJs`） | 涵蓋解析器、functions、表單、UI |
 
 ### 2.2 CRUD 現實
 
@@ -355,7 +355,7 @@ flowchart TD
 | **衝突/髒資料** | 缺少必要欄位、座標超出泰國/越南邊界框、slug 重複、欄位內含 HTML → 歸入錯誤報告，絕不寫入 |
 | **人工審核流程** | 草稿頁面 → 狀態變更 → 下一次匯出正確納入/排除（`Published` 公式測試） |
 | **回滾** | 在 preview 部署中切回 `DATA_SOURCE=sheet` → 舊行為逐位元組相同（擴充現有的 `locations-function.test.mjs`） |
-| **既有測試套件** | 全程維持 73 個 node:test 測試 + `npm run typecheck` 全綠 —— 前端契約在 Phase 4 之前不變 |
+| **既有測試套件** | 全程維持 90 個 node:test 測試 + `npm run typecheck` 全綠 —— 前端契約在 Phase 4 之前不變 |
 
 ---
 
@@ -403,7 +403,7 @@ flowchart TD
 | **目標** | 全部約 97 列資料進入 Notion；網站仍讀取 sheet |
 | **工作項目** | `migrate-sheet-to-notion.mjs`（冪等 upsert + §10.3 的清理紀錄）；去重報告；完整對照差異報告；`/api/locations` 環境變數切換 + Blob 讀取；在 `DATA_SOURCE=notion` 下做 preview 部署；**ID 修正（必須在正式切換前完成）：** 匯出器新增輸出 `Slug` 欄位；`csv-parser.js` 優先採用它 —— `id: read(r, "Slug") || slugify(name)` —— 讓 Notion 中的改名不再破壞 localStorage 收藏或已分享的 `#fav` URL；遷移時把 `Slug = slugify(現在的名稱)` 設定一次，之後凍結；驗證步驟會拒絕重複的 slug（Notion 沒有唯一性限制） |
 | **相依項** | Phase 1 通過 |
-| **驗收標準** | 對照差異只包含預期中的清理項目；冪等性測試（第二次執行 = 0 筆寫入）；preview 網站視覺上與原本一致；73 個測試 + typecheck 全綠；**改名測試：** 在 Notion 中重新命名一個地點 → 重新匯出 → 其 `id`（Slug）不變，引用它的收藏仍能正確解析；重複 slug 的輸入會被驗證器拒絕 |
+| **驗收標準** | 對照差異只包含預期中的清理項目；冪等性測試（第二次執行 = 0 筆寫入）；preview 網站視覺上與原本一致；90 個測試 + typecheck 全綠；**改名測試：** 在 Notion 中重新命名一個地點 → 重新匯出 → 其 `id`（Slug）不變，引用它的收藏仍能正確解析；重複 slug 的輸入會被驗證器拒絕 |
 | **風險** | 遷移過程中 sheet 被編輯（緩解：發佈凍結公告 + 重新執行）；slug 撞名（報告顯示預期沒有，仍需驗證） |
 | **Agent 適配** | 腳本由 **Sonnet/Codex** 負責；對照差異報告由**人工**簽核 |
 
@@ -432,7 +432,7 @@ flowchart TD
 
 ## 14. 驗收標準（專案層級）
 
-1. 切換後公開網站的行為與外觀不變（現有 73 個測試套件 + 在正式 URL 上人工抽測）。
+1. 切換後公開網站的行為與外觀不變（現有 90 個測試套件 + 在正式 URL 上人工抽測）。
 2. 任何 sheet 時代的資料列都能對應到其 Notion 頁面（Slug 保持一對一）；localStorage 收藏功能維持正常。
 3. 從貼上粉絲貼文 URL 到產出可供審核的 Notion 草稿，只需一個指令/一次 workflow 觸發，耗時 < 5 分鐘，且座標具決定性。
 4. 任何自動化寫入都不會直接發佈：流程輸出永遠是 `Needs Review`。

@@ -19,14 +19,7 @@
 // This is separate from any Cowork/Claude Notion connector.
 // ═══════════════════════════════════════════════════
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY;
-const DATA_SOURCE_ID = process.env.NOTION_DATA_SOURCE_ID;
 const NOTION_VERSION = "2025-09-03"; // plan §5.1 — pin the version; databases/data sources split here
-
-if (!NOTION_API_KEY || !DATA_SOURCE_ID) {
-  console.error("Missing NOTION_API_KEY or NOTION_DATA_SOURCE_ID env var.");
-  process.exit(1);
-}
 
 export const CSV_HEADER = [
   "Location Name", "Location Name ZH", "Thai / Alt Name", "Google Maps URL",
@@ -35,14 +28,14 @@ export const CSV_HEADER = [
   "Coordinates Approx", "Slug", // Slug is additive (Phase 2, §6.3); parseCSV() prefers it over slugify(name) as of the ID fix (2026-07-18)
 ];
 
-async function queryAllPages(dataSourceId) {
+async function queryAllPages(dataSourceId, apiKey) {
   const pages = [];
   let cursor;
   do {
     const res = await fetch(`https://api.notion.com/v1/data_sources/${dataSourceId}/query`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${NOTION_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Notion-Version": NOTION_VERSION,
         "content-type": "application/json",
       },
@@ -112,13 +105,19 @@ export function csvRow(fields) {
 }
 
 async function main() {
-  const pages = await queryAllPages(DATA_SOURCE_ID);
+  const apiKey = process.env.NOTION_API_KEY;
+  const dataSourceId = process.env.NOTION_DATA_SOURCE_ID;
+  if (!apiKey || !dataSourceId) {
+    throw new Error("Missing NOTION_API_KEY or NOTION_DATA_SOURCE_ID env var.");
+  }
+
+  const pages = await queryAllPages(dataSourceId, apiKey);
   const lines = [csvRow(CSV_HEADER)];
   for (const page of pages) {
     lines.push(csvRow(pageToRow(page)));
   }
   process.stdout.write(lines.join("\r\n") + "\r\n");
-  console.error(`Exported ${pages.length} rows from data source ${DATA_SOURCE_ID}.`);
+  console.error(`Exported ${pages.length} rows from data source ${dataSourceId}.`);
 }
 
 // Only run when executed directly (not when imported by tests)

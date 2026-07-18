@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 import { parseCSV } from '../src/csv-parser.js';
+import { CSV_HEADER, csvRow, pageToRow } from '../scripts/export-snapshot.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixtureDir = path.join(__dirname, 'fixtures', 'notion-poc');
@@ -93,4 +94,37 @@ test('Phase 1 PoC: category alias normalization applied identically on both side
   const exp = exportedRows.find(r => r.id === 'r-bar');
   assert.equal(src.catEn, 'Bar / Rooftop Club');
   assert.equal(exp.catEn, 'Bar / Rooftop Club');
+});
+
+test('snapshot exporter maps native page icon and frozen Slug without credentials', () => {
+  const richText = (plainText) => ({ rich_text: [{ plain_text: plainText }] });
+  const page = {
+    icon: { type: 'emoji', emoji: '🏨' },
+    properties: {
+      Name: { title: [{ plain_text: 'The Siam Hotel' }] },
+      'Name ZH': richText('暹羅精品酒店'),
+      'Thai / Alt Name': richText(''),
+      'Google Maps URL': { url: 'https://maps.example/the-siam' },
+      Category: { select: { name: 'Hotel' } },
+      'Notes EN': richText('Luxury hotel'),
+      'Notes ZH': richText('河畔精品酒店'),
+      'Source URLs': richText('https://example.com'),
+      'Source Tags': { multi_select: [{ name: 'KKday' }] },
+      Status: { select: { name: 'Verified' } },
+      'Duplicate Of': richText(''),
+      Lat: { number: 13.7608 },
+      Lng: { number: 100.5089 },
+      'Coordinates Approx': { checkbox: false },
+      Slug: richText('the-siam-hotel'),
+    },
+  };
+
+  const row = pageToRow(page);
+  assert.equal(row.length, CSV_HEADER.length);
+  assert.equal(row[13], '🏨');
+  assert.equal(row[15], 'the-siam-hotel');
+});
+
+test('snapshot exporter escapes quotes and commas in CSV output', () => {
+  assert.equal(csvRow(['a,b', 'say "hello"']), '"a,b","say ""hello"""');
 });
