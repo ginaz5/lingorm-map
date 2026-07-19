@@ -249,7 +249,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
   font-size:14px;line-height:1;background:var(--primary);color:#fff}
 
 /* Popup content */
-.popup-content{width:300px;max-width:85vw;max-height:300px;overflow-y:auto;box-sizing:border-box;padding-right:4px}
+.popup-content{width:300px;max-width:calc(100vw - 60px);max-height:300px;overflow-y:auto;box-sizing:border-box;padding-right:4px}
 .popup-content::-webkit-scrollbar{width:4px}
 .popup-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .popup-name{font-size:14px;font-weight:600;margin-bottom:4px;color:var(--primary);padding-right:24px;word-break:break-word}
@@ -275,6 +275,8 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
   .logo{font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis}
   .btn-ghost{display:none}
   .mobile-actions{display:block}
+  .gm-style .gm-style-iw-c{max-width:calc(100vw - 32px)!important}
+  .popup-content{width:100%;min-width:240px;max-width:none}
 }
 
 /* Modals (shared) */
