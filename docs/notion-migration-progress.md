@@ -20,21 +20,37 @@ This file is a compact progress snapshot. If anything here conflicts with the pl
 - **ID fix shipped**: `src/csv-parser.js` now resolves a row's `id` from an exported `Slug` column when present, falling back to `slugify(name)` otherwise — a Notion rename no longer breaks `localStorage` favorites or shared `?favs=` URLs. 4 new tests added.
 - **Migration safety fixes shipped**: `migrate-sheet-to-notion.mjs` requires an explicit existing-slug snapshot, rejects slug collisions before output, `resolve.mjs` flags missing coordinates, and `export-snapshot.mjs` can be imported without credentials.
 - **Snapshot serving is implemented**: `/api/locations` supports `DATA_SOURCE=sheet|notion`; Notion mode serves the bundled, validated `data/locations.csv`, while sheet mode remains the rollback path.
+- **Current update limitation**: editing Notion does **not** update production automatically. Production serves the committed `data/locations.csv` snapshot, and no raw `NOTION_API_KEY` is configured. Until post-migration automation is implemented, every Notion change requires the manual export → validation → PR preview → deployment workflow in `docs/notion-deploy-workflow.md`.
 - **Full reconciliation is done**: `tests/notion-export-full.test.mjs` compares all 98 rows with the frozen source when available, and the deploy build independently enforces the stable header, 98 rows, and unique nonempty slugs.
 - **Favorites compatibility protection is implemented**: the build compares all 98 spreadsheet-derived legacy favorite IDs with the Notion snapshot and rejects missing, renamed, empty, or duplicate slugs.
 - **Notion preview verified**: PR #1 deployed successfully with `DATA_SOURCE=notion`; `/api/locations` matched the committed 98-row snapshot byte-for-byte, all 98 production IDs matched the preview IDs, and browser testing confirmed favorites filtering and persistence.
 - **Test suite: 111/111 passing, `npm run typecheck` and the production build clean.**
 - Relevant baseline commits are `81c12dc` (Phase 2 migration) and `3b03a2a` (migration safety).
 
-### What is NOT done yet (in priority order)
+### What is NOT done for the migration
 
 | # | Task | Why it matters |
 |---|---|---|
 | 1 | **Perform the `DATA_SOURCE=sheet` rollback drill** | The Notion preview is verified; confirming the redeploy-based rollback path is the remaining Phase 2 operational acceptance check before production cutover. |
-| 2 | **Decide what to do with 41 rows flagged >150m** from their stored Lat/Lng during Place ID resolution | Full list: `migration-output/place-id-report.md` (local only, gitignored — see §5). Some distances are large (18–95 km) and likely mean the *old* hand-entered coordinates were wrong, not that the Place ID match is wrong (the plan's own coordinate-quality debt, §4 issue 2, predicted this). Nothing has been auto-corrected — this needs a human/agent decision per row or per batch. |
-| 3 | **Resolve the "by" row's missing Google Place ID** | Row slug `by` (`ข้ามันบ้านนอก by บ้านนอกคอกนาเขาใหญ่`) resolved to the *same* Place ID as an unrelated venue (`cafe-ban-nok-by-ple-venus`) — a resolver false-match, not a real duplicate. Left blank rather than write a wrong ID. Needs a manually refined query (e.g. add a landmark/district hint) or manual Google Maps lookup, then a single `notion-update-page` call. |
 
-These three items are independent; only item 1 blocks production cutover.
+The coordinate-review work and the missing Place ID for slug `by` are
+data-quality tasks, not migration blockers. They will be handled in a separate
+session and remain documented in §4 and `migration-output/place-id-report.md`.
+
+### Post-migration TODO — automatic Notion updates
+
+After the migration and production cutover are complete:
+
+1. Create a least-privilege internal Notion integration and configure
+   `NOTION_API_KEY` plus `NOTION_DATA_SOURCE_ID` as deployment secrets.
+2. Add a scheduled export job that writes a candidate snapshot, runs the
+   schema and favorites-compatibility validators, and deploys only on success.
+3. Add failure/staleness alerts and retain timestamped snapshots for rollback.
+4. Run the scheduled workflow for one week without failures before treating
+   automatic synchronization as operational.
+
+Until this TODO is complete, updating Notion alone has no effect on the live
+site; use the manual deployment workflow.
 
 ---
 
@@ -81,6 +97,9 @@ The Phase 2 migration and safety baselines are committed; snapshot serving and f
 ## 7. Suggested next steps, in order
 
 1. Run the rollback drill with `DATA_SOURCE=sheet`, including the required redeploy.
-2. Resolve the "by" row (§2 item 3).
-3. Review the 41 flagged rows (§2 item 2) and decide whether to retain or correct each stored coordinate.
-4. After the rollback check, proceed to Phase 3 (location automation pipeline) or Phase 4 (production cutover) per the plan (§13).
+2. Restore `DATA_SOURCE=notion`, verify the preview again, then proceed with the production cutover.
+3. After the migration is fully complete, implement the automatic-update TODO above.
+
+Data-quality cleanup, including the 41 coordinate discrepancies and the
+missing Place ID for `by`, is intentionally tracked outside this migration
+sequence and will be handled in another session.

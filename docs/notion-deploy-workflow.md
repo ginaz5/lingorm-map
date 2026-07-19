@@ -25,6 +25,25 @@ Browser
 `DATA_SOURCE=notion`. Updating Notion alone does not update the site; every
 data change must go through export, validation, preview, and deployment.
 
+## Current limitation and post-migration TODO
+
+There is no automatic Notion-to-production synchronization in the current
+committed-snapshot MVP, and no raw `NOTION_API_KEY` is configured. Notion
+connector access used during migration does not provide unattended production
+exports. Therefore, a successful edit in Notion is not live until the snapshot
+has completed the manual workflow in this document.
+
+After the migration and production cutover are fully complete:
+
+- Create a least-privilege Notion integration.
+- Configure `NOTION_API_KEY` and `NOTION_DATA_SOURCE_ID` as deployment secrets.
+- Add a scheduled export, validation, and deployment workflow.
+- Add export-failure and stale-snapshot alerts.
+- Retain timestamped snapshots and complete a one-week failure-free soak.
+
+This automation is a post-migration operational TODO and does not block the
+committed-snapshot cutover.
+
 Do not confuse these two variables:
 
 | Variable | Purpose |

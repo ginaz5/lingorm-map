@@ -423,10 +423,30 @@ flowchart TD
 | | |
 |---|---|
 | **Goal** | Notion becomes SoR in production |
-| **Work items** | Actions cron for export (6 h); flip `DATA_SOURCE=notion`; bake 2–4 weeks; archive sheet (§10.11); README/TECH_DECISIONS update; rollback drill (actually flip back once in preview) |
-| **Acceptance** | Zero user-visible change; one full week of cron exports with 0 failed runs; rollback drill passes |
+| **Work items** | Flip `DATA_SOURCE=notion`; verify the committed snapshot in production; bake 2–4 weeks; archive sheet (§10.11); README/TECH_DECISIONS update; rollback drill (actually flip back once in preview) |
+| **Acceptance** | Zero user-visible change; production serves the validated committed snapshot; the manual Notion update/deployment workflow is documented; rollback drill passes |
 | **Risks** | Silent export failure → stale data (mitigate: last-known-good + failure alert); favorite-slug regressions (mitigate: Slug property frozen at migration) |
 | **Agent fit** | **Sonnet** for chores; **human** flips the switch |
+
+### Post-migration TODO — automatic Notion-to-production updates
+
+Automatic synchronization is deliberately deferred until after the migration
+and production cutover. In the committed-snapshot MVP, editing Notion alone
+does not update production: `data/locations.csv` must be exported, validated,
+committed, previewed, and deployed. No raw `NOTION_API_KEY` is currently
+configured; migration writes and reads have used the approved Notion connector.
+
+After full migration:
+
+1. Create a least-privilege Notion integration and store `NOTION_API_KEY` and
+   `NOTION_DATA_SOURCE_ID` as deployment secrets.
+2. Add an Actions cron (target cadence: every 6 hours) that exports to a
+   candidate snapshot, validates it, and preserves the last-known-good file on
+   failure.
+3. Add failure and stale-snapshot alerts.
+4. Retain the last 30 timestamped snapshots.
+5. Require one full week of scheduled exports with zero failed runs before
+   declaring automatic synchronization operational.
 
 ---
 
@@ -437,7 +457,7 @@ flowchart TD
 3. A new location goes from pasted fan-post URL to reviewable Notion draft in one command / one workflow dispatch, in < 5 minutes, with deterministic coords.
 4. No automated write ever publishes directly: pipeline output is always `Needs Review`.
 5. Rollback from Notion to sheet demonstrated in ≤ 5 minutes (env flip + redeploy of unchanged code — no code change).
-6. Every export run leaves a timestamped snapshot; last 30 retained.
+6. Until post-migration automatic synchronization is implemented, every Notion data change follows the documented manual export, validation, preview, and deployment workflow.
 
 ---
 
