@@ -115,11 +115,9 @@ export function buildPopupContent(i) {
         ${hasCoords ? `
         <button class="popup-nav-btn" onclick="openNavigation(${i})" aria-label="${t('nav_btn')}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 3l-7.5 18-3-7.5L3 11 21 3z"/></svg>
-          <span class="popup-btn-label">${t('nav_btn')}</span>
         </button>
         <button class="popup-maps-btn" onclick="openInGoogleMaps(${i})" aria-label="${t('open_maps_btn')}">
           <svg width="12" height="14" viewBox="0 0 48 56" aria-hidden="true"><path d="M24 2C13.5 2 5 10.5 5 21c0 14 19 33 19 33S43 35 43 21C43 10.5 34.5 2 24 2z" fill="#34A853"/><path d="M24 2 L5 21 L24 21 Z" fill="#EA4335"/><path d="M24 2 L43 21 L24 21 Z" fill="#4285F4"/><path d="M5 21 L24 21 L24 40 Z" fill="#FBBC04"/><circle cx="24" cy="21" r="8" fill="white"/></svg>
-          <span class="popup-btn-label">${t('open_maps_btn')}</span>
         </button>` : ''}
       </div>
     </div>
@@ -181,7 +179,6 @@ export function activateCard(i) {
   if (lat && lng && state.map) {
     if (window.innerWidth <= 700) switchTab('map');
     if (state.provider === 'google') {
-      state.map.panTo({ lat, lng });
       state.map.setZoom(15);
       if (state.markers[i] && state.infoWindow) {
         state.infoWindow.setContent(buildPopupContent(i));

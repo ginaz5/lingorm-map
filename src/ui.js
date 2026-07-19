@@ -19,7 +19,7 @@ function requiredElement(id) {
 export const THEME_ICONS = { light: '☀️', dark: '🌙' };
 
 export function getEffectiveTheme() {
-  return localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+  return 'light';
 }
 
 // ═══════════════════════════════════════════════════

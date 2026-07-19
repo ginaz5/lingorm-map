@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW" data-theme="light">
+<html lang="zh-TW">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <title>Lingorm Map</title>
 <link rel="icon" type="image/svg+xml" href="./favicon.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./styles.css"/>
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -30,27 +33,40 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <!-- HEADER -->
 <header>
-  <span class="logo">🗺 Lingorm Map</span>
+  <span class="logo cal-sans">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    Lingorm Map
+  </span>
   <div class="hdr-spacer"></div>
-  <button class="hdr-btn hdr-secondary" id="issue-btn">⚠️ <span data-i18n="issue_btn"></span></button>
-  <button class="hdr-btn hdr-secondary" id="locate-btn">📍 <span data-i18n="locate_btn_label"></span></button>
-  <button class="hdr-btn hdr-secondary" id="lang-btn">🌐 <span id="lang-btn-label"></span></button>
-  <button class="hdr-btn hdr-secondary icon-btn" id="theme-btn">🌙</button>
+  <button class="btn-ghost" id="issue-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span data-i18n="issue_btn"></span>
+  </button>
+  <button class="btn-ghost" id="locate-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+    <span data-i18n="locate_btn_label"></span>
+  </button>
+  <button class="btn-ghost" id="lang-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <span id="lang-btn-label"></span>
+  </button>
   <div class="mobile-actions">
-    <button class="hdr-btn icon-btn mobile-actions-btn" id="mobile-actions-btn" type="button"
-      aria-haspopup="menu" aria-expanded="false" aria-controls="mobile-actions-menu">⋯</button>
+    <button class="mobile-actions-btn" id="mobile-actions-btn" type="button"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="mobile-actions-menu">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+    </button>
     <div class="mobile-actions-menu" id="mobile-actions-menu" role="menu" hidden>
       <button type="button" class="mobile-action-item" data-mobile-action="issue" role="menuitem">
-        <span>⚠️</span><span data-i18n="issue_btn"></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span data-i18n="issue_btn"></span>
       </button>
       <button type="button" class="mobile-action-item" data-mobile-action="locate" role="menuitem">
-        <span>📍</span><span data-i18n="locate_btn_label"></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+        <span data-i18n="locate_btn_label"></span>
       </button>
       <button type="button" class="mobile-action-item" data-mobile-action="lang" role="menuitem">
-        <span>🌐</span><span data-i18n="lang_btn"></span>
-      </button>
-      <button type="button" class="mobile-action-item" data-mobile-action="theme" role="menuitem">
-        <span id="mobile-theme-icon">🌙</span><span data-i18n="theme_btn"></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span data-i18n="lang_btn"></span>
       </button>
     </div>
   </div>

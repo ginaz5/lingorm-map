@@ -37,9 +37,12 @@ function cycleTheme() {
 
 function applyTheme() {
   const theme = getEffectiveTheme();
-  document.documentElement.setAttribute('data-theme', theme);
-  document.getElementById('theme-btn').textContent = THEME_ICONS[theme];
-  document.getElementById('mobile-theme-icon').textContent = THEME_ICONS[theme];
+  const themeBtn = document.getElementById('theme-btn');
+  if (themeBtn) themeBtn.textContent = THEME_ICONS[theme];
+  
+  const mobileThemeIcon = document.getElementById('mobile-theme-icon');
+  if (mobileThemeIcon) mobileThemeIcon.textContent = THEME_ICONS[theme];
+  
   updateMapTheme();
 }
 
@@ -100,7 +103,7 @@ document.getElementById('fav-filter-btn').addEventListener('click', () => {
 document.getElementById('issue-btn').addEventListener('click', openIssueModal);
 document.getElementById('locate-btn').addEventListener('click', locateMe);
 document.getElementById('lang-btn').addEventListener('click', toggleLang);
-document.getElementById('theme-btn').addEventListener('click', cycleTheme);
+document.getElementById('theme-btn')?.addEventListener('click', cycleTheme);
 document.getElementById('mobile-actions-btn').addEventListener('click', toggleMobileActions);
 document.querySelectorAll('[data-mobile-action]').forEach(btn => {
   btn.addEventListener('click', runMobileAction);
