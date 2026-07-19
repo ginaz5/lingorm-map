@@ -46,7 +46,8 @@ HERE Maps：免費方案 250,000 map transactions/月，無需信用卡，在 [d
 | `HERE_API_KEY` | ✅ | HERE Maps JS API key（fallback，必須） |
 | `GOOGLE_MAPS_KEY` | optional | Google Maps JS API key（primary） |
 | `GOOGLE_MAP_ID` | optional | Map ID（dark mode + AdvancedMarkerElement） |
-| `GOOGLE_SHEET_CSV_URL` | ✅ | Google Sheets 發佈的 CSV URL |
+| `DATA_SOURCE` | optional | `sheet`（預設）或 `notion`；切換後需重新部署 |
+| `GOOGLE_SHEET_CSV_URL` | 使用 `sheet` 時 | Google Sheets 發佈的回滾 CSV URL |
 
 ---
 
@@ -101,33 +102,39 @@ Emoji 取自 `row.icon`（由 `csv-parser.js` 依 category 自動填入），找
 
 ---
 
-## 資料來源：Google Sheets CSV + Netlify Function Proxy
+## 資料來源：Notion 快照 + Google Sheets 回滾路徑
 
 **架構：**
 ```
-Google Sheets（人工編輯）
-    ↓  File → Share → Publish to web → CSV
-CSV URL 存在 Netlify env var: GOOGLE_SHEET_CSV_URL
-    ↓  Netlify Function fetch（server-side）
+Notion（system of record）
+    ↓  exporter / 驗證
+data/locations.csv（隨版本提交）
+    ↓  DATA_SOURCE=notion
+                          ┌───────────────────────────────┐
+Google Sheets 發佈 CSV ──┤ DATA_SOURCE=sheet（回滾路徑） │
+                          └───────────────┬───────────────┘
+                                          ↓
 /api/locations
     ↓  frontend fetch('/api/locations') on page load
 前端 CSV parser 解析 → markers + card list
 ```
 
 **選用理由：**
-- 前端不暴露真實 Spreadsheet URL
-- 非技術用戶在熟悉的試算表界面更新資料
-- 同平台（Netlify），無需另建伺服器
+- Notion 作為可協作的主要資料來源，但 production request 不直接依賴 Notion API
+- 已驗證的 CSV 快照會隨程式版本保存，部署與回滾都可重現
+- `DATA_SOURCE=sheet` 保留原本 Google Sheets proxy 行為，切換來源不需要修改前端
+- 前端不會暴露 Notion 憑證或真實 Spreadsheet URL
 
 **限制：**
-- 單向同步（Sheets → 網頁），網頁不寫回 Sheets
-- 更新需手動重新整理網頁（非 WebSocket 即時推送）
+- Notion 資料更新後，必須重新匯出、驗證、提交快照並部署，網站才會更新
+- `DATA_SOURCE` 是部署環境變數，變更後需要重新部署才會生效
+- 目前仍是單向同步，網頁不直接寫回 Notion 或 Sheets
 
 ---
 
 ## 共編提交：Netlify Forms
 
-**架構：** 使用者填寫表單 → `fetch POST /` → Netlify Forms → Email 通知管理員 → 人工審核後更新 Google Sheets
+**架構：** 使用者填寫表單 → `fetch POST /` → Netlify Forms → Email 通知管理員 → 人工審核後更新 Notion；下一次快照匯出與部署後反映到網站
 
 **三個表單：**
 - `suggest-edit` — 建議修改現有地點

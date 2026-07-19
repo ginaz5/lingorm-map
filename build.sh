@@ -44,6 +44,8 @@ case "$DATA_SOURCE" in
       exit 1
     fi
     node scripts/validate-location-snapshot.mjs data/locations.csv
+    node scripts/validate-favorite-compatibility.mjs \
+      data/locations.csv data/legacy-favorite-ids.json
     echo "✅ Committed Notion snapshot validated for /api/locations."
     ;;
   *)
