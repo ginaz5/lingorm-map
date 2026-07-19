@@ -128,6 +128,7 @@ test('serves the committed Notion snapshot when DATA_SOURCE=notion', async () =>
     assert.equal(response.headers.get('cache-control'), 'public, max-age=60, stale-while-revalidate=300');
     assert.match(csv, /"Location Name"/);
     assert.match(csv, /"Slug"/);
+    assert.doesNotMatch(csv.split(/\r?\n/, 1)[0], /Duplicate Group/);
     assert.equal(parseCSV(csv).length, 98);
   });
 });

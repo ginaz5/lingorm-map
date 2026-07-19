@@ -116,7 +116,6 @@ test('snapshot exporter maps native page icon and frozen Slug without credential
       'Source URLs': richText('https://example.com'),
       'Source Tags': { multi_select: [{ name: 'KKday' }] },
       Status: { select: { name: 'Verified' } },
-      'Duplicate Of': richText(''),
       Lat: { number: 13.7608 },
       Lng: { number: 100.5089 },
       'Coordinates Approx': { checkbox: false },
@@ -126,8 +125,9 @@ test('snapshot exporter maps native page icon and frozen Slug without credential
 
   const row = pageToRow(page);
   assert.equal(row.length, CSV_HEADER.length);
-  assert.equal(row[13], '🏨');
-  assert.equal(row[15], 'the-siam-hotel');
+  assert.equal(CSV_HEADER.includes('Duplicate Group'), false);
+  assert.equal(row[12], '🏨');
+  assert.equal(row[14], 'the-siam-hotel');
 });
 
 test('snapshot exporter escapes quotes and commas in CSV output', () => {
@@ -140,8 +140,8 @@ test('manual Notion CSV export bridge emits the stable snapshot contract', () =>
     'The Siam Hotel,暹羅精品酒店,,https://maps.example/the-siam,Hotel,Luxury hotel,河畔精品酒店,https://example.com,KKday,Verified,13.7608,100.5089,No,the-siam-hotel',
   ].join('\n');
   const iconCsv = [
-    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
-    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店',
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店',
   ].join('\n');
 
   const [row] = parseCSV(convertNotionCsv(notionCsv, iconCsv));
@@ -168,9 +168,9 @@ test('manual Notion CSV export bridge rejects missing expected slugs', () => {
     'Alpha Cafe,Alpha Cafe,,,Cafe,,,,,Verified,13.75,100.5,No,alpha-cafe',
   ].join('\n');
   const iconCsv = [
-    'Location Name,Thai / Alt Name,Category,Notes,Source URL,Verification Status,Duplicate Group,Icon',
-    'Alpha Cafe,,Cafe,,,Verified,,☕',
-    'Beta Cafe,,Cafe,,,Verified,,☕',
+    'Location Name,Thai / Alt Name,Category,Notes,Source URL,Verification Status,Icon',
+    'Alpha Cafe,,Cafe,,,Verified,☕',
+    'Beta Cafe,,Cafe,,,Verified,☕',
   ].join('\n');
 
   assert.throws(

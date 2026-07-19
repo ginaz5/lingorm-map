@@ -1,7 +1,7 @@
 import { lang, setLang, t } from './i18n.js';
 import { state } from './state.js';
 import {
-  updateLangUI, buildCatFilter, buildCatDropdown, buildStatusFilter,
+  updateLangUI, buildCatFilter,
   applyFilters, activateCard, buildPopupContent,
 } from './render.js';
 import {
@@ -9,12 +9,9 @@ import {
   showSnackbar, locateMe, openNavigation, openInGoogleMaps, toggleLang,
 } from './ui.js';
 import {
-  openEditModal, closeEditModal, submitEdit,
-  openAddModal, closeAddModal, submitAdd,
   openIssueModal, closeIssueModal, submitIssueReport,
   tryLoadSheet,
 } from './forms.js';
-import { showPendingBanner } from './submit.js';
 import { initMap, loadMapScript, updateMapTheme, buildMarkers } from './map.js';
 import { loadFavorites, toggleFavorite } from './favorites.js';
 import { heartSVG } from './render.js';
@@ -76,7 +73,6 @@ function runMobileAction(event) {
 // (inside JS template literals in renderList / buildPopupContent)
 // ═══════════════════════════════════════════════════
 window.activateCard = activateCard;
-window.openEditModal = openEditModal;
 window.openNavigation = openNavigation;
 window.openInGoogleMaps = openInGoogleMaps;
 window.applyFilters = applyFilters;
@@ -93,7 +89,6 @@ setLang(localStorage.getItem('lang') || 'zh');
 loadFavorites();
 
 // Static event listeners
-document.getElementById('add-btn').addEventListener('click', openAddModal);
 document.getElementById('fav-filter-btn').addEventListener('click', () => {
   state.favFilterOn = !state.favFilterOn;
   const favBtn = document.getElementById('fav-filter-btn');
@@ -118,20 +113,7 @@ document.getElementById('tab-map').addEventListener('click', () => switchTab('ma
 document.getElementById('tab-list').addEventListener('click', () => switchTab('list'));
 
 // Modal backdrops (click outside = close)
-document.getElementById('edit-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeEditModal(); });
-document.getElementById('add-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAddModal(); });
 document.getElementById('issue-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeIssueModal(); });
-
-// Edit modal
-document.querySelector('#edit-modal .modal-close').addEventListener('click', closeEditModal);
-document.querySelector('#edit-modal .btn-ghost').addEventListener('click', closeEditModal);
-document.getElementById('edit-submit-btn').addEventListener('click', submitEdit);
-
-// Add modal
-document.querySelector('#add-modal .modal-close').addEventListener('click', closeAddModal);
-document.getElementById('add-cancel-btn').addEventListener('click', closeAddModal);
-document.getElementById('add-submit-btn').addEventListener('click', submitAdd);
-document.getElementById('add-done-btn').addEventListener('click', closeAddModal);
 
 // Issue report modal
 document.querySelector('#issue-modal .modal-close').addEventListener('click', closeIssueModal);
@@ -153,11 +135,8 @@ window.addEventListener('resize', () => {
 // ─── Boot sequence ───────────────────────────────
 applyTheme();
 updateLangUI();
-buildCatDropdown();
 buildCatFilter();
-buildStatusFilter();
 applyFilters();       // render initial (loading) state
-showPendingBanner();
 tryLoadSheet(rebuild);  // loads data; rebuild() triggers buildMarkers + renderList
 loadMapScript(); // tries Google Maps first, falls back to HERE if unavailable
 checkWhatsNew(); // show What's New modal if there are updates since last visit

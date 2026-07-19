@@ -120,7 +120,7 @@ http://localhost:8888/api/locations
 - 第一行是所選來源的 app schema。`DATA_SOURCE=notion` 時應為：
 
 ```text
-"Location Name","Location Name ZH","Thai / Alt Name","Google Maps URL","Category","Notes","Notes ZH","Source URL","Source Tags","Verification Status","Duplicate Group","Lat","Lng","Icon","Coordinates Approx","Slug"
+"Location Name","Location Name ZH","Thai / Alt Name","Google Maps URL","Category","Notes","Notes ZH","Source URL","Source Tags","Verification Status","Lat","Lng","Icon","Coordinates Approx","Slug"
 ```
 
 如果 `DATA_SOURCE=sheet` 時看到 Google Sheets HTML、登入頁、或錯誤 JSON，代表 `GOOGLE_SHEET_CSV_URL` 設定或 Sheet 發佈方式需要修正。如果 `DATA_SOURCE=notion` 時回傳錯誤 JSON，先執行 `node scripts/validate-location-snapshot.mjs data/locations.csv`。
@@ -146,12 +146,13 @@ http://localhost:8888
 檢查：
 
 - 地圖正常載入
-- 卡片名稱、類別、狀態、說明正常顯示
+- 卡片名稱、類別、說明正常顯示，且不顯示審核狀態
 - 沒有空白卡片
 - marker popup 不再顯示「在 Google Maps 開啟 / Open in Google Maps」
 - 語言切換正常
 - 手機版 map/list tab 正常
-- 新增地點、建議修改表單 UI 正常
+- 問題回報可開啟、驗證必填欄位並完成本機 mock 送出
+- 列表與地圖只顯示 `Verified`、`Needs Review`
 
 ## 確認後才部署
 

@@ -46,7 +46,7 @@ test('static HTML controls are wired without inline event attributes', async () 
   assert.ok(headerMatch, 'header markup should exist');
   const staticMarkup = headerMatch[0];
 
-  assert.match(staticMarkup, /id="add-btn"/);
+  assert.doesNotMatch(staticMarkup, /id="add-btn"/);
   assert.match(staticMarkup, /id="issue-btn"/);
   assert.equal(/\son(?:click|keydown)=/i.test(staticMarkup), false);
 });

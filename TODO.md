@@ -7,10 +7,10 @@
 - [x] 地圖從 Leaflet + CartoDB 遷移至 Google Maps JS API
 - [x] AdvancedMarkerElement + InfoWindow + colorScheme 深色主題
 - [x] HERE Maps 備援（Google Maps 載入失敗時自動切換）
-- [x] Emoji 圓形 badge markers（依 category emoji + status 底色）
+- [x] Emoji 圓形 markers（統一品牌色，不公開 status）
 - [x] Netlify Functions：`/api/config`、`/api/locations`
 - [x] `netlify.toml` 加入 `[functions]` + `[[redirects]]`，修正 /api/* 404
-- [x] Netlify Forms：`suggest-edit`、`add-location`、`issue-report`
+- [x] Netlify Forms：保留 `issue-report` 作為唯一公開回報管道
 - [x] build.sh 驗證 `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` / `GOOGLE_SHEET_CSV_URL`
 - [x] `.env.example` + `.gitignore`
 - [x] git init + push 至 GitHub (`ginaz5/lingorm-map`)
@@ -22,7 +22,9 @@
 - [x] 移除 admin 認證（密碼登入功能）
 - [x] 公開清單隱藏 `Could Not Find` 地點
 - [x] Issue report 功能
-- [x] 58 個 tests 全過
+- [x] 檢視優先介面：移除新增地點、建議修改、審核狀態 UI
+- [x] Notion snapshot schema 移除 `Duplicate Group`
+- [x] 自動測試、型別檢查與 production build 全過
 
 ---
 
@@ -31,16 +33,15 @@
 - [ ] Netlify env var `HERE_API_KEY` 已設定
 - [ ] HERE Maps fallback 可正常載入（暫時移除 Google keys 測試）
 - [ ] 語言切換（中文 ↔ 英文），InfoWindow 內容同步
-- [ ] 「建議修改」表單送出 → Netlify Forms 收到
-- [ ] 「新增地點」表單送出 → Netlify Forms 收到
+- [ ] 「問題回報」表單送出 → Netlify Forms 收到
 - [ ] Netlify Forms 通知 email 已設定
 - [ ] `/api/locations` 可成功回傳 CSV
 
 ---
 
-## 🔲 Spreadsheet Schema
+## 🔲 Snapshot Schema
 
-- [ ] 前端 parser 改以 spreadsheet header 直接產生 location object（降低欄位順序耦合）
+- [x] 前端 parser 依 snapshot header 直接產生 location object
 - [ ] 全部地點座標補齊後，移除內建 embedded fallback 資料
 
 ---

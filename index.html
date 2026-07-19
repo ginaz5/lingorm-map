@@ -23,19 +23,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 
 <!-- Netlify Forms detection -->
-<form class="netlify-form-probe" name="suggest-edit" data-netlify="true" netlify-honeypot="bot-field">
-  <input name="bot-field"/><input name="location_name"/><input name="location_index"/>
-  <input name="suggested_status"/><input name="maps_query"/><input name="lat"/><input name="lng"/>
-  <textarea name="notes_zh"></textarea><textarea name="notes_en"></textarea>
-  <textarea name="reason"></textarea><input name="submitter"/>
-</form>
-<form class="netlify-form-probe" name="add-location" data-netlify="true" netlify-honeypot="bot-field">
-  <input name="bot-field"/><input name="name_zh"/><input name="name_en"/><input name="alt_name"/>
-  <input name="icon"/><input name="category_zh"/><input name="category_en"/>
-  <input name="lat"/><input name="lng"/><input name="maps_query"/>
-  <textarea name="notes_zh"></textarea><textarea name="notes_en"></textarea>
-  <input name="status"/><input name="source_url"/><input name="submitter"/>
-</form>
 <form class="netlify-form-probe" name="issue-report" data-netlify="true" netlify-honeypot="bot-field">
   <input name="bot-field"/><textarea name="message"></textarea>
   <input name="page_url"/><input name="contact"/>
@@ -45,9 +32,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <header>
   <span class="logo">🗺 Lingorm Map</span>
   <div class="hdr-spacer"></div>
-  <button class="hdr-btn btn-add" id="add-btn">
-    <span>＋</span><span data-i18n="add_loc"></span>
-  </button>
   <button class="hdr-btn hdr-secondary" id="issue-btn">⚠️ <span data-i18n="issue_btn"></span></button>
   <button class="hdr-btn hdr-secondary" id="locate-btn">📍 <span data-i18n="locate_btn_label"></span></button>
   <button class="hdr-btn hdr-secondary" id="lang-btn">🌐 <span id="lang-btn-label"></span></button>
@@ -72,11 +56,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </header>
 
-<!-- Pending banner -->
-<div class="pending-banner" id="pending-banner">
-  <span>⏳</span><span data-i18n="pending_notice"></span>
-</div>
-
 <!-- SNACKBAR -->
 <div class="snackbar" id="snackbar"></div>
 
@@ -90,7 +69,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <div class="filter-row">
         <select class="filter-sel" id="cat-filter" onchange="applyFilters()"></select>
-        <select class="filter-sel" id="status-filter" onchange="applyFilters()"></select>
         <button class="fav-filter-btn" id="fav-filter-btn" aria-pressed="false" aria-label="我的最愛">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
@@ -108,9 +86,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
     <div id="map"></div>
     <div class="map-legend">
-      <div class="leg-row"><div class="leg-dot verified"></div><span data-i18n="leg_verified"></span></div>
-      <div class="leg-row"><div class="leg-dot review"></div><span data-i18n="leg_review"></span></div>
-      <div class="leg-divider"></div>
       <div class="leg-row" id="map-provider-badge">
         <div class="leg-dot" id="provider-dot"></div>
         <span id="provider-label" class="provider-label"></span>
@@ -129,138 +104,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
     <span data-i18n="tab_list"></span>
   </button>
-</div>
-
-<!-- MODAL: SUGGEST EDIT -->
-<div class="modal-overlay" id="edit-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title" data-i18n="edit_title"></span>
-      <button class="modal-close">✕</button>
-    </div>
-    <p class="modal-desc" data-i18n="edit_desc"></p>
-    <div class="modal-body">
-      <div class="form-row">
-        <label class="form-label" data-i18n="edit_lbl_location"></label>
-        <input class="form-input form-input-readonly" id="edit-location-name" readonly/>
-        <input type="hidden" id="edit-location-index"/>
-      </div>
-      <div class="form-row">
-        <label class="form-label" data-i18n="edit_lbl_status"></label>
-        <div class="status-opts">
-          <input class="status-opt" type="radio" name="suggest-status" id="so-verified" value="Verified"/>
-          <label for="so-verified" data-i18n="st_verified"></label>
-          <input class="status-opt" type="radio" name="suggest-status" id="so-review" value="Needs Review" checked/>
-          <label for="so-review" data-i18n="st_review"></label>
-        </div>
-      </div>
-      <div class="form-row">
-        <label class="form-label">
-          <span data-i18n="edit_lbl_maps"></span> <span class="lbl-opt" data-i18n="opt"></span>
-        </label>
-        <input class="form-input" id="edit-maps" data-i18n-ph="edit_ph_maps"/>
-        <div class="form-hint" data-i18n="edit_hint_maps"></div>
-      </div>
-      <div class="form-2col">
-        <div class="form-row">
-          <label class="form-label">
-            <span data-i18n="edit_lbl_lat"></span> <span class="lbl-opt" data-i18n="opt"></span>
-          </label>
-          <input class="form-input" id="edit-lat" type="number" step="any" placeholder="13.7466"/>
-        </div>
-        <div class="form-row">
-          <label class="form-label">
-            <span data-i18n="edit_lbl_lng"></span> <span class="lbl-opt" data-i18n="opt"></span>
-          </label>
-          <input class="form-input" id="edit-lng" type="number" step="any" placeholder="100.5344"/>
-        </div>
-      </div>
-      <div class="form-hint coords-hint" data-i18n="edit_hint_coords"></div>
-      <div class="form-row">
-        <label class="form-label">
-          <span data-i18n="edit_lbl_reason"></span> <span class="lbl-opt" data-i18n="opt"></span>
-        </label>
-        <textarea class="form-textarea" id="edit-reason" rows="2" data-i18n-ph="edit_ph_reason"></textarea>
-      </div>
-      <hr class="form-divider"/>
-      <div class="form-row">
-        <label class="form-label">
-          <span data-i18n="edit_lbl_submitter"></span> <span class="lbl-opt" data-i18n="edit_lbl_submitter_opt"></span>
-        </label>
-        <input class="form-input" id="edit-submitter" data-i18n-ph="ph_submitter"/>
-      </div>
-      <div class="submit-feedback" id="edit-feedback"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-ghost" data-i18n="cancel"></button>
-      <button class="btn-primary" id="edit-submit-btn" data-i18n="edit_submit"></button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: ADD LOCATION -->
-<div class="modal-overlay" id="add-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title" data-i18n="add_title"></span>
-      <button class="modal-close">✕</button>
-    </div>
-    <p class="modal-desc" id="add-modal-desc" data-i18n="add_desc"></p>
-    <div class="modal-body">
-      <div id="add-form-view">
-        <div class="form-row">
-          <label class="form-label"><span data-i18n="add_lbl_name"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
-          <input class="form-input" id="add-name" data-i18n-ph="add_ph_name"/>
-        </div>
-        <div class="form-row">
-          <label class="form-label" data-i18n="add_lbl_cat"></label>
-          <select class="form-select" id="add-cat"></select>
-        </div>
-        <div class="form-row">
-          <label class="form-label"><span data-i18n="add_lbl_maps"></span><span class="required-mark"> *</span></label>
-          <input class="form-input" id="add-maps" data-i18n-ph="add_ph_maps" type="url"/>
-          <div class="form-hint" data-i18n="add_hint_maps"></div>
-        </div>
-        <div class="form-row">
-          <label class="form-label"><span data-i18n="add_lbl_notes"></span> <span class="lbl-opt" data-i18n="opt"></span></label>
-          <textarea class="form-textarea" id="add-notes" rows="2" data-i18n-ph="add_ph_notes"></textarea>
-        </div>
-        <div class="form-row form-row-hidden">
-          <label class="form-label" data-i18n="add_lbl_status"></label>
-          <div class="status-opts">
-            <input class="status-opt" type="radio" name="new-status" id="ns-verified" value="Verified"/>
-            <label for="ns-verified" data-i18n="st_verified"></label>
-            <input class="status-opt" type="radio" name="new-status" id="ns-review" value="Needs Review" checked/>
-            <label for="ns-review" data-i18n="st_review"></label>
-          </div>
-        </div>
-        <hr class="form-divider"/>
-        <div class="form-row">
-          <label class="form-label">
-            <span data-i18n="add_lbl_source"></span> <span class="lbl-opt" data-i18n="add_lbl_source_opt"></span>
-          </label>
-          <input class="form-input" id="add-source" type="url" placeholder="https://www.instagram.com/p/..."/>
-        </div>
-        <div class="form-row">
-          <label class="form-label">
-            <span data-i18n="add_lbl_submitter"></span> <span class="lbl-opt" data-i18n="opt"></span>
-          </label>
-          <input class="form-input" id="add-submitter" data-i18n-ph="ph_submitter"/>
-        </div>
-        <div class="submit-feedback" id="add-feedback"></div>
-      </div>
-      <div class="success-view" id="add-success-view">
-        <div class="success-icon">✓</div>
-        <h3 data-i18n="add_success_title"></h3>
-        <p data-i18n="add_success_desc"></p>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-ghost" id="add-cancel-btn" data-i18n="cancel"></button>
-      <button class="btn-primary" id="add-submit-btn" data-i18n="add_submit"></button>
-      <button class="btn-primary" id="add-done-btn" data-i18n="done"></button>
-    </div>
-  </div>
 </div>
 
 <!-- MODAL: ISSUE REPORT -->

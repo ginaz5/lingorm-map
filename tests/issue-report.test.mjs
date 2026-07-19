@@ -41,6 +41,7 @@ test('issue-report Netlify detection form declares every submitted field', async
 test('issue report UI has header button and localized modal copy', async () => {
   const html = await loadIndexHtml();
   const i18nSrc = await readFile(new URL('../src/i18n.js', import.meta.url), 'utf8');
+  const formsSrc = await readFile(new URL('../src/forms.js', import.meta.url), 'utf8');
 
   assert.match(html, /id="issue-btn"/);
   assert.match(html, /id="issue-modal"/);
@@ -51,4 +52,7 @@ test('issue report UI has header button and localized modal copy', async () => {
   assert.doesNotMatch(html, /name="issue_type"/);
   assert.match(i18nSrc, /issue_title:\s*'問題回報'/);
   assert.match(i18nSrc, /issue_title:\s*'Report an issue'/);
+  assert.match(i18nSrc, /issue_submit_ok:\s*'✅ 已收到回報，感謝你提供資訊。'/);
+  assert.match(i18nSrc, /issue_submit_ok:\s*'✅ Report received\. Thank you for letting us know\.'/);
+  assert.match(formsSrc, /t\('issue_submit_ok'\)/);
 });

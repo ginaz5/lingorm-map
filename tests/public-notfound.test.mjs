@@ -16,19 +16,17 @@ function makeLocation(status, name = status) {
     lng: '100.5',
     src: '',
     sourceUrl: '',
-    dup: '',
     approx: '',
   };
 }
 
-test('public filters and list exclude Could Not Find while data remains loaded', async () => {
+test('public filters and list use the Verified/Needs Review allowlist', async () => {
   const { state } = await import('../src/state.js');
-  const { applyFilters, buildStatusFilter } = await import('../src/render.js');
+  const { applyFilters } = await import('../src/render.js');
 
   const elements = {
     search: { value: '' },
     'cat-filter': { value: '' },
-    'status-filter': { value: '', innerHTML: '' },
     'loc-list': { innerHTML: '' },
     'result-info': { textContent: '' },
   };
@@ -42,17 +40,20 @@ test('public filters and list exclude Could Not Find while data remains loaded',
     state.data = [
       makeLocation('Verified', 'Visible verified'),
       makeLocation('Needs Review', 'Visible review'),
+      makeLocation('Draft', 'Hidden draft'),
+      makeLocation('Verifying', 'Hidden verifying'),
       makeLocation('Could Not Find', 'Hidden not found'),
+      makeLocation('Closed', 'Hidden closed'),
     ];
 
-    buildStatusFilter();
     applyFilters();
 
     assert.deepEqual(state.visIdx, [0, 1]);
     assert.equal(elements['result-info'].textContent, '顯示 2 / 2 個地點');
-    assert.doesNotMatch(elements['status-filter'].innerHTML, /Could Not Find|找不到/);
-    assert.doesNotMatch(elements['loc-list'].innerHTML, /Hidden not found|找不到/);
-    assert.equal(state.data[2].status, 'Could Not Find');
+    for (const hiddenName of ['Hidden draft', 'Hidden verifying', 'Hidden not found', 'Hidden closed']) {
+      assert.doesNotMatch(elements['loc-list'].innerHTML, new RegExp(hiddenName));
+    }
+    assert.equal(state.data[4].status, 'Could Not Find');
   } finally {
     globalThis.document = previousDocument;
     state.data = [];
@@ -61,7 +62,7 @@ test('public filters and list exclude Could Not Find while data remains loaded',
   }
 });
 
-test('map markers skip Could Not Find locations', async () => {
+test('map markers use the same public status allowlist', async () => {
   const { state } = await import('../src/state.js');
   const { buildMarkers } = await import('../src/map.js');
 
@@ -95,14 +96,21 @@ test('map markers skip Could Not Find locations', async () => {
     state.markers = [];
     state.data = [
       makeLocation('Verified', 'Visible verified'),
+      makeLocation('Needs Review', 'Visible review'),
+      makeLocation('Draft', 'Hidden draft'),
+      makeLocation('Verifying', 'Hidden verifying'),
       makeLocation('Could Not Find', 'Hidden not found'),
+      makeLocation('Closed', 'Hidden closed'),
     ];
 
     buildMarkers();
 
-    assert.equal(createdMarkers.length, 1);
+    assert.equal(createdMarkers.length, 2);
     assert.ok(state.markers[0]);
-    assert.equal(state.markers[1], undefined);
+    assert.ok(state.markers[1]);
+    for (const index of [2, 3, 4, 5]) {
+      assert.equal(state.markers[index], undefined);
+    }
   } finally {
     globalThis.document = previousDocument;
     globalThis.H = previousHere;

@@ -10,28 +10,29 @@ This file is a compact progress snapshot. If anything here conflicts with the pl
 
 ## 1. What this project is
 
-`lingorm_bangkok_map` is a static Vite site (map + card list of Bangkok/Thailand venues) that used to read all its data from one Google Sheet via a read-only Netlify Function. It's being migrated to Notion as the system of record, with a snapshot exporter keeping the live site on a validated CSV (never reading Notion at request time). Full rationale, architecture, and phased plan: `docs/notion-migration-and-location-automation-plan.md`.
+`lingorm_bangkok_map` is a static Vite site (map + card list of Bangkok/Thailand venues) that uses Notion as the system of record, with a snapshot exporter keeping the live site on a validated committed CSV (never reading Notion at request time). Full rationale, architecture, and phased plan: `docs/notion-migration-and-location-automation-plan.md`.
 
 ## 2. Current migration status
 
 - **Phase 0 (decisions) and Phase 1 (10-row PoC) are done** — see plan §13, §17.
-- **Phase 2 (full data migration) is functionally done**: all **98/98 rows** are in the Notion "Locations (PoC)" data source (`collection://eefc0f40-698c-4870-97b7-e8860091f668`). Cleaning pass applied and logged, branch-duplicate groups linked, reconciliation checks passed (row count, status distribution, no slug collisions). Details: plan §18 "Done".
+- **Phase 2 (full data migration) is complete**: all **98/98 rows** are in the Notion "Locations (PoC)" data source (`collection://eefc0f40-698c-4870-97b7-e8860091f668`). Cleaning pass applied and logged, branch groups linked, reconciliation checks passed (row count, status distribution, no slug collisions). Details: plan §18 "Done".
 - **Google Place ID populated for 97/98 rows** (this session). One row intentionally left blank — see §4 below.
 - **ID fix shipped**: `src/csv-parser.js` now resolves a row's `id` from an exported `Slug` column when present, falling back to `slugify(name)` otherwise — a Notion rename no longer breaks `localStorage` favorites or shared `?favs=` URLs. 4 new tests added.
 - **Migration safety fixes shipped**: `migrate-sheet-to-notion.mjs` requires an explicit existing-slug snapshot, rejects slug collisions before output, `resolve.mjs` flags missing coordinates, and `export-snapshot.mjs` can be imported without credentials.
-- **Snapshot serving is implemented**: `/api/locations` supports `DATA_SOURCE=sheet|notion`; Notion mode serves the bundled, validated `data/locations.csv`, while sheet mode remains the rollback path.
+- **Production publishing uses Notion snapshots**: `DATA_SOURCE=notion` serves the bundled, validated `data/locations.csv`. The committed snapshot is the release contract.
+- **Public snapshot schema is simplified**: `Duplicate Group` and runtime `dup` were removed. Notion's internal `Branch Group` property remains unchanged and is not exported.
+- **Public status policy is explicit**: only `Verified` and `Needs Review` are published. `Draft`, `Verifying`, `Could Not Find`, and `Closed` remain internal; blank or unknown values fail closed to `Draft`.
 - **Current update limitation**: editing Notion does **not** update production automatically. Production serves the committed `data/locations.csv` snapshot, and no raw `NOTION_API_KEY` is configured. Until post-migration automation is implemented, every Notion change requires the manual export → validation → PR preview → deployment workflow in `docs/notion-deploy-workflow.md`.
 - **Full reconciliation is done**: `tests/notion-export-full.test.mjs` compares all 98 rows with the frozen source when available, and the deploy build independently enforces the stable header, 98 rows, and unique nonempty slugs.
 - **Favorites compatibility protection is implemented**: the build compares all 98 spreadsheet-derived legacy favorite IDs with the Notion snapshot and rejects missing, renamed, empty, or duplicate slugs.
 - **Notion preview verified**: PR #1 deployed successfully with `DATA_SOURCE=notion`; `/api/locations` matched the committed 98-row snapshot byte-for-byte, all 98 production IDs matched the preview IDs, and browser testing confirmed favorites filtering and persistence.
-- **Test suite: 111/111 passing, `npm run typecheck` and the production build clean.**
+- **Test suite: 113/113 passing, `npm run typecheck` and the production build clean.**
 - Relevant baseline commits are `81c12dc` (Phase 2 migration) and `3b03a2a` (migration safety).
 
-### What is NOT done for the migration
+### Migration completion
 
-| # | Task | Why it matters |
-|---|---|---|
-| 1 | **Perform the `DATA_SOURCE=sheet` rollback drill** | The Notion preview is verified; confirming the redeploy-based rollback path is the remaining Phase 2 operational acceptance check before production cutover. |
+There are no remaining Sheet→Notion migration blockers. Ongoing work belongs
+to the Notion snapshot update and deployment workflow.
 
 The coordinate-review work and the missing Place ID for slug `by` are
 data-quality tasks, not migration blockers. They will be handled in a separate
@@ -57,7 +58,8 @@ site; use the manual deployment workflow.
 ## 3. Notion structure (for reference)
 
 - Database/data source: **"Locations (PoC)"**, data source id `collection://eefc0f40-698c-4870-97b7-e8860091f668`. Created *by the integration itself* (not by a human in the Notion UI) — this matters because integration-created databases are fully schema-editable via the API; human-created ones are not (learned the hard way in Phase 1, see plan for the `object_not_found` incident).
-- Properties: `Name` (title), `Slug`, `Name ZH`, `Thai / Alt Name`, `Category` (select), `Notes EN`/`Notes ZH`, `Google Maps URL`, `Google Place ID`, `Lat`/`Lng` (number), `Coordinates Approx` (checkbox), `Status` (select: Verified / Needs Review / Could Not Find), `Source URLs`, `Source Tags` (multi-select), `Duplicate Of` (relation, unused/empty by design), `Branch Group` (text, used for 4 known duplicate-venue pairs), `Origin` (select: manual / pipeline / community-form).
+- Properties: `Name` (title), `Slug`, `Name ZH`, `Thai / Alt Name`, `Category` (select), `Notes EN`/`Notes ZH`, `Google Maps URL`, `Google Place ID`, `Lat`/`Lng` (number), `Coordinates Approx` (checkbox), `Status` (select: Draft / Needs Review / Verifying / Verified / Could Not Find / Closed), `Source URLs`, `Source Tags` (multi-select), `Branch Group` (text, used for known same-brand branches), `Origin` (select: manual / pipeline / community-form).
+- The live schema has no `Duplicate Of` or `Duplicate Group` property.
 - **Dropped** `Last Verified` and the rich-text `Icon` property (replaced by Notion's native page icon) — see plan §17 for why.
 - All Notion reads/writes for this migration were done interactively via the Cowork Notion MCP connector tools (`notion-query-data-sources`, `notion-update-page`, `notion-create-pages`, etc.), **not** via a raw `NOTION_API_KEY` — none exists yet in this environment. Future updates can use the same connector (when available) or a real integration token (plan §12.1).
 
@@ -96,9 +98,9 @@ The Phase 2 migration and safety baselines are committed; snapshot serving and f
 
 ## 7. Suggested next steps, in order
 
-1. Run the rollback drill with `DATA_SOURCE=sheet`, including the required redeploy.
-2. Restore `DATA_SOURCE=notion`, verify the preview again, then proceed with the production cutover.
-3. After the migration is fully complete, implement the automatic-update TODO above.
+1. Keep `DATA_SOURCE=notion` in preview and production.
+2. Use the committed snapshot workflow for every Notion data release.
+3. Implement the automatic-update TODO above when operational ownership is ready.
 
 Data-quality cleanup, including the 41 coordinate discrepancies and the
 missing Place ID for `by`, is intentionally tracked outside this migration

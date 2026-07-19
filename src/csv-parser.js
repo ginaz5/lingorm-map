@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // SLUG / ID HELPER
 // ═══════════════════════════════════════════════════
-/** @typedef {'Verified'|'Needs Review'|'Could Not Find'} LocationStatus */
+/** @typedef {'Draft'|'Needs Review'|'Verifying'|'Verified'|'Could Not Find'|'Closed'} LocationStatus */
 /**
  * @typedef {Object} LocationRow
  * @property {string} id
@@ -17,7 +17,6 @@
  * @property {string} lng
  * @property {string} maps
  * @property {LocationStatus} status
- * @property {string} dup
  * @property {string} src
  * @property {string} approx
  * @property {string} sourceUrl
@@ -130,11 +129,19 @@ export const ZH_BY_CAT = {
  * @returns {LocationStatus}
  */
 export function normalizeStatus(s) {
-  const raw = s.trim();
-  if (raw === "Verified" || raw === "Needs Review" || raw === "Could Not Find") return raw;
-  if (/could not find|not found/i.test(raw)) return "Could Not Find";
-  if (/^verified$/i.test(raw)) return "Verified";
-  return "Needs Review";
+  const raw = s.trim().toLowerCase();
+  /** @type {Record<string, LocationStatus>} */
+  const statuses = {
+    "draft": "Draft",
+    "needs review": "Needs Review",
+    "verifying": "Verifying",
+    "verified": "Verified",
+    "could not find": "Could Not Find",
+    "closed": "Closed",
+    "not found": "Could Not Find",
+    "not verified": "Needs Review",
+  };
+  return statuses[raw] || "Draft";
 }
 
 /**
@@ -181,7 +188,7 @@ export function mapsQuery(name, maps) {
  */
 export function parsePublishedFormat(rows, idx, read) {
   const required = ["Location Name","Thai / Alt Name","Category",
-                    "Notes","Source URL","Verification Status","Duplicate Group"];
+                    "Notes","Source URL","Verification Status"];
   if (!required.every(k => idx[k] !== undefined)) return null;
   return rows.slice(1)
     .filter(r => r.join('').trim() && !/^source note$/i.test(read(r, "Category")))
@@ -214,7 +221,6 @@ export function parsePublishedFormat(rows, idx, read) {
         lng:      read(r, "Lng"),
         maps:     mapsQuery(name, maps),
         status:   normalizeStatus(read(r, "Verification Status")),
-        dup:      read(r, "Duplicate Group"),
         src:      tags || sourceLabel(sourceUrl),
         approx:   read(r, "Coordinates Approx") || "TRUE",
         sourceUrl,

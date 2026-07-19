@@ -56,7 +56,7 @@ test(
     const snapshotBySlug = new Map(snapshotRows.map((row) => [row.id, row]));
     const exactFields = [
       'nameEn', 'nameZh', 'alt', 'catEn', 'catZh', 'notesEn', 'notesZh',
-      'icon', 'maps', 'dup', 'approx', 'sourceUrl',
+      'icon', 'maps', 'approx', 'sourceUrl',
     ];
 
     assert.equal(sourceRows.length, 98);

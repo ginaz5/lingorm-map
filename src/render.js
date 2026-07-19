@@ -1,4 +1,4 @@
-import { lang, t, tobj, CATEGORIES } from './i18n.js';
+import { lang, t } from './i18n.js';
 import { state } from './state.js';
 import { switchTab } from './ui.js';
 
@@ -31,18 +31,11 @@ export const heartSVG = (active) =>
     aria-hidden="true"><path d="${HEART_PATH}"/></svg>`;
 
 // ═══════════════════════════════════════════════════
-// BADGE / STATUS HELPERS
+// PUBLICATION HELPERS
 // ═══════════════════════════════════════════════════
-/** @param {string} s @returns {string} */
-export function getBadgeClass(s) {
-  if (s === 'Verified') return 'b-verified';
-  if (s === 'Could Not Find') return 'b-notfound';
-  return 'b-review';
-}
-
 /** @param {LocationRow} row @returns {boolean} */
 export function isPublicLocation(row) {
-  return row.status !== 'Could Not Find';
+  return row.status === 'Verified' || row.status === 'Needs Review';
 }
 
 /** @param {LocationRow} row @returns {boolean} */
@@ -106,7 +99,6 @@ export function buildPopupContent(i) {
     ${row.alt ? `<div class="popup-alt">${row.alt}</div>` : ''}
     <div class="badges popup-badges">
       <span class="badge b-cat">${cat}</span>
-      <span class="badge ${getBadgeClass(row.status)}">${tobj('badge', row.status)}</span>
     </div>
     <div class="popup-notes">${notes}</div>
     ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
@@ -152,8 +144,6 @@ export function renderList() {
     const name = lang === 'zh' ? row.nameZh : row.nameEn;
     const notes = lang === 'zh' ? row.notesZh : row.notesEn;
     const cat = lang === 'zh' ? row.catZh : row.catEn;
-    const st = row.status;
-    const needsHelp = st === 'Needs Review';
     const approx = isApproximateCoords(row);
     return `<div class="loc-card${state.activeIdx === i ? ' active' : ''}" id="card-${i}" onclick="activateCard(${i})">
       <div class="card-head">
@@ -165,8 +155,6 @@ export function renderList() {
       </div>
       <div class="badges">
         <span class="badge b-cat">${cat}</span>
-        <span class="badge ${getBadgeClass(st)}">${tobj('badge', st)}</span>
-        ${row.dup ? `<span class="badge b-dup">${row.dup}</span>` : ''}
       </div>
       <div class="card-notes">${notes}</div>
       ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
@@ -178,10 +166,6 @@ export function renderList() {
           aria-label="${state.favorites.has(row.id) ? '移除最愛' : '加入最愛'}"
           onclick="event.stopPropagation();toggleFavorite('${row.id}')">
           ${heartSVG(state.favorites.has(row.id))}
-        </button>
-        <button class="card-edit-btn${needsHelp ? ' verify-hint' : ''}"
-          onclick="event.stopPropagation();openEditModal(${i})">
-          ${needsHelp ? t('edit_btn_verify') : t('edit_btn_edit')}
         </button>
       </div>
     </div>`;
@@ -229,17 +213,15 @@ export function activateCard(i) {
 export function applyFilters() {
   const q = requiredInput('search').value.toLowerCase();
   const cat = requiredSelect('cat-filter').value;
-  const st = requiredSelect('status-filter').value;
   state.visIdx = [];
   state.data.forEach((row, i) => {
     const nameHit = (row.nameEn + row.nameZh + row.alt).toLowerCase().includes(q);
     const notesHit = (row.notesEn + row.notesZh).toLowerCase().includes(q);
     const catVal = lang === 'zh' ? row.catZh : row.catEn;
     const catHit = !cat || catVal === cat;
-    const stHit = !st || row.status === st;
     if (!isPublicLocation(row)) return;
     if (state.favFilterOn && !state.favorites.has(row.id)) return;
-    if ((nameHit || notesHit) && catHit && stHit) state.visIdx.push(i);
+    if ((nameHit || notesHit) && catHit) state.visIdx.push(i);
   });
   renderList();
   if (state.map) {
@@ -278,23 +260,13 @@ export function updateLangUI() {
   const langBtnLabel = document.getElementById('lang-btn-label');
   if (!langBtnLabel) throw new Error('Missing required element #lang-btn-label');
   langBtnLabel.textContent = t('lang_btn');
-  buildStatusFilter();
-}
-
-export function buildStatusFilter() {
-  const publicStatuses = Object.entries(t('status')).filter(([status]) => status !== 'Could Not Find');
-  const statusFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('status-filter'));
-  if (!statusFilter) throw new Error('Missing required element #status-filter');
-  rebuildSelect(
-    statusFilter,
-    `<option value="">${t('all_status')}</option>` +
-    publicStatuses.map(([k, v]) => `<option value="${k}">${v}</option>`).join('')
-  );
 }
 
 export function buildCatFilter() {
   const cats = new Set();
-  state.data.forEach(r => cats.add(lang === 'zh' ? r.catZh : r.catEn));
+  state.data
+    .filter(isPublicLocation)
+    .forEach(r => cats.add(lang === 'zh' ? r.catZh : r.catEn));
   const catFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('cat-filter'));
   if (!catFilter) throw new Error('Missing required element #cat-filter');
   rebuildSelect(
@@ -302,13 +274,4 @@ export function buildCatFilter() {
     `<option value="">${t('all_cat')}</option>` +
     [...cats].sort().map(c => `<option value="${c}">${c}</option>`).join('')
   );
-}
-
-export function buildCatDropdown() {
-  const sel = requiredSelect('add-cat');
-  const prev = sel.value;
-  sel.innerHTML = CATEGORIES.map(c =>
-    `<option value="${c.en}">${c.icon} ${lang === 'zh' ? c.zh : c.en}</option>`
-  ).join('');
-  if (prev) sel.value = prev;
 }

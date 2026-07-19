@@ -8,12 +8,12 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 
 ## Features
 
-- Interactive map with emoji category markers (colored by status: verified / needs review / not found)
-- Card list with search, category, and status filters
+- Interactive map with consistent brand-color emoji category markers
+- Card list with search, category, and favorites filters
 - Popup with Navigate + Open in Google Maps buttons (responsive: icon-only on mobile)
 - zh / en bilingual UI with one-click toggle
-- Light / dark / auto theme
-- Community contributions via Netlify Forms (suggest edit, add location, report issue)
+- Light / dark theme
+- Low-friction issue reporting via Netlify Forms
 - Mobile-responsive with map / list tab switching and scroll
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
@@ -37,12 +37,12 @@ flowchart TD
     subgraph Browser["Browser"]
         MAIN["main.js\nboot + event wiring"]
         STATE[("state.js\nshared state")]
-        I18N["i18n.js\ntranslations · CATEGORIES"]
+        I18N["i18n.js\ntranslations"]
         CSV["csv-parser.js\npure CSV functions"]
         RENDER["render.js\ncard list · popup · filters"]
         MAP["map.js\nmap init · markers"]
         UI["ui.js\ntheme · tabs · snackbar"]
-        FORMS["forms.js\nedit · add · issue modals"]
+        FORMS["forms.js\nissue report · data loading"]
         SUBMIT["submit.js\nNetlify Forms POST"]
         FAV["favorites.js\nlocal favorites"]
     end
@@ -99,7 +99,7 @@ graph LR
     SUBMIT["submit.js"]
     FAV["favorites.js"]
 
-    MAIN --> STATE & I18N & RENDER & UI & FORMS & SUBMIT & MAP & FAV
+    MAIN --> STATE & I18N & RENDER & UI & FORMS & MAP & FAV
     MAP --> STATE & UI & RENDER
     RENDER --> STATE & I18N & UI
     UI --> STATE & I18N & RENDER
@@ -114,13 +114,13 @@ graph LR
 |--------|------|
 | `main.js` | Entry point — boot sequence, all event listener wiring |
 | `state.js` | Single mutable object shared across modules |
-| `i18n.js` | `CATEGORIES`, translations, `t()` / `tobj()` helpers |
+| `i18n.js` | zh/en translations and the `t()` helper |
 | `csv-parser.js` | CSV tokeniser + `parseCSV` + `normalizeStatus` (pure functions) |
 | `render.js` | Card list HTML, popup content, filter helpers |
 | `ui.js` | Theme cycle, tab switch, snackbar, locate-me, `toggleLang` |
 | `map.js` | Google / HERE map init, `buildMarkers`, theme sync |
-| `forms.js` | Edit / add / issue modal open–close–validate |
-| `submit.js` | Netlify Forms POST, pending banner |
+| `forms.js` | Issue report modal, validation, and location-data loading |
+| `submit.js` | Shared Netlify Forms POST and feedback reset |
 
 ### Key constraints
 
@@ -136,7 +136,7 @@ graph LR
 |-------|--------|
 | Map | Google Maps JS API (`AdvancedMarkerElement`, `colorScheme`) with HERE Maps fallback |
 | Data | Notion system of record → committed CSV snapshot; Google Sheets retained as rollback source |
-| Forms | Netlify Forms (`suggest-edit`, `add-location`, `issue-report`) |
+| Forms | Netlify Forms (`issue-report`) |
 | Analytics | Google Tag Manager (GTM-NVNXGP44) → GA4 (G-31MF79LHFM) |
 | Build / check | Vite 6 + TS `checkJs` (no emit), ES modules in `src/` |
 | Deploy | Netlify (GitHub auto-deploy) |
@@ -153,12 +153,12 @@ lingorm_bangkok_map/
 ├── src/
 │   ├── main.js             # Entry point — wires event listeners, boot sequence
 │   ├── state.js            # Shared mutable state object
-│   ├── i18n.js             # CATEGORIES, translations (zh/en), t(), tobj()
+│   ├── i18n.js             # Translations (zh/en) and t()
 │   ├── csv-parser.js       # CSV tokenizer + parseCSV (pure functions)
 │   ├── render.js           # Card list, popup content, filter helpers
 │   ├── ui.js               # Theme, tab switch, snackbar, locate me, navigation, toggleLang
-│   ├── submit.js           # Netlify Forms submit, pending banner
-│   ├── forms.js            # Edit / add / issue modals
+│   ├── submit.js           # Shared Netlify Forms submit transport
+│   ├── forms.js            # Issue report modal and location-data loading
 │   └── map.js              # Map init (Google + HERE), markers, loadMapScript
 ├── netlify/
 │   └── functions/
@@ -170,7 +170,7 @@ lingorm_bangkok_map/
 │   ├── export-snapshot.mjs # Notion API → stable site CSV contract
 │   ├── convert-notion-csv.mjs # manual Notion UI export bridge
 │   └── validate-location-snapshot.mjs # production snapshot deploy gate
-├── tests/                  # node:test test suite (106 tests)
+├── tests/                  # node:test test suite
 ├── jsconfig.json           # Strict incremental TypeScript checkJs configuration
 ├── vite.config.js          # Vite build config
 ├── build.sh                # Netlify pre-build: validates env vars + snapshot
@@ -227,7 +227,7 @@ The project stays in `.js` files and Vite remains responsible for production out
 npm test
 ```
 
-Expected: 111 pass, 0 fail.
+Expected: all tests pass with 0 failures.
 
 ### Pre-deploy verification
 
@@ -262,7 +262,7 @@ If `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` are omitted, the map loads HERE Maps dire
 
 ### Netlify Forms
 
-Enable form detection in Netlify Dashboard → **Forms → Enable form detection**, then redeploy. Forms: `suggest-edit`, `add-location`, `issue-report`.
+Enable form detection in Netlify Dashboard → **Forms → Enable form detection**, then redeploy. The only public form is `issue-report`.
 
 ### Analytics
 
@@ -280,34 +280,37 @@ The Maps key is delivered via `/api/config` (Netlify Function). Protect it with:
 
 ## Data Schema
 
-The Google Sheet must be published as CSV with the public sheet schema:
+Production uses the committed Notion snapshot at `data/locations.csv`:
 
 ```
-Location Name, Thai / Alt Name, Category, Notes,
-Source URL, Verification Status, Duplicate Group, ...
+Location Name, Location Name ZH, Thai / Alt Name, Google Maps URL,
+Category, Notes, Notes ZH, Source URL, Source Tags, Verification Status,
+Lat, Lng, Icon, Coordinates Approx, Slug
 ```
 
-`Status` values: `Verified` | `Needs Review` | `Could Not Find`
+Notion `Status` values are `Draft`, `Needs Review`, `Verifying`, `Verified`,
+`Could Not Find`, and `Closed`. The public site uses an explicit allowlist:
+only `Verified` and `Needs Review` appear in the list and on the map. Unknown
+or blank statuses normalize to the non-public `Draft` value.
+
+`Branch Group` remains an internal Notion property and is not exported. The
+retired `Duplicate Group` column is not part of the snapshot or runtime row
+contract.
 
 ---
 
 ## Map Markers
 
-Markers are 28px emoji circles colored by status:
-
-| Status | Color |
-|--------|-------|
-| Verified | Green `#2f7d4f` |
-| Needs Review | Orange `#c2772a` |
-| Could Not Find | Red `#b1452f` (hidden from public list) |
-
-The emoji comes from `row.icon` (set per category: 🍽 🏨 ☕ etc.). Falls back to 📍 if missing.
+Markers are 28px brand-color emoji circles. Public status is intentionally not
+encoded in marker color. The emoji comes from `row.icon` and falls back to 📍
+if missing.
 
 ---
 
-## Contributing Locations
+## Reporting Issues
 
-Use **新增地點 / Add Location** or **建議修改 / Suggest edit** on any card. Submissions go to Netlify Forms and are reviewed before appearing on the map.
+Use **問題回報 / Report Issue** for incorrect location data, map problems, or
+site errors. This is the only public contribution flow.
 
 ---
 
@@ -323,14 +326,14 @@ node --test tests/*.test.mjs
 | `source-tags.test.mjs` | `renderSources` — Threads handle extraction, platform URL mapping |
 | `i18n-ui.test.mjs` | `updateLangUI`, `buildCatFilter`, `rebuildSelect` |
 | `ui-events.test.mjs` | No inline `onclick`; `switchTab` state alignment |
-| `add-location-form.test.mjs` | Netlify form field parity, URL validator, submit mock |
-| `edit-submit.test.mjs` | `submitEdit` payload correctness |
+| `view-first-ui.test.mjs` | Removed UI contracts, status-free rendering, uniform markers |
+| `submit.test.mjs` | Netlify local mock, production success, and failure recovery |
 | `favorites.test.mjs` | Favorite state persistence and rendering behavior |
 | `issue-report.test.mjs` | Issue report form field parity, UI copy |
 | `google-maps-loader.test.mjs` | No hardcoded API key placeholders; runtime config fetch |
 | `here-map-layer.test.mjs` | HERE Maps base layer selection (dark/light fallback) |
 | `no-maplink-ui.test.mjs` | No legacy "Open in Maps" links in HTML |
-| `public-notfound.test.mjs` | "Could Not Find" locations hidden from public list + markers |
+| `public-notfound.test.mjs` | Public status allowlist shared by list + markers |
 | `styles-extraction.test.mjs` | External CSS linked; no inline presentational styles |
 | `theme-mode.test.mjs` | Theme toggle supports only light/dark |
 | `typecheck-config.test.mjs` | Strict no-emit `checkJs` command, scope, and dependency configuration |

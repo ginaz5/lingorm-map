@@ -36,7 +36,6 @@ export async function doNetlifySubmit(btnId, fbId, btnLabel, payload, onSuccess)
   fb.className = 'submit-feedback'; fb.textContent = '';
   if (shouldMockNetlifySubmit()) {
     console.info('[local Netlify Forms mock]', payload['form-name'], payload);
-    recordPending();
     onSuccess(fb);
     return;
   }
@@ -47,7 +46,6 @@ export async function doNetlifySubmit(btnId, fbId, btnLabel, payload, onSuccess)
       body: new URLSearchParams(payload).toString(),
     });
     if (resp.ok) {
-      recordPending();
       onSuccess(fb);
     } else { throw new Error(String(resp.status)); }
   } catch (e) {
@@ -62,17 +60,4 @@ export function resetFeedback(fbId, btnId, btnLabel) {
   fb.className = 'submit-feedback'; fb.textContent = '';
   const btn = requiredButton(btnId);
   btn.disabled = false; btn.textContent = btnLabel;
-}
-
-// ═══════════════════════════════════════════════════
-// PENDING BANNER
-// ═══════════════════════════════════════════════════
-export function recordPending() {
-  localStorage.setItem('has_pending', '1');
-  showPendingBanner();
-}
-
-export function showPendingBanner() {
-  if (localStorage.getItem('has_pending') === '1')
-    requiredElement('pending-banner').classList.add('is-visible');
 }

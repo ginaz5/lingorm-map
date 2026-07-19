@@ -68,7 +68,6 @@ export function convertNotionCsv(notionCsv, iconsCsv) {
       read('Source URLs'),
       read('Source Tags'),
       read('Status'),
-      '',
       read('Lat'),
       read('Lng'),
       icon,

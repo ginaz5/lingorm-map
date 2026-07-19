@@ -1,7 +1,7 @@
 import { lang, setLang, t } from './i18n.js';
 import { state } from './state.js';
 import {
-  updateLangUI, buildCatFilter, buildCatDropdown,
+  updateLangUI, buildCatFilter,
   applyFilters, buildPopupContent,
 } from './render.js';
 import { updateWhatsNewLangUI } from './whats-new.js';
@@ -125,7 +125,6 @@ export function toggleLang() {
   updateLangUI();
   updateWhatsNewLangUI();
   buildCatFilter();
-  buildCatDropdown();
   applyFilters();
   if (state.activeIdx >= 0) {
     const html = buildPopupContent(state.activeIdx);

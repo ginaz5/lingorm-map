@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { getEffectiveTheme } from './ui.js';
-import { buildPopupContent, activateCard, getBadgeClass, isPublicLocation } from './render.js';
+import { buildPopupContent, activateCard, isPublicLocation } from './render.js';
 
 /** @typedef {'google'|'here'} ActiveMapProvider */
 /**
@@ -55,10 +55,10 @@ export function getHereBaseLayer(layers, theme) {
 // ═══════════════════════════════════════════════════
 // MARKERS
 // ═══════════════════════════════════════════════════
-/** @param {string} status @param {string} icon @returns {HTMLDivElement} */
-export function makeMarkerContent(status, icon) {
+/** @param {string} icon @returns {HTMLDivElement} */
+export function makeMarkerContent(icon) {
   const el = document.createElement('div');
-  el.className = `marker-dot ${getBadgeClass(status).replace('b-', 'marker-')}`;
+  el.className = 'marker-dot';
   el.textContent = icon || '📍';
   return el;
 }
@@ -78,7 +78,7 @@ export function buildMarkers() {
     const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
     if (!isPublicLocation(row)) return;
     if (!lat || !lng) return;
-    const el = makeMarkerContent(row.status, row.icon);
+    const el = makeMarkerContent(row.icon);
 
     if (state.provider === 'google') {
       const m = new google.maps.marker.AdvancedMarkerElement({

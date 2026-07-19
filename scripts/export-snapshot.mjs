@@ -4,10 +4,9 @@
 //
 // Phase 1/2 (docs/notion-migration-and-location-automation-plan.md
 // §6.3, §9.1, §13): reads the Notion "Locations" data source and
-// emits the same 15-column CSV that parsePublishedFormat() in
-// src/csv-parser.js already understands, plus one additive "Slug"
-// column. Non-breaking: the frontend parser is header-based and
-// ignores unknown columns.
+// emits the 14 published location fields that parsePublishedFormat()
+// in src/csv-parser.js understands, plus the stable "Slug" column.
+// The frontend parser is header-based and ignores unknown columns.
 //
 // Usage:
 //   NOTION_API_KEY=secret_xxx NOTION_DATA_SOURCE_ID=collection-uuid \
@@ -24,7 +23,7 @@ const NOTION_VERSION = "2025-09-03"; // plan §5.1 — pin the version; database
 export const CSV_HEADER = [
   "Location Name", "Location Name ZH", "Thai / Alt Name", "Google Maps URL",
   "Category", "Notes", "Notes ZH", "Source URL", "Source Tags",
-  "Verification Status", "Duplicate Group", "Lat", "Lng", "Icon",
+  "Verification Status", "Lat", "Lng", "Icon",
   "Coordinates Approx", "Slug", // Slug is additive (Phase 2, §6.3); parseCSV() prefers it over slugify(name) as of the ID fix (2026-07-18)
 ];
 
@@ -86,7 +85,6 @@ export function pageToRow(page) {
     text(p["Source URLs"]),
     multiSelect(p["Source Tags"]),
     select(p["Status"]),
-    text(p["Duplicate Of"]) || "", // relation not populated in MVP — emitted empty (see plan §15 open question 5)
     fmtCoord(number(p["Lat"])),
     fmtCoord(number(p["Lng"])),
     pageIcon(page),

@@ -46,10 +46,12 @@ test('slugify: produces stable location IDs', () => {
 
 // ─── normalizeStatus ────────────────────────────────────────────────────────
 
-test('normalizeStatus: exact values pass through', () => {
-  assert.equal(normalizeStatus('Verified'), 'Verified');
-  assert.equal(normalizeStatus('Needs Review'), 'Needs Review');
-  assert.equal(normalizeStatus('Could Not Find'), 'Could Not Find');
+test('normalizeStatus: all six Notion workflow values round-trip', () => {
+  for (const status of [
+    'Draft', 'Needs Review', 'Verifying', 'Verified', 'Could Not Find', 'Closed',
+  ]) {
+    assert.equal(normalizeStatus(status), status);
+  }
 });
 
 test('normalizeStatus: case-insensitive fuzzy match', () => {
@@ -59,9 +61,9 @@ test('normalizeStatus: case-insensitive fuzzy match', () => {
   assert.equal(normalizeStatus('Could not find'), 'Could Not Find');
 });
 
-test('normalizeStatus: unknown value defaults to Needs Review', () => {
-  assert.equal(normalizeStatus(''), 'Needs Review');
-  assert.equal(normalizeStatus('pending'), 'Needs Review');
+test('normalizeStatus: blank and unknown values fail closed to Draft', () => {
+  assert.equal(normalizeStatus(''), 'Draft');
+  assert.equal(normalizeStatus('pending'), 'Draft');
 });
 
 test('normalizeStatus: negated verification defaults to Needs Review', () => {
@@ -145,8 +147,8 @@ test('parseCSV: unsupported internal format returns null', () => {
 
 test('parseCSV: published format — maps category, fills icon, normalizes status', () => {
   const csv = [
-    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
-    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,"KKday, Threads",Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店',
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,"KKday, Threads",Verified,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店',
     '⚠️ Douban source,,,Source note,Login-only source note,https://example.com/source,Not extracted,,,,,',
   ].join('\n');
 
@@ -156,14 +158,14 @@ test('parseCSV: published format — maps category, fills icon, normalizes statu
     catEn: 'Hotel', catZh: '飯店',
     notesEn: 'Luxury hotel', notesZh: '河畔精品酒店', icon: '🏨',
     lat: '13.7608', lng: '100.5089', maps: 'https://maps.example/the-siam',
-    status: 'Verified', dup: '', src: 'KKday + Threads', approx: 'FALSE', sourceUrl: 'https://example.com',
+    status: 'Verified', src: 'KKday + Threads', approx: 'FALSE', sourceUrl: 'https://example.com',
   }]);
 });
 
 test('parseCSV: published format — preserves repeated source tags for URL mapping', () => {
   const csv = [
-    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
-    "Dear December Cafe,P'Booky Cafe,https://maps.example/dear,Cafe,English notes,\"https://trip.example/post, https://threads.example/a, https://threads.example/b, https://maps.example/place\",\"Trip.com, Threads, Threads, Google Maps\",Verified,Group A,13.6756573,100.6446636,☕,FALSE,Dear December 咖啡廳,中文說明",
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
+    "Dear December Cafe,P'Booky Cafe,https://maps.example/dear,Cafe,English notes,\"https://trip.example/post, https://threads.example/a, https://threads.example/b, https://maps.example/place\",\"Trip.com, Threads, Threads, Google Maps\",Verified,13.6756573,100.6446636,☕,FALSE,Dear December 咖啡廳,中文說明",
   ].join('\n');
 
   const [row] = parseCSV(csv);
@@ -173,8 +175,8 @@ test('parseCSV: published format — preserves repeated source tags for URL mapp
 
 test('parseCSV: published format — URL-only source tag falls back to sourceLabel', () => {
   const csv = [
-    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
-    "Dear December Cafe,P'Booky Cafe,https://maps.example/dear,Cafe,English notes,https://tw.trip.com/moments/detail/bangkok-191-140507082/,https://tw.trip.com/moments/detail/bangkok-191-140507082/,Verified,Group A,13.6756573,100.6446636,☕,FALSE,Dear December 咖啡廳,中文說明",
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
+    "Dear December Cafe,P'Booky Cafe,https://maps.example/dear,Cafe,English notes,https://tw.trip.com/moments/detail/bangkok-191-140507082/,https://tw.trip.com/moments/detail/bangkok-191-140507082/,Verified,13.6756573,100.6446636,☕,FALSE,Dear December 咖啡廳,中文說明",
   ].join('\n');
 
   const [row] = parseCSV(csv);
@@ -195,8 +197,8 @@ test('parseCSV: returns null for empty / header-only input', () => {
 
 test('parseCSV: prefers Slug column over slugify(name) when present', () => {
   const csv = [
-    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH,Slug',
-    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店,the-siam-hotel',
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH,Slug',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店,the-siam-hotel',
   ].join('\n');
   const [row] = parseCSV(csv);
   assert.equal(row.id, 'the-siam-hotel');
@@ -207,8 +209,8 @@ test('parseCSV: rename in Notion does not change id — Slug wins even when it n
   // Name changed, but Slug is frozen at migration time (plan §13 Phase 2)
   // specifically so localStorage favorites and shared #fav URLs still resolve.
   const csv = [
-    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH,Slug',
-    'The Siam Hotel (Renamed),,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店,the-siam-hotel',
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH,Slug',
+    'The Siam Hotel (Renamed),,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店,the-siam-hotel',
   ].join('\n');
   const [row] = parseCSV(csv);
   assert.equal(row.id, 'the-siam-hotel', 'id should stay the pre-rename slug, not slugify(new name)');
@@ -218,8 +220,8 @@ test('parseCSV: rename in Notion does not change id — Slug wins even when it n
 
 test('parseCSV: falls back to slugify(name) when Slug column absent (legacy sheet format)', () => {
   const csv = [
-    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
-    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店',
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店',
   ].join('\n');
   const [row] = parseCSV(csv);
   assert.equal(row.id, slugify('The Siam Hotel'));
@@ -227,8 +229,8 @@ test('parseCSV: falls back to slugify(name) when Slug column absent (legacy shee
 
 test('parseCSV: falls back to slugify(name) when Slug column present but empty for a row', () => {
   const csv = [
-    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH,Slug',
-    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店,',
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH,Slug',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店,',
   ].join('\n');
   const [row] = parseCSV(csv);
   assert.equal(row.id, slugify('The Siam Hotel'));
@@ -237,10 +239,19 @@ test('parseCSV: falls back to slugify(name) when Slug column present but empty f
 test('parseCSV: BOM at start of file is stripped from first header', () => {
   const bom = '﻿';
   const csv = [
-    `${bom}Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Duplicate Group,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH`,
-    'Cafe A,,https://maps.example/cafe-a,Cafe,Notes,https://example.com,KKday,Verified,,13.0,100.0,☕,FALSE,咖啡廳A,備註',
+    `${bom}Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH`,
+    'Cafe A,,https://maps.example/cafe-a,Cafe,Notes,https://example.com,KKday,Verified,13.0,100.0,☕,FALSE,咖啡廳A,備註',
   ].join('\n');
   const result = parseCSV(csv);
   assert.ok(result, 'should parse successfully despite BOM');
   assert.equal(result[0].nameEn, 'Cafe A');
+});
+
+test('parseCSV: published rows do not expose the removed dup property', () => {
+  const csv = [
+    'Location Name,Thai / Alt Name,Category,Notes,Source URL,Verification Status,Lat,Lng',
+    'Cafe A,,Cafe,Notes,https://example.com,Verified,13.0,100.0',
+  ].join('\n');
+  const [row] = parseCSV(csv);
+  assert.equal(Object.hasOwn(row, 'dup'), false);
 });
