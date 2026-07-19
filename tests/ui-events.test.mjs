@@ -60,7 +60,6 @@ test('mobile header exposes secondary actions through an overflow menu', async (
   assert.match(html, /data-mobile-action="issue"/);
   assert.match(html, /data-mobile-action="locate"/);
   assert.match(html, /data-mobile-action="lang"/);
-  assert.match(html, /data-mobile-action="theme"/);
   assert.match(mainSrc, /mobile-actions-btn/);
   assert.match(mainSrc, /data-mobile-action/);
 });

@@ -18,6 +18,7 @@ function requiredElement(id) {
 // ═══════════════════════════════════════════════════
 export const THEME_ICONS = { light: '☀️', dark: '🌙' };
 
+/** @returns {'light'|'dark'} */
 export function getEffectiveTheme() {
   return 'light';
 }
