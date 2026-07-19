@@ -2,6 +2,9 @@
 
 本專案使用 Netlify 免費方案時，建議先在本機完整測試，確認沒問題後才 push 到 GitHub 觸發 Netlify deploy，以節省 deploy credits。
 
+Notion snapshot 的完整 export → preview → production → rollback 流程請參考
+[`docs/notion-deploy-workflow.md`](../docs/notion-deploy-workflow.md)。
+
 ## 目標
 
 - 本機驗證 HTML、Netlify Function、目前選定的 location data source 都正常

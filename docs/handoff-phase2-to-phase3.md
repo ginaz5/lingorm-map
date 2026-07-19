@@ -3,6 +3,7 @@
 **Date:** 2026-07-19
 **For:** whichever agent picks this up next
 **Primary source of truth:** `docs/notion-migration-and-location-automation-plan.md` (the full plan; §17 and §18 log everything done so far — read those two sections first, they're more detailed than this file on *why* each decision was made)
+**Deployment runbook:** [Notion Data Source Deployment Workflow](notion-deploy-workflow.md)
 
 This file is a compact handoff. If anything here conflicts with the plan doc, the plan doc wins — this is a summary, not a replacement.
 

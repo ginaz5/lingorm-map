@@ -224,16 +224,16 @@ The project stays in `.js` files and Vite remains responsible for production out
 ### Unit tests
 
 ```bash
-node --test tests/*.test.mjs
+npm test
 ```
 
-Expected: 106 pass, 0 fail.
+Expected: 111 pass, 0 fail.
 
 ### Pre-deploy verification
 
 ```bash
 npm run typecheck
-node --test tests/*.test.mjs
+npm test
 npm run build      # outputs to dist/
 ```
 
@@ -241,7 +241,12 @@ npm run build      # outputs to dist/
 
 ## Deploy
 
-Push to `main` — Netlify runs `bash build.sh && npm run build` and publishes `dist/`.
+Use a feature branch and PR Deploy Preview. After preview verification, merge
+the PR into `main`; Netlify runs `bash build.sh && npm run build` and publishes
+`dist/`.
+
+For the complete Notion snapshot, preview, production, and rollback procedure,
+see [Notion Data Source Deployment Workflow](docs/notion-deploy-workflow.md).
 
 Required Netlify environment variables (Dashboard → Site Settings → Environment Variables):
 
