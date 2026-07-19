@@ -2,6 +2,13 @@
 // ═══════════════════════════════════════════════════
 // migrate-sheet-to-notion.mjs
 //
+// LIFECYCLE NOTE (migration completed):
+// This is the frozen, one-time Google Sheets → Notion migration transform.
+// It is retained only for auditability and reproducing the original migration;
+// it is not part of the current Notion update or production publish workflow.
+// Ongoing data changes belong in Notion and reach production through the
+// validated snapshot export flow in scripts/export-snapshot.mjs.
+//
 // Phase 2 full migration (docs/notion-migration-and-location-automation-plan.md
 // §10, §13 Phase 2). Reads the frozen source CSV (data/migration/source-*.csv),
 // applies the cleaning pass described in §10.3, detects branch duplicates and
