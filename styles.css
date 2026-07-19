@@ -144,13 +144,13 @@ header {
 
 /* Layout */
 .app-body{flex:1;display:flex;overflow:hidden}
-.panel{width:360px;min-width:300px;flex-shrink:0;background:var(--canvas);
+.panel{width:360px;min-width:300px;flex-shrink:0;background:#f9fafb;
   border-right:1px solid var(--hairline);display:flex;flex-direction:column;overflow:hidden}
 #map-wrap{flex:1;position:relative;overflow:hidden}
 #map{width:100%;height:100%}
 
 /* Filters */
-.filters{padding:12px;border-bottom:1px solid var(--hairline);display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.filters{padding:12px;background:var(--canvas);border-bottom:1px solid var(--hairline);display:flex;flex-direction:column;gap:8px;flex-shrink:0}
 .search-wrap{position:relative}
 .search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;fill:var(--text-muted);pointer-events:none}
 .search-input{width:100%;background:var(--canvas);border:1px solid var(--border);
@@ -170,9 +170,9 @@ header {
 .loc-list::-webkit-scrollbar{width:4px}
 .loc-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .loc-card{background:var(--canvas);border:1px solid var(--hairline);border-radius:12px;
-  padding:12px 14px;cursor:pointer;transition:border-color .15s, box-shadow .15s;
+  padding:12px 14px;cursor:pointer;transition:all .2s ease;
   position:relative;box-shadow:var(--shadow)}
-.loc-card:hover{border-color:var(--border)}
+.loc-card:hover{border-color:var(--border);transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .loc-card.active{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
 .card-head{display:flex;align-items:flex-start;gap:10px}
 .card-title-wrap{flex:1;min-width:0}
