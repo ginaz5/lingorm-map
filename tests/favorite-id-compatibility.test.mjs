@@ -14,11 +14,11 @@ const manifestPath = fileURLToPath(
 const snapshotCsv = readFileSync(snapshotPath, 'utf8');
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 
-test('Notion snapshot preserves every legacy spreadsheet favorite ID', () => {
+test('Notion snapshot preserves every protected favorite ID', () => {
   assert.deepEqual(validateFavoriteCompatibility(snapshotCsv, manifest), {
     legacyIdCount: 98,
-    notionSlugCount: 98,
-    newSlugCount: 0,
+    notionSlugCount: 100,
+    newSlugCount: 2,
   });
 });
 
@@ -58,8 +58,8 @@ test('favorite compatibility allows new locations without weakening legacy IDs',
 
   assert.deepEqual(validateFavoriteCompatibility(serialize(rows), manifest), {
     legacyIdCount: 98,
-    notionSlugCount: 99,
-    newSlugCount: 1,
+    notionSlugCount: 101,
+    newSlugCount: 3,
   });
 });
 

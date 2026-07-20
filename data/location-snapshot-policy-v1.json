@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "policyId": "three-status-20260721",
+  "minimumRowCount": 98,
+  "protectedSlugManifest": "legacy-favorite-ids.json",
+  "allowedStatuses": [
+    "Published",
+    "Paused",
+    "Inactive"
+  ],
+  "publicStatuses": [
+    "Published"
+  ],
+  "deletionManifest": []
+}

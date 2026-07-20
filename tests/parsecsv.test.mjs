@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  LEGACY_LOCATION_STATUSES, LOCATION_STATUSES,
   tokenizeCSV, normalizeStatus, sourceLabel,
   normalizeSourceTags, mapsQuery, parseCSV, slugify,
 } from '../src/csv-parser.js';
@@ -46,28 +47,42 @@ test('slugify: produces stable location IDs', () => {
 
 // ─── normalizeStatus ────────────────────────────────────────────────────────
 
-test('normalizeStatus: all six Notion workflow values round-trip', () => {
-  for (const status of [
-    'Draft', 'Needs Review', 'Verifying', 'Verified', 'Could Not Find', 'Closed',
-  ]) {
+test('normalizeStatus: every current status round-trips', () => {
+  for (const status of LOCATION_STATUSES) {
     assert.equal(normalizeStatus(status), status);
   }
 });
 
-test('normalizeStatus: case-insensitive fuzzy match', () => {
-  assert.equal(normalizeStatus('verified'), 'Verified');
-  assert.equal(normalizeStatus('VERIFIED'), 'Verified');
-  assert.equal(normalizeStatus('Not Found'), 'Could Not Find');
-  assert.equal(normalizeStatus('Could not find'), 'Could Not Find');
+test('status model exposes exactly the three current values', () => {
+  assert.deepEqual(LEGACY_LOCATION_STATUSES, [
+    'Draft', 'Needs Review', 'Verifying', 'Verified', 'Could Not Find', 'Closed',
+  ]);
+  assert.deepEqual(LOCATION_STATUSES, ['Published', 'Paused', 'Inactive']);
+  assert.equal(
+    LOCATION_STATUSES.length,
+    new Set(LOCATION_STATUSES).size
+  );
 });
 
-test('normalizeStatus: blank and unknown values fail closed to Draft', () => {
-  assert.equal(normalizeStatus(''), 'Draft');
-  assert.equal(normalizeStatus('pending'), 'Draft');
+test('normalizeStatus: canonicalizes case and legacy values into three statuses', () => {
+  assert.equal(normalizeStatus('verified'), 'Paused');
+  assert.equal(normalizeStatus('VERIFIED'), 'Paused');
+  assert.equal(normalizeStatus('PUBLISHED'), 'Published');
+  assert.equal(normalizeStatus('paused'), 'Paused');
+  assert.equal(normalizeStatus('INACTIVE'), 'Inactive');
+  assert.equal(normalizeStatus('Not Found'), 'Inactive');
+  assert.equal(normalizeStatus('Could not find'), 'Inactive');
+  assert.equal(normalizeStatus('Closed'), 'Inactive');
+  assert.equal(normalizeStatus('Draft'), 'Paused');
 });
 
-test('normalizeStatus: negated verification defaults to Needs Review', () => {
-  assert.equal(normalizeStatus('Not Verified'), 'Needs Review');
+test('normalizeStatus: blank and unknown values fail closed to Paused', () => {
+  assert.equal(normalizeStatus(''), 'Paused');
+  assert.equal(normalizeStatus('pending'), 'Paused');
+});
+
+test('normalizeStatus: negated verification defaults to Paused', () => {
+  assert.equal(normalizeStatus('Not Verified'), 'Paused');
 });
 
 // ─── sourceLabel ────────────────────────────────────────────────────────────
@@ -158,7 +173,7 @@ test('parseCSV: published format — maps category, fills icon, normalizes statu
     catEn: 'Hotel', catZh: '飯店',
     notesEn: 'Luxury hotel', notesZh: '河畔精品酒店', icon: '🏨',
     lat: '13.7608', lng: '100.5089', maps: 'https://maps.example/the-siam',
-    status: 'Verified', src: 'KKday + Threads', approx: 'FALSE', sourceUrl: 'https://example.com',
+    status: 'Paused', src: 'KKday + Threads', approx: 'FALSE', sourceUrl: 'https://example.com',
   }]);
 });
 

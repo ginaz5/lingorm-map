@@ -29,9 +29,8 @@
 // ═══════════════════════════════════════════════════
 
 // Read lazily (not at module load) so this file can be `import`ed for its
-// pure helpers (haversineMeters) from other scripts — e.g.
-// resolve-legacy-batch.mjs — without requiring the env var or triggering
-// a process.exit() as a side effect of importing.
+// pure helpers (haversineMeters) from other scripts without requiring the env
+// var or triggering a process.exit() as a side effect of importing.
 const getKey = () => process.env.GOOGLE_PLACES_KEY || process.env.GOOGLE_PLACE_KEY;
 
 const TH_REGION_CODE = "TH";

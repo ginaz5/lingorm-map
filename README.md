@@ -165,7 +165,7 @@ lingorm_bangkok_map/
 │       ├── config.mjs      # /api/config — returns Maps key + map ID
 │       └── locations.mjs   # /api/locations — sheet/snapshot source switch
 ├── data/
-│   └── locations.csv       # validated 98-row Notion export snapshot
+│   └── locations.csv       # validated 100-row formal Notion export snapshot
 ├── scripts/
 │   ├── export-snapshot.mjs # Notion API → stable site CSV contract
 │   ├── convert-notion-csv.mjs # manual Notion UI export bridge
@@ -285,17 +285,32 @@ Production uses the committed Notion snapshot at `data/locations.csv`:
 ```
 Location Name, Location Name ZH, Thai / Alt Name, Google Maps URL,
 Category, Notes, Notes ZH, Source URL, Source Tags, Verification Status,
-Lat, Lng, Icon, Coordinates Approx, Slug
+Lat, Lng, Icon, Slug
 ```
 
-Notion `Status` values are `Draft`, `Needs Review`, `Verifying`, `Verified`,
-`Could Not Find`, and `Closed`. The public site uses an explicit allowlist:
-only `Verified` and `Needs Review` appear in the list and on the map. Unknown
-or blank statuses normalize to the non-public `Draft` value.
+The current formal Notion data source has 17 properties: 14 content fields and
+the three verification fields `Review Needed`, `Verification Note`, and
+`Last Verified`. Verification fields are not exported to the public snapshot.
+`Coordinates Approx` and `Branch Group` have been retired from the formal
+schema; the parser still accepts `Coordinates Approx` only on the legacy Google
+Sheet rollback path.
 
-`Branch Group` remains an internal Notion property and is not exported. The
-retired `Duplicate Group` column is not part of the snapshot or runtime row
-contract.
+The formal data source accepts exactly three status values: `Published`,
+`Paused`, and `Inactive`. Only `Published` locations appear on the public site;
+`Paused`, `Inactive`, and all unknown or blank inputs remain hidden. Legacy
+status names are accepted only while parsing old rollback exports and are
+normalized to `Paused` or `Inactive`; they are never emitted by the current
+snapshot contract.
+
+Generate a candidate snapshot from the allowlisted formal data source with:
+
+```bash
+npm run locations:export:notion -- --output data/locations.next.csv
+node scripts/validate-location-snapshot.mjs data/locations.next.csv
+```
+
+The exporter reads only `NOTION_FORMAL_READ_API_KEY`, verifies the live
+17-property schema before querying rows, and never writes to Notion.
 
 ---
 
@@ -339,8 +354,7 @@ node --test tests/*.test.mjs
 | `typecheck-config.test.mjs` | Strict no-emit `checkJs` command, scope, and dependency configuration |
 | `config-function.test.mjs` | `/api/config` Netlify Function |
 | `locations-function.test.mjs` | `/api/locations` Netlify Function |
-| `migration-script.test.mjs` | Migration rerun idempotency and slug-collision rejection |
-| `notion-export-full.test.mjs` | Full 98-row Notion snapshot reconciliation |
+| `notion-export-full.test.mjs` | Formal Notion snapshot contract and approved slug-delta reconciliation |
 | `notion-export-poc.test.mjs` | Notion snapshot round-trip and exporter serialization |
 | `resolver.test.mjs` | Place-resolution distance and missing-coordinate review rules |
 | `snapshot-validator.test.mjs` | Production snapshot contract, row-count, and slug validation |

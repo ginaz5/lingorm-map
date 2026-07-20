@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // SLUG / ID HELPER
 // ═══════════════════════════════════════════════════
-/** @typedef {'Draft'|'Needs Review'|'Verifying'|'Verified'|'Could Not Find'|'Closed'} LocationStatus */
+/** @typedef {'Published'|'Paused'|'Inactive'} LocationStatus */
 /**
  * @typedef {Object} LocationRow
  * @property {string} id
@@ -124,6 +124,21 @@ export const ZH_BY_CAT = {
   "Nature / Day-trip":"自然 / 一日遊","Street Food":"街頭小吃","Neighbourhood":"街區"
 };
 
+export const LEGACY_LOCATION_STATUSES = Object.freeze([
+  "Draft",
+  "Needs Review",
+  "Verifying",
+  "Verified",
+  "Could Not Find",
+  "Closed",
+]);
+
+export const LOCATION_STATUSES = Object.freeze([
+  "Published",
+  "Paused",
+  "Inactive",
+]);
+
 /**
  * @param {string} s
  * @returns {LocationStatus}
@@ -132,16 +147,19 @@ export function normalizeStatus(s) {
   const raw = s.trim().toLowerCase();
   /** @type {Record<string, LocationStatus>} */
   const statuses = {
-    "draft": "Draft",
-    "needs review": "Needs Review",
-    "verifying": "Verifying",
-    "verified": "Verified",
-    "could not find": "Could Not Find",
-    "closed": "Closed",
-    "not found": "Could Not Find",
-    "not verified": "Needs Review",
+    "draft": "Paused",
+    "needs review": "Paused",
+    "verifying": "Paused",
+    "verified": "Paused",
+    "could not find": "Inactive",
+    "closed": "Inactive",
+    "published": "Published",
+    "paused": "Paused",
+    "inactive": "Inactive",
+    "not found": "Inactive",
+    "not verified": "Paused",
   };
-  return statuses[raw] || "Draft";
+  return statuses[raw] || "Paused";
 }
 
 /**
@@ -222,7 +240,10 @@ export function parsePublishedFormat(rows, idx, read) {
         maps:     mapsQuery(name, maps),
         status:   normalizeStatus(read(r, "Verification Status")),
         src:      tags || sourceLabel(sourceUrl),
-        approx:   read(r, "Coordinates Approx") || "TRUE",
+        // Optional only for the legacy Google Sheet rollback format. The
+        // current Notion schema retired this property, so its absence means
+        // exact/unspecified rather than approximate.
+        approx:   read(r, "Coordinates Approx"),
         sourceUrl,
       };
     });

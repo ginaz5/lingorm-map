@@ -30,7 +30,17 @@ import {
   convertNotionCsv,
   normalizeNotionExportText,
 } from '../scripts/convert-notion-csv.mjs';
-import { CSV_HEADER, csvRow, pageToRow } from '../scripts/export-snapshot.mjs';
+import {
+  CSV_HEADER,
+  assertCurrentFormalSchema,
+  csvRow,
+  exportSnapshot,
+  pageToRow,
+} from '../scripts/export-snapshot.mjs';
+import {
+  CURRENT_FORMAL_LOCATION_PROPERTIES,
+  CURRENT_FORMAL_LOCATION_PROPERTY_TYPES,
+} from '../scripts/formal-location-current-schema.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixtureDir = path.join(__dirname, 'fixtures', 'notion-poc');
@@ -89,9 +99,9 @@ test('Phase 1 PoC: golden parse-equality (source vs. Notion round-trip)', () => 
   }
 });
 
-test('Phase 1 PoC: Could Not Find status survives round-trip (Yoru Omakase)', () => {
+test('Phase 1 PoC: legacy Could Not Find normalizes to Inactive', () => {
   const row = exportedRows.find(r => r.id === 'yoru-omakase');
-  assert.equal(row.status, 'Could Not Find');
+  assert.equal(row.status, 'Inactive');
 });
 
 test('Phase 1 PoC: category alias normalization applied identically on both sides (R Bar: "Bar" -> "Bar / Rooftop Club")', () => {
@@ -118,7 +128,6 @@ test('snapshot exporter maps native page icon and frozen Slug without credential
       Status: { select: { name: 'Verified' } },
       Lat: { number: 13.7608 },
       Lng: { number: 100.5089 },
-      'Coordinates Approx': { checkbox: false },
       Slug: richText('the-siam-hotel'),
     },
   };
@@ -126,22 +135,184 @@ test('snapshot exporter maps native page icon and frozen Slug without credential
   const row = pageToRow(page);
   assert.equal(row.length, CSV_HEADER.length);
   assert.equal(CSV_HEADER.includes('Duplicate Group'), false);
+  assert.equal(CSV_HEADER.includes('Coordinates Approx'), false);
   assert.equal(row[12], '🏨');
-  assert.equal(row[14], 'the-siam-hotel');
+  assert.equal(row[13], 'the-siam-hotel');
 });
 
 test('snapshot exporter escapes quotes and commas in CSV output', () => {
   assert.equal(csvRow(['a,b', 'say "hello"']), '"a,b","say ""hello"""');
 });
 
+test('snapshot exporter removes only invisible whitespace before rich-text newlines', () => {
+  assert.equal(
+    csvRow(['first line \nsecond line\t\r\nthird line ']),
+    '"first line\nsecond line\r\nthird line "'
+  );
+});
+
+test('snapshot exporter accepts the current 17-property formal schema', () => {
+  const properties = Object.fromEntries(
+    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
+      name,
+      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
+    ])
+  );
+  assert.deepEqual(assertCurrentFormalSchema({ properties }), {
+    propertyCount: 17,
+    requiredPropertyCount: 17,
+  });
+});
+
+test('snapshot exporter fails closed when the current formal schema drifts', () => {
+  const properties = Object.fromEntries(
+    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
+      name,
+      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
+    ])
+  );
+  delete properties.Slug;
+  properties.Lat = { type: 'rich_text' };
+  properties.Legacy = { type: 'rich_text' };
+
+  assert.throws(
+    () => assertCurrentFormalSchema({ properties }),
+    /missing: Slug; unexpected: Legacy; wrong types: Lat \(rich_text; expected number\)/
+  );
+});
+
+test('snapshot exporter rejects retired or miscolored Status options', () => {
+  const properties = Object.fromEntries(
+    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
+      name,
+      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
+    ])
+  );
+  properties.Status.select = {
+    options: [
+      { name: 'Published', color: 'blue' },
+      { name: 'Paused', color: 'yellow' },
+      { name: 'Draft', color: 'gray' },
+    ],
+  };
+
+  assert.throws(
+    () => assertCurrentFormalSchema({ properties }),
+    /Status options: missing Inactive; unexpected Draft; wrong colors Published/
+  );
+});
+
+test('snapshot exporter reads only the formal data source and emits deterministic rows', async () => {
+  const properties = Object.fromEntries(
+    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
+      name,
+      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
+    ])
+  );
+  const page = (name, slug) => ({
+    icon: { type: 'emoji', emoji: '☕' },
+    properties: {
+      Name: { title: [{ plain_text: name }] },
+      'Name ZH': { rich_text: [] },
+      'Thai / Alt Name': { rich_text: [] },
+      'Google Maps URL': { url: 'https://maps.google.com/' },
+      Category: { select: { name: 'Cafe' } },
+      'Notes EN': { rich_text: [] },
+      'Notes ZH': { rich_text: [] },
+      'Source URLs': { rich_text: [] },
+      'Source Tags': { multi_select: [] },
+      Status: { select: { name: 'Published' } },
+      Lat: { number: 13.75 },
+      Lng: { number: 100.5 },
+      Slug: { rich_text: [{ plain_text: slug }] },
+    },
+  });
+  const calls = [];
+  const fetchImpl = async (url, options = {}) => {
+    calls.push({ url, options });
+    if (options.method === 'POST') {
+      return new Response(JSON.stringify({
+        results: [page('Zulu Cafe', 'zulu-cafe'), page('Alpha Cafe', 'alpha-cafe')],
+        has_more: false,
+      }));
+    }
+    return new Response(JSON.stringify({ properties }));
+  };
+
+  const result = await exportSnapshot({
+    apiKey: 'read-only-test-token',
+    dataSourceId: 'e55c2315-8ea2-837d-9637-07c1118486c8',
+    fetchImpl,
+  });
+  const rows = parseCSV(result.csv);
+
+  assert.equal(result.pageCount, 2);
+  assert.deepEqual(rows.map(({ id }) => id), ['alpha-cafe', 'zulu-cafe']);
+  assert.equal(calls.length, 2);
+  assert.match(calls[0].url, /data_sources\/e55c2315-8ea2-837d-9637-07c1118486c8$/);
+  assert.match(calls[1].url, /data_sources\/e55c2315-8ea2-837d-9637-07c1118486c8\/query$/);
+});
+
+test('snapshot exporter refuses missing or duplicate Notion Slugs before output', async () => {
+  const properties = Object.fromEntries(
+    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
+      name,
+      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
+    ])
+  );
+  const page = (name, slug) => ({
+    properties: {
+      Name: { title: [{ plain_text: name }] },
+      'Name ZH': { rich_text: [] },
+      'Thai / Alt Name': { rich_text: [] },
+      'Google Maps URL': { url: 'https://maps.google.com/' },
+      Category: { select: { name: 'Cafe' } },
+      'Notes EN': { rich_text: [] },
+      'Notes ZH': { rich_text: [] },
+      'Source URLs': { rich_text: [] },
+      'Source Tags': { multi_select: [] },
+      Status: { select: { name: 'Published' } },
+      Lat: { number: 13.75 },
+      Lng: { number: 100.5 },
+      Slug: { rich_text: slug ? [{ plain_text: slug }] : [] },
+    },
+  });
+  const fetchFor = (pages) => async (_url, options = {}) =>
+    new Response(JSON.stringify(
+      options.method === 'POST'
+        ? { results: pages, has_more: false }
+        : { properties }
+    ));
+
+  await assert.rejects(
+    exportSnapshot({
+      apiKey: 'read-only-test-token',
+      dataSourceId: 'e55c2315-8ea2-837d-9637-07c1118486c8',
+      fetchImpl: fetchFor([page('Missing Slug Cafe', '')]),
+    }),
+    /Notion location "Missing Slug Cafe" has no Slug/
+  );
+  await assert.rejects(
+    exportSnapshot({
+      apiKey: 'read-only-test-token',
+      dataSourceId: 'e55c2315-8ea2-837d-9637-07c1118486c8',
+      fetchImpl: fetchFor([
+        page('First Cafe', 'same-slug'),
+        page('Second Cafe', 'same-slug'),
+      ]),
+    }),
+    /Notion Locations contains duplicate Slug: same-slug/
+  );
+});
+
 test('manual Notion CSV export bridge emits the stable snapshot contract', () => {
   const notionCsv = [
-    'Name,Name ZH,Thai / Alt Name,Google Maps URL,Category,Notes EN,Notes ZH,Source URLs,Source Tags,Status,Lat,Lng,Coordinates Approx,Slug',
-    'The Siam Hotel,暹羅精品酒店,,https://maps.example/the-siam,Hotel,Luxury hotel,河畔精品酒店,https://example.com,KKday,Verified,13.7608,100.5089,No,the-siam-hotel',
+    'Name,Name ZH,Thai / Alt Name,Google Maps URL,Category,Notes EN,Notes ZH,Source URLs,Source Tags,Status,Lat,Lng,Slug',
+    'The Siam Hotel,暹羅精品酒店,,https://maps.example/the-siam,Hotel,Luxury hotel,河畔精品酒店,https://example.com,KKday,Verified,13.7608,100.5089,the-siam-hotel',
   ].join('\n');
   const iconCsv = [
-    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Coordinates Approx,Location Name ZH,Notes ZH',
-    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,13.7608,100.5089,🏨,FALSE,暹羅精品酒店,河畔精品酒店',
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Location Name ZH,Notes ZH',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Verified,13.7608,100.5089,🏨,暹羅精品酒店,河畔精品酒店',
   ].join('\n');
 
   const [row] = parseCSV(convertNotionCsv(notionCsv, iconCsv));
@@ -151,9 +322,9 @@ test('manual Notion CSV export bridge emits the stable snapshot contract', () =>
 
 test('manual Notion CSV export bridge rejects duplicate slugs', () => {
   const notionCsv = [
-    'Name,Name ZH,Thai / Alt Name,Google Maps URL,Category,Notes EN,Notes ZH,Source URLs,Source Tags,Status,Lat,Lng,Coordinates Approx,Slug',
-    'The Siam Hotel,暹羅精品酒店,,https://maps.example/the-siam,Hotel,Luxury hotel,河畔精品酒店,https://example.com,KKday,Verified,13.7608,100.5089,No,the-siam-hotel',
-    'Renamed Hotel,暹羅精品酒店,,https://maps.example/the-siam,Hotel,Luxury hotel,河畔精品酒店,https://example.com,KKday,Verified,13.7608,100.5089,No,the-siam-hotel',
+    'Name,Name ZH,Thai / Alt Name,Google Maps URL,Category,Notes EN,Notes ZH,Source URLs,Source Tags,Status,Lat,Lng,Slug',
+    'The Siam Hotel,暹羅精品酒店,,https://maps.example/the-siam,Hotel,Luxury hotel,河畔精品酒店,https://example.com,KKday,Verified,13.7608,100.5089,the-siam-hotel',
+    'Renamed Hotel,暹羅精品酒店,,https://maps.example/the-siam,Hotel,Luxury hotel,河畔精品酒店,https://example.com,KKday,Verified,13.7608,100.5089,the-siam-hotel',
   ].join('\n');
 
   assert.throws(
@@ -164,8 +335,8 @@ test('manual Notion CSV export bridge rejects duplicate slugs', () => {
 
 test('manual Notion CSV export bridge rejects missing expected slugs', () => {
   const notionCsv = [
-    'Name,Name ZH,Thai / Alt Name,Google Maps URL,Category,Notes EN,Notes ZH,Source URLs,Source Tags,Status,Lat,Lng,Coordinates Approx,Slug',
-    'Alpha Cafe,Alpha Cafe,,,Cafe,,,,,Verified,13.75,100.5,No,alpha-cafe',
+    'Name,Name ZH,Thai / Alt Name,Google Maps URL,Category,Notes EN,Notes ZH,Source URLs,Source Tags,Status,Lat,Lng,Slug',
+    'Alpha Cafe,Alpha Cafe,,,Cafe,,,,,Verified,13.75,100.5,alpha-cafe',
   ].join('\n');
   const iconCsv = [
     'Location Name,Thai / Alt Name,Category,Notes,Source URL,Verification Status,Icon',

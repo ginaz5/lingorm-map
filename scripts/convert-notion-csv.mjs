@@ -22,7 +22,7 @@ import { CSV_HEADER, csvRow } from './export-snapshot.mjs';
 const REQUIRED_NOTION_HEADERS = [
   'Name', 'Name ZH', 'Thai / Alt Name', 'Google Maps URL', 'Category',
   'Notes EN', 'Notes ZH', 'Source URLs', 'Source Tags', 'Status',
-  'Lat', 'Lng', 'Coordinates Approx', 'Slug',
+  'Lat', 'Lng', 'Slug',
 ];
 
 export function convertNotionCsv(notionCsv, iconsCsv) {
@@ -71,7 +71,6 @@ export function convertNotionCsv(notionCsv, iconsCsv) {
       read('Lat'),
       read('Lng'),
       icon,
-      normalizeCheckbox(read('Coordinates Approx')),
       slug,
     ]));
   }
@@ -83,11 +82,7 @@ export function convertNotionCsv(notionCsv, iconsCsv) {
     );
   }
 
-  return `${output.join('\r\n')}\r\n`;
-}
-
-function normalizeCheckbox(value) {
-  return /^(?:yes|true|1|checked)$/i.test(value) ? 'TRUE' : 'FALSE';
+  return `${output.join('\n')}\n`;
 }
 
 // Notion's Markdown & CSV exporter serializes auto-linked rich text using the

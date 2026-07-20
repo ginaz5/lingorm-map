@@ -33,15 +33,11 @@ export const heartSVG = (active) =>
 // ═══════════════════════════════════════════════════
 // PUBLICATION HELPERS
 // ═══════════════════════════════════════════════════
-export const MIGRATION_PUBLIC_LOCATION_STATUSES = Object.freeze([
-  'Verified',
-  'Needs Review',
-  'Published',
-]);
+export const PUBLIC_LOCATION_STATUSES = Object.freeze(['Published']);
 
 /** @param {LocationRow} row @returns {boolean} */
 export function isPublicLocation(row) {
-  return MIGRATION_PUBLIC_LOCATION_STATUSES.includes(row.status);
+  return PUBLIC_LOCATION_STATUSES.includes(row.status);
 }
 
 /** @param {LocationRow} row @returns {boolean} */

@@ -25,18 +25,19 @@ Browser
 `DATA_SOURCE=notion`. Updating Notion alone does not update the site; every
 data change must go through export, validation, preview, and deployment.
 
-## Current limitation and post-migration TODO
+## Current synchronization model
 
 There is no automatic Notion-to-production synchronization in the current
-committed-snapshot MVP, and no raw `NOTION_API_KEY` is configured. Notion
-connector access used during migration does not provide unattended production
-exports. Therefore, a successful edit in Notion is not live until the snapshot
-has completed the manual workflow in this document.
+committed-snapshot MVP. A successful edit in Notion is not live until the
+snapshot has completed the manual workflow in this document.
 
-After the migration and production cutover are fully complete:
+The local exporter uses the least-privilege
+`NOTION_FORMAL_READ_API_KEY` and an allowlisted formal data source ID. It
+validates the current 17-property schema before reading any rows and has no
+Notion write path.
 
-- Create a least-privilege Notion integration.
-- Configure `NOTION_API_KEY` and `NOTION_DATA_SOURCE_ID` as deployment secrets.
+Future automation work:
+
 - Add a scheduled export, validation, and deployment workflow.
 - Add export-failure and stale-snapshot alerts.
 - Retain timestamped snapshots and complete a one-week failure-free soak.
@@ -44,12 +45,12 @@ After the migration and production cutover are fully complete:
 This automation is a post-migration operational TODO and does not block the
 committed-snapshot cutover.
 
-Do not confuse these two variables:
+Do not confuse runtime and export configuration:
 
 | Variable | Purpose |
 |---|---|
 | `DATA_SOURCE=notion` | Selects the committed Notion snapshot at build/runtime |
-| `NOTION_DATA_SOURCE_ID` | Identifies the Notion data source used by the exporter |
+| `NOTION_FORMAL_READ_API_KEY` | Lets the local exporter read only the formal Locations data source |
 
 ## Netlify environment contexts
 
@@ -83,12 +84,10 @@ shared `?favs=` URLs.
 
 ### 2. Export the snapshot
 
-When a Notion integration token is available:
+Create a candidate file with the formal read-only integration:
 
 ```bash
-NOTION_API_KEY=secret_xxx \
-NOTION_DATA_SOURCE_ID=collection-uuid \
-node scripts/export-snapshot.mjs > data/locations.next.csv
+npm run locations:export:notion -- --output data/locations.next.csv
 
 node scripts/validate-location-snapshot.mjs data/locations.next.csv
 node scripts/validate-favorite-compatibility.mjs \
@@ -97,13 +96,15 @@ node scripts/validate-favorite-compatibility.mjs \
 mv data/locations.next.csv data/locations.csv
 ```
 
-The Notion integration needs read access to the Locations data source. Never
-commit `NOTION_API_KEY`. Exporting to a candidate file first preserves the
-last-known-good `data/locations.csv` if the Notion request or validation fails.
+The Notion integration needs read access only to the formal Locations data
+source. Never commit `NOTION_FORMAL_READ_API_KEY`. Exporting to a candidate
+file first preserves the last-known-good `data/locations.csv` if the Notion
+request, schema preflight, snapshot validation, or favorite compatibility gate
+fails.
 
 If no raw integration token is available, use the approved Notion connector or
 manual export bridge. The required final artifact is still
-`data/locations.csv` using the stable 16-column schema, including `Slug`.
+`data/locations.csv` using the stable 14-column schema, including `Slug`.
 
 ### 3. Validate locally
 
@@ -129,7 +130,10 @@ With `DATA_SOURCE=notion`, `build.sh` enforces:
 - Availability of the map-provider configuration.
 
 Do not update `data/legacy-favorite-ids.json` merely to make a renamed or
-removed slug pass. It is the immutable compatibility baseline for favorites.
+removed slug pass. A deliberate replacement requires an explicit maintainer
+decision and must record the old and new IDs in the manifest source metadata.
+The approved `by` → `plantiful-sukhumvit-61` replacement intentionally does
+not preserve the old favorite ID.
 
 ### 4. Commit on a feature branch
 
@@ -165,7 +169,7 @@ Complete this checklist on the preview URL:
 - The CSV header includes `Slug`.
 - The expected public location count is shown.
 - Map markers and cards load.
-- Search, category, status, language, and map/list controls work.
+- Search, category, language, and map/list controls work.
 - A production favorites URL works on preview:
 
   ```text
@@ -242,7 +246,7 @@ favorite IDs.
 |---|---|
 | `scripts/export-snapshot.mjs` | Notion API → stable CSV snapshot |
 | `data/locations.csv` | Versioned runtime snapshot |
-| `data/legacy-favorite-ids.json` | Immutable spreadsheet-era favorite IDs |
+| `data/legacy-favorite-ids.json` | Protected favorite IDs plus explicit maintainer-approved replacements |
 | `scripts/validate-location-snapshot.mjs` | Schema, row count, and slug validation |
 | `scripts/validate-favorite-compatibility.mjs` | Legacy favorite-ID deploy gate |
 | `netlify/functions/locations.mjs` | Selects Notion snapshot or Sheet proxy |

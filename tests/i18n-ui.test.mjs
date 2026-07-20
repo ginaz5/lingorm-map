@@ -24,9 +24,7 @@ async function loadUiHelpers(deps) {
     deps.t,
     deps.state,
     deps.lang,
-    deps.isPublicLocation ?? ((row) => (
-      row.status === 'Verified' || row.status === 'Needs Review'
-    )),
+    deps.isPublicLocation ?? ((row) => row.status === 'Published'),
   );
 }
 
@@ -84,9 +82,9 @@ test('buildCatFilter preserves the selected category while rebuilding options', 
     t: (key) => ({ all_cat: 'All Categories' })[key],
     state: {
       data: [
-        { catEn: 'Cafe', catZh: '咖啡廳', status: 'Verified' },
-        { catEn: 'Hotel', catZh: '飯店', status: 'Needs Review' },
-        { catEn: 'Internal', catZh: '內部分類', status: 'Draft' },
+        { catEn: 'Cafe', catZh: '咖啡廳', status: 'Published' },
+        { catEn: 'Hotel', catZh: '飯店', status: 'Published' },
+        { catEn: 'Internal', catZh: '內部分類', status: 'Paused' },
       ],
     },
     lang: 'en',

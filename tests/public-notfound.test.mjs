@@ -20,7 +20,7 @@ function makeLocation(status, name = status) {
   };
 }
 
-test('public filters and list use the migration public allowlist', async () => {
+test('public filters and list show only Published locations', async () => {
   const { state } = await import('../src/state.js');
   const { applyFilters } = await import('../src/render.js');
 
@@ -38,9 +38,9 @@ test('public filters and list use the migration public allowlist', async () => {
   try {
     state.isLoading = false;
     state.data = [
-      makeLocation('Verified', 'Visible verified'),
-      makeLocation('Needs Review', 'Visible review'),
       makeLocation('Published', 'Visible published'),
+      makeLocation('Verified', 'Hidden verified'),
+      makeLocation('Needs Review', 'Hidden review'),
       makeLocation('Draft', 'Hidden draft'),
       makeLocation('Verifying', 'Hidden verifying'),
       makeLocation('Could Not Find', 'Hidden not found'),
@@ -52,9 +52,11 @@ test('public filters and list use the migration public allowlist', async () => {
 
     applyFilters();
 
-    assert.deepEqual(state.visIdx, [0, 1, 2]);
-    assert.equal(elements['result-info'].textContent, '顯示 3 / 3 個地點');
+    assert.deepEqual(state.visIdx, [0]);
+    assert.equal(elements['result-info'].textContent, '顯示 1 / 1 個地點');
     for (const hiddenName of [
+      'Hidden verified',
+      'Hidden review',
       'Hidden draft',
       'Hidden verifying',
       'Hidden not found',
@@ -133,9 +135,9 @@ test('map markers use the same public status allowlist', async () => {
     state.markers = [];
     state.markerClusterer = null;
     state.data = [
-      makeLocation('Verified', 'Visible verified'),
-      makeLocation('Needs Review', 'Visible review'),
       makeLocation('Published', 'Visible published'),
+      makeLocation('Verified', 'Hidden verified'),
+      makeLocation('Needs Review', 'Hidden review'),
       makeLocation('Draft', 'Hidden draft'),
       makeLocation('Verifying', 'Hidden verifying'),
       makeLocation('Could Not Find', 'Hidden not found'),
@@ -147,7 +149,7 @@ test('map markers use the same public status allowlist', async () => {
 
     await buildMarkers();
 
-    assert.equal(createdDataPoints.length, 3);
+    assert.equal(createdDataPoints.length, 1);
   } finally {
     globalThis.document = previousDocument;
     globalThis.H = previousHere;
@@ -198,7 +200,7 @@ test('activateCard centers HERE map and opens info bubble', async () => {
   try {
     state.activeIdx = -1;
     state.provider = 'here';
-    state.data = [makeLocation('Verified', 'Visible verified')];
+    state.data = [makeLocation('Published', 'Visible published')];
     state.map = {
       setCenter: (position) => centers.push(position),
       setZoom: (zoom) => zooms.push(zoom),
@@ -217,7 +219,7 @@ test('activateCard centers HERE map and opens info bubble', async () => {
     assert.deepEqual(zooms, [15]);
     assert.equal(bubbles.length, 1);
     assert.deepEqual(bubbles[0].position, { lat: 13.7, lng: 100.5 });
-    assert.match(bubbles[0].options.content, /Visible verified/);
+    assert.match(bubbles[0].options.content, /Visible published/);
     assert.deepEqual(activeClassOps, [['remove', 'active']]);
     assert.deepEqual(cardClassOps, [['add', 'active']]);
   } finally {

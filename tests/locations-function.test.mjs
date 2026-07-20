@@ -129,7 +129,7 @@ test('serves the committed Notion snapshot when DATA_SOURCE=notion', async () =>
     assert.match(csv, /"Location Name"/);
     assert.match(csv, /"Slug"/);
     assert.doesNotMatch(csv.split(/\r?\n/, 1)[0], /Duplicate Group/);
-    assert.equal(parseCSV(csv).length, 98);
+    assert.equal(parseCSV(csv).length, 100);
   });
 });
 
