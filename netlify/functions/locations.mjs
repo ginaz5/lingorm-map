@@ -4,45 +4,28 @@ import { parseCSV } from '../../src/csv-parser.js';
 
 const DEFAULT_NOTION_SNAPSHOT = new URL('../../data/locations.csv', import.meta.url);
 
+// DATA_SOURCE=sheet is retired as of the 2026-07-21 three-status cutover
+// (mirrors build.sh): legacy verified/needs-review statuses now normalize to
+// Paused (non-public), so the old Google Sheet proxy would render zero
+// public locations. There is no live sheet path anymore — a "sheet" value
+// fails closed instead of fetching anything.
 export default async function locations(req) {
   if (req.method !== 'GET') {
     return json({ error: 'Method not allowed' }, 405);
   }
 
-  const dataSource = (env('DATA_SOURCE') || 'sheet').trim().toLowerCase();
+  const dataSource = (env('DATA_SOURCE') || 'notion').trim().toLowerCase();
   if (dataSource === 'notion') {
     return serveNotionSnapshot();
   }
-  if (dataSource !== 'sheet') {
-    return json({ error: 'DATA_SOURCE must be either "sheet" or "notion"' }, 500);
+  if (dataSource === 'sheet') {
+    return json({
+      error:
+        'DATA_SOURCE=sheet is retired — legacy verified/needs-review statuses now normalize to Paused (non-public), so the sheet path would render zero public locations. Set DATA_SOURCE=notion (or unset it).',
+    }, 410);
   }
 
-  return serveSheet();
-}
-
-async function serveSheet() {
-  const csvUrl = normalizeSheetUrl(env('GOOGLE_SHEET_CSV_URL'));
-  if (!csvUrl) {
-    return json({ error: 'GOOGLE_SHEET_CSV_URL is not configured' }, 500);
-  }
-
-  try {
-    const upstream = await fetch(csvUrl);
-    if (!upstream.ok) {
-      return json({ error: `Google Sheet CSV request failed: ${upstream.status}` }, 502);
-    }
-
-    const csv = await upstream.text();
-    if (isHtmlResponse(upstream, csv)) {
-      return json({
-        error: 'Google Sheet URL did not return CSV. Use a published CSV URL or a share URL that can be exported as CSV.',
-      }, 502);
-    }
-
-    return csvResponse(csv);
-  } catch (error) {
-    return json({ error: error.message || 'Google Sheet CSV request failed' }, 502);
-  }
+  return json({ error: 'DATA_SOURCE must be "notion" (sheet rollback path is retired)' }, 500);
 }
 
 export async function serveNotionSnapshot(snapshotPath = DEFAULT_NOTION_SNAPSHOT) {
@@ -64,29 +47,6 @@ export async function serveNotionSnapshot(snapshotPath = DEFAULT_NOTION_SNAPSHOT
 
 function env(key) {
   return globalThis.Netlify?.env?.get(key);
-}
-
-function normalizeSheetUrl(value) {
-  if (!value) return '';
-
-  try {
-    const url = new URL(value);
-    const match = url.pathname.match(/^\/spreadsheets\/d\/([^/]+)/);
-    if (!match || !url.pathname.includes('/edit')) return value;
-
-    const exportUrl = new URL(`https://docs.google.com/spreadsheets/d/${match[1]}/export`);
-    exportUrl.searchParams.set('format', 'csv');
-    const gid = url.searchParams.get('gid') || value.match(/[#&?]gid=(\d+)/)?.[1];
-    if (gid) exportUrl.searchParams.set('gid', gid);
-    return exportUrl.toString();
-  } catch {
-    return value;
-  }
-}
-
-function isHtmlResponse(response, body) {
-  const contentType = response.headers.get('content-type') || '';
-  return contentType.includes('text/html') || /^\s*<!doctype html/i.test(body) || /^\s*<html/i.test(body);
 }
 
 function isNotionSnapshot(body) {

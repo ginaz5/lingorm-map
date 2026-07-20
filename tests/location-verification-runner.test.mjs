@@ -37,7 +37,9 @@ import {
   buildPlaceIdCandidatePatch,
 } from '../scripts/location-verification-core.mjs';
 
-const POC_DATA_SOURCE_ID = 'eefc0f40-698c-4870-97b7-e8860091f668';
+// Arbitrary data source ID used only in fail-closed tests to represent a
+// page that lives outside the single allowlisted Locations database.
+const OTHER_DATA_SOURCE_ID = 'eefc0f40-698c-4870-97b7-e8860091f668';
 const FORMAL_DATA_SOURCE_ID = 'e55c2315-8ea2-837d-9637-07c1118486c8';
 const PAGE_ID = '3a1c2315-8ea2-810c-9814-d95050c65916';
 
@@ -99,7 +101,7 @@ function page(overrides = {}) {
     url: `https://www.notion.so/${PAGE_ID.replaceAll('-', '')}`,
     parent: {
       type: 'data_source_id',
-      data_source_id: POC_DATA_SOURCE_ID,
+      data_source_id: FORMAL_DATA_SOURCE_ID,
     },
     archived: false,
     in_trash: false,
@@ -212,7 +214,7 @@ function reviewReadyPage({
   const ready = page();
   const candidatePatch = buildPlaceIdCandidatePatch({
     row: notionPageToRow(ready),
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     placeId: candidatePlaceId,
     candidateSource: 'existing_place_id',
     verificationMethod: 'places_refresh',
@@ -471,7 +473,7 @@ test('duplicate Place IDs are blocked before a candidate patch can be written', 
   assert.equal(result.resolver.duplicatePages[0].slug, 'different-location');
 });
 
-test('resolve dry-run fails closed for a page outside Locations (PoC)', async () => {
+test('resolve dry-run fails closed for a page outside the allowlisted Locations database', async () => {
   const calls = [];
   const fetchImpl = async (url, options = {}) => {
     calls.push({ url: String(url), options });
@@ -479,7 +481,7 @@ test('resolve dry-run fails closed for a page outside Locations (PoC)', async ()
       page({
         parent: {
           type: 'data_source_id',
-          data_source_id: FORMAL_DATA_SOURCE_ID,
+          data_source_id: OTHER_DATA_SOURCE_ID,
         },
       })
     );
@@ -772,7 +774,7 @@ test('review confirm writes only the three human decision fields and verifies th
   }
 });
 
-test('formal review write requires a separate key and explicit authorization', async () => {
+test('review write against the formal Locations database uses NOTION_API_KEY directly', async () => {
   let formalPage = page({
     parent: {
       type: 'data_source_id',
@@ -798,48 +800,16 @@ test('formal review write requires a separate key and explicit authorization', a
   formalPage.properties['Review Decision'] = select('');
   formalPage.properties['Coordinate Type'] = select('');
   formalPage.properties['Verification Note'] = richText('');
-  const blockedCalls = [];
-  const blocked = {
+
+  const harness = applyFetchHarness(formalPage);
+  const result = await reviewPageConfirm({
     pageReference: PAGE_ID,
     decision: 'Need Research',
     coordinateType: '',
     newEvidence: '',
-    notionApiKey: 'formal-read-key',
-    expectedDataSourceId: FORMAL_DATA_SOURCE_ID,
+    notionApiKey: 'notion-test-key',
     fetchImpl: async (url, options = {}) => {
-      blockedCalls.push({
-        url: String(url),
-        method: options.method || 'GET',
-      });
-      return jsonResponse(formalPage);
-    },
-  };
-  await assert.rejects(
-    reviewPageConfirm(blocked),
-    /Missing NOTION_FORMAL_WRITE_API_KEY/
-  );
-  await assert.rejects(
-    reviewPageConfirm({
-      ...blocked,
-      notionWriteApiKey: 'formal-write-key',
-    }),
-    /explicit allowFormalWrite/
-  );
-  assert.equal(blockedCalls.length, 0);
-
-  const harness = applyFetchHarness(formalPage);
-  const result = await reviewPageConfirm({
-    ...blocked,
-    notionWriteApiKey: 'formal-write-key',
-    allowFormalWrite: true,
-    fetchImpl: async (url, options = {}) => {
-      const method = options.method || 'GET';
-      assert.equal(
-        options.headers?.Authorization,
-        method === 'PATCH'
-          ? 'Bearer formal-write-key'
-          : 'Bearer formal-read-key'
-      );
+      assert.equal(options.headers?.Authorization, 'Bearer notion-test-key');
       return harness.fetchImpl(url, options);
     },
   });
@@ -1071,7 +1041,7 @@ test('candidate reset supports invalid payload recovery but blocks pending apply
   pending.properties['Apply Metadata'] = richText(
     buildPendingApplyPatch({
       row: notionPageToRow(pending),
-      dataSourceId: POC_DATA_SOURCE_ID,
+      dataSourceId: FORMAL_DATA_SOURCE_ID,
       actionRunId: 'action-pending-reset',
       now: '2026-07-19T09:30:00.000Z',
     })['Apply Metadata']
@@ -1585,7 +1555,7 @@ test('apply confirm resumes an existing pending action with the same action ID',
   let remotePage = reviewReadyPage();
   const pending = buildPendingApplyPatch({
     row: notionPageToRow(remotePage),
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     actionRunId: 'action-existing',
     now: '2026-07-19T09:00:00.000Z',
   });
@@ -1841,9 +1811,9 @@ test('apply blocks a duplicate Place ID found after resolver review', async () =
   );
 });
 
-test('apply confirm fails closed outside Locations (PoC) before any write', async () => {
+test('apply confirm fails closed for a page outside the allowlisted Locations database', async () => {
   const outsidePage = reviewReadyPage();
-  outsidePage.parent.data_source_id = FORMAL_DATA_SOURCE_ID;
+  outsidePage.parent.data_source_id = OTHER_DATA_SOURCE_ID;
   const calls = [];
   await assert.rejects(
     applyPageConfirm({
@@ -2219,7 +2189,7 @@ test('production preflight reads one formal page and previews conservative migra
   const calls = [];
   const result = await productionPreflightPage({
     pageReference: PAGE_ID,
-    formalReadApiKey: 'formal-read-test-key',
+    notionApiKey: 'notion-test-key',
     fetchImpl: async (url, options = {}) => {
       calls.push({
         url: String(url),
@@ -2249,7 +2219,7 @@ test('production preflight reads one formal page and previews conservative migra
     {
       url: `https://api.notion.com/v1/pages/${parsePageReference(PAGE_ID)}`,
       method: 'GET',
-      authorization: 'Bearer formal-read-test-key',
+      authorization: 'Bearer notion-test-key',
     },
   ]);
 });
@@ -2276,7 +2246,7 @@ test('production preflight accepts the current 17-property formal schema', async
 
   const result = await productionPreflightPage({
     pageReference: PAGE_ID,
-    formalReadApiKey: 'formal-read-test-key',
+    notionApiKey: 'notion-test-key',
     fetchImpl: async () => jsonResponse(formalPage),
   });
 
@@ -2306,7 +2276,7 @@ test('production preflight accepts the current 17-property formal schema', async
   assert.equal(result.writePerformed, false);
 });
 
-test('production preflight fails closed before reading without formal read credential', async () => {
+test('production preflight fails closed before reading without NOTION_API_KEY', async () => {
   let called = false;
   await assert.rejects(
     () =>
@@ -2317,21 +2287,23 @@ test('production preflight fails closed before reading without formal read crede
           throw new Error('must not fetch');
         },
       }),
-    /Missing NOTION_FORMAL_READ_API_KEY/
+    /Missing NOTION_API_KEY/
   );
   assert.equal(called, false);
 });
 
-test('production preflight rejects a PoC page and never writes', async () => {
+test('production preflight rejects a page outside the allowlisted Locations database and never writes', async () => {
   const calls = [];
+  const outsidePage = page();
+  outsidePage.parent.data_source_id = OTHER_DATA_SOURCE_ID;
   await assert.rejects(
     () =>
       productionPreflightPage({
         pageReference: PAGE_ID,
-        formalReadApiKey: 'formal-read-test-key',
+        notionApiKey: 'notion-test-key',
         fetchImpl: async (url, options = {}) => {
           calls.push({ method: options.method || 'GET', url: String(url) });
-          return jsonResponse(page());
+          return jsonResponse(outsidePage);
         },
       }),
     /not formal allowlist/
@@ -2365,7 +2337,7 @@ test('validate data-source reader paginates with POST and never writes', async (
     });
   };
   const pages = await queryAllNotionDataSourcePages({
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     notionApiKey: 'notion-test-key',
     fetchImpl,
   });
@@ -2382,65 +2354,25 @@ test('validate data-source reader paginates with POST and never writes', async (
   assert.equal(calls.some(({ method }) => method === 'PATCH'), false);
 });
 
-test('validate all fails closed without the separate formal read credential', async () => {
+test('validate all fails closed without NOTION_API_KEY', async () => {
   let called = false;
   await assert.rejects(
     () =>
       validateAllLocations({
-        notionApiKey: 'poc-test-key',
         fetchImpl: async () => {
           called = true;
-          throw new Error('must not query without both credentials');
+          throw new Error('must not query without a credential');
         },
-        baseline: {},
       }),
-    /Missing NOTION_FORMAL_READ_API_KEY/
+    /Missing NOTION_API_KEY/
   );
   assert.equal(called, false);
 });
 
-test('validate all rejects a redirected formal baseline before querying Notion', async () => {
-  let called = false;
-  await assert.rejects(
-    () =>
-      validateAllLocations({
-        notionApiKey: 'poc-test-key',
-        formalReadApiKey: 'formal-read-test-key',
-        baseline: {
-          pocDataSourceId: POC_DATA_SOURCE_ID,
-          formalDataSourceId: 'unexpected-formal-source',
-        },
-        fetchImpl: async () => {
-          called = true;
-          throw new Error('must not query a redirected baseline');
-        },
-      }),
-    /Refusing formal validation read/
-  );
-  assert.equal(called, false);
-});
-
-test('validate all keeps PoC and formal read credentials separated', async () => {
+test('validate all queries only the single formal Locations database with NOTION_API_KEY', async () => {
   const calls = [];
-  const formalFieldNames = [
-    'Branch Group',
-    'Category',
-    'Coordinates Approx',
-    'Google Maps URL',
-    'Google Place ID',
-    'Lat',
-    'Lng',
-    'Name',
-    'Name ZH',
-    'Notes EN',
-    'Notes ZH',
-    'Origin',
-    'Slug',
-    'Source Tags',
-    'Source URLs',
-    'Status',
-    'Thai / Alt Name',
-  ];
+  const formalPage = page();
+  formalPage.properties.Status = select('Published');
   const fetchImpl = async (url, options = {}) => {
     calls.push({
       url: String(url),
@@ -2448,30 +2380,23 @@ test('validate all keeps PoC and formal read credentials separated', async () =>
       authorization: options.headers.Authorization,
     });
     return jsonResponse({
-      results: [],
+      results: [formalPage],
       has_more: false,
       next_cursor: null,
     });
   };
   const result = await validateAllLocations({
-    notionApiKey: 'poc-test-key',
-    formalReadApiKey: 'formal-read-test-key',
+    notionApiKey: 'notion-test-key',
     fetchImpl,
-    baseline: {
-      pocDataSourceId: POC_DATA_SOURCE_ID,
-      formalDataSourceId: FORMAL_DATA_SOURCE_ID,
-      pocCount: 98,
-      formalCount: 98,
-      formalFieldNames,
-      rows: [],
-    },
+    expectedCount: 1,
   });
 
-  const pocCall = calls.find(({ url }) => url.includes(POC_DATA_SOURCE_ID));
-  const formalCall = calls.find(({ url }) => url.includes(FORMAL_DATA_SOURCE_ID));
-  assert.equal(pocCall.authorization, 'Bearer poc-test-key');
-  assert.equal(formalCall.authorization, 'Bearer formal-read-test-key');
-  assert.equal(calls.every(({ method }) => method === 'POST'), true);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].method, 'POST');
+  assert.equal(calls[0].url.includes(FORMAL_DATA_SOURCE_ID), true);
+  assert.equal(calls[0].authorization, 'Bearer notion-test-key');
+  assert.equal(result.mode, 'live');
   assert.equal(result.writePerformed, false);
-  assert.equal(result.ok, false);
+  assert.equal(result.dataSource, FORMAL_DATA_SOURCE_ID);
+  assert.equal(result.rowCount, 1);
 });

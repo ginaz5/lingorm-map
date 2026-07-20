@@ -6,6 +6,7 @@
 > - 狀態：正式檢核 UI 為完全唯讀；正式 schema 現為 17 欄，程式契約、preflight、snapshot bridge 與 UI 已同步
 > - 目的：記錄地點正確性責任、Notion 檢核流程、工具邊界及後續決策，避免設計散落在對話中。
 > - 執行進度：[地點檢核工具進度紀錄](location-verification-tool-progress.zh-TW.md)
+> - ⚠️ **Artifact 說明**：本文件中所有 `docs/location-verification-*.json`（baseline、change approvals、schema migration、canary、review queue 等機器可讀紀錄）皆為 2026-07-19～07-20 cutover 期間**本機產生的一次性稽核檔案**，事後已從本機刪除，repo 中從未提交、也找不到。以下敘事保留當時的實際檔名與 hash 作為文字紀錄，但這些檔案**不存在於 repo，也不是後續操作所需**——`location-verification-runner.mjs` 的 `validate --all` 路徑若在找不到檔案時仍嘗試讀取，會直接丟出 `Unable to read ...` 錯誤而非靜默略過；日常使用不依賴這些檔案。
 
 ---
 
@@ -126,8 +127,7 @@ Phase A 基線建立時（2026-07-19）：
 - `docs/location-verification-formal-change-approvals.json`
 - `docs/notion-migration-progress.md`
 - `docs/notion-deploy-workflow.md`
-- `scripts/resolve.mjs`
-- `scripts/resolve-legacy-batch.mjs`
+- ~~`scripts/resolve.mjs`~~ / ~~`scripts/resolve-legacy-batch.mjs`~~ — 已刪除；resolve 邏輯併入 `scripts/location-verification-runner.mjs` 的 `resolve` 子命令
 - `scripts/location-verification-runner.mjs`
 - `tests/location-verification-runner.test.mjs`
 - `scripts/export-snapshot.mjs`
@@ -890,7 +890,7 @@ Apply worker 不自行猜測；它依人工填寫的兩個欄位保存結果，U
 
 ## 10. Resolver 的搜尋順序
 
-目前 `scripts/resolve.mjs` 仍採用 Google Text Search 回傳的第一筆。Phase A 必須先替換這個行為；不能只把第一筆重新命名為「最佳候選」。
+目前 `scripts/resolve.mjs`（歷史檔名；已刪除，邏輯後併入 `scripts/location-verification-runner.mjs` 的 `resolve` 子命令）仍採用 Google Text Search 回傳的第一筆。Phase A 必須先替換這個行為；不能只把第一筆重新命名為「最佳候選」。
 
 建議順序：
 

@@ -31,10 +31,10 @@ There is no automatic Notion-to-production synchronization in the current
 committed-snapshot MVP. A successful edit in Notion is not live until the
 snapshot has completed the manual workflow in this document.
 
-The local exporter uses the least-privilege
-`NOTION_FORMAL_READ_API_KEY` and an allowlisted formal data source ID. It
-validates the current 17-property schema before reading any rows and has no
-Notion write path.
+The local exporter uses `NOTION_API_KEY` (the sole Notion credential as of the
+2026-07-21 single-source cutover — see README "Environment variables") against
+an allowlisted formal data source ID. It validates the current 17-property
+schema before reading any rows and has no Notion write path.
 
 Future automation work:
 
@@ -49,8 +49,8 @@ Do not confuse runtime and export configuration:
 
 | Variable | Purpose |
 |---|---|
-| `DATA_SOURCE=notion` | Selects the committed Notion snapshot at build/runtime |
-| `NOTION_FORMAL_READ_API_KEY` | Lets the local exporter read only the formal Locations data source |
+| `DATA_SOURCE=notion` | Selects the committed Notion snapshot at build/runtime (the only supported value — see README) |
+| `NOTION_API_KEY` | Lets the local exporter (and all location-verification tooling) read and write the formal Locations data source |
 
 ## Netlify environment contexts
 
@@ -59,11 +59,10 @@ variables**. Values may differ between Deploy Previews and Production.
 
 | Variable | Deploy Preview | Production |
 |---|---|---|
-| `DATA_SOURCE` | `notion` | `notion` after production cutover |
+| `DATA_SOURCE` | `notion` | `notion` (the only supported value) |
 | `HERE_API_KEY` | Required | Required |
 | `GOOGLE_MAPS_KEY` | Optional | Optional |
 | `GOOGLE_MAP_ID` | Required when `GOOGLE_MAPS_KEY` is set | Required when `GOOGLE_MAPS_KEY` is set |
-| `GOOGLE_SHEET_CSV_URL` | Not required in Notion mode | Keep configured for rollback |
 
 Use scopes that include both **Builds** and **Functions**, or use **All scopes**.
 The Deploy Preview value does not automatically become the Production value.
@@ -96,11 +95,10 @@ node scripts/validate-favorite-compatibility.mjs \
 mv data/locations.next.csv data/locations.csv
 ```
 
-The Notion integration needs read access only to the formal Locations data
-source. Never commit `NOTION_FORMAL_READ_API_KEY`. Exporting to a candidate
-file first preserves the last-known-good `data/locations.csv` if the Notion
-request, schema preflight, snapshot validation, or favorite compatibility gate
-fails.
+The Notion integration reads the formal Locations data source. Never commit
+`NOTION_API_KEY`. Exporting to a candidate file first preserves the
+last-known-good `data/locations.csv` if the Notion request, schema preflight,
+snapshot validation, or favorite compatibility gate fails.
 
 If no raw integration token is available, use the approved Notion connector or
 manual export bridge. The required final artifact is still
@@ -223,22 +221,25 @@ architecture.
 
 ## Rollback drill and emergency rollback
 
-The Google Sheet remains the rollback source.
+The legacy Google Sheet rollback path (`DATA_SOURCE=sheet`) is retired as of
+the 2026-07-21 three-status cutover — `normalizeStatus()` no longer maps
+legacy `verified`/`needs review` to `Published`, so it would render zero
+public locations. `DATA_SOURCE=notion` is the only supported value; `build.sh`
+refuses `DATA_SOURCE=sheet` outright.
 
-1. Confirm `GOOGLE_SHEET_CSV_URL` is configured for the target Netlify context.
-2. Change that context to:
+`data/locations.csv` is the sole runtime data source, so rollback is a normal
+git revert:
 
-   ```text
-   DATA_SOURCE=sheet
-   ```
+1. Identify the last known-good commit to `data/locations.csv` (`git log --
+   data/locations.csv`).
+2. Revert or fix-forward that file on a feature branch, then run the standard
+   validation path (`npm test`, `npm run typecheck`, `bash build.sh`,
+   `npm run build`).
+3. Open a PR, verify the Deploy Preview, then merge to `main` for production.
 
-3. Trigger a new deploy. Environment changes require a redeploy.
-4. Verify `/api/locations`, the map, filters, and favorites.
-5. For a drill, restore `DATA_SOURCE=notion`, redeploy, and verify again.
-
-The sheet and Notion paths must retain compatible location IDs. The committed
-legacy favorite manifest protects the Notion path from losing spreadsheet-era
-favorite IDs.
+There is no environment-variable toggle for rollback anymore — every recovery
+goes through the same commit → Deploy Preview → merge flow as a normal
+snapshot update.
 
 ## Related files
 
@@ -249,6 +250,6 @@ favorite IDs.
 | `data/legacy-favorite-ids.json` | Protected favorite IDs plus explicit maintainer-approved replacements |
 | `scripts/validate-location-snapshot.mjs` | Schema, row count, and slug validation |
 | `scripts/validate-favorite-compatibility.mjs` | Legacy favorite-ID deploy gate |
-| `netlify/functions/locations.mjs` | Selects Notion snapshot or Sheet proxy |
+| `netlify/functions/locations.mjs` | Serves the committed Notion snapshot at `/api/locations` (the retired Sheet proxy code path is unreachable in production — `build.sh` refuses `DATA_SOURCE=sheet`) |
 | `build.sh` | Netlify predeploy validation |
 | `netlify.toml` | Build, publish, Functions, and redirect configuration |

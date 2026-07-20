@@ -46,8 +46,7 @@ HERE Maps：免費方案 250,000 map transactions/月，無需信用卡，在 [d
 | `HERE_API_KEY` | ✅ | HERE Maps JS API key（fallback，必須） |
 | `GOOGLE_MAPS_KEY` | optional | Google Maps JS API key（primary） |
 | `GOOGLE_MAP_ID` | optional | Map ID（dark mode + AdvancedMarkerElement） |
-| `DATA_SOURCE` | optional | `sheet`（預設）或 `notion`；切換後需重新部署 |
-| `GOOGLE_SHEET_CSV_URL` | 使用 `sheet` 時 | Google Sheets 發佈的回滾 CSV URL |
+| `DATA_SOURCE` | optional | `notion`（唯一支援值，也是預設值）；切換後需重新部署 |
 
 ---
 
@@ -102,18 +101,14 @@ Emoji 取自 `row.icon`（由 `csv-parser.js` 依 category 自動填入），找
 
 ---
 
-## 資料來源：Notion 快照 + Google Sheets 回滾路徑
+## 資料來源：Notion 快照（`DATA_SOURCE=notion` 為唯一支援路徑）
 
 **架構：**
 ```
-Notion（system of record）
+Notion（system of record，單一 Locations database）
     ↓  exporter / 驗證
 data/locations.csv（隨版本提交）
     ↓  DATA_SOURCE=notion
-                          ┌───────────────────────────────┐
-Google Sheets 發佈 CSV ──┤ DATA_SOURCE=sheet（回滾路徑） │
-                          └───────────────┬───────────────┘
-                                          ↓
 /api/locations
     ↓  frontend fetch('/api/locations') on page load
 前端 CSV parser 解析 → markers + card list
@@ -121,14 +116,17 @@ Google Sheets 發佈 CSV ──┤ DATA_SOURCE=sheet（回滾路徑） │
 
 **選用理由：**
 - Notion 作為可協作的主要資料來源，但 production request 不直接依賴 Notion API
-- 已驗證的 CSV 快照會隨程式版本保存，部署與回滾都可重現
-- `DATA_SOURCE=sheet` 保留原本 Google Sheets proxy 行為，切換來源不需要修改前端
-- 前端不會暴露 Notion 憑證或真實 Spreadsheet URL
+- 已驗證的 CSV 快照會隨程式版本保存，部署與回滾都可重現（回滾＝ git revert `data/locations.csv`，見 `docs/notion-deploy-workflow.md`）
+- 前端不會暴露 Notion 憑證
 
 **限制：**
 - Notion 資料更新後，必須重新匯出、驗證、提交快照並部署，網站才會更新
-- `DATA_SOURCE` 是部署環境變數，變更後需要重新部署才會生效
-- 目前仍是單向同步，網頁不直接寫回 Notion 或 Sheets
+- 目前仍是單向同步，網頁不直接寫回 Notion
+
+**已停用：** 舊版 `DATA_SOURCE=sheet`（Google Sheets 回滾路徑）已於 2026-07-21
+三狀態 cutover 後停用——legacy 的 `verified`/`needs review` 狀態一律
+normalize 為 `Paused`（非公開），該路徑會顯示 0 筆地點。`build.sh` 現在會
+直接拒絕 `DATA_SOURCE=sheet`。
 
 ---
 

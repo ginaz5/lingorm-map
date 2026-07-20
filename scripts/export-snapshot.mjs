@@ -2,7 +2,7 @@
 // ═══════════════════════════════════════════════════
 // export-snapshot.mjs
 //
-// Phase 1/2 (docs/notion-migration-and-location-automation-plan.md
+// Phase 1/2 (docs/archive/notion-migration-and-location-automation-plan.md
 // §6.3, §9.1, §13): reads the Notion "Locations" data source and
 // emits the public location fields that parsePublishedFormat()
 // in src/csv-parser.js understands. Verification-only properties and retired
@@ -182,7 +182,7 @@ export async function exportSnapshot({
   fetchImpl = fetch,
 }) {
   if (!apiKey) {
-    throw new Error("Missing NOTION_FORMAL_READ_API_KEY.");
+    throw new Error("Missing NOTION_API_KEY.");
   }
   if (dataSourceId !== FORMAL_DATA_SOURCE_ID) {
     throw new Error(
@@ -244,7 +244,7 @@ async function writeAtomic(outputPath, csv) {
 
 async function main() {
   const { outputPath } = parseCliArgs(process.argv.slice(2));
-  const apiKey = process.env.NOTION_FORMAL_READ_API_KEY;
+  const apiKey = process.env.NOTION_API_KEY;
   const dataSourceId =
     process.env.NOTION_FORMAL_DATA_SOURCE_ID || FORMAL_DATA_SOURCE_ID;
   const result = await exportSnapshot({ apiKey, dataSourceId });

@@ -28,7 +28,7 @@ The app is a static site with two Netlify Functions acting as a thin backend pro
 
 On page load, `main.js` kicks off two parallel flows:
 
-1. **Data flow** — `tryLoadSheet()` calls `/api/locations`, which serves either the legacy published Google Sheets CSV or the committed Notion export snapshot according to `DATA_SOURCE`. The response is tokenised by `csv-parser.js`, normalised into a flat array, and stored in `state.js`. Once loaded, `rebuild()` triggers `render.js` (card list + filters) and `map.js` (place markers).
+1. **Data flow** — `tryLoadSheet()` calls `/api/locations`, which serves the committed Notion export snapshot (`DATA_SOURCE=notion`, the only supported value; the legacy published Google Sheets CSV path is retired — see Deploy section). The response is tokenised by `csv-parser.js`, normalised into a flat array, and stored in `state.js`. Once loaded, `rebuild()` triggers `render.js` (card list + filters) and `map.js` (place markers).
 
 2. **Map flow** — `loadMapScript()` calls `/api/config` to retrieve the Google Maps API key and Map ID (never exposed client-side directly). It injects the Google Maps JS script; if that fails or the key is absent, it falls back to the HERE Maps JS API. Either way, `initMap()` runs and markers are placed via `buildMarkers()`.
 
@@ -52,7 +52,7 @@ flowchart TD
         LOC["/api/locations\nselects location snapshot"]
     end
 
-    GS[("Google Sheets\npublished CSV")]
+    GS[("Google Sheets\npublished CSV\n(retired rollback path)")]
     NOTION[("Notion export\ndata/locations.csv")]
     GMAPS["Google Maps JS API"]
     HERE["HERE Maps JS API\n(fallback)"]
@@ -135,7 +135,7 @@ graph LR
 | Layer | Choice |
 |-------|--------|
 | Map | Google Maps JS API (`AdvancedMarkerElement`, `colorScheme`) with HERE Maps fallback |
-| Data | Notion system of record → committed CSV snapshot; Google Sheets retained as rollback source |
+| Data | Notion system of record → committed CSV snapshot (`DATA_SOURCE=notion`, the only supported source; the legacy Google Sheets rollback path is retired) |
 | Forms | Netlify Forms (`issue-report`) |
 | Analytics | Google Tag Manager (GTM-NVNXGP44) → GA4 (G-31MF79LHFM) |
 | Build / check | Vite 6 + TS `checkJs` (no emit), ES modules in `src/` |
@@ -168,7 +168,6 @@ lingorm_bangkok_map/
 │   └── locations.csv       # validated 100-row formal Notion export snapshot
 ├── scripts/
 │   ├── export-snapshot.mjs # Notion API → stable site CSV contract
-│   ├── convert-notion-csv.mjs # manual Notion UI export bridge
 │   └── validate-location-snapshot.mjs # production snapshot deploy gate
 ├── tests/                  # node:test test suite
 ├── jsconfig.json           # Strict incremental TypeScript checkJs configuration
@@ -199,9 +198,13 @@ Create `.env` in the project root (not committed — copy from `.env.example`):
 HERE_API_KEY=your_here_api_key          # required — fallback map provider
 GOOGLE_MAPS_KEY=your_google_maps_key    # optional — primary map provider
 GOOGLE_MAP_ID=your_google_map_id        # optional — required if using Google Maps
-DATA_SOURCE=notion                      # optional — sheet (default) or notion
-GOOGLE_SHEET_CSV_URL=your_csv_url       # required only for DATA_SOURCE=sheet
+DATA_SOURCE=notion                      # optional — notion is the default and only supported value
 ```
+
+`DATA_SOURCE=sheet` (the legacy Google Sheets rollback path) is retired as of
+the 2026-07-21 three-status cutover — `normalizeStatus()` no longer maps
+legacy `verified`/`needs review` to `Published`, so it would render zero
+public locations.
 
 Get a HERE API key at [developer.here.com](https://developer.here.com) → Projects → REST → Create API key (free tier: 250k map transactions/month).
 
@@ -255,8 +258,7 @@ Required Netlify environment variables (Dashboard → Site Settings → Environm
 | `HERE_API_KEY` | ✅ | HERE Maps JS API key (fallback provider) |
 | `GOOGLE_MAPS_KEY` | optional | Google Maps JS API key (primary provider) |
 | `GOOGLE_MAP_ID` | optional | Map ID for dark mode + AdvancedMarkerElement |
-| `DATA_SOURCE` | optional | `sheet` (default) or `notion`; requires a redeploy when changed |
-| `GOOGLE_SHEET_CSV_URL` | when using `sheet` | Published rollback CSV URL for `/api/locations` |
+| `DATA_SOURCE` | optional | `notion` (default and only supported value); requires a redeploy when changed |
 
 If `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` are omitted, the map loads HERE Maps directly. If both Google and HERE keys are present, Google Maps is used as primary with HERE as fallback.
 
@@ -309,8 +311,9 @@ npm run locations:export:notion -- --output data/locations.next.csv
 node scripts/validate-location-snapshot.mjs data/locations.next.csv
 ```
 
-The exporter reads only `NOTION_FORMAL_READ_API_KEY`, verifies the live
-17-property schema before querying rows, and never writes to Notion.
+The exporter reads `NOTION_API_KEY` (the sole Notion credential — see
+Environment variables above), verifies the live 17-property schema before
+querying rows, and never writes to Notion.
 
 ---
 
@@ -356,5 +359,4 @@ node --test tests/*.test.mjs
 | `locations-function.test.mjs` | `/api/locations` Netlify Function |
 | `notion-export-full.test.mjs` | Formal Notion snapshot contract and approved slug-delta reconciliation |
 | `notion-export-poc.test.mjs` | Notion snapshot round-trip and exporter serialization |
-| `resolver.test.mjs` | Place-resolution distance and missing-coordinate review rules |
 | `snapshot-validator.test.mjs` | Production snapshot contract, row-count, and slug validation |

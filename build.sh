@@ -8,8 +8,11 @@
 # Optional env vars:
 #   GOOGLE_MAPS_KEY       — Google Maps JS API key (primary provider)
 #   GOOGLE_MAP_ID         — Google Maps Map ID (required if GOOGLE_MAPS_KEY is set)
-#   DATA_SOURCE           — sheet (default) or notion
-#   GOOGLE_SHEET_CSV_URL  — required only when DATA_SOURCE=sheet
+#   DATA_SOURCE           — notion (default; only supported value)
+#
+# DATA_SOURCE=sheet is retired as of the 2026-07-21 three-status cutover:
+# normalizeStatus() no longer maps legacy verified/needs-review to Published,
+# so the sheet path would render zero public locations. Do not set it.
 
 set -e
 
@@ -29,14 +32,13 @@ else
 fi
 
 # ── Location data source ─────────────────────────────────────
-DATA_SOURCE="${DATA_SOURCE:-sheet}"
+DATA_SOURCE="${DATA_SOURCE:-notion}"
 case "$DATA_SOURCE" in
   sheet)
-    if [ -z "$GOOGLE_SHEET_CSV_URL" ]; then
-      echo "❌  GOOGLE_SHEET_CSV_URL not set — required when DATA_SOURCE=sheet."
-      exit 1
-    fi
-    echo "✅ Google Sheet CSV URL configured for /api/locations."
+    echo "❌  DATA_SOURCE=sheet is retired — legacy verified/needs-review statuses"
+    echo "    now normalize to Paused (non-public), so the sheet path would"
+    echo "    render zero public locations. Set DATA_SOURCE=notion (or unset it)."
+    exit 1
     ;;
   notion)
     if [ ! -f "data/locations.csv" ]; then
@@ -49,7 +51,7 @@ case "$DATA_SOURCE" in
     echo "✅ Committed Notion snapshot validated for /api/locations."
     ;;
   *)
-    echo "❌  DATA_SOURCE must be either \"sheet\" or \"notion\"."
+    echo "❌  DATA_SOURCE must be \"notion\" (sheet rollback path is retired)."
     exit 1
     ;;
 esac

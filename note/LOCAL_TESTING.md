@@ -47,14 +47,12 @@ GOOGLE_MAPS_KEY=your_google_maps_key
 GOOGLE_MAP_ID=your_google_map_id
 HERE_API_KEY=your_here_api_key
 DATA_SOURCE=notion
-GOOGLE_SHEET_CSV_URL=your_google_sheet_csv_url
 ```
 
 注意：
 
 - `.env` 已在 `.gitignore` 中，不要 commit。
-- `DATA_SOURCE=notion` 會讀取已提交並驗證的 `data/locations.csv`；`DATA_SOURCE=sheet` 則使用 Google Sheets 回滾來源。未設定時預設為 `sheet`。
-- `GOOGLE_SHEET_CSV_URL` 僅在 `DATA_SOURCE=sheet` 時需要；它是 server-side secret，只給 Netlify Function 使用，不會暴露到前端。
+- `DATA_SOURCE=notion` 會讀取已提交並驗證的 `data/locations.csv`，是唯一支援的值，也是未設定時的預設值。舊版 `DATA_SOURCE=sheet` 回滾路徑已於 2026-07-21 三狀態 cutover 後停用（`build.sh` 會直接拒絕），不要使用。
 - 不要直接用瀏覽器打開 `index.html` 測試，因為那樣測不到 `/api/locations` Netlify Function。
 
 ## 每次修改後的本機測試流程
@@ -123,7 +121,7 @@ http://localhost:8888/api/locations
 "Location Name","Location Name ZH","Thai / Alt Name","Google Maps URL","Category","Notes","Notes ZH","Source URL","Source Tags","Verification Status","Lat","Lng","Icon","Coordinates Approx","Slug"
 ```
 
-如果 `DATA_SOURCE=sheet` 時看到 Google Sheets HTML、登入頁、或錯誤 JSON，代表 `GOOGLE_SHEET_CSV_URL` 設定或 Sheet 發佈方式需要修正。如果 `DATA_SOURCE=notion` 時回傳錯誤 JSON，先執行 `node scripts/validate-location-snapshot.mjs data/locations.csv`。
+如果回傳錯誤 JSON，先執行 `node scripts/validate-location-snapshot.mjs data/locations.csv`。
 
 如果地圖顯示「這個網頁並未正確載入 Google 地圖」，請到 Google Cloud Console 的 Maps API key restriction 加入本機 referrer：
 
@@ -188,31 +186,14 @@ git push -u origin <feature-branch>
 
 ## 常見問題
 
-### `DATA_SOURCE=sheet` 時 API 回傳 HTML，不是 CSV
-
-代表 `GOOGLE_SHEET_CSV_URL` 可能填成一般 Google Sheets `/edit` 頁面，或 Sheet 尚未正確發佈 CSV。
-
-建議使用：
-
-```text
-https://docs.google.com/spreadsheets/d/<sheet-id>/export?format=csv&gid=<gid>
-```
-
-或在 Google Sheets：
-
-```text
-File → Share → Publish to web → 選工作表 → Comma-separated values (.csv)
-```
-
 ### API 沒有回傳預期的 location 資料
 
 可能原因：
 
 - `/api/locations` 無法取得 CSV
 - CSV headers 不符合 app schema
-- `DATA_SOURCE` 沒有被 `netlify dev` 載入
-- 使用 `DATA_SOURCE=sheet` 時，`GOOGLE_SHEET_CSV_URL` 沒有被載入
-- 使用 `DATA_SOURCE=notion` 時，`data/locations.csv` 遺失或驗證失敗
+- `DATA_SOURCE` 沒有被 `netlify dev` 載入，或誤設為已停用的 `sheet`
+- `data/locations.csv` 遺失或驗證失敗
 
 先打開：
 

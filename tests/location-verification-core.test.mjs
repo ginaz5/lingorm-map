@@ -2,15 +2,26 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  POC_DATA_SOURCE_ID,
+  FORMAL_DATA_SOURCE_ID,
   basisRevision,
   buildCandidatePatch,
   buildCompletedApplyPatch,
   buildPendingApplyPatch,
   buildPlaceIdCandidatePatch,
   buildStatusMigrationPatch,
+  haversineMeters,
   validateCandidatePayload,
 } from '../scripts/location-verification-core.mjs';
+
+test('haversineMeters returns 0 for identical coordinates', () => {
+  assert.equal(haversineMeters(13.75, 100.5, 13.75, 100.5), 0);
+});
+
+test('haversineMeters flags coordinates more than 150m apart (moved-place threshold)', () => {
+  // ~0.01 degrees latitude at this latitude is well over 150m.
+  const distance = haversineMeters(13.75, 100.5, 13.76, 100.5);
+  assert.ok(distance > 150, `expected > 150m, got ${distance}`);
+});
 
 function row(overrides = {}) {
   return {
@@ -39,7 +50,7 @@ function row(overrides = {}) {
 function candidatePatch(currentRow = row()) {
   return buildPlaceIdCandidatePatch({
     row: currentRow,
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     placeId: currentRow['Google Place ID'],
     candidateSource: 'existing_place_id',
     verificationMethod: 'google_maps_manual',
@@ -91,7 +102,7 @@ test('high-distance safety flag blocks publishing decisions without persisting P
   const current = row({ 'Review Decision': 'Accept Candidate' });
   const flaggedCandidate = buildPlaceIdCandidatePatch({
     row: current,
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     placeId: 'ChIJcurrent',
     coordinateReviewRequired: true,
     candidateSource: 'existing_place_id',
@@ -121,7 +132,7 @@ test('high-distance safety flag blocks publishing decisions without persisting P
           ...flaggedCandidate,
           'Review Decision': 'Accept Candidate',
         },
-        dataSourceId: POC_DATA_SOURCE_ID,
+        dataSourceId: FORMAL_DATA_SOURCE_ID,
         actionRunId: 'action-coordinate-risk',
         now: '2026-07-19T02:00:00.000Z',
       }),
@@ -129,12 +140,12 @@ test('high-distance safety flag blocks publishing decisions without persisting P
   );
 });
 
-test('candidate writes fail closed for the production data source', () => {
+test('candidate writes fail closed for an unrecognized data source', () => {
   assert.throws(
     () =>
       buildPlaceIdCandidatePatch({
         row: row(),
-        dataSourceId: 'e55c2315-8ea2-837d-9637-07c1118486c8',
+        dataSourceId: '11111111-1111-1111-1111-111111111111',
         placeId: 'ChIJcandidate',
         candidateSource: 'text_search',
         verificationMethod: 'places_refresh',
@@ -191,7 +202,7 @@ test('Keep Current uses pending then completed metadata and preserves formal coo
 
   const pending = buildPendingApplyPatch({
     row: withCandidate,
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     actionRunId: 'action-001',
     now: '2026-07-19T02:00:00.000Z',
   });
@@ -199,7 +210,7 @@ test('Keep Current uses pending then completed metadata and preserves formal coo
 
   const completed = buildCompletedApplyPatch({
     row: withCandidate,
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     actionRunId: 'action-001',
     now: '2026-07-19T02:00:00.000Z',
   });
@@ -220,7 +231,7 @@ test('Accept Candidate changes Place ID and Maps URL but never writes Lat/Lng', 
   };
   const completed = buildCompletedApplyPatch({
     row: withCandidate,
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     actionRunId: 'action-002',
     now: '2026-07-19T02:00:00.000Z',
   });
@@ -235,7 +246,7 @@ test('expired candidate cannot be accepted', () => {
   const current = row({ 'Review Decision': 'Accept Candidate' });
   const expiredCandidate = buildPlaceIdCandidatePatch({
     row: current,
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     placeId: 'ChIJcurrent',
     candidateSource: 'existing_place_id',
     verificationMethod: 'google_maps_manual',
@@ -254,7 +265,7 @@ test('expired candidate cannot be accepted', () => {
     () =>
       buildCompletedApplyPatch({
         row: withCandidate,
-        dataSourceId: POC_DATA_SOURCE_ID,
+        dataSourceId: FORMAL_DATA_SOURCE_ID,
         actionRunId: 'action-expired',
         now: '2026-07-19T02:00:00.000Z',
       }),
@@ -270,7 +281,7 @@ test('Reject Candidate records the Place ID and keeps formal location fields', (
       ...candidatePatch(current),
       'Review Decision': 'Reject Candidate',
     },
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     actionRunId: 'action-reject',
     now: '2026-07-19T02:00:00.000Z',
   });
@@ -293,7 +304,7 @@ test('Need Research keeps the candidate queue and permits an empty note', () => 
       ...candidatePatch(current),
       'Review Decision': 'Need Research',
     },
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     actionRunId: 'action-research',
     now: '2026-07-19T02:00:00.000Z',
   });
@@ -311,7 +322,7 @@ test('Could Not Find inactivates the page and rejects a remaining candidate', ()
       ...candidatePatch(current),
       'Review Decision': 'Could Not Find',
     },
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     actionRunId: 'action-not-found',
     now: '2026-07-19T02:00:00.000Z',
   });
@@ -331,7 +342,7 @@ test('Deactivate requires no candidate and does not reject the current Place ID'
       'Candidate Payload': '',
       'Rejected Place IDs': '',
     }),
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     actionRunId: 'action-deactivate',
     now: '2026-07-19T02:00:00.000Z',
   });
@@ -346,7 +357,7 @@ test('Accept Candidate rejects ambiguous resolver results', () => {
   const current = row({ 'Review Decision': 'Accept Candidate' });
   const ambiguous = buildCandidatePatch({
     row: current,
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     result: 'ambiguous',
     candidateSource: 'text_search',
     verificationMethod: 'places_text_search',
@@ -364,7 +375,7 @@ test('Accept Candidate rejects ambiguous resolver results', () => {
           ...ambiguous,
           'Review Decision': 'Accept Candidate',
         },
-        dataSourceId: POC_DATA_SOURCE_ID,
+        dataSourceId: FORMAL_DATA_SOURCE_ID,
         actionRunId: 'action-ambiguous',
         now: '2026-07-19T02:00:00.000Z',
       }),
@@ -385,7 +396,7 @@ test('apply rejects candidates already listed in Rejected Place IDs', () => {
           ...candidatePatch(current),
           'Review Decision': 'Accept Candidate',
         },
-        dataSourceId: POC_DATA_SOURCE_ID,
+        dataSourceId: FORMAL_DATA_SOURCE_ID,
         actionRunId: 'action-rejected-before',
         now: '2026-07-19T02:00:00.000Z',
       }),
@@ -405,7 +416,7 @@ test('apply rejects changed basis and workflow revisions', () => {
           Lat: current.Lat + 0.001,
           'Review Decision': 'Keep Current',
         },
-        dataSourceId: POC_DATA_SOURCE_ID,
+        dataSourceId: FORMAL_DATA_SOURCE_ID,
         actionRunId: 'action-basis-changed',
         now: '2026-07-19T02:00:00.000Z',
       }),
@@ -420,7 +431,7 @@ test('apply rejects changed basis and workflow revisions', () => {
           Status: 'Published',
           'Review Decision': 'Keep Current',
         },
-        dataSourceId: POC_DATA_SOURCE_ID,
+        dataSourceId: FORMAL_DATA_SOURCE_ID,
         actionRunId: 'action-workflow-changed',
         now: '2026-07-19T02:00:00.000Z',
       }),
@@ -441,7 +452,7 @@ test('Inactive pages cannot be republished through an old apply request', () => 
           ...candidatePatch(inactive),
           'Review Decision': 'Keep Current',
         },
-        dataSourceId: POC_DATA_SOURCE_ID,
+        dataSourceId: FORMAL_DATA_SOURCE_ID,
         actionRunId: 'action-inactive',
         now: '2026-07-19T02:00:00.000Z',
       }),

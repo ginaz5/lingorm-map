@@ -16,5 +16,5 @@
   # Set runtime secrets in Netlify Dashboard:
   # Site Settings → Environment Variables → Add variable
   # Required: HERE_API_KEY
-  # Data: DATA_SOURCE=notion, or DATA_SOURCE=sheet + GOOGLE_SHEET_CSV_URL
+  # Data: DATA_SOURCE=notion (default; only supported value — sheet is retired)
   # Optional: GOOGLE_MAPS_KEY, GOOGLE_MAP_ID

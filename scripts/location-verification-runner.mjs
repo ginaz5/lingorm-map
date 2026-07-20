@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import {
   mkdir,
   open,
@@ -14,7 +14,6 @@ import { join } from 'node:path';
 import {
   COORDINATE_TYPES,
   FORMAL_DATA_SOURCE_ID,
-  POC_DATA_SOURCE_ID,
   REVIEW_DECISIONS,
   TARGET_STATUSES,
   assertAllowedDataSource,
@@ -23,45 +22,26 @@ import {
   buildCompletedApplyPatch,
   buildPendingApplyPatch,
   buildStatusMigrationPatch,
+  haversineMeters,
   mapsUrlForPlaceId,
   validateCandidatePayload,
   workflowRevision,
 } from './location-verification-core.mjs';
 import {
   EXPECTED_LOCATION_COUNT,
-  validateAllData,
+  validateTargetRows,
 } from './location-verification-validator.mjs';
-import {
-  FORMAL_PROPERTY_RETIREMENT_URL,
-} from './formal-location-property-retirement-contract.mjs';
 import {
   CURRENT_FORMAL_BASELINE_FIELDS,
   CURRENT_FORMAL_WORKFLOW_FIELDS,
   inspectCurrentFormalLocationProperties,
 } from './formal-location-current-schema.mjs';
-import { haversineMeters } from './resolve.mjs';
 
 const NOTION_API_BASE = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2025-09-03';
 const PLACES_API_BASE = 'https://places.googleapis.com/v1';
 const LEGACY_PLACES_API_BASE = 'https://maps.googleapis.com/maps/api/place';
 const REVIEW_TTL_DAYS = 30;
-const VALIDATION_BASELINE_URL = new URL(
-  '../docs/location-verification-poc-baseline-20260719.json',
-  import.meta.url
-);
-const FORMAL_CHANGE_APPROVALS_URL = new URL(
-  '../docs/location-verification-formal-change-approvals.json',
-  import.meta.url
-);
-const FORMAL_CUTOVER_BASELINE_URL = new URL(
-  '../docs/location-verification-formal-cutover-baseline-20260719.json',
-  import.meta.url
-);
-const FORMAL_CUTOVER_CHANGE_APPROVALS_URL = new URL(
-  '../docs/location-verification-formal-cutover-change-approvals.json',
-  import.meta.url
-);
 const APPLY_LOCK_ROOT = join(
   tmpdir(),
   'lingorm-bangkok-map-location-verification-locks'
@@ -87,10 +67,11 @@ export const FORMAL_FIELDS = [
 ];
 const ACTIVE_FORMAL_FIELDS = CURRENT_FORMAL_BASELINE_FIELDS;
 const ACTIVE_FORMAL_WORKFLOW_FIELDS = CURRENT_FORMAL_WORKFLOW_FIELDS;
-const RUNNER_DATA_SOURCE_IDS = new Set([
-  POC_DATA_SOURCE_ID,
-  FORMAL_DATA_SOURCE_ID,
-]);
+// There is a single Notion Locations database (the "Locations (PoC)"
+// workbench used during the 2026-07 migration has been deleted); every
+// runner action targets FORMAL_DATA_SOURCE_ID with the one NOTION_API_KEY
+// credential, which has both read and write access.
+const RUNNER_DATA_SOURCE_IDS = new Set([FORMAL_DATA_SOURCE_ID]);
 
 function assertSupportedRunnerDataSource(dataSourceId) {
   if (!RUNNER_DATA_SOURCE_IDS.has(dataSourceId)) {
@@ -100,40 +81,14 @@ function assertSupportedRunnerDataSource(dataSourceId) {
   }
 }
 
-function assertWriteTarget({
-  dataSourceId,
-  expectedDataSourceId,
-  allowFormalWrite,
-}) {
+function assertWriteTarget({ dataSourceId, expectedDataSourceId }) {
   assertSupportedRunnerDataSource(expectedDataSourceId);
   assertAllowedDataSource(dataSourceId, expectedDataSourceId);
-  if (
-    expectedDataSourceId === FORMAL_DATA_SOURCE_ID &&
-    allowFormalWrite !== true
-  ) {
-    throw new Error(
-      'Refusing formal write without explicit allowFormalWrite authorization'
-    );
-  }
 }
 
-function requireNotionWriteApiKey({
-  notionApiKey,
-  notionWriteApiKey,
-  expectedDataSourceId,
-}) {
-  const key =
-    expectedDataSourceId === FORMAL_DATA_SOURCE_ID
-      ? notionWriteApiKey
-      : notionWriteApiKey || notionApiKey;
-  if (!key) {
-    throw new Error(
-      expectedDataSourceId === FORMAL_DATA_SOURCE_ID
-        ? 'Missing NOTION_FORMAL_WRITE_API_KEY'
-        : 'Missing NOTION_API_KEY'
-    );
-  }
-  return key;
+function requireNotionApiKey(notionApiKey) {
+  if (!notionApiKey) throw new Error('Missing NOTION_API_KEY');
+  return notionApiKey;
 }
 
 const PLACE_FIELD_MASK = [
@@ -663,176 +618,50 @@ function validatorRow(page, expectedDataSourceId) {
   };
 }
 
+// Validates every live row in the single Notion Locations database against
+// the target invariants (required fields, coordinates, apply metadata,
+// candidate lifecycle — see validateTargetRows). Prior to the 2026-07-21
+// single-source cutover this compared a "Locations (PoC)" workbench against
+// the formal database plus a set of frozen migration-era baseline/approval
+// JSON artifacts; both the PoC database and those artifacts have since been
+// deleted, so this is now a straightforward live read-and-check.
 export async function validateAllLocations({
   notionApiKey,
-  formalReadApiKey,
   fetchImpl = fetch,
-  baseline = null,
-  baselineUrl = VALIDATION_BASELINE_URL,
-  baselineSha256 = null,
-  formalChangeApprovals,
-  formalChangeApprovalsUrl = FORMAL_CHANGE_APPROVALS_URL,
-  formalCutoverBaseline,
-  formalCutoverBaselineUrl = FORMAL_CUTOVER_BASELINE_URL,
-  formalCutoverChangeApprovals,
-  formalCutoverChangeApprovalsUrl =
-    FORMAL_CUTOVER_CHANGE_APPROVALS_URL,
-  formalPropertyRetirement,
-  formalPropertyRetirementUrl = FORMAL_PROPERTY_RETIREMENT_URL,
+  expectedCount = EXPECTED_LOCATION_COUNT,
 }) {
-  if (!notionApiKey) throw new Error('Missing NOTION_API_KEY');
-  if (!formalReadApiKey) {
-    throw new Error(
-      'Missing NOTION_FORMAL_READ_API_KEY; validate --all requires a separate read-only integration shared only with formal Locations'
-    );
-  }
-  let loadedBaseline = baseline;
-  let loadedBaselineSha256 = baselineSha256;
-  if (!loadedBaseline) {
-    try {
-      const baselineText = await readFile(baselineUrl, 'utf8');
-      loadedBaseline = JSON.parse(baselineText);
-      loadedBaselineSha256 = `sha256:${createHash('sha256')
-        .update(baselineText)
-        .digest('hex')}`;
-    } catch (error) {
-      throw new Error(`Unable to read validation baseline: ${error.message}`);
-    }
-  }
-  let loadedFormalChangeApprovals = formalChangeApprovals;
-  if (loadedFormalChangeApprovals === undefined) {
-    if (baseline) {
-      loadedFormalChangeApprovals = null;
-    } else {
-      try {
-        loadedFormalChangeApprovals = JSON.parse(
-          await readFile(formalChangeApprovalsUrl, 'utf8')
-        );
-      } catch (error) {
-        throw new Error(
-          `Unable to read formal change approvals: ${error.message}`
-        );
-      }
-    }
-  }
-  let loadedFormalCutoverBaseline = formalCutoverBaseline;
-  if (loadedFormalCutoverBaseline === undefined) {
-    if (baseline) {
-      loadedFormalCutoverBaseline = null;
-    } else {
-      try {
-        loadedFormalCutoverBaseline = JSON.parse(
-          await readFile(formalCutoverBaselineUrl, 'utf8')
-        );
-      } catch (error) {
-        throw new Error(
-          `Unable to read formal cutover baseline: ${error.message}`
-        );
-      }
-    }
-  }
-  let loadedFormalCutoverChangeApprovals =
-    formalCutoverChangeApprovals;
-  if (loadedFormalCutoverChangeApprovals === undefined) {
-    if (baseline) {
-      loadedFormalCutoverChangeApprovals = null;
-    } else {
-      try {
-        loadedFormalCutoverChangeApprovals = JSON.parse(
-          await readFile(formalCutoverChangeApprovalsUrl, 'utf8')
-        );
-      } catch (error) {
-        throw new Error(
-          `Unable to read formal cutover change approvals: ${error.message}`
-        );
-      }
-    }
-  }
-  let loadedFormalPropertyRetirement = formalPropertyRetirement;
-  if (loadedFormalPropertyRetirement === undefined) {
-    if (baseline) {
-      loadedFormalPropertyRetirement = null;
-    } else {
-      try {
-        loadedFormalPropertyRetirement = JSON.parse(
-          await readFile(formalPropertyRetirementUrl, 'utf8')
-        );
-      } catch (error) {
-        throw new Error(
-          `Unable to read formal property retirement contract: ${error.message}`
-        );
-      }
-    }
-  }
-  const pocDataSourceId = loadedBaseline.pocDataSourceId;
-  const formalDataSourceId = loadedBaseline.formalDataSourceId;
-  if (!pocDataSourceId || !formalDataSourceId) {
-    throw new Error('Validation baseline is missing data source IDs');
-  }
-  if (pocDataSourceId !== POC_DATA_SOURCE_ID) {
-    throw new Error(
-      `Refusing PoC validation read: data source ${pocDataSourceId} is not allowlisted ${POC_DATA_SOURCE_ID}`
-    );
-  }
-  if (formalDataSourceId !== FORMAL_DATA_SOURCE_ID) {
-    throw new Error(
-      `Refusing formal validation read: data source ${formalDataSourceId} is not allowlisted ${FORMAL_DATA_SOURCE_ID}`
-    );
-  }
+  requireNotionApiKey(notionApiKey);
 
-  const [pocPages, formalPages] = await Promise.all([
-    queryAllNotionDataSourcePages({
-      dataSourceId: pocDataSourceId,
-      notionApiKey,
-      fetchImpl,
-    }),
-    queryAllNotionDataSourcePages({
-      dataSourceId: formalDataSourceId,
-      notionApiKey: formalReadApiKey,
-      fetchImpl,
-    }),
-  ]);
-  const pocRows = pocPages.map((page) => validatorRow(page, pocDataSourceId));
-  const formalRows = formalPages.map((page) =>
-    validatorRow(page, formalDataSourceId)
-  );
+  const pages = await queryAllNotionDataSourcePages({
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
+    notionApiKey,
+    fetchImpl,
+  });
+  const rows = pages.map((page) => validatorRow(page, FORMAL_DATA_SOURCE_ID));
+  const { issues, statusCounts } = validateTargetRows(rows, { expectedCount });
+
   return {
-    ...validateAllData({
-      baseline: loadedBaseline,
-      pocRows,
-      formalRows,
-      formalChangeApprovals: loadedFormalChangeApprovals,
-      formalCutoverBaseline: loadedFormalCutoverBaseline,
-      formalCutoverChangeApprovals:
-        loadedFormalCutoverChangeApprovals,
-      formalPropertyRetirement: loadedFormalPropertyRetirement,
-      baselineSha256: loadedBaselineSha256,
-      expectedCount: EXPECTED_LOCATION_COUNT,
-    }),
-    mode: 'all',
+    ok: issues.length === 0,
+    issues,
+    statusCounts,
+    rowCount: rows.length,
+    mode: 'live',
     writePerformed: false,
-    dataSources: {
-      poc: pocDataSourceId,
-      formal: formalDataSourceId,
-    },
+    dataSource: FORMAL_DATA_SOURCE_ID,
   };
 }
 
 export async function productionPreflightPage({
   pageReference,
-  formalReadApiKey,
+  notionApiKey,
   fetchImpl = fetch,
 }) {
-  if (!formalReadApiKey) {
-    throw new Error(
-      'Missing NOTION_FORMAL_READ_API_KEY; production-preflight is read-only and requires the formal-only read credential'
-    );
-  }
+  requireNotionApiKey(notionApiKey);
 
   const pageId = parsePageReference(pageReference);
   const page = await fetchNotionPage({
     pageId,
-    notionApiKey: formalReadApiKey,
+    notionApiKey,
     fetchImpl,
   });
   const dataSourceId = page.parent?.data_source_id;
@@ -1149,7 +978,7 @@ export async function resolvePageDryRun({
   pageReference,
   notionApiKey,
   googlePlacesKey,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
   fetchImpl = fetch,
   now = new Date(),
   randomUUIDImpl = randomUUID,
@@ -1760,7 +1589,6 @@ async function updateNotionCandidateFields({
   pageId,
   dataSourceId,
   expectedDataSourceId,
-  allowFormalWrite,
   notionApiKey,
   patch,
   fetchImpl,
@@ -1768,7 +1596,6 @@ async function updateNotionCandidateFields({
   assertWriteTarget({
     dataSourceId,
     expectedDataSourceId,
-    allowFormalWrite,
   });
   const response = await fetchImpl(`${NOTION_API_BASE}/pages/${pageId}`, {
     method: 'PATCH',
@@ -1788,7 +1615,6 @@ async function updateNotionReviewFields({
   pageId,
   dataSourceId,
   expectedDataSourceId,
-  allowFormalWrite,
   notionApiKey,
   patch,
   fetchImpl,
@@ -1796,7 +1622,6 @@ async function updateNotionReviewFields({
   assertWriteTarget({
     dataSourceId,
     expectedDataSourceId,
-    allowFormalWrite,
   });
   const response = await fetchImpl(`${NOTION_API_BASE}/pages/${pageId}`, {
     method: 'PATCH',
@@ -1816,7 +1641,6 @@ async function updateNotionCoordinateCorrectionFields({
   pageId,
   dataSourceId,
   expectedDataSourceId,
-  allowFormalWrite,
   notionApiKey,
   patch,
   fetchImpl,
@@ -1824,7 +1648,6 @@ async function updateNotionCoordinateCorrectionFields({
   assertWriteTarget({
     dataSourceId,
     expectedDataSourceId,
-    allowFormalWrite,
   });
   const response = await fetchImpl(`${NOTION_API_BASE}/pages/${pageId}`, {
     method: 'PATCH',
@@ -1844,7 +1667,6 @@ async function updateNotionCandidateResetFields({
   pageId,
   dataSourceId,
   expectedDataSourceId,
-  allowFormalWrite,
   notionApiKey,
   patch,
   fetchImpl,
@@ -1852,7 +1674,6 @@ async function updateNotionCandidateResetFields({
   assertWriteTarget({
     dataSourceId,
     expectedDataSourceId,
-    allowFormalWrite,
   });
   const response = await fetchImpl(`${NOTION_API_BASE}/pages/${pageId}`, {
     method: 'PATCH',
@@ -1872,7 +1693,6 @@ async function updateNotionApplyFields({
   pageId,
   dataSourceId,
   expectedDataSourceId,
-  allowFormalWrite,
   notionApiKey,
   patch,
   fetchImpl,
@@ -1881,7 +1701,6 @@ async function updateNotionApplyFields({
   assertWriteTarget({
     dataSourceId,
     expectedDataSourceId,
-    allowFormalWrite,
   });
   const response = await fetchImpl(`${NOTION_API_BASE}/pages/${pageId}`, {
     method: 'PATCH',
@@ -2089,7 +1908,7 @@ export async function reviewPageDryRun({
   verificationNote,
   newEvidence,
   notionApiKey,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
   fetchImpl = fetch,
   now = new Date(),
 }) {
@@ -2121,22 +1940,15 @@ async function reviewPageConfirmUnlocked({
   verificationNote,
   newEvidence,
   notionApiKey,
-  notionWriteApiKey,
-  allowFormalWrite = false,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
   fetchImpl = fetch,
   now = new Date(),
   onPreview = () => {},
 }) {
-  const writeApiKey = requireNotionWriteApiKey({
-    notionApiKey,
-    notionWriteApiKey,
-    expectedDataSourceId,
-  });
+  requireNotionApiKey(notionApiKey);
   assertWriteTarget({
     dataSourceId: expectedDataSourceId,
     expectedDataSourceId,
-    allowFormalWrite,
   });
   const preview = await reviewPageDryRun({
     pageReference,
@@ -2167,8 +1979,7 @@ async function reviewPageConfirmUnlocked({
       pageId,
       dataSourceId: beforeWrite.dataSourceId,
       expectedDataSourceId,
-      allowFormalWrite,
-      notionApiKey: writeApiKey,
+      notionApiKey,
       patch: preview.proposedPatch,
       fetchImpl,
     });
@@ -2417,7 +2228,7 @@ export async function coordinateCorrectionPageDryRun({
   sourceUrl,
   sourceConfirmed,
   notionApiKey,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
   fetchImpl = fetch,
   now = new Date(),
 }) {
@@ -2448,23 +2259,16 @@ async function coordinateCorrectionPageConfirmUnlocked({
   sourceUrl,
   sourceConfirmed,
   notionApiKey,
-  notionWriteApiKey,
-  allowFormalWrite = false,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
   fetchImpl = fetch,
   now = new Date(),
   onPreview = () => {},
   onBeforeWrite = () => {},
 }) {
-  const writeApiKey = requireNotionWriteApiKey({
-    notionApiKey,
-    notionWriteApiKey,
-    expectedDataSourceId,
-  });
+  requireNotionApiKey(notionApiKey);
   assertWriteTarget({
     dataSourceId: expectedDataSourceId,
     expectedDataSourceId,
-    allowFormalWrite,
   });
   const preview = await coordinateCorrectionPageDryRun({
     pageReference,
@@ -2496,8 +2300,7 @@ async function coordinateCorrectionPageConfirmUnlocked({
       pageId,
       dataSourceId: beforeWrite.dataSourceId,
       expectedDataSourceId,
-      allowFormalWrite,
-      notionApiKey: writeApiKey,
+      notionApiKey,
       patch: preview.proposedPatch,
       fetchImpl,
     });
@@ -2706,7 +2509,7 @@ export async function candidateResetPageDryRun({
   pageReference,
   reason,
   notionApiKey,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
   fetchImpl = fetch,
   now = new Date(),
 }) {
@@ -2731,22 +2534,15 @@ async function candidateResetPageConfirmUnlocked({
   pageReference,
   reason,
   notionApiKey,
-  notionWriteApiKey,
-  allowFormalWrite = false,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
   fetchImpl = fetch,
   now = new Date(),
   onPreview = () => {},
 }) {
-  const writeApiKey = requireNotionWriteApiKey({
-    notionApiKey,
-    notionWriteApiKey,
-    expectedDataSourceId,
-  });
+  requireNotionApiKey(notionApiKey);
   assertWriteTarget({
     dataSourceId: expectedDataSourceId,
     expectedDataSourceId,
-    allowFormalWrite,
   });
   const preview = await candidateResetPageDryRun({
     pageReference,
@@ -2774,8 +2570,7 @@ async function candidateResetPageConfirmUnlocked({
       pageId,
       dataSourceId: beforeWrite.dataSourceId,
       expectedDataSourceId,
-      allowFormalWrite,
-      notionApiKey: writeApiKey,
+      notionApiKey,
       patch: preview.proposedPatch,
       fetchImpl,
     });
@@ -3080,24 +2875,17 @@ function assertCompletedActionStillApplied(current, metadata) {
 async function resolvePageWriteUnlocked({
   pageReference,
   notionApiKey,
-  notionWriteApiKey,
-  allowFormalWrite = false,
   googlePlacesKey,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
   fetchImpl = fetch,
   now = new Date(),
   randomUUIDImpl = randomUUID,
   onPreview = () => {},
 }) {
-  const writeApiKey = requireNotionWriteApiKey({
-    notionApiKey,
-    notionWriteApiKey,
-    expectedDataSourceId,
-  });
+  requireNotionApiKey(notionApiKey);
   assertWriteTarget({
     dataSourceId: expectedDataSourceId,
     expectedDataSourceId,
-    allowFormalWrite,
   });
   const preview = await resolvePageDryRun({
     pageReference,
@@ -3137,8 +2925,7 @@ async function resolvePageWriteUnlocked({
       pageId,
       dataSourceId: beforeWrite.dataSourceId,
       expectedDataSourceId,
-      allowFormalWrite,
-      notionApiKey: writeApiKey,
+      notionApiKey,
       patch: preview.proposedPatch,
       fetchImpl,
     });
@@ -3203,7 +2990,7 @@ export async function resolvePageWrite(options) {
 export async function applyPageDryRun({
   pageReference,
   notionApiKey,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
   fetchImpl = fetch,
   now = new Date(),
   randomUUIDImpl = randomUUID,
@@ -3236,9 +3023,7 @@ export async function applyPageDryRun({
 async function applyPageConfirmUnlocked({
   pageReference,
   notionApiKey,
-  notionWriteApiKey,
-  allowFormalWrite = false,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
   fetchImpl = fetch,
   now = new Date(),
   randomUUIDImpl = randomUUID,
@@ -3246,16 +3031,10 @@ async function applyPageConfirmUnlocked({
   onPreview = () => {},
   onBeforePendingWrite = () => {},
 }) {
-  if (!notionApiKey) throw new Error('Missing NOTION_API_KEY');
-  const writeApiKey = requireNotionWriteApiKey({
-    notionApiKey,
-    notionWriteApiKey,
-    expectedDataSourceId,
-  });
+  requireNotionApiKey(notionApiKey);
   assertWriteTarget({
     dataSourceId: expectedDataSourceId,
     expectedDataSourceId,
-    allowFormalWrite,
   });
 
   const pageId = parsePageReference(pageReference);
@@ -3377,8 +3156,7 @@ async function applyPageConfirmUnlocked({
         pageId,
         dataSourceId: beforePending.dataSourceId,
         expectedDataSourceId,
-        allowFormalWrite,
-        notionApiKey: writeApiKey,
+        notionApiKey,
         patch: preview.pendingPatch,
         fetchImpl,
         label: 'Notion pending apply write',
@@ -3431,8 +3209,7 @@ async function applyPageConfirmUnlocked({
       pageId,
       dataSourceId: pendingPage.dataSourceId,
       expectedDataSourceId,
-      allowFormalWrite,
-      notionApiKey: writeApiKey,
+      notionApiKey,
       patch: preview.completedPatch,
       fetchImpl,
       label: 'Notion completed apply write',
@@ -3802,42 +3579,17 @@ export function formatApplyConfirmResult(result) {
 }
 
 export function formatValidationReport(result) {
-  const layerLabel = (value) => (value ? 'PASS' : 'FAIL');
   const lines = [
-    'LOCATION VERIFICATION — VALIDATE ALL',
+    'LOCATION VERIFICATION — VALIDATE',
     '',
     'Execution',
     '  Mode: read-only',
-    `  PoC data source: ${result.dataSources.poc}`,
-    `  Formal data source: ${result.dataSources.formal}`,
+    `  Data source: ${result.dataSource}`,
     '',
     'Counts',
-    `  Immutable PoC baseline: ${result.counts.baseline}`,
-    `  Formal cutover baseline: ${result.counts.formalBaseline}`,
-    `  Locations (PoC): ${result.counts.poc}`,
-    `  Formal Locations: ${result.counts.formal}`,
-    `  Formal change approvals: ${result.counts.formalApprovals} ` +
-      `(immutable ${result.counts.immutableFormalApprovals}, ` +
-      `cutover ${result.counts.cutoverFormalApprovals})`,
-    `  Retired formal properties: ${result.counts.retiredFormalProperties}`,
+    `  Locations: ${result.rowCount}`,
     '',
-    'Layers',
-    `  Baseline contract: ${layerLabel(result.layers.baseline)}`,
-    `  Formal approval contract: ${layerLabel(result.layers.approvals)}`,
-    `  Formal property retirement: ${layerLabel(result.layers.retirement)}`,
-    `  PoC/formal Slug integrity: ${layerLabel(result.layers.slug)}`,
-    `  Target invariants: ${layerLabel(result.layers.target)}`,
-    `  PoC action reconciliation: ${layerLabel(result.layers.poc)}`,
-    `  Formal baseline drift: ${layerLabel(result.layers.formal)}`,
-    '',
-    'Reconciliation',
-    `  Conservative migration field differences: ${result.reconciliation.migrationDifferenceCount}`,
-    `  Completed-action field differences: ${result.reconciliation.actionDifferenceCount}`,
-    `  Observed formal changes from immutable baseline: ${result.reconciliation.formalObservedDifferenceCount}`,
-    `  Approved exact-value formal changes: ${result.reconciliation.formalApprovedDifferenceCount}`,
-    `  Unapproved formal field differences: ${result.reconciliation.formalDifferenceCount}`,
-    '',
-    'PoC Status distribution',
+    'Status distribution',
   ];
   for (const [status, count] of Object.entries(result.statusCounts).sort()) {
     lines.push(`  ${status}: ${count}`);
@@ -3865,8 +3617,8 @@ export function formatProductionPreflight(result) {
     'LOCATION VERIFICATION — PRODUCTION PREFLIGHT',
     '',
     'Execution',
-    '  Mode: formal read-only',
-    '  Credential: NOTION_FORMAL_READ_API_KEY',
+    '  Mode: read-only',
+    '  Credential: NOTION_API_KEY',
     `  Formal data source: ${result.page.dataSourceId}`,
     `  Page: ${result.page.url}`,
     `  Name: ${result.page.name}`,
@@ -3973,7 +3725,6 @@ async function main() {
   if (options.command === 'validate') {
     const result = await validateAllLocations({
       notionApiKey: process.env.NOTION_API_KEY,
-      formalReadApiKey: process.env.NOTION_FORMAL_READ_API_KEY,
     });
     process.stdout.write(formatValidationReport(result));
     if (!result.ok) process.exitCode = 1;
@@ -3983,7 +3734,7 @@ async function main() {
   if (options.command === 'production-preflight') {
     const result = await productionPreflightPage({
       pageReference: options.pageReference,
-      formalReadApiKey: process.env.NOTION_FORMAL_READ_API_KEY,
+      notionApiKey: process.env.NOTION_API_KEY,
     });
     process.stdout.write(formatProductionPreflight(result));
     if (!result.gates.canaryWriteReady) process.exitCode = 2;

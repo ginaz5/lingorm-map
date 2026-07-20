@@ -10,11 +10,7 @@
     "locations:export:notion": "node --env-file-if-exists=.env scripts/export-snapshot.mjs",
     "location:verify": "node --env-file-if-exists=.env scripts/location-verification-runner.mjs",
     "location:verify:ui": "node --env-file-if-exists=.env scripts/location-verification-ui-server.mjs",
-    "location:verify:formal-ui": "node --env-file-if-exists=.env scripts/location-verification-ui-server.mjs --target formal",
-    "location:cutover:capture": "node --env-file-if-exists=.env scripts/capture-formal-cutover-baseline.mjs",
-    "location:formal-schema": "node --env-file-if-exists=.env scripts/migrate-formal-location-schema.mjs",
-    "location:formal-canary": "node --env-file-if-exists=.env scripts/initialize-formal-location-canary.mjs",
-    "test:location-verification": "node --test tests/formal-canary-initialization.test.mjs tests/formal-location-current-schema.test.mjs tests/formal-schema-migration.test.mjs tests/location-verification-core.test.mjs tests/location-verification-runner.test.mjs tests/location-verification-ui-server.test.mjs tests/location-verification-validator.test.mjs",
+    "test:location-verification": "node --test tests/formal-location-current-schema.test.mjs tests/location-verification-core.test.mjs tests/location-verification-runner.test.mjs tests/location-verification-ui-server.test.mjs tests/location-verification-validator.test.mjs",
     "typecheck": "tsc --noEmit -p jsconfig.json"
   },
   "devDependencies": {

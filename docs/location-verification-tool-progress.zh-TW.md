@@ -6,6 +6,7 @@
 > - 目前階段：Phase B 暫緩；正式地點改由 localhost 唯讀 Candidate 工具輔助、Notion 手動維護
 > - 狀態：正式 schema 現為 17 欄；新契約、preflight、export bridge 與唯讀 UI 已同步，既有未核准資料 drift 仍 fail-closed
 > - 設計依據：[地點檢核工具設計紀錄](location-verification-tool-design.zh-TW.md)
+> - ⚠️ **Artifact 說明**：文中提到的 `docs/location-verification-*.json` 稽核檔案（baseline、change approvals、schema migration、canary 等）為 cutover 期間本機產生的一次性紀錄，事後已刪除且從未提交，repo 中不存在。
 
 本文件只追蹤實際執行進度、驗證結果、run IDs、待辦與完成門檻。資料模型、決策語意、安全原則與階段設計以設計文件為準；若兩份文件衝突，應先更新設計文件，再同步本文件。
 

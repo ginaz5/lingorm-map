@@ -505,39 +505,38 @@ async function handleResolvePreview() {
 }
 
 function validationRows(result) {
-  const labels = {
-    baseline: 'Baseline contract',
-    approvals: 'Formal approvals',
-    slug: 'PoC/formal Slug integrity',
-    target: 'Target invariants',
-    poc: 'PoC reconciliation',
-    formal: 'Formal drift',
-  };
   const container = document.createElement('div');
   container.className = 'validation-layers';
-  [
-    ['前置檢查', ['baseline', 'approvals', 'target']],
-    ['三層資料對帳', ['slug', 'poc', 'formal']],
-  ].forEach(([groupLabel, keys]) => {
-    const group = document.createElement('section');
-    group.className = 'validation-group';
-    const heading = document.createElement('h3');
-    heading.textContent = groupLabel;
-    group.append(heading);
-    keys.forEach((key) => {
+
+  const summary = document.createElement('section');
+  summary.className = 'validation-group';
+  const heading = document.createElement('h3');
+  heading.textContent = '摘要';
+  summary.append(heading);
+
+  const countRow = document.createElement('div');
+  countRow.className = 'validation-layer';
+  const countLabel = document.createElement('span');
+  countLabel.textContent = '地點總數';
+  const countValue = document.createElement('strong');
+  countValue.textContent = String(result.rowCount ?? '—');
+  countRow.append(countLabel, countValue);
+  summary.append(countRow);
+
+  Object.entries(result.statusCounts || {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([status, count]) => {
       const row = document.createElement('div');
       row.className = 'validation-layer';
       const label = document.createElement('span');
-      label.textContent = labels[key] || key;
-      const status = document.createElement('strong');
-      const passed = Boolean(result.layers[key]);
-      status.className = passed ? 'pass' : 'fail';
-      status.textContent = passed ? 'PASS' : 'FAIL';
-      row.append(label, status);
-      group.append(row);
+      label.textContent = status;
+      const value = document.createElement('strong');
+      value.textContent = String(count);
+      row.append(label, value);
+      summary.append(row);
     });
-    container.append(group);
-  });
+  container.append(summary);
+
   if (result.issues.length > 0) {
     const issues = document.createElement('section');
     issues.className = 'validation-issues';
@@ -579,8 +578,8 @@ async function handleValidateAll() {
       body: {},
     });
     elements['validation-title'].textContent = result.ok
-      ? '全量資料對帳全部通過'
-      : '全量資料對帳發現問題';
+      ? '驗證全部通過'
+      : '驗證發現問題';
     elements['validation-content'].replaceChildren(validationRows(result));
   } catch (error) {
     elements['validation-title'].textContent = '驗證無法完成';

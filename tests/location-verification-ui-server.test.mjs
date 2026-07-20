@@ -95,7 +95,6 @@ function fakeOperations(configuration = {}) {
     calls,
     operations: {
       configuration: {
-        target: 'formal',
         dataSourceId: 'formal-data-source',
         allowedPageId: null,
         readOnly: true,
@@ -114,16 +113,7 @@ function fakeOperations(configuration = {}) {
         calls.validateAll += 1;
         return {
           ok: true,
-          counts: { formal: 99 },
-          layers: {
-            baseline: true,
-            approvals: true,
-            target: true,
-            slug: true,
-            poc: true,
-            formal: true,
-          },
-          reconciliation: {},
+          rowCount: 99,
           statusCounts: {},
           issues: [],
         };
@@ -208,47 +198,34 @@ function post(server, path, body, session = SESSION) {
   });
 }
 
-test('UI arguments keep the listener on loopback and formal mode needs no write flags', () => {
+test('UI arguments keep the listener on loopback with no target flag needed', () => {
   assert.deepEqual(parseUiServerArgs([]), {
     host: '127.0.0.1',
     port: 4317,
-    target: 'poc',
     pageReference: null,
   });
-  assert.deepEqual(
-    parseUiServerArgs(['--target', 'formal', '--port', '4318']),
-    {
-      host: '127.0.0.1',
-      port: 4318,
-      target: 'formal',
-      pageReference: null,
-    }
-  );
+  assert.deepEqual(parseUiServerArgs(['--port', '4318']), {
+    host: '127.0.0.1',
+    port: 4318,
+    pageReference: null,
+  });
 });
 
-test('removed write-capable arguments are rejected', () => {
+test('removed write-capable and target arguments are rejected', () => {
   assert.throws(
-    () => parseUiServerArgs(['--target', 'formal', '--formal-workflow']),
+    () => parseUiServerArgs(['--target', 'formal']),
     /Unknown argument/
   );
   assert.throws(
-    () =>
-      parseUiServerArgs([
-        '--target',
-        'formal',
-        '--allow-formal-write',
-        'candidate',
-      ]),
+    () => parseUiServerArgs(['--formal-workflow']),
     /Unknown argument/
   );
   assert.throws(
-    () =>
-      parseUiServerArgs([
-        '--target',
-        'formal',
-        '--approved-by',
-        'maintainer',
-      ]),
+    () => parseUiServerArgs(['--allow-formal-write', 'candidate']),
+    /Unknown argument/
+  );
+  assert.throws(
+    () => parseUiServerArgs(['--approved-by', 'maintainer']),
     /Unknown argument/
   );
 });
@@ -346,12 +323,12 @@ test('page allowlist is enforced before a Candidate dry-run', async () => {
   assert.equal(server.calls.resolvePreview, 0);
 });
 
-test('full reconciliation remains available and read-only', async () => {
+test('validation remains available and read-only', async () => {
   const server = createTestServer();
   const response = await post(server, '/api/validate', {});
   assert.equal(response.status, 200);
   assert.equal(response.json().ok, true);
-  assert.equal(response.json().layers.formal, true);
+  assert.equal(response.json().rowCount, 99);
   assert.equal(server.calls.validateAll, 1);
 });
 

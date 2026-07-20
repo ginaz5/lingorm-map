@@ -1,10 +1,26 @@
 import { createHash } from 'node:crypto';
 import { LOCATION_STATUSES } from '../src/csv-parser.js';
 
-export const POC_DATA_SOURCE_ID = 'eefc0f40-698c-4870-97b7-e8860091f668';
+// The "Locations (PoC)" data source used during the 2026-07 migration has
+// been deleted — there is now a single Notion Locations database, and
+// NOTION_API_KEY is the sole credential (read + write) used to reach it.
 export const FORMAL_DATA_SOURCE_ID = 'e55c2315-8ea2-837d-9637-07c1118486c8';
-export const PRODUCTION_REHEARSAL_DATA_SOURCE_ID =
-  '173c2315-8ea2-83d8-a33f-876f53663251';
+
+// Haversine distance in meters. Cross-checks a resolved/candidate place
+// against the currently-stored Lat/Lng so a run can flag "moved more than
+// 150m" for human review (originally scripts/resolve.mjs's Phase 1 PoC
+// resolver spike; moved here since this core module is the only consumer
+// left after the PoC resolver was retired).
+export function haversineMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
 
 export const BASIS_FIELDS = [
   'Slug',
@@ -186,7 +202,7 @@ export function workflowRevision({ status, dataSourceId, inTrash = false }) {
   });
 }
 
-export function assertAllowedDataSource(dataSourceId, expectedDataSourceId = POC_DATA_SOURCE_ID) {
+export function assertAllowedDataSource(dataSourceId, expectedDataSourceId = FORMAL_DATA_SOURCE_ID) {
   if (dataSourceId !== expectedDataSourceId) {
     throw new Error(
       `Refusing write: data source ${dataSourceId} is not allowlisted ${expectedDataSourceId}`
@@ -248,7 +264,7 @@ export function buildCandidatePatch({
   reviewExpiresAt,
   errorCode = null,
   expiredAt = null,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
 }) {
   assertAllowedDataSource(dataSourceId, expectedDataSourceId);
   if (!CANDIDATE_RESULTS.has(result)) {
@@ -452,7 +468,7 @@ export function buildPendingApplyPatch({
   dataSourceId,
   actionRunId,
   now,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
 }) {
   assertAllowedDataSource(dataSourceId, expectedDataSourceId);
   if (!normalizeText(actionRunId)) throw new Error('actionRunId is required');
@@ -478,7 +494,7 @@ export function buildCompletedApplyPatch({
   dataSourceId,
   actionRunId,
   now,
-  expectedDataSourceId = POC_DATA_SOURCE_ID,
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID,
   allowLegacySourceStatus = false,
 }) {
   assertAllowedDataSource(dataSourceId, expectedDataSourceId);

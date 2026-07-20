@@ -8,7 +8,6 @@ import { fileURLToPath } from 'node:url';
 
 import {
   FORMAL_DATA_SOURCE_ID,
-  POC_DATA_SOURCE_ID,
   assertAllowedDataSource,
   validateCandidatePayload,
 } from './location-verification-core.mjs';
@@ -68,36 +67,34 @@ function parseCandidate(value) {
 
 export function notionPageToQueueItem(
   page,
-  expectedDataSourceId = POC_DATA_SOURCE_ID
+  expectedDataSourceId = FORMAL_DATA_SOURCE_ID
 ) {
   const dataSourceId = page?.parent?.data_source_id;
   assertAllowedDataSource(dataSourceId, expectedDataSourceId);
-  if (expectedDataSourceId === FORMAL_DATA_SOURCE_ID) {
-    const schema = inspectCurrentFormalLocationProperties(page?.properties);
-    if (!schema.ok) {
-      const details = [
-        schema.missing.length
-          ? `missing ${schema.missing.join(', ')}`
-          : '',
-        schema.unexpected.length
-          ? `unexpected ${schema.unexpected.join(', ')}`
-          : '',
-        schema.wrongTypes.length
-          ? `wrong types ${schema.wrongTypes
-              .map(
-                ({ field, expected, actual }) =>
-                  `${field}:${actual}->${expected}`
-              )
-              .join(', ')}`
-          : '',
-        schema.statusOptions.checked && !schema.statusOptions.ok
-          ? 'Status options do not match Published/Paused/Inactive'
-          : '',
-      ]
-        .filter(Boolean)
-        .join('; ');
-      throw new Error(`Formal Locations schema mismatch: ${details}`);
-    }
+  const schema = inspectCurrentFormalLocationProperties(page?.properties);
+  if (!schema.ok) {
+    const details = [
+      schema.missing.length
+        ? `missing ${schema.missing.join(', ')}`
+        : '',
+      schema.unexpected.length
+        ? `unexpected ${schema.unexpected.join(', ')}`
+        : '',
+      schema.wrongTypes.length
+        ? `wrong types ${schema.wrongTypes
+            .map(
+              ({ field, expected, actual }) =>
+                `${field}:${actual}->${expected}`
+            )
+            .join(', ')}`
+        : '',
+      schema.statusOptions.checked && !schema.statusOptions.ok
+        ? 'Status options do not match Published/Paused/Inactive'
+        : '',
+    ]
+      .filter(Boolean)
+      .join('; ');
+    throw new Error(`Formal Locations schema mismatch: ${details}`);
   }
   const row = notionPageToRow(page);
   return {
@@ -284,9 +281,7 @@ async function serveAsset(response, pathname, assetRoot) {
 function validationSummary(result) {
   return {
     ok: result.ok,
-    counts: result.counts,
-    layers: result.layers,
-    reconciliation: result.reconciliation,
+    rowCount: result.rowCount,
     statusCounts: result.statusCounts,
     issues: result.issues,
   };
@@ -300,28 +295,15 @@ function forbidden(message) {
 
 export function createDefaultUiOperations({
   notionApiKey = process.env.NOTION_API_KEY,
-  formalReadApiKey = process.env.NOTION_FORMAL_READ_API_KEY,
   googlePlacesKey =
     process.env.GOOGLE_PLACE_KEY || process.env.GOOGLE_PLACES_KEY,
-  target = 'poc',
   pageReference,
   fetchImpl = fetch,
 } = {}) {
-  if (!['poc', 'formal'].includes(target)) {
-    throw new Error('UI target must be poc or formal');
-  }
-  if (target === 'poc' && !notionApiKey) {
-    throw new Error('Missing NOTION_API_KEY');
-  }
-  if (target === 'formal' && !formalReadApiKey) {
-    throw new Error('Missing NOTION_FORMAL_READ_API_KEY');
-  }
+  if (!notionApiKey) throw new Error('Missing NOTION_API_KEY');
   if (!googlePlacesKey) throw new Error('Missing GOOGLE_PLACE_KEY');
 
-  const expectedDataSourceId =
-    target === 'formal' ? FORMAL_DATA_SOURCE_ID : POC_DATA_SOURCE_ID;
-  const readApiKey =
-    target === 'formal' ? formalReadApiKey : notionApiKey;
+  const expectedDataSourceId = FORMAL_DATA_SOURCE_ID;
   const allowedPageId = pageReference
     ? parsePageReference(pageReference)
     : null;
@@ -338,7 +320,7 @@ export function createDefaultUiOperations({
     const pageId = assertAllowedPage(reference);
     const page = await fetchNotionPage({
       pageId,
-      notionApiKey: readApiKey,
+      notionApiKey,
       fetchImpl,
     });
     return notionPageToQueueItem(page, expectedDataSourceId);
@@ -346,7 +328,6 @@ export function createDefaultUiOperations({
 
   return {
     configuration: Object.freeze({
-      target,
       dataSourceId: expectedDataSourceId,
       allowedPageId,
       readOnly: true,
@@ -357,7 +338,7 @@ export function createDefaultUiOperations({
       }
       const pages = await queryAllNotionDataSourcePages({
         dataSourceId: expectedDataSourceId,
-        notionApiKey: readApiKey,
+        notionApiKey,
         fetchImpl,
       });
       return sortReviewQueue(
@@ -381,15 +362,14 @@ export function createDefaultUiOperations({
         pageReference: pageId,
         googlePlacesKey,
         placesApiMode: 'legacy',
-        notionApiKey: readApiKey,
+        notionApiKey,
         expectedDataSourceId,
         fetchImpl,
       });
     },
     validateAll: () =>
       validateAllLocations({
-        notionApiKey: notionApiKey || readApiKey,
-        formalReadApiKey,
+        notionApiKey,
         fetchImpl,
       }),
   };
@@ -401,8 +381,7 @@ export function createLocationVerificationUiServer({
   assetRoot = UI_ROOT,
 } = {}) {
   const configuration = {
-    target: 'poc',
-    dataSourceId: POC_DATA_SOURCE_ID,
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
     allowedPageId: null,
     readOnly: true,
     ...(operations.configuration || {}),
@@ -436,7 +415,6 @@ export function createLocationVerificationUiServer({
         sendJson(response, 200, {
           sessionToken,
           apiMode: 'legacy',
-          target: configuration.target,
           dataSourceId: configuration.dataSourceId,
           allowedPageId: configuration.allowedPageId,
           writePolicy: {
@@ -497,7 +475,6 @@ export function createLocationVerificationUiServer({
 
 export function parseUiServerArgs(args) {
   let port = DEFAULT_PORT;
-  let target = 'poc';
   let pageReference = null;
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -506,11 +483,6 @@ export function parseUiServerArgs(args) {
       index += 1;
     } else if (arg.startsWith('--port=')) {
       port = Number(arg.slice('--port='.length));
-    } else if (arg === '--target') {
-      target = args[index + 1];
-      index += 1;
-    } else if (arg.startsWith('--target=')) {
-      target = arg.slice('--target='.length);
     } else if (arg === '--page') {
       pageReference = args[index + 1];
       index += 1;
@@ -523,16 +495,9 @@ export function parseUiServerArgs(args) {
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error('Port must be an integer from 1 to 65535');
   }
-  if (!['poc', 'formal'].includes(target)) {
-    throw new Error('Target must be poc or formal');
-  }
-  if (target !== 'formal' && pageReference) {
-    throw new Error('--page requires --target formal');
-  }
   return {
     host: LOOPBACK_HOST,
     port,
-    target,
     pageReference,
   };
 }
@@ -568,13 +533,9 @@ if (isMain) {
   try {
     const options = parseUiServerArgs(process.argv.slice(2));
     const app = await startLocationVerificationUiServer(options);
-    const policy =
-      options.target === 'formal'
-        ? 'Formal Review Needed queue; read-only Candidate dry-runs.'
-        : 'Locations (PoC) Review Needed queue; read-only Candidate dry-runs.';
     process.stdout.write(
       `Location verification UI: ${app.url}\n` +
-        `${policy}\n` +
+        'Formal Locations Review Needed queue; read-only Candidate dry-runs.\n' +
         'No Notion writes are exposed. Localhost only. Press Ctrl+C to stop.\n'
     );
   } catch (error) {

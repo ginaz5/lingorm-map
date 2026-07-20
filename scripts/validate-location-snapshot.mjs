@@ -12,7 +12,7 @@ import {
 import { PUBLIC_LOCATION_STATUSES } from '../src/render.js';
 import { CSV_HEADER } from './export-snapshot.mjs';
 
-export const EXPECTED_LOCATION_COUNT = 98;
+export const EXPECTED_LOCATION_COUNT = 100;
 export const DEFAULT_SNAPSHOT_POLICY_PATH = fileURLToPath(
   new URL('../data/location-snapshot-policy-v1.json', import.meta.url)
 );
