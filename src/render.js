@@ -176,15 +176,20 @@ export function renderList() {
   }).join('');
 }
 
-/** @param {number} i */
-export function activateCard(i) {
+/**
+ * @param {number} i
+ * @param {{ centerMap?: boolean }} [options]
+ */
+export function activateCard(i, options = {}) {
+  const centerMap = options.centerMap !== false;
   state.activeIdx = i;
   const row = state.data[i];
   const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
 
-  if (lat && lng && state.map) {
+  if (centerMap && lat && lng && state.map) {
     if (window.innerWidth <= 700) switchTab('map');
     if (state.provider === 'google') {
+      state.map.setCenter({ lat, lng });
       state.map.setZoom(15);
       if (state.markers[i] && state.infoWindow) {
         state.infoWindow.setContent(buildPopupContent(i));
@@ -193,7 +198,7 @@ export function activateCard(i) {
     } else if (state.provider === 'here') {
       state.map.setCenter({ lat, lng });
       state.map.setZoom(15);
-      if (state.markers[i] && state.hereUi) {
+      if (state.hereUi) {
         if (state.infoBubble) {
           state.hereUi.removeBubble(state.infoBubble);
           state.infoBubble = null;

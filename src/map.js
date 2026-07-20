@@ -169,7 +169,7 @@ export async function buildMarkers() {
       m.addListener('click', () => {
         state.infoWindow.setContent(buildPopupContent(i));
         state.infoWindow.open({ anchor: m, map: state.map });
-        activateCard(i);
+        activateCard(i, { centerMap: false });
       });
       state.markers[i] = m;
       clusterMarkers.push(m);
@@ -225,7 +225,7 @@ export async function buildMarkers() {
           }
           state.infoBubble = new H.ui.InfoBubble({ lat, lng }, { content: buildPopupContent(i) });
           state.hereUi.addBubble(state.infoBubble);
-          activateCard(i);
+          activateCard(i, { centerMap: false });
         }
       }
     });
