@@ -18,6 +18,7 @@
  * @property {any} hereLayers
  * @property {any} infoBubble
  * @property {any[]} markers
+ * @property {any} markerClusterer
  * @property {any} userLocationMarker
  * @property {ReturnType<typeof setTimeout>|null} snackTimer
  * @property {boolean} isLoading
@@ -51,6 +52,8 @@ export const state = {
 
   // Sparse array: markers[i] corresponds to data[i]
   markers: [],
+  // Google MarkerClusterer or HERE clustering layer
+  markerClusterer: null,
   // Blue-dot marker for the user's GPS position
   userLocationMarker: null,
 

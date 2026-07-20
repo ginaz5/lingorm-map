@@ -20,7 +20,7 @@ function makeLocation(status, name = status) {
   };
 }
 
-test('public filters and list use the Verified/Needs Review allowlist', async () => {
+test('public filters and list use the migration public allowlist', async () => {
   const { state } = await import('../src/state.js');
   const { applyFilters } = await import('../src/render.js');
 
@@ -40,20 +40,32 @@ test('public filters and list use the Verified/Needs Review allowlist', async ()
     state.data = [
       makeLocation('Verified', 'Visible verified'),
       makeLocation('Needs Review', 'Visible review'),
+      makeLocation('Published', 'Visible published'),
       makeLocation('Draft', 'Hidden draft'),
       makeLocation('Verifying', 'Hidden verifying'),
       makeLocation('Could Not Find', 'Hidden not found'),
       makeLocation('Closed', 'Hidden closed'),
+      makeLocation('Paused', 'Hidden paused'),
+      makeLocation('Inactive', 'Hidden inactive'),
+      makeLocation('Unexpected', 'Hidden unknown'),
     ];
 
     applyFilters();
 
-    assert.deepEqual(state.visIdx, [0, 1]);
-    assert.equal(elements['result-info'].textContent, '顯示 2 / 2 個地點');
-    for (const hiddenName of ['Hidden draft', 'Hidden verifying', 'Hidden not found', 'Hidden closed']) {
+    assert.deepEqual(state.visIdx, [0, 1, 2]);
+    assert.equal(elements['result-info'].textContent, '顯示 3 / 3 個地點');
+    for (const hiddenName of [
+      'Hidden draft',
+      'Hidden verifying',
+      'Hidden not found',
+      'Hidden closed',
+      'Hidden paused',
+      'Hidden inactive',
+      'Hidden unknown',
+    ]) {
       assert.doesNotMatch(elements['loc-list'].innerHTML, new RegExp(hiddenName));
     }
-    assert.equal(state.data[4].status, 'Could Not Find');
+    assert.equal(state.data[5].status, 'Could Not Find');
   } finally {
     globalThis.document = previousDocument;
     state.data = [];
@@ -66,11 +78,11 @@ test('map markers use the same public status allowlist', async () => {
   const { state } = await import('../src/state.js');
   const { buildMarkers } = await import('../src/map.js');
 
-  const createdMarkers = [];
+  const createdDataPoints = [];
   const previousDocument = globalThis.document;
   const previousHere = globalThis.H;
   globalThis.document = {
-    createElement: () => ({ className: '', textContent: '' }),
+    createElement: () => ({ className: '', textContent: '', style: {} }),
   };
   globalThis.H = {
     map: {
@@ -83,7 +95,32 @@ test('map markers use the same public status allowlist', async () => {
         constructor(position, options) {
           this.position = position;
           this.options = options;
-          createdMarkers.push(this);
+        }
+
+        setData() {}
+        addEventListener() {}
+      },
+      layer: {
+        ObjectLayer: class {
+          constructor(provider) {
+            this.provider = provider;
+          }
+        },
+      },
+    },
+    clustering: {
+      DataPoint: class {
+        constructor(lat, lng, weight, data) {
+          this.lat = lat;
+          this.lng = lng;
+          this.data = data;
+          createdDataPoints.push(this);
+        }
+      },
+      Provider: class {
+        constructor(dataPoints, options) {
+          this.dataPoints = dataPoints;
+          this.options = options;
         }
 
         addEventListener() {}
@@ -92,30 +129,31 @@ test('map markers use the same public status allowlist', async () => {
   };
 
   try {
-    state.map = { addObject() {}, removeObject() {} };
+    state.map = { addObject() {}, removeObject() {}, addLayer() {}, removeLayer() {} };
     state.markers = [];
+    state.markerClusterer = null;
     state.data = [
       makeLocation('Verified', 'Visible verified'),
       makeLocation('Needs Review', 'Visible review'),
+      makeLocation('Published', 'Visible published'),
       makeLocation('Draft', 'Hidden draft'),
       makeLocation('Verifying', 'Hidden verifying'),
       makeLocation('Could Not Find', 'Hidden not found'),
       makeLocation('Closed', 'Hidden closed'),
+      makeLocation('Paused', 'Hidden paused'),
+      makeLocation('Inactive', 'Hidden inactive'),
+      makeLocation('Unexpected', 'Hidden unknown'),
     ];
 
-    buildMarkers();
+    await buildMarkers();
 
-    assert.equal(createdMarkers.length, 2);
-    assert.ok(state.markers[0]);
-    assert.ok(state.markers[1]);
-    for (const index of [2, 3, 4, 5]) {
-      assert.equal(state.markers[index], undefined);
-    }
+    assert.equal(createdDataPoints.length, 3);
   } finally {
     globalThis.document = previousDocument;
     globalThis.H = previousHere;
     state.map = null;
     state.markers = [];
+    state.markerClusterer = null;
     state.data = [];
   }
 });

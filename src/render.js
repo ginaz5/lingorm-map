@@ -33,9 +33,15 @@ export const heartSVG = (active) =>
 // ═══════════════════════════════════════════════════
 // PUBLICATION HELPERS
 // ═══════════════════════════════════════════════════
+export const MIGRATION_PUBLIC_LOCATION_STATUSES = Object.freeze([
+  'Verified',
+  'Needs Review',
+  'Published',
+]);
+
 /** @param {LocationRow} row @returns {boolean} */
 export function isPublicLocation(row) {
-  return row.status === 'Verified' || row.status === 'Needs Review';
+  return MIGRATION_PUBLIC_LOCATION_STATUSES.includes(row.status);
 }
 
 /** @param {LocationRow} row @returns {boolean} */
@@ -222,16 +228,40 @@ export function applyFilters() {
   });
   renderList();
   if (state.map) {
-    state.markers.forEach((m, i) => {
-      if (!m) return;
-      const row = state.data[i];
-      const visible = !state.favFilterOn || state.favorites.has(row.id);
-      if (state.provider === 'google') {
-        m.map = visible ? state.map : null;
-      } else {
-        m.setVisibility(visible);
-      }
-    });
+    if (state.provider === 'google' && state.markerClusterer) {
+      // Use MarkerClusterer add/remove APIs for Google
+      /** @type {any[]} */
+      const toAdd = [];
+      /** @type {any[]} */
+      const toRemove = [];
+      const currentMarkers = state.markerClusterer.markers;
+      state.markers.forEach((m, i) => {
+        if (!m) return;
+        const row = state.data[i];
+        const visible = !state.favFilterOn || state.favorites.has(row.id);
+        const isInCluster = currentMarkers.includes(m);
+        if (visible && !isInCluster) toAdd.push(m);
+        else if (!visible && isInCluster) toRemove.push(m);
+      });
+      if (toRemove.length) state.markerClusterer.removeMarkers(toRemove);
+      if (toAdd.length) state.markerClusterer.addMarkers(toAdd);
+    } else if (state.provider === 'here') {
+      // HERE clustering doesn't support partial add/remove;
+      // rebuild the entire clustering layer via buildMarkers()
+      import('./map.js').then(({ buildMarkers }) => buildMarkers());
+    } else {
+      // Fallback: direct marker visibility toggle
+      state.markers.forEach((m, i) => {
+        if (!m) return;
+        const row = state.data[i];
+        const visible = !state.favFilterOn || state.favorites.has(row.id);
+        if (state.provider === 'google') {
+          m.map = visible ? state.map : null;
+        } else {
+          m.setVisibility(visible);
+        }
+      });
+    }
   }
   const publicTotal = state.data.filter(isPublicLocation).length;
   requiredElement('result-info').textContent = state.isLoading ? '' : t('count', state.visIdx.length, publicTotal);

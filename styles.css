@@ -247,6 +247,12 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 .marker-dot{width:28px;height:28px;border-radius:50%;border:2px solid #fff;
   box-shadow:0 2px 4px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;
   font-size:14px;line-height:1;background:var(--primary);color:#fff}
+.marker-cluster{border-radius:50%;background:var(--primary);color:#fff;
+  font-family:'Inter',sans-serif;font-weight:600;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+  border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.25);
+  cursor:pointer;transition:transform .15s ease}
+.marker-cluster:hover{transform:scale(1.12)}
 
 /* HERE Maps InfoBubble overrides */
 .H_ib_body{background:var(--canvas)!important;border:1px solid var(--hairline)!important;

@@ -1,6 +1,16 @@
 import { state } from './state.js';
 import { getEffectiveTheme } from './ui.js';
 import { buildPopupContent, activateCard, isPublicLocation } from './render.js';
+// MarkerClusterer is loaded lazily to avoid CJS/ESM issues in Node.js test env
+/** @type {typeof import('@googlemaps/markerclusterer').MarkerClusterer|null} */
+let _MarkerClusterer = null;
+async function getMarkerClusterer() {
+  if (!_MarkerClusterer) {
+    const mod = await import('@googlemaps/markerclusterer');
+    _MarkerClusterer = mod.MarkerClusterer || mod.default?.MarkerClusterer;
+  }
+  return _MarkerClusterer;
+}
 
 /** @typedef {'google'|'here'} ActiveMapProvider */
 /**
@@ -53,7 +63,7 @@ export function getHereBaseLayer(layers, theme) {
 }
 
 // ═══════════════════════════════════════════════════
-// MARKERS
+// MARKERS & CLUSTERING
 // ═══════════════════════════════════════════════════
 /** @param {string} icon @returns {HTMLDivElement} */
 export function makeMarkerContent(icon) {
@@ -63,26 +73,98 @@ export function makeMarkerContent(icon) {
   return el;
 }
 
-export function buildMarkers() {
+/**
+ * Custom renderer for Google MarkerClusterer.
+ * Draws a circle with the cluster count.
+ * @param {{ count: number, position: any }} param0
+ * @returns {any}
+ */
+function clusterRenderer({ count, position }) {
+  const size = count >= 100 ? 48 : count >= 10 ? 40 : 32;
+  const el = document.createElement('div');
+  el.className = 'marker-cluster';
+  el.textContent = String(count);
+  el.style.width = `${size}px`;
+  el.style.height = `${size}px`;
+  return new google.maps.marker.AdvancedMarkerElement({
+    position,
+    content: el,
+    zIndex: 1000 + count,
+  });
+}
+
+/**
+ * Custom theme for HERE Maps clustering.
+ * Provides consistent visual style with Google clustering.
+ * @returns {any}
+ */
+function makeHereClusterTheme() {
+  return {
+    getClusterPresentation: (/** @type {any} */ cluster) => {
+      const weight = cluster.getWeight();
+      const size = weight >= 100 ? 48 : weight >= 10 ? 40 : 32;
+      const el = document.createElement('div');
+      el.className = 'marker-cluster';
+      el.textContent = String(weight);
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
+      const domIcon = new H.map.DomIcon(el);
+      const marker = new H.map.DomMarker(cluster.getPosition(), {
+        icon: domIcon,
+        min: cluster.getMinZoom(),
+        max: cluster.getMaxZoom(),
+      });
+      marker.setData(cluster);
+      return marker;
+    },
+    getNoisePresentation: (/** @type {any} */ noisePoint) => {
+      const data = noisePoint.getData();
+      const el = makeMarkerContent(data?.icon || '📍');
+      const domIcon = new H.map.DomIcon(el);
+      const marker = new H.map.DomMarker(noisePoint.getPosition(), {
+        icon: domIcon,
+        min: noisePoint.getMinZoom(),
+      });
+      marker.setData(noisePoint.getData());
+      return marker;
+    },
+  };
+}
+
+export async function buildMarkers() {
   if (!state.map) return;
 
-  // Remove old markers
+  // --- Tear down old clustering & markers ---
+  if (state.markerClusterer) {
+    if (state.provider === 'google') {
+      state.markerClusterer.clearMarkers();
+    } else {
+      state.map.removeLayer(state.markerClusterer);
+    }
+    state.markerClusterer = null;
+  }
+  // Remove leftover individual markers (safety net)
   state.markers.forEach(m => {
     if (!m) return;
     if (state.provider === 'google') m.map = null;
-    else state.map.removeObject(m);
+    else {
+      try { state.map.removeObject(m); } catch (_) { /* already removed */ }
+    }
   });
   state.markers.length = 0;
 
-  state.data.forEach((row, i) => {
-    const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
-    if (!isPublicLocation(row)) return;
-    if (!lat || !lng) return;
-    const el = makeMarkerContent(row.icon);
-
-    if (state.provider === 'google') {
+  // --- Build markers per provider ---
+  if (state.provider === 'google') {
+    /** @type {any[]} */
+    const clusterMarkers = [];
+    state.data.forEach((row, i) => {
+      const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+      if (!isPublicLocation(row)) return;
+      if (!lat || !lng) return;
+      const el = makeMarkerContent(row.icon);
+      // NOTE: do NOT set map here; MarkerClusterer will manage it
       const m = new google.maps.marker.AdvancedMarkerElement({
-        map: state.map, position: { lat, lng }, content: el,
+        position: { lat, lng }, content: el,
       });
       m.addListener('click', () => {
         state.infoWindow.setContent(buildPopupContent(i));
@@ -90,22 +172,68 @@ export function buildMarkers() {
         activateCard(i);
       });
       state.markers[i] = m;
-    } else {
-      const domIcon = new H.map.DomIcon(el);
-      const m = new H.map.DomMarker({ lat, lng }, { icon: domIcon });
-      m.addEventListener('tap', () => {
-        if (state.infoBubble) {
-          state.hereUi.removeBubble(state.infoBubble);
-          state.infoBubble = null;
+      clusterMarkers.push(m);
+    });
+
+    // Create MarkerClusterer
+    const MCtor = await getMarkerClusterer();
+    state.markerClusterer = new MCtor({
+      map: state.map,
+      markers: clusterMarkers,
+      renderer: { render: clusterRenderer },
+    });
+
+  } else {
+    // HERE Maps clustering via H.clustering.Provider
+    /** @type {any[]} */
+    const dataPoints = [];
+    state.data.forEach((row, i) => {
+      const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+      if (!isPublicLocation(row)) return;
+      if (!lat || !lng) return;
+      dataPoints.push(new H.clustering.DataPoint(lat, lng, null, { index: i, icon: row.icon }));
+    });
+
+    const clusterProvider = new H.clustering.Provider(dataPoints, {
+      clusteringOptions: {
+        eps: 40,
+        minWeight: 2,
+      },
+      theme: makeHereClusterTheme(),
+    });
+
+    // Handle tap on cluster or noise points
+    clusterProvider.addEventListener('tap', (/** @type {any} */ evt) => {
+      const target = evt.target;
+      const data = target.getData();
+      if (data && typeof data.getWeight === 'function') {
+        // It's a cluster — zoom into its bounds
+        const bbox = data.getBoundingBox();
+        if (bbox) {
+          state.map.getViewModel().setLookAtData({ bounds: bbox }, true);
         }
-        state.infoBubble = new H.ui.InfoBubble({ lat, lng }, { content: buildPopupContent(i) });
-        state.hereUi.addBubble(state.infoBubble);
-        activateCard(i);
-      });
-      state.map.addObject(m);
-      state.markers[i] = m;
-    }
-  });
+      } else {
+        // It's a noise point (individual marker)
+        const pointData = data;
+        const i = pointData?.index;
+        if (i != null) {
+          const row = state.data[i];
+          const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+          if (state.infoBubble) {
+            state.hereUi.removeBubble(state.infoBubble);
+            state.infoBubble = null;
+          }
+          state.infoBubble = new H.ui.InfoBubble({ lat, lng }, { content: buildPopupContent(i) });
+          state.hereUi.addBubble(state.infoBubble);
+          activateCard(i);
+        }
+      }
+    });
+
+    const clusterLayer = new H.map.layer.ObjectLayer(clusterProvider);
+    state.map.addLayer(clusterLayer);
+    state.markerClusterer = clusterLayer;
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -131,6 +259,7 @@ async function loadHereScripts() {
   await loadScript('https://js.api.here.com/v3/3.1/mapsjs-service.js');
   await loadScript('https://js.api.here.com/v3/3.1/mapsjs-ui.js');
   await loadScript('https://js.api.here.com/v3/3.1/mapsjs-mapevents.js');
+  await loadScript('https://js.api.here.com/v3/3.1/mapsjs-clustering.js');
 }
 
 // ═══════════════════════════════════════════════════
@@ -198,6 +327,10 @@ function initWithHere(apiKey) {
 /** @param {MapConfig} cfg @returns {Promise<void>} */
 async function fallbackToHere(cfg) {
   // Tear down Google state
+  if (state.markerClusterer) {
+    state.markerClusterer.clearMarkers();
+    state.markerClusterer = null;
+  }
   if (state.googleErrorObserver) {
     state.googleErrorObserver.disconnect();
     state.googleErrorObserver = null;

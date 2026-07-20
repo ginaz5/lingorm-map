@@ -20,7 +20,34 @@ import { checkWhatsNew, closeWhatsNew } from './whats-new.js';
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
 // ═══════════════════════════════════════════════════
+function applyCoordinateJitter() {
+  if (state.jitterApplied) return;
+  state.jitterApplied = true;
+
+  const coordMap = {};
+  state.data.forEach(row => {
+    if (!row.lat || !row.lng) return;
+    const key = `${row.lat},${row.lng}`;
+    if (!coordMap[key]) coordMap[key] = [];
+    coordMap[key].push(row);
+  });
+  
+  Object.values(coordMap).forEach(rows => {
+    if (rows.length > 1) {
+      const radius = 0.00008; // ~8 meters offset
+      rows.forEach((row, idx) => {
+        const angle = (idx / rows.length) * Math.PI * 2;
+        const lat = parseFloat(row.lat) + radius * Math.cos(angle);
+        const lng = parseFloat(row.lng) + radius * Math.sin(angle);
+        row.lat = lat.toFixed(6);
+        row.lng = lng.toFixed(6);
+      });
+    }
+  });
+}
+
 function rebuild() {
+  applyCoordinateJitter();
   if (state.map) buildMarkers();
   buildCatFilter();
   applyFilters();
