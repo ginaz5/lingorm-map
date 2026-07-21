@@ -39,3 +39,20 @@ test('map markers keep their light style and use coral with contrast in dark mod
   assert.match(css, /\.marker-dot\.active\{[^}]*0 0 15px rgba\(255,255,255,\.6\)/);
   assert.doesNotMatch(css, /\.marker-cluster\{[^}]*background:var\(--primary\)/);
 });
+
+test('light mode cards have scoped accessible contrast styles', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+  const lightSection = css.match(/\/\* Light mode card contrast \*\/([\s\S]*?)\/\* User location blue dot \*\//)?.[1];
+
+  assert.ok(lightSection);
+  assert.match(lightSection, /:root:not\(\[data-theme="dark"\]\) \.gm-style \.gm-style-iw-c/);
+  assert.match(lightSection, /border:1px solid rgba\(0,0,0,\.12\)/);
+  assert.match(lightSection, /box-shadow:0 10px 25px -5px rgba\(0,0,0,\.12\),0 8px 10px -6px rgba\(0,0,0,\.08\)/);
+  assert.match(lightSection, /\.popup-content\{\s*color:#111827;\s*font-family:'Inter'/);
+  assert.match(lightSection, /\.popup-content \.popup-name\{\s*color:#111827;font-weight:600/);
+  assert.match(lightSection, /\.popup-content \.popup-notes\{color:#374151\}/);
+  assert.match(lightSection, /\.popup-content \.approx-tag\{color:#4b5563;font-weight:500\}/);
+  assert.match(lightSection, /\.popup-content \.src-tag\{font-family:inherit!important\}/);
+  assert.match(lightSection, /background:#e0f2fe;color:#0369a1;font-weight:600/);
+  assert.doesNotMatch(lightSection, /:root\[data-theme="dark"\]/);
+});

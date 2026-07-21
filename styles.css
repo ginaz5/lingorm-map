@@ -434,6 +434,57 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
   .popup-nav-btn,.popup-maps-btn{padding:6px 8px;}
 }
 
+/* Light mode card contrast */
+:root:not([data-theme="dark"]) .loc-card{
+  background:#fff;border-color:rgba(0,0,0,.12);
+  box-shadow:0 1px 3px rgba(0,0,0,.08)}
+:root:not([data-theme="dark"]) .loc-card:hover{
+  border-color:rgba(0,0,0,.18);
+  box-shadow:0 10px 25px -5px rgba(0,0,0,.12),0 8px 10px -6px rgba(0,0,0,.08)}
+:root:not([data-theme="dark"]) .loc-card.active{
+  border-color:#111827;box-shadow:0 0 0 1px #111827,0 8px 18px rgba(0,0,0,.1)}
+:root:not([data-theme="dark"]) .gm-style .gm-style-iw-c{
+  background:#fff!important;border:1px solid rgba(0,0,0,.12)!important;
+  box-shadow:0 10px 25px -5px rgba(0,0,0,.12),0 8px 10px -6px rgba(0,0,0,.08)!important}
+:root:not([data-theme="dark"]) .gm-style .gm-style-iw-t::after,
+:root:not([data-theme="dark"]) .gm-style .gm-style-iw-tc::after{background:#fff!important}
+:root:not([data-theme="dark"]) .H_ib_body{
+  background:#fff!important;border:1px solid rgba(0,0,0,.12)!important;
+  box-shadow:0 10px 25px -5px rgba(0,0,0,.12),0 8px 10px -6px rgba(0,0,0,.08)!important}
+:root:not([data-theme="dark"]) .H_ib_tail polygon{fill:#fff!important}
+:root:not([data-theme="dark"]) .popup-content{
+  color:#111827;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC',sans-serif}
+:root:not([data-theme="dark"]) .popup-content button,
+:root:not([data-theme="dark"]) .popup-content .badge,
+:root:not([data-theme="dark"]) .popup-content .src-tag{font-family:inherit!important}
+:root:not([data-theme="dark"]) .card-name,
+:root:not([data-theme="dark"]) .popup-content .popup-name{
+  color:#111827;font-weight:600;line-height:1.4;letter-spacing:-.01em}
+:root:not([data-theme="dark"]) .card-alt,
+:root:not([data-theme="dark"]) .card-notes,
+:root:not([data-theme="dark"]) .popup-content .popup-alt,
+:root:not([data-theme="dark"]) .popup-content .popup-notes{color:#374151}
+:root:not([data-theme="dark"]) .popup-content .approx-tag{color:#4b5563;font-weight:500}
+:root:not([data-theme="dark"]) .src-tags .src-tag{
+  background:#f3f4f6;color:#4b5563;font-weight:500;border-color:rgba(0,0,0,.12)}
+:root:not([data-theme="dark"]) .src-tags .src-tag:hover{color:#111827;border-color:rgba(0,0,0,.2)}
+:root:not([data-theme="dark"]) .b-cat{
+  background:#e0f2fe;color:#0369a1;font-weight:600;border-color:#bae6fd}
+:root:not([data-theme="dark"]) button.gm-ui-hover-effect span{background-color:#4b5563!important}
+:root:not([data-theme="dark"]) button.gm-ui-hover-effect:hover span{background-color:#111827!important}
+:root:not([data-theme="dark"]) .H_ib_close svg{fill:#4b5563!important}
+:root:not([data-theme="dark"]) .H_ib_close:hover svg{fill:#111827!important}
+:root:not([data-theme="dark"]) .popup-nav-btn,
+:root:not([data-theme="dark"]) .popup-maps-btn{
+  background:#fff;color:#4b5563;border-color:rgba(0,0,0,.14)}
+:root:not([data-theme="dark"]) .popup-nav-btn:hover,
+:root:not([data-theme="dark"]) .popup-maps-btn:hover{
+  background:#f9fafb;color:#111827;opacity:1}
+:root:not([data-theme="dark"]) .fav-btn:not(.fav-active){color:#4b5563}
+:root:not([data-theme="dark"]) .fav-btn:not(.fav-active):hover{color:#111827}
+:root:not([data-theme="dark"]) .fav-btn:not(.fav-active):hover svg{stroke:#111827}
+
 /* User location blue dot */
 .user-location-dot{width:18px;height:18px;border-radius:50%;background:#3b82f6;
   border:2.5px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.2);position:relative}
