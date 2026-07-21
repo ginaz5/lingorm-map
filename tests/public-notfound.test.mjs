@@ -172,6 +172,7 @@ test('activateCard centers HERE map and opens info bubble', async () => {
   const bubbles = [];
   const activeClassOps = [];
   const cardClassOps = [];
+  const markerClassOps = [];
 
   globalThis.document = {
     querySelectorAll: () => [
@@ -210,7 +211,12 @@ test('activateCard centers HERE map and opens info bubble', async () => {
       removeBubble: () => {},
     };
     state.infoBubble = null;
-    state.markers = [{ id: 'marker-0' }];
+    state.markers = [{
+      id: 'marker-0',
+      __markerContent: {
+        classList: { toggle: (name, active) => markerClassOps.push([name, active]) },
+      },
+    }];
 
     activateCard(0);
 
@@ -222,6 +228,7 @@ test('activateCard centers HERE map and opens info bubble', async () => {
     assert.match(bubbles[0].options.content, /Visible published/);
     assert.deepEqual(activeClassOps, [['remove', 'active']]);
     assert.deepEqual(cardClassOps, [['add', 'active']]);
+    assert.deepEqual(markerClassOps, [['active', true]]);
   } finally {
     globalThis.document = previousDocument;
     globalThis.window = previousWindow;

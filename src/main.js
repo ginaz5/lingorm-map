@@ -5,7 +5,7 @@ import {
   applyFilters, activateCard, buildPopupContent,
 } from './render.js';
 import {
-  THEME_ICONS, getEffectiveTheme, switchTab,
+  getEffectiveTheme, switchTab,
   showSnackbar, locateMe, openNavigation, openInGoogleMaps, toggleLang,
 } from './ui.js';
 import {
@@ -66,15 +66,9 @@ function applyTheme() {
   const theme = getEffectiveTheme();
   document.documentElement.dataset.theme = theme;
 
-  const themeIcon = document.getElementById('theme-icon');
-  if (themeIcon) themeIcon.textContent = THEME_ICONS[theme];
-
   const themeBtn = document.getElementById('theme-btn');
   if (themeBtn) themeBtn.setAttribute('aria-pressed', String(theme === 'dark'));
-  
-  const mobileThemeIcon = document.getElementById('mobile-theme-icon');
-  if (mobileThemeIcon) mobileThemeIcon.textContent = THEME_ICONS[theme];
-  
+
   updateMapTheme();
 }
 

@@ -206,6 +206,9 @@ export function activateCard(i, options = {}) {
   }
 
   document.querySelectorAll('.loc-card').forEach(c => c.classList.remove('active'));
+  state.markers.forEach((marker, markerIndex) => {
+    marker?.__markerContent?.classList.toggle('active', markerIndex === i);
+  });
   const card = document.getElementById('card-' + i);
   if (card) {
     card.classList.add('active');

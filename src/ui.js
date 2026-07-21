@@ -16,8 +16,6 @@ function requiredElement(id) {
 // ═══════════════════════════════════════════════════
 // THEME
 // ═══════════════════════════════════════════════════
-export const THEME_ICONS = { light: '☀️', dark: '🌙' };
-
 /** @returns {'light'|'dark'} */
 export function getEffectiveTheme() {
   try {

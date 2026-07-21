@@ -131,11 +131,14 @@ function makeHereClusterTheme() {
     getNoisePresentation: (/** @type {any} */ noisePoint) => {
       const data = noisePoint.getData();
       const el = makeMarkerContent(data?.icon || '📍');
+      if (data?.index === state.activeIdx) el.classList.add('active');
       const domIcon = new H.map.DomIcon(el);
       const marker = new H.map.DomMarker(noisePoint.getPosition(), {
         icon: domIcon,
         min: noisePoint.getMinZoom(),
       });
+      marker.__markerContent = el;
+      if (data?.index != null) state.markers[data.index] = marker;
       marker.setData(noisePoint.getData());
       return marker;
     },
@@ -173,10 +176,12 @@ export async function buildMarkers() {
       if (!isPublicLocation(row)) return;
       if (!lat || !lng) return;
       const el = makeMarkerContent(row.icon);
+      if (state.activeIdx === i) el.classList.add('active');
       // NOTE: do NOT set map here; MarkerClusterer will manage it
       const m = new google.maps.marker.AdvancedMarkerElement({
         position: { lat, lng }, content: el,
       });
+      m.__markerContent = el;
       m.addListener('click', () => {
         state.infoWindow.setContent(buildPopupContent(i));
         state.infoWindow.open({ anchor: m, map: state.map });

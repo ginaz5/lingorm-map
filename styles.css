@@ -60,9 +60,9 @@
   --muted: #a1a1aa;
   --brand-accent: #60a5fa;
   --brand-accent-hover: #93c5fd;
-  --marker-bg: #2563eb;
+  --marker-bg: #ff6b35;
   --marker-fg: #ffffff;
-  --marker-ring: #bfdbfe;
+  --marker-ring: #ffffff;
   --accent-soft: rgba(96,165,250,.14);
   --on-accent: #0b1220;
   --success: #4ade80;
@@ -147,6 +147,11 @@ header {
 .btn-ghost svg {
   flex-shrink: 0;
 }
+.theme-icon{width:14px;height:14px;display:inline-grid;place-items:center;flex-shrink:0}
+.theme-icon svg{grid-area:1/1}
+.theme-icon-moon{display:none}
+:root[data-theme="dark"] .theme-icon-sun{display:none}
+:root[data-theme="dark"] .theme-icon-moon{display:block}
 
 .icon-btn{padding:6px 8px;font-size:16px}
 .mobile-actions{display:none;position:relative}
@@ -278,12 +283,14 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 .gm-style .gm-style-iw-ch{padding-top:0!important;height:0!important}
 .gm-style .gm-style-iw-chr{height:0!important}
 .marker-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--marker-ring);
-  box-shadow:0 2px 4px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;
-  font-size:14px;line-height:1;background:var(--marker-bg);color:var(--marker-fg)}
+  box-shadow:0 4px 12px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;
+  font-size:14px;line-height:1;background:var(--marker-bg);color:var(--marker-fg);
+  filter:drop-shadow(0 0 1px var(--marker-ring));transition:box-shadow .18s ease,transform .18s ease}
+.marker-dot.active{box-shadow:0 4px 12px rgba(0,0,0,.4),0 0 15px rgba(255,255,255,.6);transform:scale(1.08)}
 .marker-cluster{border-radius:50%;background:var(--marker-bg);color:var(--marker-fg);
   font-family:'Inter',sans-serif;font-weight:600;font-size:13px;
   display:flex;align-items:center;justify-content:center;
-  border:2.5px solid var(--marker-ring);box-shadow:0 2px 8px rgba(0,0,0,0.35);
+  border:2px solid var(--marker-ring);box-shadow:0 4px 12px rgba(0,0,0,.4);
   cursor:pointer;transition:transform .15s ease}
 .marker-cluster:hover{transform:scale(1.12)}
 
