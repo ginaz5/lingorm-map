@@ -1,20 +1,17 @@
 import { lang, setLang, t } from './i18n.js';
 import { state } from './state.js';
 import {
-  updateLangUI, buildCatFilter, buildCatDropdown, buildStatusFilter,
+  updateLangUI, buildCatFilter,
   applyFilters, activateCard, buildPopupContent,
 } from './render.js';
 import {
-  THEME_ICONS, getEffectiveTheme, switchTab,
+  getEffectiveTheme, switchTab,
   showSnackbar, locateMe, openNavigation, openInGoogleMaps, toggleLang,
 } from './ui.js';
 import {
-  openEditModal, closeEditModal, submitEdit,
-  openAddModal, closeAddModal, submitAdd,
   openIssueModal, closeIssueModal, submitIssueReport,
   tryLoadSheet,
 } from './forms.js';
-import { showPendingBanner } from './submit.js';
 import { initMap, loadMapScript, updateMapTheme, buildMarkers } from './map.js';
 import { loadFavorites, toggleFavorite } from './favorites.js';
 import { heartSVG } from './render.js';
@@ -23,7 +20,34 @@ import { checkWhatsNew, closeWhatsNew } from './whats-new.js';
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
 // ═══════════════════════════════════════════════════
+function applyCoordinateJitter() {
+  if (state.jitterApplied) return;
+  state.jitterApplied = true;
+
+  const coordMap = {};
+  state.data.forEach(row => {
+    if (!row.lat || !row.lng) return;
+    const key = `${row.lat},${row.lng}`;
+    if (!coordMap[key]) coordMap[key] = [];
+    coordMap[key].push(row);
+  });
+  
+  Object.values(coordMap).forEach(rows => {
+    if (rows.length > 1) {
+      const radius = 0.00008; // ~8 meters offset
+      rows.forEach((row, idx) => {
+        const angle = (idx / rows.length) * Math.PI * 2;
+        const lat = parseFloat(row.lat) + radius * Math.cos(angle);
+        const lng = parseFloat(row.lng) + radius * Math.sin(angle);
+        row.lat = lat.toFixed(6);
+        row.lng = lng.toFixed(6);
+      });
+    }
+  });
+}
+
 function rebuild() {
+  applyCoordinateJitter();
   if (state.map) buildMarkers();
   buildCatFilter();
   applyFilters();
@@ -40,9 +64,11 @@ function cycleTheme() {
 
 function applyTheme() {
   const theme = getEffectiveTheme();
-  document.documentElement.setAttribute('data-theme', theme);
-  document.getElementById('theme-btn').textContent = THEME_ICONS[theme];
-  document.getElementById('mobile-theme-icon').textContent = THEME_ICONS[theme];
+  document.documentElement.dataset.theme = theme;
+
+  const themeBtn = document.getElementById('theme-btn');
+  if (themeBtn) themeBtn.setAttribute('aria-pressed', String(theme === 'dark'));
+
   updateMapTheme();
 }
 
@@ -76,7 +102,6 @@ function runMobileAction(event) {
 // (inside JS template literals in renderList / buildPopupContent)
 // ═══════════════════════════════════════════════════
 window.activateCard = activateCard;
-window.openEditModal = openEditModal;
 window.openNavigation = openNavigation;
 window.openInGoogleMaps = openInGoogleMaps;
 window.applyFilters = applyFilters;
@@ -93,7 +118,6 @@ setLang(localStorage.getItem('lang') || 'zh');
 loadFavorites();
 
 // Static event listeners
-document.getElementById('add-btn').addEventListener('click', openAddModal);
 document.getElementById('fav-filter-btn').addEventListener('click', () => {
   state.favFilterOn = !state.favFilterOn;
   const favBtn = document.getElementById('fav-filter-btn');
@@ -105,7 +129,7 @@ document.getElementById('fav-filter-btn').addEventListener('click', () => {
 document.getElementById('issue-btn').addEventListener('click', openIssueModal);
 document.getElementById('locate-btn').addEventListener('click', locateMe);
 document.getElementById('lang-btn').addEventListener('click', toggleLang);
-document.getElementById('theme-btn').addEventListener('click', cycleTheme);
+document.getElementById('theme-btn')?.addEventListener('click', cycleTheme);
 document.getElementById('mobile-actions-btn').addEventListener('click', toggleMobileActions);
 document.querySelectorAll('[data-mobile-action]').forEach(btn => {
   btn.addEventListener('click', runMobileAction);
@@ -118,20 +142,7 @@ document.getElementById('tab-map').addEventListener('click', () => switchTab('ma
 document.getElementById('tab-list').addEventListener('click', () => switchTab('list'));
 
 // Modal backdrops (click outside = close)
-document.getElementById('edit-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeEditModal(); });
-document.getElementById('add-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeAddModal(); });
 document.getElementById('issue-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeIssueModal(); });
-
-// Edit modal
-document.querySelector('#edit-modal .modal-close').addEventListener('click', closeEditModal);
-document.querySelector('#edit-modal .btn-ghost').addEventListener('click', closeEditModal);
-document.getElementById('edit-submit-btn').addEventListener('click', submitEdit);
-
-// Add modal
-document.querySelector('#add-modal .modal-close').addEventListener('click', closeAddModal);
-document.getElementById('add-cancel-btn').addEventListener('click', closeAddModal);
-document.getElementById('add-submit-btn').addEventListener('click', submitAdd);
-document.getElementById('add-done-btn').addEventListener('click', closeAddModal);
 
 // Issue report modal
 document.querySelector('#issue-modal .modal-close').addEventListener('click', closeIssueModal);
@@ -153,11 +164,8 @@ window.addEventListener('resize', () => {
 // ─── Boot sequence ───────────────────────────────
 applyTheme();
 updateLangUI();
-buildCatDropdown();
 buildCatFilter();
-buildStatusFilter();
 applyFilters();       // render initial (loading) state
-showPendingBanner();
 tryLoadSheet(rebuild);  // loads data; rebuild() triggers buildMarkers + renderList
 loadMapScript(); // tries Google Maps first, falls back to HERE if unavailable
 checkWhatsNew(); // show What's New modal if there are updates since last visit

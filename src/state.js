@@ -12,12 +12,15 @@
  * @property {number} activeIdx
  * @property {MapProvider} provider
  * @property {any} map
+ * @property {any} mapConfig
+ * @property {'light'|'dark'} mapTheme
  * @property {any} infoWindow
  * @property {MutationObserver|null} googleErrorObserver
  * @property {any} hereUi
  * @property {any} hereLayers
  * @property {any} infoBubble
  * @property {any[]} markers
+ * @property {any} markerClusterer
  * @property {any} userLocationMarker
  * @property {ReturnType<typeof setTimeout>|null} snackTimer
  * @property {boolean} isLoading
@@ -39,6 +42,8 @@ export const state = {
 
   // Shared map object (google.maps.Map or H.Map)
   map: null,
+  mapConfig: null,
+  mapTheme: 'light',
 
   // Google Maps-specific
   infoWindow: null,
@@ -51,6 +56,8 @@ export const state = {
 
   // Sparse array: markers[i] corresponds to data[i]
   markers: [],
+  // Google MarkerClusterer or HERE clustering layer
+  markerClusterer: null,
   // Blue-dot marker for the user's GPS position
   userLocationMarker: null,
 

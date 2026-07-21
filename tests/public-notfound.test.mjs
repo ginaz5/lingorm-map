@@ -16,19 +16,17 @@ function makeLocation(status, name = status) {
     lng: '100.5',
     src: '',
     sourceUrl: '',
-    dup: '',
     approx: '',
   };
 }
 
-test('public filters and list exclude Could Not Find while data remains loaded', async () => {
+test('public filters and list show only Published locations', async () => {
   const { state } = await import('../src/state.js');
-  const { applyFilters, buildStatusFilter } = await import('../src/render.js');
+  const { applyFilters } = await import('../src/render.js');
 
   const elements = {
     search: { value: '' },
     'cat-filter': { value: '' },
-    'status-filter': { value: '', innerHTML: '' },
     'loc-list': { innerHTML: '' },
     'result-info': { textContent: '' },
   };
@@ -40,19 +38,36 @@ test('public filters and list exclude Could Not Find while data remains loaded',
   try {
     state.isLoading = false;
     state.data = [
-      makeLocation('Verified', 'Visible verified'),
-      makeLocation('Needs Review', 'Visible review'),
+      makeLocation('Published', 'Visible published'),
+      makeLocation('Verified', 'Hidden verified'),
+      makeLocation('Needs Review', 'Hidden review'),
+      makeLocation('Draft', 'Hidden draft'),
+      makeLocation('Verifying', 'Hidden verifying'),
       makeLocation('Could Not Find', 'Hidden not found'),
+      makeLocation('Closed', 'Hidden closed'),
+      makeLocation('Paused', 'Hidden paused'),
+      makeLocation('Inactive', 'Hidden inactive'),
+      makeLocation('Unexpected', 'Hidden unknown'),
     ];
 
-    buildStatusFilter();
     applyFilters();
 
-    assert.deepEqual(state.visIdx, [0, 1]);
-    assert.equal(elements['result-info'].textContent, '顯示 2 / 2 個地點');
-    assert.doesNotMatch(elements['status-filter'].innerHTML, /Could Not Find|找不到/);
-    assert.doesNotMatch(elements['loc-list'].innerHTML, /Hidden not found|找不到/);
-    assert.equal(state.data[2].status, 'Could Not Find');
+    assert.deepEqual(state.visIdx, [0]);
+    assert.equal(elements['result-info'].textContent, '顯示 1 / 1 個地點');
+    for (const hiddenName of [
+      'Hidden verified',
+      'Hidden review',
+      'Hidden draft',
+      'Hidden verifying',
+      'Hidden not found',
+      'Hidden closed',
+      'Hidden paused',
+      'Hidden inactive',
+      'Hidden unknown',
+    ]) {
+      assert.doesNotMatch(elements['loc-list'].innerHTML, new RegExp(hiddenName));
+    }
+    assert.equal(state.data[5].status, 'Could Not Find');
   } finally {
     globalThis.document = previousDocument;
     state.data = [];
@@ -61,15 +76,15 @@ test('public filters and list exclude Could Not Find while data remains loaded',
   }
 });
 
-test('map markers skip Could Not Find locations', async () => {
+test('map markers use the same public status allowlist', async () => {
   const { state } = await import('../src/state.js');
   const { buildMarkers } = await import('../src/map.js');
 
-  const createdMarkers = [];
+  const createdDataPoints = [];
   const previousDocument = globalThis.document;
   const previousHere = globalThis.H;
   globalThis.document = {
-    createElement: () => ({ className: '', textContent: '' }),
+    createElement: () => ({ className: '', textContent: '', style: {} }),
   };
   globalThis.H = {
     map: {
@@ -82,7 +97,32 @@ test('map markers skip Could Not Find locations', async () => {
         constructor(position, options) {
           this.position = position;
           this.options = options;
-          createdMarkers.push(this);
+        }
+
+        setData() {}
+        addEventListener() {}
+      },
+      layer: {
+        ObjectLayer: class {
+          constructor(provider) {
+            this.provider = provider;
+          }
+        },
+      },
+    },
+    clustering: {
+      DataPoint: class {
+        constructor(lat, lng, weight, data) {
+          this.lat = lat;
+          this.lng = lng;
+          this.data = data;
+          createdDataPoints.push(this);
+        }
+      },
+      Provider: class {
+        constructor(dataPoints, options) {
+          this.dataPoints = dataPoints;
+          this.options = options;
         }
 
         addEventListener() {}
@@ -91,23 +131,31 @@ test('map markers skip Could Not Find locations', async () => {
   };
 
   try {
-    state.map = { addObject() {}, removeObject() {} };
+    state.map = { addObject() {}, removeObject() {}, addLayer() {}, removeLayer() {} };
     state.markers = [];
+    state.markerClusterer = null;
     state.data = [
-      makeLocation('Verified', 'Visible verified'),
+      makeLocation('Published', 'Visible published'),
+      makeLocation('Verified', 'Hidden verified'),
+      makeLocation('Needs Review', 'Hidden review'),
+      makeLocation('Draft', 'Hidden draft'),
+      makeLocation('Verifying', 'Hidden verifying'),
       makeLocation('Could Not Find', 'Hidden not found'),
+      makeLocation('Closed', 'Hidden closed'),
+      makeLocation('Paused', 'Hidden paused'),
+      makeLocation('Inactive', 'Hidden inactive'),
+      makeLocation('Unexpected', 'Hidden unknown'),
     ];
 
-    buildMarkers();
+    await buildMarkers();
 
-    assert.equal(createdMarkers.length, 1);
-    assert.ok(state.markers[0]);
-    assert.equal(state.markers[1], undefined);
+    assert.equal(createdDataPoints.length, 1);
   } finally {
     globalThis.document = previousDocument;
     globalThis.H = previousHere;
     state.map = null;
     state.markers = [];
+    state.markerClusterer = null;
     state.data = [];
   }
 });
@@ -124,6 +172,7 @@ test('activateCard centers HERE map and opens info bubble', async () => {
   const bubbles = [];
   const activeClassOps = [];
   const cardClassOps = [];
+  const markerClassOps = [];
 
   globalThis.document = {
     querySelectorAll: () => [
@@ -152,7 +201,7 @@ test('activateCard centers HERE map and opens info bubble', async () => {
   try {
     state.activeIdx = -1;
     state.provider = 'here';
-    state.data = [makeLocation('Verified', 'Visible verified')];
+    state.data = [makeLocation('Published', 'Visible published')];
     state.map = {
       setCenter: (position) => centers.push(position),
       setZoom: (zoom) => zooms.push(zoom),
@@ -162,7 +211,12 @@ test('activateCard centers HERE map and opens info bubble', async () => {
       removeBubble: () => {},
     };
     state.infoBubble = null;
-    state.markers = [{ id: 'marker-0' }];
+    state.markers = [{
+      id: 'marker-0',
+      __markerContent: {
+        classList: { toggle: (name, active) => markerClassOps.push([name, active]) },
+      },
+    }];
 
     activateCard(0);
 
@@ -171,9 +225,10 @@ test('activateCard centers HERE map and opens info bubble', async () => {
     assert.deepEqual(zooms, [15]);
     assert.equal(bubbles.length, 1);
     assert.deepEqual(bubbles[0].position, { lat: 13.7, lng: 100.5 });
-    assert.match(bubbles[0].options.content, /Visible verified/);
+    assert.match(bubbles[0].options.content, /Visible published/);
     assert.deepEqual(activeClassOps, [['remove', 'active']]);
     assert.deepEqual(cardClassOps, [['add', 'active']]);
+    assert.deepEqual(markerClassOps, [['active', true]]);
   } finally {
     globalThis.document = previousDocument;
     globalThis.window = previousWindow;

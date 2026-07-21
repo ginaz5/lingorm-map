@@ -2,10 +2,13 @@
 
 本專案使用 Netlify 免費方案時，建議先在本機完整測試，確認沒問題後才 push 到 GitHub 觸發 Netlify deploy，以節省 deploy credits。
 
+Notion snapshot 的完整 export → preview → production → rollback 流程請參考
+[`docs/notion-deploy-workflow.md`](../docs/notion-deploy-workflow.md)。
+
 ## 目標
 
-- 本機驗證 HTML、Netlify Function、Google Sheets CSV proxy 都正常
-- 確認後才 `git push origin main`
+- 本機驗證 HTML、Netlify Function、目前選定的 location data source 都正常
+- 確認後才 push feature branch、建立 PR，並驗證 Netlify Deploy Preview
 - 避免每次小修改都觸發 Netlify deploy
 
 ## 前置設定
@@ -42,14 +45,14 @@ netlify link
 ```bash
 GOOGLE_MAPS_KEY=your_google_maps_key
 GOOGLE_MAP_ID=your_google_map_id
-GOOGLE_SHEET_CSV_URL=your_google_sheet_csv_url
-ADMIN_PASSWORD=your_admin_password
+HERE_API_KEY=your_here_api_key
+DATA_SOURCE=notion
 ```
 
 注意：
 
 - `.env` 已在 `.gitignore` 中，不要 commit。
-- `GOOGLE_SHEET_CSV_URL` 是 server-side secret，只給 Netlify Function 使用，不會暴露到前端。
+- `DATA_SOURCE=notion` 會讀取已提交並驗證的 `data/locations.csv`，是唯一支援的值，也是未設定時的預設值。舊版 `DATA_SOURCE=sheet` 回滾路徑已於 2026-07-21 三狀態 cutover 後停用（`build.sh` 會直接拒絕），不要使用。
 - 不要直接用瀏覽器打開 `index.html` 測試，因為那樣測不到 `/api/locations` Netlify Function。
 
 ## 每次修改後的本機測試流程
@@ -71,7 +74,7 @@ node --test tests/*.test.mjs
 預期結果：
 
 ```text
-pass 68
+pass 106
 fail 0
 ```
 
@@ -103,7 +106,7 @@ http://localhost:8888/api/config
 {"googleMapsKey":"...","googleMapId":"..."}
 ```
 
-再確認 location CSV proxy：
+再確認 location CSV endpoint：
 
 ```text
 http://localhost:8888/api/locations
@@ -112,13 +115,13 @@ http://localhost:8888/api/locations
 預期：
 
 - 看到 CSV 內容
-- 第一行是 app 需要的欄位，例如：
+- 第一行是所選來源的 app schema。`DATA_SOURCE=notion` 時應為：
 
 ```text
-Name_EN,Name_ZH,Alt_Name,Category_EN,Category_ZH,Notes_EN,Notes_ZH,Icon,Lat,Lng,Maps_Query,Status,Duplicate_Group,Source,Coords_Approx
+"Location Name","Location Name ZH","Thai / Alt Name","Google Maps URL","Category","Notes","Notes ZH","Source URL","Source Tags","Verification Status","Lat","Lng","Icon","Coordinates Approx","Slug"
 ```
 
-如果看到 Google Sheets HTML、登入頁、或錯誤 JSON，代表 `GOOGLE_SHEET_CSV_URL` 設定或 Sheet 發佈方式需要修正。
+如果回傳錯誤 JSON，先執行 `node scripts/validate-location-snapshot.mjs data/locations.csv`。
 
 如果地圖顯示「這個網頁並未正確載入 Google 地圖」，請到 Google Cloud Console 的 Maps API key restriction 加入本機 referrer：
 
@@ -141,12 +144,13 @@ http://localhost:8888
 檢查：
 
 - 地圖正常載入
-- 卡片名稱、類別、狀態、說明正常顯示
+- 卡片名稱、類別、說明正常顯示，且不顯示審核狀態
 - 沒有空白卡片
 - marker popup 不再顯示「在 Google Maps 開啟 / Open in Google Maps」
 - 語言切換正常
 - 手機版 map/list tab 正常
-- 新增地點、建議修改表單 UI 正常
+- 問題回報可開啟、驗證必填欄位並完成本機 mock 送出
+- 列表與地圖只顯示 `Verified`、`Needs Review`
 
 ## 確認後才部署
 
@@ -161,44 +165,35 @@ git add <changed-files>
 git commit -m "your commit message"
 ```
 
-最後才 push，讓 Netlify deploy：
+最後才 push feature branch：
 
 ```bash
-git push origin main
+git push -u origin <feature-branch>
 ```
+
+接著建立 PR：
+
+1. 等待 Netlify Deploy Preview 完成。
+2. 在 preview URL 重跑 API、地圖、篩選與 favorites 檢查。
+3. 確認 preview 正常後才 merge PR；merge 到 `main` 才會觸發 production deploy。
 
 ## 省 Netlify credits 的原則
 
 - 可以多次 local edit、local test、local commit。
-- 不要每改一點就 push 到 `main`。
-- 等本機確認後，一次 push。
-- 若 Netlify 已連 GitHub auto deploy，通常每次 push 到 production branch 都會觸發 deploy。
+- 不要直接 push 到 `main`；使用 feature branch + PR Deploy Preview。
+- 等本機確認後再 push feature branch。
+- PR preview 驗證完成後才 merge；production branch 的更新會觸發 production deploy。
 
 ## 常見問題
 
-### API 回傳 HTML，不是 CSV
-
-代表 `GOOGLE_SHEET_CSV_URL` 可能填成一般 Google Sheets `/edit` 頁面，或 Sheet 尚未正確發佈 CSV。
-
-建議使用：
-
-```text
-https://docs.google.com/spreadsheets/d/<sheet-id>/export?format=csv&gid=<gid>
-```
-
-或在 Google Sheets：
-
-```text
-File → Share → Publish to web → 選工作表 → Comma-separated values (.csv)
-```
-
-### 首頁顯示內建資料，不是 Sheet 資料
+### API 沒有回傳預期的 location 資料
 
 可能原因：
 
 - `/api/locations` 無法取得 CSV
 - CSV headers 不符合 app schema
-- `GOOGLE_SHEET_CSV_URL` 沒有被 `netlify dev` 載入
+- `DATA_SOURCE` 沒有被 `netlify dev` 載入，或誤設為已停用的 `sheet`
+- `data/locations.csv` 遺失或驗證失敗
 
 先打開：
 

@@ -1,6 +1,16 @@
 import { state } from './state.js';
 import { getEffectiveTheme } from './ui.js';
-import { buildPopupContent, activateCard, getBadgeClass, isPublicLocation } from './render.js';
+import { buildPopupContent, activateCard, isPublicLocation } from './render.js';
+// MarkerClusterer is loaded lazily to avoid CJS/ESM issues in Node.js test env
+/** @type {typeof import('@googlemaps/markerclusterer').MarkerClusterer|null} */
+let _MarkerClusterer = null;
+async function getMarkerClusterer() {
+  if (!_MarkerClusterer) {
+    const mod = await import('@googlemaps/markerclusterer');
+    _MarkerClusterer = mod.MarkerClusterer || mod.default?.MarkerClusterer;
+  }
+  return _MarkerClusterer;
+}
 
 /** @typedef {'google'|'here'} ActiveMapProvider */
 /**
@@ -39,73 +49,207 @@ export function updateProviderBadge(provider) {
 // ═══════════════════════════════════════════════════
 export function updateMapTheme() {
   if (!state.map) return;
+  const theme = getEffectiveTheme();
   if (state.provider === 'google') {
-    state.map.setOptions({ colorScheme: getEffectiveTheme() === 'dark' ? 'DARK' : 'LIGHT' });
+    if (state.mapTheme !== theme && state.mapConfig) reinitializeGoogleMap(theme);
   } else if (state.provider === 'here' && state.hereLayers) {
-    state.map.setBaseLayer(getHereBaseLayer(state.hereLayers, getEffectiveTheme()));
+    state.map.setBaseLayer(getHereBaseLayer(state.hereLayers, theme));
+    state.mapTheme = theme;
   }
 }
 
 /** @param {any} layers @param {'light'|'dark'} theme @returns {any} */
 export function getHereBaseLayer(layers, theme) {
-  const n = layers?.vector?.normal;
-  return theme === 'dark' ? (n?.mapnight || n?.map) : n?.map;
+  const raster = layers?.raster?.normal;
+  const vector = layers?.vector?.normal;
+  if (theme === 'dark') {
+    return raster?.mapnight || vector?.mapnight || raster?.map || vector?.map;
+  }
+  return raster?.map || vector?.map;
+}
+
+/** @param {'light'|'dark'} theme @returns {'LIGHT'|'DARK'} */
+export function getGoogleColorScheme(theme) {
+  return theme === 'dark' ? 'DARK' : 'LIGHT';
 }
 
 // ═══════════════════════════════════════════════════
-// MARKERS
+// MARKERS & CLUSTERING
 // ═══════════════════════════════════════════════════
-/** @param {string} status @param {string} icon @returns {HTMLDivElement} */
-export function makeMarkerContent(status, icon) {
+/** @param {string} icon @returns {HTMLDivElement} */
+export function makeMarkerContent(icon) {
   const el = document.createElement('div');
-  el.className = `marker-dot ${getBadgeClass(status).replace('b-', 'marker-')}`;
+  el.className = 'marker-dot';
   el.textContent = icon || '📍';
   return el;
 }
 
-export function buildMarkers() {
+/**
+ * Custom renderer for Google MarkerClusterer.
+ * Draws a circle with the cluster count.
+ * @param {{ count: number, position: any }} param0
+ * @returns {any}
+ */
+function clusterRenderer({ count, position }) {
+  const size = count >= 100 ? 48 : count >= 10 ? 40 : 32;
+  const el = document.createElement('div');
+  el.className = 'marker-cluster';
+  el.textContent = String(count);
+  el.style.width = `${size}px`;
+  el.style.height = `${size}px`;
+  return new google.maps.marker.AdvancedMarkerElement({
+    position,
+    content: el,
+    zIndex: 1000 + count,
+  });
+}
+
+/**
+ * Custom theme for HERE Maps clustering.
+ * Provides consistent visual style with Google clustering.
+ * @returns {any}
+ */
+function makeHereClusterTheme() {
+  return {
+    getClusterPresentation: (/** @type {any} */ cluster) => {
+      const weight = cluster.getWeight();
+      const size = weight >= 100 ? 48 : weight >= 10 ? 40 : 32;
+      const el = document.createElement('div');
+      el.className = 'marker-cluster';
+      el.textContent = String(weight);
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
+      const domIcon = new H.map.DomIcon(el);
+      const marker = new H.map.DomMarker(cluster.getPosition(), {
+        icon: domIcon,
+        min: cluster.getMinZoom(),
+        max: cluster.getMaxZoom(),
+      });
+      marker.setData(cluster);
+      return marker;
+    },
+    getNoisePresentation: (/** @type {any} */ noisePoint) => {
+      const data = noisePoint.getData();
+      const el = makeMarkerContent(data?.icon || '📍');
+      if (data?.index === state.activeIdx) el.classList.add('active');
+      const domIcon = new H.map.DomIcon(el);
+      const marker = new H.map.DomMarker(noisePoint.getPosition(), {
+        icon: domIcon,
+        min: noisePoint.getMinZoom(),
+      });
+      marker.__markerContent = el;
+      if (data?.index != null) state.markers[data.index] = marker;
+      marker.setData(noisePoint.getData());
+      return marker;
+    },
+  };
+}
+
+export async function buildMarkers() {
   if (!state.map) return;
 
-  // Remove old markers
+  // --- Tear down old clustering & markers ---
+  if (state.markerClusterer) {
+    if (state.provider === 'google') {
+      state.markerClusterer.clearMarkers();
+    } else {
+      state.map.removeLayer(state.markerClusterer);
+    }
+    state.markerClusterer = null;
+  }
+  // Remove leftover individual markers (safety net)
   state.markers.forEach(m => {
     if (!m) return;
     if (state.provider === 'google') m.map = null;
-    else state.map.removeObject(m);
+    else {
+      try { state.map.removeObject(m); } catch (_) { /* already removed */ }
+    }
   });
   state.markers.length = 0;
 
-  state.data.forEach((row, i) => {
-    const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
-    if (!isPublicLocation(row)) return;
-    if (!lat || !lng) return;
-    const el = makeMarkerContent(row.status, row.icon);
-
-    if (state.provider === 'google') {
+  // --- Build markers per provider ---
+  if (state.provider === 'google') {
+    /** @type {any[]} */
+    const clusterMarkers = [];
+    state.data.forEach((row, i) => {
+      const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+      if (!isPublicLocation(row)) return;
+      if (!lat || !lng) return;
+      const el = makeMarkerContent(row.icon);
+      if (state.activeIdx === i) el.classList.add('active');
+      // NOTE: do NOT set map here; MarkerClusterer will manage it
       const m = new google.maps.marker.AdvancedMarkerElement({
-        map: state.map, position: { lat, lng }, content: el,
+        position: { lat, lng }, content: el,
       });
+      m.__markerContent = el;
       m.addListener('click', () => {
         state.infoWindow.setContent(buildPopupContent(i));
         state.infoWindow.open({ anchor: m, map: state.map });
-        activateCard(i);
+        activateCard(i, { centerMap: false });
       });
       state.markers[i] = m;
-    } else {
-      const domIcon = new H.map.DomIcon(el);
-      const m = new H.map.DomMarker({ lat, lng }, { icon: domIcon });
-      m.addEventListener('tap', () => {
-        if (state.infoBubble) {
-          state.hereUi.removeBubble(state.infoBubble);
-          state.infoBubble = null;
+      clusterMarkers.push(m);
+    });
+
+    // Create MarkerClusterer
+    const MCtor = await getMarkerClusterer();
+    state.markerClusterer = new MCtor({
+      map: state.map,
+      markers: clusterMarkers,
+      renderer: { render: clusterRenderer },
+    });
+
+  } else {
+    // HERE Maps clustering via H.clustering.Provider
+    /** @type {any[]} */
+    const dataPoints = [];
+    state.data.forEach((row, i) => {
+      const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+      if (!isPublicLocation(row)) return;
+      if (!lat || !lng) return;
+      dataPoints.push(new H.clustering.DataPoint(lat, lng, null, { index: i, icon: row.icon }));
+    });
+
+    const clusterProvider = new H.clustering.Provider(dataPoints, {
+      clusteringOptions: {
+        eps: 40,
+        minWeight: 2,
+      },
+      theme: makeHereClusterTheme(),
+    });
+
+    // Handle tap on cluster or noise points
+    clusterProvider.addEventListener('tap', (/** @type {any} */ evt) => {
+      const target = evt.target;
+      const data = target.getData();
+      if (data && typeof data.getWeight === 'function') {
+        // It's a cluster — zoom into its bounds
+        const bbox = data.getBoundingBox();
+        if (bbox) {
+          state.map.getViewModel().setLookAtData({ bounds: bbox }, true);
         }
-        state.infoBubble = new H.ui.InfoBubble({ lat, lng }, { content: buildPopupContent(i) });
-        state.hereUi.addBubble(state.infoBubble);
-        activateCard(i);
-      });
-      state.map.addObject(m);
-      state.markers[i] = m;
-    }
-  });
+      } else {
+        // It's a noise point (individual marker)
+        const pointData = data;
+        const i = pointData?.index;
+        if (i != null) {
+          const row = state.data[i];
+          const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+          if (state.infoBubble) {
+            state.hereUi.removeBubble(state.infoBubble);
+            state.infoBubble = null;
+          }
+          state.infoBubble = new H.ui.InfoBubble({ lat, lng }, { content: buildPopupContent(i) });
+          state.hereUi.addBubble(state.infoBubble);
+          activateCard(i, { centerMap: false });
+        }
+      }
+    });
+
+    const clusterLayer = new H.map.layer.ObjectLayer(clusterProvider);
+    state.map.addLayer(clusterLayer);
+    state.markerClusterer = clusterLayer;
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -125,26 +269,33 @@ function loadScript(src) {
 async function loadHereScripts() {
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'https://js.api.here.com/v3/3.1/mapsjs-ui.css';
+  link.href = 'https://js.api.here.com/v3/3.2/mapsjs-ui.css';
   document.head.appendChild(link);
-  await loadScript('https://js.api.here.com/v3/3.1/mapsjs-core.js');
-  await loadScript('https://js.api.here.com/v3/3.1/mapsjs-service.js');
-  await loadScript('https://js.api.here.com/v3/3.1/mapsjs-ui.js');
-  await loadScript('https://js.api.here.com/v3/3.1/mapsjs-mapevents.js');
+  await loadScript('https://js.api.here.com/v3/3.2/mapsjs-core.js');
+  await loadScript('https://js.api.here.com/v3/3.2/mapsjs-service.js');
+  await loadScript('https://js.api.here.com/v3/3.2/mapsjs-ui.js');
+  await loadScript('https://js.api.here.com/v3/3.2/mapsjs-mapevents.js');
+  await loadScript('https://js.api.here.com/v3/3.2/mapsjs-clustering.js');
 }
 
 // ═══════════════════════════════════════════════════
 // GOOGLE MAPS INIT
 // ═══════════════════════════════════════════════════
-/** @param {MapConfig} cfg */
-function initWithGoogle(cfg) {
+/**
+ * @param {MapConfig} cfg
+ * @param {{center?: any, zoom?: number}} [view]
+ */
+function initWithGoogle(cfg, view = {}) {
   state.provider = 'google';
+  state.mapConfig = cfg;
+  state.mapTheme = getEffectiveTheme();
   requiredElement('map-loading').classList.add('is-hidden');
 
   state.map = new google.maps.Map(requiredElement('map'), {
-    center: { lat: 13.82, lng: 100.52 }, zoom: 11,
+    center: view.center || { lat: 13.82, lng: 100.52 }, zoom: view.zoom ?? 11,
     mapId: cfg.googleMapId,
-    colorScheme: getEffectiveTheme() === 'dark' ? 'DARK' : 'LIGHT',
+    colorScheme: getGoogleColorScheme(state.mapTheme),
+    backgroundColor: state.mapTheme === 'dark' ? '#111827' : '#e5e7eb',
     zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_CENTER },
   });
   state.infoWindow = new google.maps.InfoWindow();
@@ -165,25 +316,65 @@ function initWithGoogle(cfg) {
   buildMarkers();
 }
 
+/**
+ * Google Maps only accepts colorScheme during construction, so preserve the
+ * viewport and rebuild the map when the user changes theme.
+ * @param {'light'|'dark'} theme
+ */
+function reinitializeGoogleMap(theme) {
+  if (!state.map || !state.mapConfig) return;
+  const center = state.map.getCenter?.() || { lat: 13.82, lng: 100.52 };
+  const zoom = state.map.getZoom?.() ?? 11;
+
+  if (state.markerClusterer) {
+    state.markerClusterer.clearMarkers();
+    state.markerClusterer = null;
+  }
+  state.markers.forEach(marker => { if (marker) marker.map = null; });
+  state.markers.length = 0;
+  if (state.infoWindow) state.infoWindow.close();
+  if (state.userLocationMarker) {
+    state.userLocationMarker.map = null;
+    state.userLocationMarker = null;
+  }
+  if (state.googleErrorObserver) {
+    state.googleErrorObserver.disconnect();
+    state.googleErrorObserver = null;
+  }
+
+  state.mapTheme = theme;
+  requiredElement('map').innerHTML = '';
+  initWithGoogle(state.mapConfig, { center, zoom });
+}
+
 // ═══════════════════════════════════════════════════
 // HERE MAPS INIT
 // ═══════════════════════════════════════════════════
 /** @param {string} apiKey */
 function initWithHere(apiKey) {
   state.provider = 'here';
+  state.mapTheme = getEffectiveTheme();
   const loadingEl = requiredElement('map-loading');
   const msgEl = document.getElementById('map-loading-msg');
   loadingEl.classList.add('is-hidden');
   if (msgEl) msgEl.textContent = '';
 
   const platform = new H.service.Platform({ apikey: apiKey });
-  const layers = platform.createDefaultLayers();
+  // HERE 3.2 uses HARP as its only renderer. The app uses the matching raster
+  // day/night pair because some deployments expose a vector night layer that
+  // resolves successfully but renders blank tiles.
+  const layers = platform.createDefaultLayers({ engineType: H.Map.EngineType.HARP });
   state.hereLayers = layers;
 
   state.map = new H.Map(
     requiredElement('map'),
-    getHereBaseLayer(layers, getEffectiveTheme()),
-    { zoom: 11, center: { lat: 13.82, lng: 100.52 } }
+    getHereBaseLayer(layers, state.mapTheme),
+    {
+      engineType: H.Map.EngineType.HARP,
+      pixelRatio: window.devicePixelRatio || 1,
+      zoom: 11,
+      center: { lat: 13.82, lng: 100.52 },
+    }
   );
   new H.mapevents.Behavior(new H.mapevents.MapEvents(state.map));
   state.hereUi = H.ui.UI.createDefault(state.map, layers);
@@ -198,6 +389,10 @@ function initWithHere(apiKey) {
 /** @param {MapConfig} cfg @returns {Promise<void>} */
 async function fallbackToHere(cfg) {
   // Tear down Google state
+  if (state.markerClusterer) {
+    state.markerClusterer.clearMarkers();
+    state.markerClusterer = null;
+  }
   if (state.googleErrorObserver) {
     state.googleErrorObserver.disconnect();
     state.googleErrorObserver = null;
@@ -250,7 +445,6 @@ export async function loadMapScript() {
 
       window.initMapCallback = () => {
         initWithGoogle(cfg);
-        updateMapTheme();
       };
 
       const script = document.createElement('script');

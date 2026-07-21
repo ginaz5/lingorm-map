@@ -8,12 +8,12 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 
 ## Features
 
-- Interactive map with emoji category markers (colored by status: verified / needs review / not found)
-- Card list with search, category, and status filters
+- Interactive map with consistent brand-color emoji category markers
+- Card list with search, category, and favorites filters
 - Popup with Navigate + Open in Google Maps buttons (responsive: icon-only on mobile)
 - zh / en bilingual UI with one-click toggle
-- Light / dark / auto theme
-- Community contributions via Netlify Forms (suggest edit, add location, report issue)
+- Light / dark theme
+- Low-friction issue reporting via Netlify Forms
 - Mobile-responsive with map / list tab switching and scroll
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
@@ -28,7 +28,7 @@ The app is a static site with two Netlify Functions acting as a thin backend pro
 
 On page load, `main.js` kicks off two parallel flows:
 
-1. **Data flow** — `tryLoadSheet()` calls `/api/locations`, which proxies the published Google Sheets CSV. The response is tokenised by `csv-parser.js`, normalised into a flat array, and stored in `state.js`. Once loaded, `rebuild()` triggers `render.js` (card list + filters) and `map.js` (place markers).
+1. **Data flow** — `tryLoadSheet()` calls `/api/locations`, which serves the committed Notion export snapshot (`DATA_SOURCE=notion`, the only supported value; the legacy published Google Sheets CSV path is retired — see Deploy section). The response is tokenised by `csv-parser.js`, normalised into a flat array, and stored in `state.js`. Once loaded, `rebuild()` triggers `render.js` (card list + filters) and `map.js` (place markers).
 
 2. **Map flow** — `loadMapScript()` calls `/api/config` to retrieve the Google Maps API key and Map ID (never exposed client-side directly). It injects the Google Maps JS script; if that fails or the key is absent, it falls back to the HERE Maps JS API. Either way, `initMap()` runs and markers are placed via `buildMarkers()`.
 
@@ -37,22 +37,23 @@ flowchart TD
     subgraph Browser["Browser"]
         MAIN["main.js\nboot + event wiring"]
         STATE[("state.js\nshared state")]
-        I18N["i18n.js\ntranslations · CATEGORIES"]
+        I18N["i18n.js\ntranslations"]
         CSV["csv-parser.js\npure CSV functions"]
         RENDER["render.js\ncard list · popup · filters"]
         MAP["map.js\nmap init · markers"]
         UI["ui.js\ntheme · tabs · snackbar"]
-        FORMS["forms.js\nedit · add · issue modals"]
+        FORMS["forms.js\nissue report · data loading"]
         SUBMIT["submit.js\nNetlify Forms POST"]
         FAV["favorites.js\nlocal favorites"]
     end
 
     subgraph Netlify_Fn["Netlify Functions"]
         CFG["/api/config\nreturns Maps key + Map ID"]
-        LOC["/api/locations\nproxies Sheets CSV"]
+        LOC["/api/locations\nselects location snapshot"]
     end
 
-    GS[("Google Sheets\npublished CSV")]
+    GS[("Google Sheets\npublished CSV\n(retired rollback path)")]
+    NOTION[("Notion export\ndata/locations.csv")]
     GMAPS["Google Maps JS API"]
     HERE["HERE Maps JS API\n(fallback)"]
     NFORMS[("Netlify Forms\nsubmission storage")]
@@ -63,6 +64,7 @@ flowchart TD
     MAIN -->|"boot"| FAV
     MAIN -->|"tryLoadSheet"| LOC
     GS -->|"published CSV"| LOC
+    NOTION -->|"DATA_SOURCE=notion"| LOC
     LOC -->|"raw CSV"| CSV
     CSV -->|"rows"| STATE
     STATE -->|"data"| RENDER
@@ -97,7 +99,7 @@ graph LR
     SUBMIT["submit.js"]
     FAV["favorites.js"]
 
-    MAIN --> STATE & I18N & RENDER & UI & FORMS & SUBMIT & MAP & FAV
+    MAIN --> STATE & I18N & RENDER & UI & FORMS & MAP & FAV
     MAP --> STATE & UI & RENDER
     RENDER --> STATE & I18N & UI
     UI --> STATE & I18N & RENDER
@@ -112,13 +114,13 @@ graph LR
 |--------|------|
 | `main.js` | Entry point — boot sequence, all event listener wiring |
 | `state.js` | Single mutable object shared across modules |
-| `i18n.js` | `CATEGORIES`, translations, `t()` / `tobj()` helpers |
+| `i18n.js` | zh/en translations and the `t()` helper |
 | `csv-parser.js` | CSV tokeniser + `parseCSV` + `normalizeStatus` (pure functions) |
 | `render.js` | Card list HTML, popup content, filter helpers |
 | `ui.js` | Theme cycle, tab switch, snackbar, locate-me, `toggleLang` |
 | `map.js` | Google / HERE map init, `buildMarkers`, theme sync |
-| `forms.js` | Edit / add / issue modal open–close–validate |
-| `submit.js` | Netlify Forms POST, pending banner |
+| `forms.js` | Issue report modal, validation, and location-data loading |
+| `submit.js` | Shared Netlify Forms POST and feedback reset |
 
 ### Key constraints
 
@@ -133,12 +135,12 @@ graph LR
 | Layer | Choice |
 |-------|--------|
 | Map | Google Maps JS API (`AdvancedMarkerElement`, `colorScheme`) with HERE Maps fallback |
-| Data | Google Sheets → published CSV → Netlify Function proxy (`/api/locations`) |
-| Forms | Netlify Forms (`suggest-edit`, `add-location`, `issue-report`) |
+| Data | Notion system of record → committed CSV snapshot (`DATA_SOURCE=notion`, the only supported source; the legacy Google Sheets rollback path is retired) |
+| Forms | Netlify Forms (`issue-report`) |
 | Analytics | Google Tag Manager (GTM-NVNXGP44) → GA4 (G-31MF79LHFM) |
 | Build / check | Vite 6 + TS `checkJs` (no emit), ES modules in `src/` |
 | Deploy | Netlify (GitHub auto-deploy) |
-| Tests | Node.js built-in `node:test` — 73 tests |
+| Tests | Node.js built-in `node:test` — 106 tests |
 
 ---
 
@@ -151,21 +153,26 @@ lingorm_bangkok_map/
 ├── src/
 │   ├── main.js             # Entry point — wires event listeners, boot sequence
 │   ├── state.js            # Shared mutable state object
-│   ├── i18n.js             # CATEGORIES, translations (zh/en), t(), tobj()
+│   ├── i18n.js             # Translations (zh/en) and t()
 │   ├── csv-parser.js       # CSV tokenizer + parseCSV (pure functions)
 │   ├── render.js           # Card list, popup content, filter helpers
 │   ├── ui.js               # Theme, tab switch, snackbar, locate me, navigation, toggleLang
-│   ├── submit.js           # Netlify Forms submit, pending banner
-│   ├── forms.js            # Edit / add / issue modals
+│   ├── submit.js           # Shared Netlify Forms submit transport
+│   ├── forms.js            # Issue report modal and location-data loading
 │   └── map.js              # Map init (Google + HERE), markers, loadMapScript
 ├── netlify/
 │   └── functions/
 │       ├── config.mjs      # /api/config — returns Maps key + map ID
-│       └── locations.mjs   # /api/locations — proxies Google Sheets CSV
-├── tests/                  # node:test test suite (73 tests)
+│       └── locations.mjs   # /api/locations — sheet/snapshot source switch
+├── data/
+│   └── locations.csv       # validated 100-row formal Notion export snapshot
+├── scripts/
+│   ├── export-snapshot.mjs # Notion API → stable site CSV contract
+│   └── validate-location-snapshot.mjs # production snapshot deploy gate
+├── tests/                  # node:test test suite
 ├── jsconfig.json           # Strict incremental TypeScript checkJs configuration
 ├── vite.config.js          # Vite build config
-├── build.sh                # Netlify pre-build: validates env vars
+├── build.sh                # Netlify pre-build: validates env vars + snapshot
 ├── netlify.toml            # build command, publish dir, functions dir, /api/* redirect
 └── note/TECH_DECISIONS.md  # Architecture decision records
 ```
@@ -191,8 +198,13 @@ Create `.env` in the project root (not committed — copy from `.env.example`):
 HERE_API_KEY=your_here_api_key          # required — fallback map provider
 GOOGLE_MAPS_KEY=your_google_maps_key    # optional — primary map provider
 GOOGLE_MAP_ID=your_google_map_id        # optional — required if using Google Maps
-GOOGLE_SHEET_CSV_URL=your_csv_url       # required — location data
+DATA_SOURCE=notion                      # optional — notion is the default and only supported value
 ```
+
+`DATA_SOURCE=sheet` (the legacy Google Sheets rollback path) is retired as of
+the 2026-07-21 three-status cutover — `normalizeStatus()` no longer maps
+legacy `verified`/`needs review` to `Published`, so it would render zero
+public locations.
 
 Get a HERE API key at [developer.here.com](https://developer.here.com) → Projects → REST → Create API key (free tier: 250k map transactions/month).
 
@@ -215,16 +227,16 @@ The project stays in `.js` files and Vite remains responsible for production out
 ### Unit tests
 
 ```bash
-node --test tests/*.test.mjs
+npm test
 ```
 
-Expected: 68 pass, 0 fail.
+Expected: all tests pass with 0 failures.
 
 ### Pre-deploy verification
 
 ```bash
 npm run typecheck
-node --test tests/*.test.mjs
+npm test
 npm run build      # outputs to dist/
 ```
 
@@ -232,7 +244,12 @@ npm run build      # outputs to dist/
 
 ## Deploy
 
-Push to `main` — Netlify runs `bash build.sh && npm run build` and publishes `dist/`.
+Use a feature branch and PR Deploy Preview. After preview verification, merge
+the PR into `main`; Netlify runs `bash build.sh && npm run build` and publishes
+`dist/`.
+
+For the complete Notion snapshot, preview, production, and rollback procedure,
+see [Notion Data Source Deployment Workflow](docs/notion-deploy-workflow.md).
 
 Required Netlify environment variables (Dashboard → Site Settings → Environment Variables):
 
@@ -241,13 +258,13 @@ Required Netlify environment variables (Dashboard → Site Settings → Environm
 | `HERE_API_KEY` | ✅ | HERE Maps JS API key (fallback provider) |
 | `GOOGLE_MAPS_KEY` | optional | Google Maps JS API key (primary provider) |
 | `GOOGLE_MAP_ID` | optional | Map ID for dark mode + AdvancedMarkerElement |
-| `GOOGLE_SHEET_CSV_URL` | ✅ | Published CSV URL for `/api/locations` |
+| `DATA_SOURCE` | optional | `notion` (default and only supported value); requires a redeploy when changed |
 
 If `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` are omitted, the map loads HERE Maps directly. If both Google and HERE keys are present, Google Maps is used as primary with HERE as fallback.
 
 ### Netlify Forms
 
-Enable form detection in Netlify Dashboard → **Forms → Enable form detection**, then redeploy. Forms: `suggest-edit`, `add-location`, `issue-report`.
+Enable form detection in Netlify Dashboard → **Forms → Enable form detection**, then redeploy. The only public form is `issue-report`.
 
 ### Analytics
 
@@ -265,34 +282,53 @@ The Maps key is delivered via `/api/config` (Netlify Function). Protect it with:
 
 ## Data Schema
 
-The Google Sheet must be published as CSV with the public sheet schema:
+Production uses the committed Notion snapshot at `data/locations.csv`:
 
 ```
-Location Name, Thai / Alt Name, Category, Notes,
-Source URL, Verification Status, Duplicate Group, ...
+Location Name, Location Name ZH, Thai / Alt Name, Google Maps URL,
+Category, Notes, Notes ZH, Source URL, Source Tags, Verification Status,
+Lat, Lng, Icon, Slug
 ```
 
-`Status` values: `Verified` | `Needs Review` | `Could Not Find`
+The current formal Notion data source has 17 properties: 14 content fields and
+the three verification fields `Review Needed`, `Verification Note`, and
+`Last Verified`. Verification fields are not exported to the public snapshot.
+`Coordinates Approx` and `Branch Group` have been retired from the formal
+schema; the parser still accepts `Coordinates Approx` only on the legacy Google
+Sheet rollback path.
+
+The formal data source accepts exactly three status values: `Published`,
+`Paused`, and `Inactive`. Only `Published` locations appear on the public site;
+`Paused`, `Inactive`, and all unknown or blank inputs remain hidden. Legacy
+status names are accepted only while parsing old rollback exports and are
+normalized to `Paused` or `Inactive`; they are never emitted by the current
+snapshot contract.
+
+Generate a candidate snapshot from the allowlisted formal data source with:
+
+```bash
+npm run locations:export:notion -- --output data/locations.next.csv
+node scripts/validate-location-snapshot.mjs data/locations.next.csv
+```
+
+The exporter reads `NOTION_API_KEY` (the sole Notion credential — see
+Environment variables above), verifies the live 17-property schema before
+querying rows, and never writes to Notion.
 
 ---
 
 ## Map Markers
 
-Markers are 28px emoji circles colored by status:
-
-| Status | Color |
-|--------|-------|
-| Verified | Green `#2f7d4f` |
-| Needs Review | Orange `#c2772a` |
-| Could Not Find | Red `#b1452f` (hidden from public list) |
-
-The emoji comes from `row.icon` (set per category: 🍽 🏨 ☕ etc.). Falls back to 📍 if missing.
+Markers are 28px brand-color emoji circles. Public status is intentionally not
+encoded in marker color. The emoji comes from `row.icon` and falls back to 📍
+if missing.
 
 ---
 
-## Contributing Locations
+## Reporting Issues
 
-Use **新增地點 / Add Location** or **建議修改 / Suggest edit** on any card. Submissions go to Netlify Forms and are reviewed before appearing on the map.
+Use **問題回報 / Report Issue** for incorrect location data, map problems, or
+site errors. This is the only public contribution flow.
 
 ---
 
@@ -308,16 +344,19 @@ node --test tests/*.test.mjs
 | `source-tags.test.mjs` | `renderSources` — Threads handle extraction, platform URL mapping |
 | `i18n-ui.test.mjs` | `updateLangUI`, `buildCatFilter`, `rebuildSelect` |
 | `ui-events.test.mjs` | No inline `onclick`; `switchTab` state alignment |
-| `add-location-form.test.mjs` | Netlify form field parity, URL validator, submit mock |
-| `edit-submit.test.mjs` | `submitEdit` payload correctness |
+| `view-first-ui.test.mjs` | Removed UI contracts, status-free rendering, uniform markers |
+| `submit.test.mjs` | Netlify local mock, production success, and failure recovery |
 | `favorites.test.mjs` | Favorite state persistence and rendering behavior |
 | `issue-report.test.mjs` | Issue report form field parity, UI copy |
 | `google-maps-loader.test.mjs` | No hardcoded API key placeholders; runtime config fetch |
 | `here-map-layer.test.mjs` | HERE Maps base layer selection (dark/light fallback) |
 | `no-maplink-ui.test.mjs` | No legacy "Open in Maps" links in HTML |
-| `public-notfound.test.mjs` | "Could Not Find" locations hidden from public list + markers |
+| `public-notfound.test.mjs` | Public status allowlist shared by list + markers |
 | `styles-extraction.test.mjs` | External CSS linked; no inline presentational styles |
 | `theme-mode.test.mjs` | Theme toggle supports only light/dark |
 | `typecheck-config.test.mjs` | Strict no-emit `checkJs` command, scope, and dependency configuration |
 | `config-function.test.mjs` | `/api/config` Netlify Function |
 | `locations-function.test.mjs` | `/api/locations` Netlify Function |
+| `notion-export-full.test.mjs` | Formal Notion snapshot contract and approved slug-delta reconciliation |
+| `notion-export-poc.test.mjs` | Notion snapshot round-trip and exporter serialization |
+| `snapshot-validator.test.mjs` | Production snapshot contract, row-count, and slug validation |

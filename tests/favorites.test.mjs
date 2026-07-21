@@ -92,7 +92,6 @@ test('applyFilters shows only favorited locations when the favorites filter is a
   const elements = {
     search: { value: '' },
     'cat-filter': { value: '' },
-    'status-filter': { value: '' },
     'loc-list': { innerHTML: '' },
     'result-info': { textContent: '' },
   };
@@ -106,12 +105,12 @@ test('applyFilters shows only favorited locations when the favorites filter is a
       {
         id: 'favorite-cafe', nameEn: 'Favorite Cafe', nameZh: 'Favorite Cafe', alt: '',
         notesEn: '', notesZh: '', catEn: 'Cafe', catZh: '咖啡廳', icon: '☕',
-        status: 'Verified', lat: '13.7', lng: '100.5', src: '', sourceUrl: '', dup: '', approx: '',
+        status: 'Published', lat: '13.7', lng: '100.5', src: '', sourceUrl: '', approx: '',
       },
       {
         id: 'other-cafe', nameEn: 'Other Cafe', nameZh: 'Other Cafe', alt: '',
         notesEn: '', notesZh: '', catEn: 'Cafe', catZh: '咖啡廳', icon: '☕',
-        status: 'Verified', lat: '13.8', lng: '100.6', src: '', sourceUrl: '', dup: '', approx: '',
+        status: 'Published', lat: '13.8', lng: '100.6', src: '', sourceUrl: '', approx: '',
       },
     ];
     state.map = { id: 'map' };

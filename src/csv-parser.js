@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // SLUG / ID HELPER
 // ═══════════════════════════════════════════════════
-/** @typedef {'Verified'|'Needs Review'|'Could Not Find'} LocationStatus */
+/** @typedef {'Published'|'Paused'|'Inactive'} LocationStatus */
 /**
  * @typedef {Object} LocationRow
  * @property {string} id
@@ -17,7 +17,6 @@
  * @property {string} lng
  * @property {string} maps
  * @property {LocationStatus} status
- * @property {string} dup
  * @property {string} src
  * @property {string} approx
  * @property {string} sourceUrl
@@ -125,16 +124,42 @@ export const ZH_BY_CAT = {
   "Nature / Day-trip":"自然 / 一日遊","Street Food":"街頭小吃","Neighbourhood":"街區"
 };
 
+export const LEGACY_LOCATION_STATUSES = Object.freeze([
+  "Draft",
+  "Needs Review",
+  "Verifying",
+  "Verified",
+  "Could Not Find",
+  "Closed",
+]);
+
+export const LOCATION_STATUSES = Object.freeze([
+  "Published",
+  "Paused",
+  "Inactive",
+]);
+
 /**
  * @param {string} s
  * @returns {LocationStatus}
  */
 export function normalizeStatus(s) {
-  const raw = s.trim();
-  if (raw === "Verified" || raw === "Needs Review" || raw === "Could Not Find") return raw;
-  if (/could not find|not found/i.test(raw)) return "Could Not Find";
-  if (/^verified$/i.test(raw)) return "Verified";
-  return "Needs Review";
+  const raw = s.trim().toLowerCase();
+  /** @type {Record<string, LocationStatus>} */
+  const statuses = {
+    "draft": "Paused",
+    "needs review": "Paused",
+    "verifying": "Paused",
+    "verified": "Paused",
+    "could not find": "Inactive",
+    "closed": "Inactive",
+    "published": "Published",
+    "paused": "Paused",
+    "inactive": "Inactive",
+    "not found": "Inactive",
+    "not verified": "Paused",
+  };
+  return statuses[raw] || "Paused";
 }
 
 /**
@@ -181,7 +206,7 @@ export function mapsQuery(name, maps) {
  */
 export function parsePublishedFormat(rows, idx, read) {
   const required = ["Location Name","Thai / Alt Name","Category",
-                    "Notes","Source URL","Verification Status","Duplicate Group"];
+                    "Notes","Source URL","Verification Status"];
   if (!required.every(k => idx[k] !== undefined)) return null;
   return rows.slice(1)
     .filter(r => r.join('').trim() && !/^source note$/i.test(read(r, "Category")))
@@ -195,7 +220,13 @@ export function parsePublishedFormat(rows, idx, read) {
       const tags      = normalizeSourceTags(read(r, "Source Tags"));
       const maps      = read(r, "Google Maps URL") || read(r, "Google Maps Link");
       return {
-        id:       slugify(name),
+        // Prefer an explicit Slug column when present (Notion export, plan
+        // §6.3/§13 Phase 2) so a Notion page rename doesn't change the
+        // location's id — that would silently break localStorage favorites
+        // and any shared #fav URL (plan §4 debt #5, §14 acceptance #2).
+        // Falls back to slugify(name) for the legacy sheet format, which
+        // has no Slug column and never will.
+        id:       read(r, "Slug") || slugify(name),
         nameEn:   name,
         nameZh,
         alt:      read(r, "Thai / Alt Name"),
@@ -208,9 +239,11 @@ export function parsePublishedFormat(rows, idx, read) {
         lng:      read(r, "Lng"),
         maps:     mapsQuery(name, maps),
         status:   normalizeStatus(read(r, "Verification Status")),
-        dup:      read(r, "Duplicate Group"),
         src:      tags || sourceLabel(sourceUrl),
-        approx:   read(r, "Coordinates Approx") || "TRUE",
+        // Optional only for the legacy Google Sheet rollback format. The
+        // current Notion schema retired this property, so its absence means
+        // exact/unspecified rather than approximate.
+        approx:   read(r, "Coordinates Approx"),
         sourceUrl,
       };
     });

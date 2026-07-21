@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-test('theme mode supports only light and dark', async () => {
+test('theme mode restores a saved light or dark preference', async () => {
   const store = new Map();
   globalThis.localStorage = {
     getItem: (key) => store.get(key) ?? null,
@@ -9,9 +9,8 @@ test('theme mode supports only light and dark', async () => {
   };
 
   try {
-    const { THEME_ICONS, getEffectiveTheme } = await import('../src/ui.js');
+    const { getEffectiveTheme } = await import('../src/ui.js');
 
-    assert.deepEqual(Object.keys(THEME_ICONS).sort(), ['dark', 'light']);
     assert.equal(getEffectiveTheme(), 'light');
 
     localStorage.setItem('theme', 'dark');

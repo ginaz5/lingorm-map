@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <meta name="color-scheme" content="light" />
+    <title>Location verification desk</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside id="sidebar" class="sidebar">
+        <header class="brand">
+          <div class="brand-mark" aria-hidden="true">L</div>
+          <div>
+            <p class="eyebrow">READ-ONLY VERIFICATION</p>
+            <h1>Location desk</h1>
+          </div>
+          <button
+            id="queue-toggle"
+            class="queue-toggle"
+            type="button"
+            aria-expanded="true"
+          >
+            收合佇列
+          </button>
+        </header>
+
+        <section
+          class="queue-summary is-single"
+          aria-label="待檢核佇列摘要"
+        >
+          <div>
+            <span id="review-count">—</span>
+            <small>待檢核</small>
+          </div>
+        </section>
+
+        <div class="queue-tools">
+          <label class="search">
+            <span class="sr-only">搜尋地點</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"
+              />
+            </svg>
+            <input
+              id="queue-search"
+              type="search"
+              placeholder="搜尋名稱或 Slug"
+              autocomplete="off"
+            />
+          </label>
+        </div>
+
+        <nav
+          id="queue-list"
+          class="queue-list"
+          aria-label="Review Needed 地點清單"
+        ></nav>
+
+        <footer class="sidebar-footer">
+          <button id="validate-all" class="validation-button">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span>
+              <strong>執行全量資料對帳</strong>
+              <small>3 層對帳 · 3 項前置檢查</small>
+            </span>
+          </button>
+          <button id="refresh-queue" class="refresh-button" type="button">
+            重新整理 Notion
+          </button>
+          <p id="last-synced">尚未同步</p>
+          <p>Legacy Places API · localhost only</p>
+        </footer>
+      </aside>
+
+      <main class="workspace">
+        <section
+          id="environment-banner"
+          class="environment-banner is-formal"
+          aria-live="polite"
+        >
+          <span id="environment-badge" class="environment-badge">
+            READ ONLY
+          </span>
+          <div>
+            <strong id="environment-title">正式資料庫 · 待檢核清單</strong>
+            <p id="environment-message">
+              只讀取 Review Needed 地點並產生 Candidate；不會寫入
+              Notion。
+            </p>
+          </div>
+        </section>
+
+        <div id="loading-state" class="center-state">
+          <div class="spinner" aria-hidden="true"></div>
+          <p id="loading-message">正在讀取正式 Locations…</p>
+        </div>
+
+        <div id="empty-state" class="center-state" hidden>
+          <div class="empty-mark" aria-hidden="true">⌖</div>
+          <h2 id="empty-title">從左側選一個地點</h2>
+          <p id="empty-message">
+            工具只提供正式資料與 Candidate 證據，不會寫入 Notion。
+          </p>
+        </div>
+
+        <article id="location-workspace" hidden>
+          <header class="location-header">
+            <div>
+              <div class="location-kicker">
+                <span id="location-category">—</span>
+                <span aria-hidden="true">/</span>
+                <span id="location-slug">—</span>
+              </div>
+              <h2 id="location-name">—</h2>
+              <p id="location-alt-name" class="location-alt"></p>
+            </div>
+            <div class="header-actions">
+              <span id="location-status" class="status-badge">—</span>
+              <button
+                id="next-location"
+                class="button button-primary"
+                type="button"
+              >
+                下一筆 →
+              </button>
+              <a
+                id="notion-link"
+                class="icon-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                開啟 Notion
+                <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+          </header>
+
+          <section class="progress-rail single-step" aria-label="檢核流程">
+            <div id="progress-candidate" class="progress-step is-current">
+              <span>1</span>
+              <div>
+                <strong>檢查 Candidate</strong>
+                <small>比較正式資料與 Google Maps 證據</small>
+              </div>
+            </div>
+          </section>
+
+          <div class="content-grid">
+            <div class="workflow-column">
+              <section class="workflow-card" id="candidate-card">
+                <header class="card-header">
+                  <div class="step-number">01</div>
+                  <div>
+                    <p class="eyebrow">GOOGLE MAPS EVIDENCE</p>
+                    <h3>檢查 Candidate</h3>
+                  </div>
+                  <span id="candidate-state" class="card-state">
+                    尚未執行
+                  </span>
+                </header>
+
+                <div id="candidate-preview" class="candidate-preview" hidden>
+                  <div class="preview-meta">
+                    <div>
+                      <span>Resolver 結果</span>
+                      <strong id="resolver-result">—</strong>
+                    </div>
+                    <div>
+                      <span>查詢</span>
+                      <strong id="resolver-query">—</strong>
+                    </div>
+                    <div>
+                      <span>候選來源</span>
+                      <strong id="resolver-source">—</strong>
+                    </div>
+                  </div>
+                  <div id="candidate-results"></div>
+                  <div id="duplicate-results"></div>
+                  <p class="attribution">
+                    候選詳情只保存在本次瀏覽器記憶體；同一地點重新同步後會保留，
+                    切換地點、正式比對資料變更或重載頁面時清除。資料來源：Google
+                    Maps；距離僅供人工判斷。
+                  </p>
+                </div>
+
+                <div class="read-only-guidance">
+                  <strong>確認方式</strong>
+                  <p>
+                    比較名稱、地址、Place ID、座標距離與地圖位置。需要修正時，
+                    請按「開啟 Notion」自行更新；完成後取消
+                    Review Needed，Notion Automation 會更新 Last
+                    Verified。
+                  </p>
+                </div>
+
+                <div class="card-actions">
+                  <button
+                    id="resolve-preview"
+                    class="button button-primary"
+                    type="button"
+                  >
+                    執行 Candidate dry-run
+                  </button>
+                </div>
+              </section>
+            </div>
+
+            <aside class="evidence-column">
+              <section class="evidence-card">
+                <p class="eyebrow">CURRENT FORMAL RECORD</p>
+                <h3>目前正式資料</h3>
+                <dl class="record-list">
+                  <div>
+                    <dt>Google Place ID</dt>
+                    <dd id="current-place-id">—</dd>
+                  </div>
+                  <div>
+                    <dt>座標</dt>
+                    <dd id="current-coordinates">—</dd>
+                  </div>
+                  <div>
+                    <dt>Last Verified</dt>
+                    <dd id="last-verified">—</dd>
+                  </div>
+                </dl>
+                <a
+                  id="current-map-link"
+                  class="map-button"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  在 Google Maps 查看正式資料
+                  <span aria-hidden="true">↗</span>
+                </a>
+              </section>
+
+              <section class="evidence-card">
+                <p class="eyebrow">SOURCE CONTEXT</p>
+                <h3>資料與來源</h3>
+                <div class="source-block">
+                  <span>中文備註</span>
+                  <p id="notes-zh">—</p>
+                </div>
+                <div class="source-block">
+                  <span>English note</span>
+                  <p id="notes-en">—</p>
+                </div>
+                <div class="source-block">
+                  <span>Verification Note</span>
+                  <p id="verification-note-history">—</p>
+                </div>
+                <div class="source-block">
+                  <span>Source URLs</span>
+                  <div id="source-links" class="source-links">—</div>
+                </div>
+              </section>
+
+              <section class="evidence-card compact">
+                <p class="eyebrow">SAFETY BOUNDARY</p>
+                <ul id="safety-list" class="safety-list">
+                  <li>清單只顯示 Review Needed 地點</li>
+                  <li>Candidate 固定使用 Legacy Places API dry-run，不持久化</li>
+                  <li>UI 與 server 都不提供任何 Notion 寫入入口</li>
+                  <li>取消 Review Needed 後由 Notion 更新 Last Verified</li>
+                </ul>
+              </section>
+            </aside>
+          </div>
+        </article>
+      </main>
+    </div>
+
+    <dialog id="validation-dialog">
+      <form method="dialog">
+        <p class="eyebrow">FULL DATA RECONCILIATION</p>
+        <h2 id="validation-title">正在驗證…</h2>
+        <div id="validation-content" class="validation-content">
+          <div class="spinner" aria-hidden="true"></div>
+        </div>
+        <div class="dialog-actions">
+          <button value="close" class="button button-primary">關閉</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast-region" class="toast-region" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
