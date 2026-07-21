@@ -49,17 +49,28 @@ export function updateProviderBadge(provider) {
 // ═══════════════════════════════════════════════════
 export function updateMapTheme() {
   if (!state.map) return;
+  const theme = getEffectiveTheme();
   if (state.provider === 'google') {
-    state.map.setOptions({ colorScheme: getEffectiveTheme() === 'dark' ? 'DARK' : 'LIGHT' });
+    if (state.mapTheme !== theme && state.mapConfig) reinitializeGoogleMap(theme);
   } else if (state.provider === 'here' && state.hereLayers) {
-    state.map.setBaseLayer(getHereBaseLayer(state.hereLayers, getEffectiveTheme()));
+    state.map.setBaseLayer(getHereBaseLayer(state.hereLayers, theme));
+    state.mapTheme = theme;
   }
 }
 
 /** @param {any} layers @param {'light'|'dark'} theme @returns {any} */
 export function getHereBaseLayer(layers, theme) {
-  const n = layers?.vector?.normal;
-  return theme === 'dark' ? (n?.mapnight || n?.map) : n?.map;
+  const raster = layers?.raster?.normal;
+  const vector = layers?.vector?.normal;
+  if (theme === 'dark') {
+    return raster?.mapnight || vector?.mapnight || raster?.map || vector?.map;
+  }
+  return raster?.map || vector?.map;
+}
+
+/** @param {'light'|'dark'} theme @returns {'LIGHT'|'DARK'} */
+export function getGoogleColorScheme(theme) {
+  return theme === 'dark' ? 'DARK' : 'LIGHT';
 }
 
 // ═══════════════════════════════════════════════════
@@ -253,27 +264,33 @@ function loadScript(src) {
 async function loadHereScripts() {
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'https://js.api.here.com/v3/3.1/mapsjs-ui.css';
+  link.href = 'https://js.api.here.com/v3/3.2/mapsjs-ui.css';
   document.head.appendChild(link);
-  await loadScript('https://js.api.here.com/v3/3.1/mapsjs-core.js');
-  await loadScript('https://js.api.here.com/v3/3.1/mapsjs-service.js');
-  await loadScript('https://js.api.here.com/v3/3.1/mapsjs-ui.js');
-  await loadScript('https://js.api.here.com/v3/3.1/mapsjs-mapevents.js');
-  await loadScript('https://js.api.here.com/v3/3.1/mapsjs-clustering.js');
+  await loadScript('https://js.api.here.com/v3/3.2/mapsjs-core.js');
+  await loadScript('https://js.api.here.com/v3/3.2/mapsjs-service.js');
+  await loadScript('https://js.api.here.com/v3/3.2/mapsjs-ui.js');
+  await loadScript('https://js.api.here.com/v3/3.2/mapsjs-mapevents.js');
+  await loadScript('https://js.api.here.com/v3/3.2/mapsjs-clustering.js');
 }
 
 // ═══════════════════════════════════════════════════
 // GOOGLE MAPS INIT
 // ═══════════════════════════════════════════════════
-/** @param {MapConfig} cfg */
-function initWithGoogle(cfg) {
+/**
+ * @param {MapConfig} cfg
+ * @param {{center?: any, zoom?: number}} [view]
+ */
+function initWithGoogle(cfg, view = {}) {
   state.provider = 'google';
+  state.mapConfig = cfg;
+  state.mapTheme = getEffectiveTheme();
   requiredElement('map-loading').classList.add('is-hidden');
 
   state.map = new google.maps.Map(requiredElement('map'), {
-    center: { lat: 13.82, lng: 100.52 }, zoom: 11,
+    center: view.center || { lat: 13.82, lng: 100.52 }, zoom: view.zoom ?? 11,
     mapId: cfg.googleMapId,
-    colorScheme: getEffectiveTheme() === 'dark' ? 'DARK' : 'LIGHT',
+    colorScheme: getGoogleColorScheme(state.mapTheme),
+    backgroundColor: state.mapTheme === 'dark' ? '#111827' : '#e5e7eb',
     zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_CENTER },
   });
   state.infoWindow = new google.maps.InfoWindow();
@@ -294,25 +311,65 @@ function initWithGoogle(cfg) {
   buildMarkers();
 }
 
+/**
+ * Google Maps only accepts colorScheme during construction, so preserve the
+ * viewport and rebuild the map when the user changes theme.
+ * @param {'light'|'dark'} theme
+ */
+function reinitializeGoogleMap(theme) {
+  if (!state.map || !state.mapConfig) return;
+  const center = state.map.getCenter?.() || { lat: 13.82, lng: 100.52 };
+  const zoom = state.map.getZoom?.() ?? 11;
+
+  if (state.markerClusterer) {
+    state.markerClusterer.clearMarkers();
+    state.markerClusterer = null;
+  }
+  state.markers.forEach(marker => { if (marker) marker.map = null; });
+  state.markers.length = 0;
+  if (state.infoWindow) state.infoWindow.close();
+  if (state.userLocationMarker) {
+    state.userLocationMarker.map = null;
+    state.userLocationMarker = null;
+  }
+  if (state.googleErrorObserver) {
+    state.googleErrorObserver.disconnect();
+    state.googleErrorObserver = null;
+  }
+
+  state.mapTheme = theme;
+  requiredElement('map').innerHTML = '';
+  initWithGoogle(state.mapConfig, { center, zoom });
+}
+
 // ═══════════════════════════════════════════════════
 // HERE MAPS INIT
 // ═══════════════════════════════════════════════════
 /** @param {string} apiKey */
 function initWithHere(apiKey) {
   state.provider = 'here';
+  state.mapTheme = getEffectiveTheme();
   const loadingEl = requiredElement('map-loading');
   const msgEl = document.getElementById('map-loading-msg');
   loadingEl.classList.add('is-hidden');
   if (msgEl) msgEl.textContent = '';
 
   const platform = new H.service.Platform({ apikey: apiKey });
-  const layers = platform.createDefaultLayers();
+  // HERE 3.2 uses HARP as its only renderer. The app uses the matching raster
+  // day/night pair because some deployments expose a vector night layer that
+  // resolves successfully but renders blank tiles.
+  const layers = platform.createDefaultLayers({ engineType: H.Map.EngineType.HARP });
   state.hereLayers = layers;
 
   state.map = new H.Map(
     requiredElement('map'),
-    getHereBaseLayer(layers, getEffectiveTheme()),
-    { zoom: 11, center: { lat: 13.82, lng: 100.52 } }
+    getHereBaseLayer(layers, state.mapTheme),
+    {
+      engineType: H.Map.EngineType.HARP,
+      pixelRatio: window.devicePixelRatio || 1,
+      zoom: 11,
+      center: { lat: 13.82, lng: 100.52 },
+    }
   );
   new H.mapevents.Behavior(new H.mapevents.MapEvents(state.map));
   state.hereUi = H.ui.UI.createDefault(state.map, layers);
@@ -383,7 +440,6 @@ export async function loadMapScript() {
 
       window.initMapCallback = () => {
         initWithGoogle(cfg);
-        updateMapTheme();
       };
 
       const script = document.createElement('script');

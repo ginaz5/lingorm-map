@@ -20,7 +20,11 @@ export const THEME_ICONS = { light: '☀️', dark: '🌙' };
 
 /** @returns {'light'|'dark'} */
 export function getEffectiveTheme() {
-  return 'light';
+  try {
+    return localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+  } catch (_) {
+    return 'light';
+  }
 }
 
 // ═══════════════════════════════════════════════════

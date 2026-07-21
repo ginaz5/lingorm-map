@@ -48,6 +48,7 @@ test('static HTML controls are wired without inline event attributes', async () 
 
   assert.doesNotMatch(staticMarkup, /id="add-btn"/);
   assert.match(staticMarkup, /id="issue-btn"/);
+  assert.match(staticMarkup, /id="theme-btn"/);
   assert.equal(/\son(?:click|keydown)=/i.test(staticMarkup), false);
 });
 
@@ -60,6 +61,7 @@ test('mobile header exposes secondary actions through an overflow menu', async (
   assert.match(html, /data-mobile-action="issue"/);
   assert.match(html, /data-mobile-action="locate"/);
   assert.match(html, /data-mobile-action="lang"/);
+  assert.match(html, /data-mobile-action="theme"/);
   assert.match(mainSrc, /mobile-actions-btn/);
   assert.match(mainSrc, /data-mobile-action/);
 });

@@ -12,6 +12,6 @@ test('index loads HERE Maps through runtime config instead of build placeholders
   // /api/config is fetched at runtime in src/map.js
   const mapJs = await readFile(new URL('../src/map.js', import.meta.url), 'utf8');
   assert.equal(mapJs.includes('/api/config'), true);
-  assert.equal(mapJs.includes('https://js.api.here.com/v3/3.1/mapsjs-core.js'), true);
+  assert.equal(mapJs.includes('https://js.api.here.com/v3/3.2/mapsjs-core.js'), true);
   assert.equal(mapJs.includes('cfg.hereApiKey'), true);
 });

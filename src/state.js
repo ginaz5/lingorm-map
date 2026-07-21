@@ -12,6 +12,8 @@
  * @property {number} activeIdx
  * @property {MapProvider} provider
  * @property {any} map
+ * @property {any} mapConfig
+ * @property {'light'|'dark'} mapTheme
  * @property {any} infoWindow
  * @property {MutationObserver|null} googleErrorObserver
  * @property {any} hereUi
@@ -40,6 +42,8 @@ export const state = {
 
   // Shared map object (google.maps.Map or H.Map)
   map: null,
+  mapConfig: null,
+  mapTheme: 'light',
 
   // Google Maps-specific
   infoWindow: null,

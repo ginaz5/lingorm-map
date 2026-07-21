@@ -26,3 +26,12 @@ test('unused map-link and Leaflet styles are not kept', async () => {
   assert.equal(css.includes('card-maplink'), false);
   assert.equal(css.includes('leaflet-popup'), false);
 });
+
+test('map clusters keep explicit contrast in dark mode', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /:root\[data-theme="dark"\][\s\S]*--marker-bg:\s*#2563eb/);
+  assert.match(css, /:root\[data-theme="dark"\][\s\S]*--marker-fg:\s*#ffffff/);
+  assert.match(css, /\.marker-cluster\{[^}]*background:var\(--marker-bg\);color:var\(--marker-fg\)/);
+  assert.doesNotMatch(css, /\.marker-cluster\{[^}]*background:var\(--primary\)/);
+});
