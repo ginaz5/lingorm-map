@@ -17,18 +17,22 @@ const snapshotCsv = readFileSync(snapshotPath, 'utf8');
 const snapshotRows = parseCSV(snapshotCsv);
 
 const APPROVED_ADDED_SLUGS = [
+  'cafe-madeleine-four-seasons-bangkok',
+  'churn-buttery-lat-krabang',
   'kate-teaw-boat-noodles-siam-square-soi-3',
   'khlong-bang-luang-floating-market',
+  'mok-ubon-ratchathani',
+  'pata-plantation-original-tiwanon',
   'plantiful-sukhumvit-61',
 ];
 const APPROVED_REMOVED_SLUGS = [
   'by',
 ];
 
-test('formal snapshot uses the stable CSV contract and contains 100 unique rows', () => {
+test('formal snapshot uses the stable CSV contract and contains 104 unique rows', () => {
   assert.deepEqual(tokenizeCSV(snapshotCsv)[0], CSV_HEADER);
-  assert.equal(snapshotRows.length, 100);
-  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, 100);
+  assert.equal(snapshotRows.length, 104);
+  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, 104);
 });
 
 test('formal snapshot preserves the current publication status distribution', () => {
@@ -40,7 +44,7 @@ test('formal snapshot preserves the current publication status distribution', ()
   );
 
   assert.deepEqual(statusCounts, {
-    Published: 99,
+    Published: 103,
     Inactive: 1,
   });
   assert.equal(snapshotRows.every((row) => row.approx === ''), true);
