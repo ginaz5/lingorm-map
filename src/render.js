@@ -2,6 +2,25 @@ import { lang, t } from './i18n.js';
 import { state } from './state.js';
 import { switchTab } from './ui.js';
 
+// ISO commit time of data/locations.csv, injected by Vite (see vite.config.js).
+// Guarded so non-Vite contexts (Node tests) don't throw a ReferenceError.
+const DATA_UPDATED_ISO = typeof __DATA_UPDATED__ !== 'undefined' ? __DATA_UPDATED__ : '';
+
+// Render the data-updated date in GMT+8 (Asia/Taipei), e.g. "2026/07/22 (GMT+8)".
+/** @param {string} iso @returns {string} */
+export function formatUpdated(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const ymd = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d).replace(/-/g, '/');
+  return `${ymd} (GMT+8)`;
+}
+
 /** @typedef {import('./csv-parser.js').LocationRow} LocationRow */
 
 /** @param {string} id @returns {HTMLElement} */
@@ -269,6 +288,11 @@ export function applyFilters() {
   }
   const publicTotal = state.data.filter(isPublicLocation).length;
   requiredElement('result-info').textContent = state.isLoading ? '' : t('count', state.visIdx.length, publicTotal);
+  const updatedEl = document.getElementById('last-updated');
+  if (updatedEl) {
+    const updated = formatUpdated(DATA_UPDATED_ISO);
+    updatedEl.textContent = state.isLoading || !updated ? '' : t('updated', updated);
+  }
 }
 
 // ═══════════════════════════════════════════════════
