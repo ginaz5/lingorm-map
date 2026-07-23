@@ -5,6 +5,7 @@ import {
   applyFilters, buildPopupContent,
 } from './render.js';
 import { updateWhatsNewLangUI } from './whats-new.js';
+import { renderDestinationFilter } from './destination-filter.js';
 
 /** @param {string} id @returns {HTMLElement} */
 function requiredElement(id) {
@@ -128,6 +129,7 @@ export function toggleLang() {
   updateLangUI();
   updateWhatsNewLangUI();
   buildCatFilter();
+  renderDestinationFilter();
   applyFilters();
   if (state.activeIdx >= 0) {
     const html = buildPopupContent(state.activeIdx);

@@ -76,6 +76,17 @@ test('search placeholders explain that names and notes are searchable', () => {
   assert.equal(T.en.search_ph, 'Search names or notes…');
 });
 
+test('favorite storage notice is available in both supported languages', () => {
+  assert.equal(
+    T.zh.favorite_storage_notice,
+    '收藏僅儲存在此瀏覽器，不會跨裝置同步；清除瀏覽資料後可能遺失。',
+  );
+  assert.equal(
+    T.en.favorite_storage_notice,
+    'Favorites stay in this browser only. They aren’t synced across devices and may be lost if browsing data is cleared.',
+  );
+});
+
 test('buildCatFilter preserves the selected category while rebuilding options', async () => {
   const catFilter = makeSelect('Cafe');
   const { buildCatFilter } = await loadUiHelpers({

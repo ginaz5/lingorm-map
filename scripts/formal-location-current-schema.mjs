@@ -13,6 +13,8 @@ export const CURRENT_FORMAL_BASELINE_FIELDS = Object.freeze([
   'Source Tags',
   'Source URLs',
   'Status',
+  'Country Code',
+  'Destination Key',
 ]);
 
 export const CURRENT_FORMAL_WORKFLOW_FIELDS = Object.freeze([
@@ -41,6 +43,8 @@ export const CURRENT_FORMAL_LOCATION_PROPERTY_TYPES = Object.freeze({
   'Source Tags': 'multi_select',
   'Source URLs': 'rich_text',
   Status: 'select',
+  'Country Code': 'select',
+  'Destination Key': 'select',
   'Review Needed': 'checkbox',
   'Verification Note': 'rich_text',
   'Last Verified': 'date',

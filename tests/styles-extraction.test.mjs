@@ -56,3 +56,20 @@ test('light mode cards have scoped accessible contrast styles', async () => {
   assert.match(lightSection, /background:#e0f2fe;color:#0369a1;font-weight:600/);
   assert.doesNotMatch(lightSection, /:root\[data-theme="dark"\]/);
 });
+
+test('favorite buttons avoid a black flash while becoming active', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.fav-btn\{[^}]*-webkit-tap-highlight-color:transparent/);
+  assert.match(css, /\.fav-btn:focus\{outline:none\}/);
+  assert.match(css, /\.fav-btn:focus-visible\{outline:2px solid #e05252;outline-offset:2px\}/);
+  assert.match(css, /\.fav-filter-btn\{[^}]*-webkit-tap-highlight-color:transparent/);
+  assert.match(css, /\.fav-filter-btn:focus\{outline:none\}/);
+  assert.match(css, /\.fav-filter-btn:focus-visible\{outline:2px solid #e05252;outline-offset:2px\}/);
+  assert.match(css, /\.fav-filter-btn:hover,\s*\.fav-filter-btn:active\{border-color:#fca5a5;color:#e05252\}/);
+  assert.doesNotMatch(css, /\.fav-filter-btn\{[^}]*transition:all/);
+  assert.doesNotMatch(css, /\.fav-filter-btn:hover\{[^}]*color:var\(--primary\)/);
+  assert.match(css, /\.fav-btn:not\(\.fav-active\):hover\{color:#e05252\}/);
+  assert.match(css, /\.fav-btn:not\(\.fav-active\):hover svg\{stroke:#e05252\}/);
+  assert.doesNotMatch(css, /\.fav-btn:not\(\.fav-active\):hover(?: svg)?\{[^}]*#111827/);
+});

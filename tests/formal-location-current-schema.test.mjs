@@ -13,14 +13,16 @@ import {
   inspectCurrentFormalStatusOptions,
 } from '../scripts/formal-location-current-schema.mjs';
 
-test('current formal schema matches the 17-property Notion contract', () => {
-  assert.equal(CURRENT_FORMAL_BASELINE_FIELDS.length, 14);
+test('current formal schema matches the 19-property Notion contract', () => {
+  assert.equal(CURRENT_FORMAL_BASELINE_FIELDS.length, 16);
+  assert.ok(CURRENT_FORMAL_BASELINE_FIELDS.includes('Country Code'));
+  assert.ok(CURRENT_FORMAL_BASELINE_FIELDS.includes('Destination Key'));
   assert.deepEqual(CURRENT_FORMAL_WORKFLOW_FIELDS, [
     'Review Needed',
     'Verification Note',
     'Last Verified',
   ]);
-  assert.equal(CURRENT_FORMAL_LOCATION_PROPERTIES.length, 17);
+  assert.equal(CURRENT_FORMAL_LOCATION_PROPERTIES.length, 19);
   assert.deepEqual(CURRENT_FORMAL_STATUS_OPTIONS, [
     { name: 'Published', color: 'green' },
     { name: 'Paused', color: 'yellow' },

@@ -17,27 +17,53 @@ const snapshotCsv = readFileSync(snapshotPath, 'utf8');
 const snapshotRows = parseCSV(snapshotCsv);
 
 const APPROVED_ADDED_SLUGS = [
+  'ama-bakery-silom',
+  'auntie-nid-coffee-shop',
   'cafe-madeleine-four-seasons-bangkok',
+  'chatuchak-weekend-market',
+  'chom-arun-restaurant',
   'churn-buttery-lat-krabang',
+  'dragon-town-banthat-thong',
+  'gourmet-market-siam-paragon',
+  'hint-coffee-khlong-san',
+  'hitori-shabu-siam-paragon',
+  'iki-haus-sukhumvit-71',
+  'james-boulangerie-gaysorn-amarin',
+  'kao-man-ban-nok-ramkhamhaeng',
   'kate-teaw-boat-noodles-siam-square-soi-3',
   'khlong-bang-luang-floating-market',
+  'long-phung-buffet-seafood-mookata',
+  'mae-varee-mango-sticky-rice',
   'mok-ubon-ratchathani',
+  'moo-ping-sutra-akong-jae-hoong',
+  'nai-ek-roll-noodles',
+  'nanaflora',
+  'nattaporn-coconut-ice-cream',
+  'nguan-soon-no1-hand-brand-yaowarat',
+  'pak-khlong-talat',
   'pata-plantation-original-tiwanon',
+  'phra-phutthayotfa-bridge-memorial-bridge',
   'plantiful-sukhumvit-61',
+  'pungdet-banthat-thong',
+  'sampeng-market',
+  'swu-international-flea-market',
+  'titicaca-brunch-club-central-eastville',
+  'waraporn-salapao-asoke',
+  'wat-paknam-phasi-charoen',
 ];
 const APPROVED_REMOVED_SLUGS = [
   'by',
 ];
 
-test('formal snapshot uses the stable CSV contract and contains 104 unique rows', () => {
+test('formal snapshot uses the stable CSV contract and contains 130 unique rows', () => {
   assert.deepEqual(tokenizeCSV(snapshotCsv)[0], CSV_HEADER);
-  assert.equal(snapshotRows.length, 104);
-  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, 104);
+  assert.equal(snapshotRows.length, 130);
+  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, 130);
 });
 
 test('formal snapshot preserves the current publication status distribution', () => {
   const statusCounts = Object.fromEntries(
-    ['Published', 'Inactive'].map((status) => [
+    ['Published', 'Paused', 'Inactive'].map((status) => [
       status,
       snapshotRows.filter((row) => row.status === status).length,
     ])
@@ -45,6 +71,7 @@ test('formal snapshot preserves the current publication status distribution', ()
 
   assert.deepEqual(statusCounts, {
     Published: 103,
+    Paused: 26,
     Inactive: 1,
   });
   assert.equal(snapshotRows.every((row) => row.approx === ''), true);

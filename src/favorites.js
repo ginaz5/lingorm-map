@@ -2,6 +2,9 @@ import { state } from './state.js';
 import { applyFilters, heartSVG } from './render.js';
 
 const LS_KEY = 'favorites';
+const STORAGE_NOTICE_KEY = 'favorites-storage-notice-seen-v1';
+
+/** @typedef {Event & {detail?: number}} FavoriteToggleEvent */
 
 // ═══════════════════════════════════════════════════
 // PERSIST — write to both localStorage and URL
@@ -53,6 +56,11 @@ export function loadFavorites() {
 // ═══════════════════════════════════════════════════
 // TOGGLE — add or remove a location from favorites
 // ═══════════════════════════════════════════════════
+/**
+ * @param {string} id
+ * @param {FavoriteToggleEvent} [event]
+ * @returns {boolean} Whether the location is now favorited.
+ */
 export function toggleFavorite(id, event) {
   if (event) event.stopPropagation();
 
@@ -75,4 +83,31 @@ export function toggleFavorite(id, event) {
 
   // If "show favorites only" is active, re-run filters so removed items disappear
   if (state.favFilterOn) applyFilters();
+
+  return isFav;
+}
+
+/** @param {FavoriteToggleEvent|undefined} event */
+export function releasePointerFocus(event) {
+  if (!event || (event.detail ?? 0) <= 0) return;
+
+  const target = /** @type {(EventTarget & {blur?: () => void})|null} */ (event.currentTarget);
+  target?.blur?.();
+}
+
+/**
+ * Handle a user-initiated favorite toggle and show the storage notice only
+ * after the first manual addition in this browser.
+ *
+ * @param {string} id
+ * @param {FavoriteToggleEvent|undefined} event
+ * @param {() => void} showStorageNotice
+ */
+export function toggleFavoriteWithNotice(id, event, showStorageNotice) {
+  const isFav = toggleFavorite(id, event);
+  if (isFav && localStorage.getItem(STORAGE_NOTICE_KEY) !== '1') {
+    localStorage.setItem(STORAGE_NOTICE_KEY, '1');
+    showStorageNotice();
+  }
+  releasePointerFocus(event);
 }

@@ -111,6 +111,8 @@ function page(overrides = {}) {
       'Name ZH': richText('漢王廟'),
       'Thai / Alt Name': richText(''),
       Category: select('Neighbourhood'),
+      'Country Code': select('TH'),
+      'Destination Key': select('bangkok'),
       'Google Maps URL': {
         type: 'url',
         url: 'https://www.google.com/maps/search/?api=1&query=Han+Wang+Miao',
@@ -2204,12 +2206,12 @@ test('production preflight reads one formal page and previews conservative migra
     Status: 'Paused',
     'Review Needed': '__YES__',
   });
-  assert.equal(result.schema.formalFieldCount, 14);
+  assert.equal(result.schema.formalFieldCount, 16);
   assert.deepEqual(result.schema.missingFormalFields, []);
   assert.equal(result.schema.requiredWorkflowFieldCount, 3);
   assert.equal(result.schema.presentWorkflowFields.length, 0);
   assert.equal(result.schema.missingWorkflowFields.length, 3);
-  assert.equal(result.schema.expectedPropertyCount, 17);
+  assert.equal(result.schema.expectedPropertyCount, 19);
   assert.deepEqual(result.schema.wrongPropertyTypes, []);
   assert.equal(result.gates.formalReadBoundary, true);
   assert.equal(result.gates.canaryWriteReady, false);
@@ -2224,7 +2226,7 @@ test('production preflight reads one formal page and previews conservative migra
   ]);
 });
 
-test('production preflight accepts the current 17-property formal schema', async () => {
+test('production preflight accepts the current 19-property formal schema', async () => {
   const formalPage = page();
   formalPage.parent.data_source_id = FORMAL_DATA_SOURCE_ID;
   formalPage.properties.Status = select('Published');
@@ -2252,7 +2254,7 @@ test('production preflight accepts the current 17-property formal schema', async
 
   assert.deepEqual(result.proposedPatch, {});
   assert.deepEqual(result.schema, {
-    formalFieldCount: 14,
+    formalFieldCount: 16,
     missingFormalFields: [],
     requiredWorkflowFieldCount: 3,
     presentWorkflowFields: [
@@ -2261,7 +2263,7 @@ test('production preflight accepts the current 17-property formal schema', async
       'Last Verified',
     ],
     missingWorkflowFields: [],
-    expectedPropertyCount: 17,
+    expectedPropertyCount: 19,
     wrongPropertyTypes: [],
     unexpectedProperties: [],
     statusOptions: {

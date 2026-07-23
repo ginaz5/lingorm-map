@@ -9,7 +9,8 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 ## Features
 
 - Interactive map with consistent brand-color emoji category markers
-- Card list with search, category, and favorites filters
+- Card list with search, category, destination, and favorites filters
+- Country-grouped destination multi-select with persisted choices and automatic map fitting
 - Popup with Navigate + Open in Google Maps buttons (responsive: icon-only on mobile)
 - zh / en bilingual UI with one-click toggle
 - Light / dark theme
@@ -117,6 +118,8 @@ graph LR
 | `i18n.js` | zh/en translations and the `t()` helper |
 | `csv-parser.js` | CSV tokeniser + `parseCSV` + `normalizeStatus` (pure functions) |
 | `render.js` | Card list HTML, popup content, filter helpers |
+| `destination-filter.js` | Destination multi-select UI, country grouping, and persisted selection |
+| `destinations.js` | Canonical country and destination taxonomy |
 | `ui.js` | Theme cycle, tab switch, snackbar, locate-me, `toggleLang` |
 | `map.js` | Google / HERE map init, `buildMarkers`, theme sync |
 | `forms.js` | Issue report modal, validation, and location-data loading |
@@ -140,7 +143,7 @@ graph LR
 | Analytics | Google Tag Manager (GTM-NVNXGP44) → GA4 (G-31MF79LHFM) |
 | Build / check | Vite 6 + TS `checkJs` (no emit), ES modules in `src/` |
 | Deploy | Netlify (GitHub auto-deploy) |
-| Tests | Node.js built-in `node:test` — 106 tests |
+| Tests | Node.js built-in `node:test` — 251 tests |
 
 ---
 
@@ -156,6 +159,8 @@ lingorm_bangkok_map/
 │   ├── i18n.js             # Translations (zh/en) and t()
 │   ├── csv-parser.js       # CSV tokenizer + parseCSV (pure functions)
 │   ├── render.js           # Card list, popup content, filter helpers
+│   ├── destination-filter.js # Destination multi-select and persistence
+│   ├── destinations.js     # Canonical country/destination taxonomy
 │   ├── ui.js               # Theme, tab switch, snackbar, locate me, navigation, toggleLang
 │   ├── submit.js           # Shared Netlify Forms submit transport
 │   ├── forms.js            # Issue report modal and location-data loading
@@ -165,7 +170,7 @@ lingorm_bangkok_map/
 │       ├── config.mjs      # /api/config — returns Maps key + map ID
 │       └── locations.mjs   # /api/locations — sheet/snapshot source switch
 ├── data/
-│   └── locations.csv       # validated 100-row formal Notion export snapshot
+│   └── locations.csv       # validated 130-row formal Notion export snapshot
 ├── scripts/
 │   ├── export-snapshot.mjs # Notion API → stable site CSV contract
 │   └── validate-location-snapshot.mjs # production snapshot deploy gate
@@ -285,12 +290,12 @@ The Maps key is delivered via `/api/config` (Netlify Function). Protect it with:
 Production uses the committed Notion snapshot at `data/locations.csv`:
 
 ```
-Location Name, Location Name ZH, Thai / Alt Name, Google Maps URL,
-Category, Notes, Notes ZH, Source URL, Source Tags, Verification Status,
-Lat, Lng, Icon, Slug
+"Location Name","Location Name ZH","Thai / Alt Name","Google Maps URL",
+"Category","Notes","Notes ZH","Source URL","Source Tags","Verification Status",
+"Lat","Lng","Icon","Country Code","Destination Key","Slug"
 ```
 
-The current formal Notion data source has 17 properties: 14 content fields and
+The current formal Notion data source has 19 properties: 16 content fields and
 the three verification fields `Review Needed`, `Verification Note`, and
 `Last Verified`. Verification fields are not exported to the public snapshot.
 `Coordinates Approx` and `Branch Group` have been retired from the formal
@@ -304,6 +309,11 @@ status names are accepted only while parsing old rollback exports and are
 normalized to `Paused` or `Inactive`; they are never emitted by the current
 snapshot contract.
 
+Every `Published` row must contain a supported `Country Code` and
+`Destination Key` pair. Missing or mismatched geography fails snapshot
+validation and therefore blocks the build/deploy path. Paused and inactive
+drafts may remain unclassified until they are ready to publish.
+
 Generate a candidate snapshot from the allowlisted formal data source with:
 
 ```bash
@@ -312,7 +322,7 @@ node scripts/validate-location-snapshot.mjs data/locations.next.csv
 ```
 
 The exporter reads `NOTION_API_KEY` (the sole Notion credential — see
-Environment variables above), verifies the live 17-property schema before
+Environment variables above), verifies the live 19-property schema before
 querying rows, and never writes to Notion.
 
 ---

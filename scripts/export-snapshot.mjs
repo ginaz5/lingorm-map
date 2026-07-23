@@ -35,6 +35,7 @@ export const CSV_HEADER = [
   "Location Name", "Location Name ZH", "Thai / Alt Name", "Google Maps URL",
   "Category", "Notes", "Notes ZH", "Source URL", "Source Tags",
   "Verification Status", "Lat", "Lng", "Icon",
+  "Country Code", "Destination Key",
   "Slug", // Slug is the stable public ID; parseCSV() prefers it over slugify(name).
 ];
 
@@ -117,6 +118,8 @@ export function pageToRow(page) {
     fmtCoord(number(p["Lat"])),
     fmtCoord(number(p["Lng"])),
     pageIcon(page),
+    select(p["Country Code"]),
+    select(p["Destination Key"]),
     text(p["Slug"]),
   ];
 }

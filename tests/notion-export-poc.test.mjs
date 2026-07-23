@@ -123,6 +123,8 @@ test('snapshot exporter maps native page icon and frozen Slug without credential
       Status: { select: { name: 'Verified' } },
       Lat: { number: 13.7608 },
       Lng: { number: 100.5089 },
+      'Country Code': { select: { name: 'TH' } },
+      'Destination Key': { select: { name: 'bangkok' } },
       Slug: richText('the-siam-hotel'),
     },
   };
@@ -132,7 +134,9 @@ test('snapshot exporter maps native page icon and frozen Slug without credential
   assert.equal(CSV_HEADER.includes('Duplicate Group'), false);
   assert.equal(CSV_HEADER.includes('Coordinates Approx'), false);
   assert.equal(row[12], '🏨');
-  assert.equal(row[13], 'the-siam-hotel');
+  assert.equal(row[13], 'TH');
+  assert.equal(row[14], 'bangkok');
+  assert.equal(row[15], 'the-siam-hotel');
 });
 
 test('snapshot exporter escapes quotes and commas in CSV output', () => {
@@ -146,7 +150,7 @@ test('snapshot exporter removes only invisible whitespace before rich-text newli
   );
 });
 
-test('snapshot exporter accepts the current 17-property formal schema', () => {
+test('snapshot exporter accepts the current 19-property formal schema', () => {
   const properties = Object.fromEntries(
     CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
       name,
@@ -154,8 +158,8 @@ test('snapshot exporter accepts the current 17-property formal schema', () => {
     ])
   );
   assert.deepEqual(assertCurrentFormalSchema({ properties }), {
-    propertyCount: 17,
-    requiredPropertyCount: 17,
+    propertyCount: 19,
+    requiredPropertyCount: 19,
   });
 });
 
@@ -219,6 +223,8 @@ test('snapshot exporter reads only the formal data source and emits deterministi
       Status: { select: { name: 'Published' } },
       Lat: { number: 13.75 },
       Lng: { number: 100.5 },
+      'Country Code': { select: { name: 'TH' } },
+      'Destination Key': { select: { name: 'bangkok' } },
       Slug: { rich_text: [{ plain_text: slug }] },
     },
   });

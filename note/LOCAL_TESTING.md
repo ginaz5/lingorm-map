@@ -118,7 +118,7 @@ http://localhost:8888/api/locations
 - 第一行是所選來源的 app schema。`DATA_SOURCE=notion` 時應為：
 
 ```text
-"Location Name","Location Name ZH","Thai / Alt Name","Google Maps URL","Category","Notes","Notes ZH","Source URL","Source Tags","Verification Status","Lat","Lng","Icon","Coordinates Approx","Slug"
+"Location Name","Location Name ZH","Thai / Alt Name","Google Maps URL","Category","Notes","Notes ZH","Source URL","Source Tags","Verification Status","Lat","Lng","Icon","Country Code","Destination Key","Slug"
 ```
 
 如果回傳錯誤 JSON，先執行 `node scripts/validate-location-snapshot.mjs data/locations.csv`。
@@ -148,9 +148,11 @@ http://localhost:8888
 - 沒有空白卡片
 - marker popup 不再顯示「在 Google Maps 開啟 / Open in Google Maps」
 - 語言切換正常
+- 目的地可跨國複選，國家 checkbox 能全選／取消子目的地，部分選取時顯示 indeterminate
+- 目的地變更立即套用，重新整理後保留，且地圖自動縮放至全部篩選結果
 - 手機版 map/list tab 正常
 - 問題回報可開啟、驗證必填欄位並完成本機 mock 送出
-- 列表與地圖只顯示 `Verified`、`Needs Review`
+- 列表與地圖只顯示 `Published`
 
 ## 確認後才部署
 

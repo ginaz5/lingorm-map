@@ -26,6 +26,8 @@
  * @property {boolean} isLoading
  * @property {Set<string>} favorites
  * @property {boolean} favFilterOn
+ * @property {Set<string>} selectedDestinations
+ * @property {boolean} pendingDestinationFit
  */
 
 /** @type {AppState} */
@@ -71,4 +73,9 @@ export const state = {
   favorites: new Set(),
   // Whether the "show favorites only" filter is active
   favFilterOn: false,
+
+  // Destination filter — empty means every destination.
+  selectedDestinations: new Set(),
+  // Fit the map after it becomes available (used when restoring a saved filter).
+  pendingDestinationFit: false,
 };

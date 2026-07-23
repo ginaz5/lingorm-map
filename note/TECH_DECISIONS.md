@@ -227,3 +227,22 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 **限制：** Google Maps 與 HERE Maps SDK 是執行時動態載入，目前只在 ambient declaration 將其 global boundary 標為 `any`。這代表第三方 SDK 內部 API 不在本階段的嚴格型別保證內；應用程式自行擁有的資料與函式邊界仍以 JSDoc 嚴格檢查。若日後需要更完整 SDK 型別，再個別引入官方或維護良好的 declarations。
 
 **擴充方式：** 每次納入新模組時，同步補足其 public JSDoc contract、imported boundaries 與測試，維持 `npm run typecheck`、完整 node tests、`npm run build` 依序通過後才提交。
+
+---
+
+## 國家／目的地複選篩選
+
+**決策：** 地理篩選採兩層式 `Country Code` → `Destination Key` taxonomy。
+目的地代表城市或旅遊目的地，不代表曼谷行政區或街區。篩選器允許跨國複選；
+同一層目的地之間使用 OR，並與搜尋、類別、收藏條件使用 AND。
+
+**互動：**
+
+- 國家 checkbox 全選或取消其所有子目的地；只選部分子項時顯示 indeterminate。
+- 變更立即套用，選擇儲存在 `localStorage`，重新載入後還原。
+- 每次目的地變更後，Google Maps 與 HERE Maps 都縮放至所有篩選結果；
+  單一結果使用地點層級 zoom，零結果維持原視窗。
+
+**資料契約：** taxonomy 集中在 `src/destinations.js`。每個 `Published`
+地點必須具備受支援且互相匹配的 `Country Code` 與 `Destination Key`；
+匯出快照驗證失敗即阻擋 build/deploy。`Paused`／`Inactive` 草稿可暫時未分類。

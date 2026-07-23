@@ -13,9 +13,18 @@ import {
   tryLoadSheet,
 } from './forms.js';
 import { initMap, loadMapScript, updateMapTheme, buildMarkers } from './map.js';
-import { loadFavorites, toggleFavorite } from './favorites.js';
+import {
+  loadFavorites,
+  releasePointerFocus,
+  toggleFavoriteWithNotice,
+} from './favorites.js';
 import { heartSVG } from './render.js';
 import { checkWhatsNew, closeWhatsNew } from './whats-new.js';
+import {
+  initDestinationFilter,
+  reconcileDestinationFilter,
+  renderDestinationFilter,
+} from './destination-filter.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -50,7 +59,9 @@ function rebuild() {
   applyCoordinateJitter();
   if (state.map) buildMarkers();
   buildCatFilter();
-  applyFilters();
+  reconcileDestinationFilter();
+  renderDestinationFilter();
+  applyFilters({ fitMap: state.selectedDestinations.size > 0 });
 }
 
 // ═══════════════════════════════════════════════════
@@ -97,6 +108,13 @@ function runMobileAction(event) {
   else if (action === 'theme') cycleTheme();
 }
 
+/** @param {string} id @param {Event & {detail?: number}} [event] */
+function handleFavoriteClick(id, event) {
+  toggleFavoriteWithNotice(id, event, () => {
+    showSnackbar(t('favorite_storage_notice'), 6000);
+  });
+}
+
 // ═══════════════════════════════════════════════════
 // EXPOSE FUNCTIONS USED IN TEMPLATE onclick STRINGS
 // (inside JS template literals in renderList / buildPopupContent)
@@ -105,7 +123,7 @@ window.activateCard = activateCard;
 window.openNavigation = openNavigation;
 window.openInGoogleMaps = openInGoogleMaps;
 window.applyFilters = applyFilters;
-window.toggleFavorite = toggleFavorite;
+window.toggleFavorite = handleFavoriteClick;
 
 
 // ═══════════════════════════════════════════════════
@@ -116,15 +134,17 @@ setLang(localStorage.getItem('lang') || 'zh');
 
 // Restore favorites from URL or localStorage
 loadFavorites();
+initDestinationFilter(() => applyFilters({ fitMap: true }));
 
 // Static event listeners
-document.getElementById('fav-filter-btn').addEventListener('click', () => {
+document.getElementById('fav-filter-btn').addEventListener('click', event => {
   state.favFilterOn = !state.favFilterOn;
   const favBtn = document.getElementById('fav-filter-btn');
   favBtn.classList.toggle('active', state.favFilterOn);
   favBtn.setAttribute('aria-pressed', String(state.favFilterOn));
   favBtn.innerHTML = heartSVG(state.favFilterOn);
   applyFilters();
+  releasePointerFocus(event);
 });
 document.getElementById('issue-btn').addEventListener('click', openIssueModal);
 document.getElementById('locate-btn').addEventListener('click', locateMe);

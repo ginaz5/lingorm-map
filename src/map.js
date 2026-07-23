@@ -27,6 +27,65 @@ function requiredElement(id) {
   return el;
 }
 
+/**
+ * Fit the active map provider to every currently visible location.
+ * A single result uses a useful place-level zoom; no results preserve the
+ * current viewport.
+ * @returns {boolean} whether the viewport changed
+ */
+export function fitMapToVisibleLocations() {
+  if (!state.map) {
+    state.pendingDestinationFit = true;
+    return false;
+  }
+
+  const points = state.visIdx.flatMap(index => {
+    const row = state.data[index];
+    if (String(row?.lat ?? '').trim() === '' || String(row?.lng ?? '').trim() === '') {
+      return [];
+    }
+
+    const lat = Number(row?.lat);
+    const lng = Number(row?.lng);
+    return Number.isFinite(lat) && Number.isFinite(lng)
+      ? [{ lat, lng }]
+      : [];
+  });
+  state.pendingDestinationFit = false;
+  if (!points.length) return false;
+
+  if (points.length === 1) {
+    state.map.setCenter(points[0]);
+    state.map.setZoom(14);
+    return true;
+  }
+
+  const lats = points.map(point => point.lat);
+  const lngs = points.map(point => point.lng);
+  const bounds = {
+    north: Math.max(...lats),
+    south: Math.min(...lats),
+    east: Math.max(...lngs),
+    west: Math.min(...lngs),
+  };
+
+  if (state.provider === 'google') {
+    state.map.fitBounds(bounds, 48);
+  } else if (state.provider === 'here') {
+    const rect = new H.geo.Rect(
+      bounds.north,
+      bounds.west,
+      bounds.south,
+      bounds.east
+    );
+    state.map.getViewModel().setLookAtData({
+      bounds: rect,
+      padding: { top: 48, right: 48, bottom: 48, left: 48 },
+    }, true);
+  }
+  return true;
+}
+
 // ═══════════════════════════════════════════════════
 // PROVIDER BADGE
 // ═══════════════════════════════════════════════════
@@ -391,6 +450,7 @@ function initWithGoogle(cfg, view = {}) {
 
   updateProviderBadge('google');
   buildMarkers();
+  if (state.pendingDestinationFit) fitMapToVisibleLocations();
 }
 
 /**
@@ -465,6 +525,7 @@ function initWithHere(apiKey) {
 
   updateProviderBadge('here');
   buildMarkers();
+  if (state.pendingDestinationFit) fitMapToVisibleLocations();
 }
 
 // ═══════════════════════════════════════════════════

@@ -98,7 +98,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </header>
 
 <!-- SNACKBAR -->
-<div class="snackbar" id="snackbar"></div>
+<div class="snackbar" id="snackbar" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- APP BODY -->
 <div class="app-body">
@@ -110,6 +110,27 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <div class="filter-row">
         <select class="filter-sel" id="cat-filter" onchange="applyFilters()"></select>
+        <div class="destination-filter">
+          <button class="dest-filter-btn" id="dest-filter-btn" type="button"
+            aria-haspopup="dialog" aria-expanded="false" aria-controls="dest-filter-menu">
+            <span id="dest-filter-label"></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5z"/></svg>
+          </button>
+          <div class="dest-filter-menu" id="dest-filter-menu" role="dialog"
+            aria-labelledby="dest-filter-label" hidden>
+            <div class="dest-filter-head">
+              <span data-i18n="dest_filter"></span>
+              <button class="dest-filter-clear" id="dest-filter-clear" type="button"
+                data-i18n="clear"></button>
+            </div>
+            <label class="dest-option dest-all-option">
+              <input type="checkbox" id="dest-filter-all">
+              <span class="dest-check" aria-hidden="true"></span>
+              <span data-i18n="all_destinations"></span>
+            </label>
+            <div class="dest-filter-groups" id="dest-filter-groups"></div>
+          </div>
+        </div>
         <button class="fav-filter-btn" id="fav-filter-btn" aria-pressed="false" aria-label="我的最愛">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>

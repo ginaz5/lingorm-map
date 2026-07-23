@@ -9,6 +9,11 @@ import {
   parseCSV,
   tokenizeCSV,
 } from '../src/csv-parser.js';
+import {
+  COUNTRY_CODES,
+  DESTINATION_KEYS,
+  isValidDestinationPair,
+} from '../src/destinations.js';
 import { PUBLIC_LOCATION_STATUSES } from '../src/render.js';
 import { CSV_HEADER } from './export-snapshot.mjs';
 
@@ -220,6 +225,48 @@ function validateCoordinates(dataRows, headers, rawStatuses) {
   }
 }
 
+function validateDestinations(dataRows, headers, rawStatuses) {
+  const countryIndex = headers.indexOf('Country Code');
+  const destinationIndex = headers.indexOf('Destination Key');
+  const supportedCountries = new Set(COUNTRY_CODES);
+  const supportedDestinations = new Set(DESTINATION_KEYS);
+
+  for (let index = 0; index < dataRows.length; index += 1) {
+    const rowNumber = index + 2;
+    const countryCode = (dataRows[index][countryIndex] || '').trim();
+    const destinationKey = (dataRows[index][destinationIndex] || '').trim();
+    const hasCountry = Boolean(countryCode);
+    const hasDestination = Boolean(destinationKey);
+
+    if (rawStatuses[index] === 'Published' && (!hasCountry || !hasDestination)) {
+      throw new Error(
+        `Published location snapshot row ${rowNumber} requires Country Code and Destination Key.`
+      );
+    }
+    if (hasCountry !== hasDestination) {
+      throw new Error(
+        `Location snapshot row ${rowNumber} must provide both Country Code and Destination Key or neither.`
+      );
+    }
+    if (!hasCountry) continue;
+    if (!supportedCountries.has(countryCode)) {
+      throw new Error(
+        `Location snapshot row ${rowNumber} has unsupported Country Code: ${countryCode}.`
+      );
+    }
+    if (!supportedDestinations.has(destinationKey)) {
+      throw new Error(
+        `Location snapshot row ${rowNumber} has unsupported Destination Key: ${destinationKey}.`
+      );
+    }
+    if (!isValidDestinationPair(countryCode, destinationKey)) {
+      throw new Error(
+        `Location snapshot row ${rowNumber} has mismatched Country Code and Destination Key.`
+      );
+    }
+  }
+}
+
 export function validateLocationSnapshot(
   csv,
   policyOrExpectedCount = loadSnapshotPolicy()
@@ -290,6 +337,7 @@ export function validateLocationSnapshot(
   }
 
   validateCoordinates(dataRows, headers, rawStatuses);
+  validateDestinations(dataRows, headers, rawStatuses);
 
   const parsed = parseCSV(csv);
   if (!parsed || parsed.length !== dataRows.length) {

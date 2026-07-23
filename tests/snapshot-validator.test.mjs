@@ -14,14 +14,15 @@ const snapshotPath = fileURLToPath(new URL('../data/locations.csv', import.meta.
 const snapshotCsv = readFileSync(snapshotPath, 'utf8');
 const snapshotRows = tokenizeCSV(snapshotCsv);
 
-test('production snapshot validator accepts the committed 104-row snapshot', () => {
+test('production snapshot validator accepts the committed 130-row snapshot', () => {
   assert.deepEqual(validateLocationSnapshot(snapshotCsv), {
     policyId: 'three-status-20260721',
-    rowCount: 104,
-    uniqueSlugCount: 104,
+    rowCount: 130,
+    uniqueSlugCount: 130,
     publicRowCount: 103,
     statusCounts: {
       Published: 103,
+      Paused: 26,
       Inactive: 1,
     },
   });
@@ -73,8 +74,8 @@ test('production snapshot validator accepts additions while protecting the basel
   ].join('\r\n');
 
   const result = validateLocationSnapshot(expandedCsv);
-  assert.equal(result.rowCount, 105);
-  assert.equal(result.uniqueSlugCount, 105);
+  assert.equal(result.rowCount, 131);
+  assert.equal(result.uniqueSlugCount, 131);
 });
 
 test('production snapshot validator rejects replacement additions when a protected Slug disappears', () => {
@@ -144,8 +145,42 @@ test('production snapshot validator accepts target Paused and Inactive as non-pu
 
   const result = validateLocationSnapshot(changedCsv);
   assert.equal(result.publicRowCount, 101);
-  assert.equal(result.statusCounts.Paused, 1);
+  assert.equal(result.statusCounts.Paused, 27);
   assert.equal(result.statusCounts.Inactive, 2);
+});
+
+test('production snapshot validator requires geography for Published rows', () => {
+  const missingGeography = changedRow(snapshotRows[1], {
+    'Country Code': '',
+    'Destination Key': '',
+  });
+  const changedCsv = [
+    csvRow(snapshotRows[0]),
+    csvRow(missingGeography),
+    ...snapshotRows.slice(2).map(csvRow),
+  ].join('\r\n');
+
+  assert.throws(
+    () => validateLocationSnapshot(changedCsv),
+    /requires Country Code and Destination Key/
+  );
+});
+
+test('production snapshot validator rejects mismatched country and destination', () => {
+  const mismatched = changedRow(snapshotRows[1], {
+    'Country Code': 'VN',
+    'Destination Key': 'bangkok',
+  });
+  const changedCsv = [
+    csvRow(snapshotRows[0]),
+    csvRow(mismatched),
+    ...snapshotRows.slice(2).map(csvRow),
+  ].join('\r\n');
+
+  assert.throws(
+    () => validateLocationSnapshot(changedCsv),
+    /mismatched Country Code and Destination Key/
+  );
 });
 
 test('production snapshot validator requires navigation-safe Published rows', () => {

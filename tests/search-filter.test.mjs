@@ -23,6 +23,8 @@ function makeLocation(overrides = {}) {
     src: '',
     sourceUrl: '',
     approx: '',
+    countryCode: 'TH',
+    destinationKey: 'bangkok',
     ...overrides,
   };
 }
@@ -72,6 +74,8 @@ function installBrowserState() {
       state.markerClusterer = null;
       state.favorites = new Set();
       state.favFilterOn = false;
+      state.selectedDestinations = new Set();
+      state.pendingDestinationFit = false;
     },
   };
 }
@@ -171,6 +175,42 @@ test('notes search combines with category, favorites, and public status', () => 
     state.favorites = new Set(['favorite-cafe', 'draft-cafe']);
     applyFilters();
     assert.deepEqual(state.visIdx, [0]);
+  } finally {
+    browser.restore();
+  }
+});
+
+test('multiple destinations use OR and combine with category using AND', () => {
+  const browser = installBrowserState();
+
+  try {
+    state.isLoading = false;
+    state.data = [
+      makeLocation({ id: 'bangkok-cafe', destinationKey: 'bangkok' }),
+      makeLocation({
+        id: 'samui-cafe',
+        destinationKey: 'koh-samui',
+      }),
+      makeLocation({
+        id: 'hcmc-restaurant',
+        countryCode: 'VN',
+        destinationKey: 'ho-chi-minh-city',
+        catEn: 'Restaurant',
+        catZh: '餐廳',
+      }),
+    ];
+    state.selectedDestinations = new Set(['bangkok', 'ho-chi-minh-city']);
+
+    applyFilters();
+    assert.deepEqual(state.visIdx, [0, 2]);
+
+    browser.elements['cat-filter'].value = '咖啡廳';
+    applyFilters();
+    assert.deepEqual(state.visIdx, [0]);
+
+    state.selectedDestinations.clear();
+    applyFilters();
+    assert.deepEqual(state.visIdx, [0, 1]);
   } finally {
     browser.restore();
   }

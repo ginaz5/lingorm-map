@@ -33,7 +33,7 @@ snapshot has completed the manual workflow in this document.
 
 The local exporter uses `NOTION_API_KEY` (the sole Notion credential as of the
 2026-07-21 single-source cutover — see README "Environment variables") against
-an allowlisted formal data source ID. It validates the current 17-property
+an allowlisted formal data source ID. It validates the current 19-property
 schema before reading any rows and has no Notion write path.
 
 Future automation work:
@@ -79,7 +79,8 @@ Netlify references:
 
 Make and review location changes in the Notion Locations data source. Preserve
 each existing row's `Slug`; it is the stable ID used by browser favorites and
-shared `?favs=` URLs.
+shared `?favs=` URLs. Assign a supported `Country Code` and `Destination Key`
+before changing a row to `Published`.
 
 ### 2. Export the snapshot
 
@@ -102,7 +103,8 @@ snapshot validation, or favorite compatibility gate fails.
 
 If no raw integration token is available, use the approved Notion connector or
 manual export bridge. The required final artifact is still
-`data/locations.csv` using the stable 14-column schema, including `Slug`.
+`data/locations.csv` using the stable 16-column schema, including
+`Country Code`, `Destination Key`, and `Slug`.
 
 ### 3. Validate locally
 
@@ -123,6 +125,7 @@ With `DATA_SOURCE=notion`, `build.sh` enforces:
 
 - The stable CSV header contract.
 - The expected snapshot row count.
+- Every published row has a supported, matching country/destination pair.
 - Non-empty, unique Notion slugs.
 - Preservation of all spreadsheet-derived legacy favorite IDs.
 - Availability of the map-provider configuration.

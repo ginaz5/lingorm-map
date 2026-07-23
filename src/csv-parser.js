@@ -20,6 +20,8 @@
  * @property {string} src
  * @property {string} approx
  * @property {string} sourceUrl
+ * @property {string} countryCode
+ * @property {string} destinationKey
  */
 /** @typedef {{en: string, zh: string}} CategoryAlias */
 /** @typedef {(row: string[], key: string) => string} ReadCell */
@@ -245,6 +247,8 @@ export function parsePublishedFormat(rows, idx, read) {
         // exact/unspecified rather than approximate.
         approx:   read(r, "Coordinates Approx"),
         sourceUrl,
+        countryCode: read(r, "Country Code"),
+        destinationKey: read(r, "Destination Key"),
       };
     });
 }

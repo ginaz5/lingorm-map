@@ -174,6 +174,7 @@ test('parseCSV: published format — maps category, fills icon, normalizes statu
     notesEn: 'Luxury hotel', notesZh: '河畔精品酒店', icon: '🏨',
     lat: '13.7608', lng: '100.5089', maps: 'https://maps.example/the-siam',
     status: 'Paused', src: 'KKday + Threads', approx: 'FALSE', sourceUrl: 'https://example.com',
+    countryCode: '', destinationKey: '',
   }]);
 });
 

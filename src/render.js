@@ -130,7 +130,7 @@ export function buildPopupContent(i) {
           data-fav-id="${row.id}"
           aria-pressed="${state.favorites.has(row.id)}"
           aria-label="${state.favorites.has(row.id) ? '移除最愛' : '加入最愛'}"
-          onclick="toggleFavorite('${row.id}')">
+          onclick="toggleFavorite('${row.id}', event)">
           ${heartSVG(state.favorites.has(row.id))}
         </button>
         ${hasCoords ? `
@@ -183,7 +183,7 @@ export function renderList() {
           data-fav-id="${row.id}"
           aria-pressed="${state.favorites.has(row.id)}"
           aria-label="${state.favorites.has(row.id) ? '移除最愛' : '加入最愛'}"
-          onclick="event.stopPropagation();toggleFavorite('${row.id}')">
+          onclick="toggleFavorite('${row.id}', event)">
           ${heartSVG(state.favorites.has(row.id))}
         </button>
       </div>
@@ -260,11 +260,15 @@ export function matchesLocationFilters(row, query, category) {
   ].some(value => normalizeSearchText(value).includes(normalizedQuery));
   const categoryValue = lang === 'zh' ? row.catZh : row.catEn;
   const categoryHit = !category || categoryValue === category;
+  const destinationHit =
+    state.selectedDestinations.size === 0 ||
+    state.selectedDestinations.has(row.destinationKey);
 
-  return queryHit && categoryHit;
+  return queryHit && categoryHit && destinationHit;
 }
 
-export function applyFilters() {
+/** @param {{ fitMap?: boolean }} [options] */
+export function applyFilters(options = {}) {
   const query = requiredInput('search').value;
   const category = requiredSelect('cat-filter').value;
   state.visIdx = [];
@@ -313,6 +317,14 @@ export function applyFilters() {
   if (updatedEl) {
     const updated = formatUpdated(DATA_UPDATED_ISO);
     updatedEl.textContent = state.isLoading || !updated ? '' : t('updated', updated);
+  }
+  if (options.fitMap) {
+    state.pendingDestinationFit = true;
+    if (state.map) {
+      import('./map.js').then(({ fitMapToVisibleLocations }) => {
+        fitMapToVisibleLocations();
+      });
+    }
   }
 }
 
