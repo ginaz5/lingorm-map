@@ -17,6 +17,10 @@ Read relevant documentation before editing:
 - `note/LOCAL_TESTING.md`: local verification
 - `docs/notion-deploy-workflow.md`: Notion snapshot and deployment workflow
 
+`docs/archive/` contains historical context only. Do not read it by default or
+treat it as current requirements; consult it only when explicitly requested or
+when historical investigation is necessary.
+
 ## Key Files
 
 - `src/main.js`: startup and event wiring
