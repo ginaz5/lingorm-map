@@ -73,6 +73,69 @@ export function getGoogleColorScheme(theme) {
   return theme === 'dark' ? 'DARK' : 'LIGHT';
 }
 
+/**
+ * UI locales supported by the HERE JS API 3.2 `H.ui.UI.createDefault`.
+ * The `lg` tile parameter supports many more languages for map labels;
+ * this table only governs which locale the default zoom/scale controls use.
+ * @type {Record<string, string>}
+ */
+const HERE_UI_LOCALES = {
+  cs: 'cs-CZ',
+  da: 'da-DK',
+  de: 'de-DE',
+  en: 'en-US',
+  es: 'es-ES',
+  fi: 'fi-FI',
+  fr: 'fr-FR',
+  hi: 'hi-IN',
+  hu: 'hu-HU',
+  it: 'it-IT',
+  nb: 'nb-NO',
+  nl: 'nl-NL',
+  pl: 'pl-PL',
+  pt: 'pt-PT',
+  ru: 'ru-RU',
+  sv: 'sv-SE',
+  tr: 'tr-TR',
+  zh: 'zh-CN',
+};
+
+/**
+ * Convert the browser's ordered language preferences into the language values
+ * supported by HERE map labels and default UI controls.
+ *
+ * `mapLanguage` comes from the user's top preferred language and is passed to
+ * `createDefaultLayers({ lg })` — HERE's tile service supports a broad set of
+ * languages here. `uiLocale` is the first language from the preference list
+ * that appears in {@link HERE_UI_LOCALES} (a smaller set). The two values may
+ * intentionally reference different base languages when the primary language
+ * has map-label support but no matching UI locale.
+ *
+ * @param {readonly string[]} browserLanguages
+ * @returns {{ mapLanguage: string, uiLocale: string }}
+ */
+export function getHereLanguagePreferences(browserLanguages = []) {
+  const normalized = browserLanguages
+    .filter(language => typeof language === 'string' && language.trim())
+    .map(language => language.trim().replaceAll('_', '-'));
+
+  const primary = normalized.find(language => /^[a-z]{2}(?:-[a-z\d]+)?$/i.test(language));
+  const mapLanguage = primary?.slice(0, 2).toLowerCase() || 'en';
+
+  for (const language of normalized) {
+    const [base, region] = language.split('-');
+    const normalizedBase = base.toLowerCase();
+    if (normalizedBase === 'pt' && region?.toUpperCase() === 'BR') {
+      return { mapLanguage, uiLocale: 'pt-BR' };
+    }
+    if (HERE_UI_LOCALES[normalizedBase]) {
+      return { mapLanguage, uiLocale: HERE_UI_LOCALES[normalizedBase] };
+    }
+  }
+
+  return { mapLanguage, uiLocale: 'en-US' };
+}
+
 // ═══════════════════════════════════════════════════
 // MARKERS & CLUSTERING
 // ═══════════════════════════════════════════════════
@@ -354,6 +417,10 @@ function reinitializeGoogleMap(theme) {
 function initWithHere(apiKey) {
   state.provider = 'here';
   state.mapTheme = getEffectiveTheme();
+  const browserLanguages = navigator.languages?.length
+    ? navigator.languages
+    : [navigator.language];
+  const { mapLanguage, uiLocale } = getHereLanguagePreferences(browserLanguages);
   const loadingEl = requiredElement('map-loading');
   const msgEl = document.getElementById('map-loading-msg');
   loadingEl.classList.add('is-hidden');
@@ -363,7 +430,10 @@ function initWithHere(apiKey) {
   // HERE 3.2 uses HARP as its only renderer. The app uses the matching raster
   // day/night pair because some deployments expose a vector night layer that
   // resolves successfully but renders blank tiles.
-  const layers = platform.createDefaultLayers({ engineType: H.Map.EngineType.HARP });
+  const layers = platform.createDefaultLayers({
+    engineType: H.Map.EngineType.HARP,
+    lg: mapLanguage,
+  });
   state.hereLayers = layers;
 
   state.map = new H.Map(
@@ -377,7 +447,7 @@ function initWithHere(apiKey) {
     }
   );
   new H.mapevents.Behavior(new H.mapevents.MapEvents(state.map));
-  state.hereUi = H.ui.UI.createDefault(state.map, layers);
+  state.hereUi = H.ui.UI.createDefault(state.map, layers, uiLocale);
 
   updateProviderBadge('here');
   buildMarkers();

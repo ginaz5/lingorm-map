@@ -7,8 +7,85 @@ test('HERE loads the supported 3.2 SDK and uses the HARP renderer', async () => 
 
   assert.doesNotMatch(source, /js\.api\.here\.com\/v3\/3\.1/);
   assert.match(source, /js\.api\.here\.com\/v3\/3\.2\/mapsjs-core\.js/);
-  assert.match(source, /createDefaultLayers\(\{ engineType: H\.Map\.EngineType\.HARP \}\)/);
+  assert.match(source, /createDefaultLayers\(\{[\s\S]*?engineType: H\.Map\.EngineType\.HARP,[\s\S]*?lg: mapLanguage,[\s\S]*?\}\)/);
   assert.match(source, /engineType: H\.Map\.EngineType\.HARP/);
+});
+
+test('getHereLanguagePreferences uses the primary language for map labels and the first supported locale for UI', async () => {
+  const { getHereLanguagePreferences } = await import('../src/map.js');
+
+  // zh-TW → map labels in Chinese, UI in zh-CN (closest supported locale)
+  assert.deepEqual(
+    getHereLanguagePreferences(['zh-TW', 'en-US']),
+    { mapLanguage: 'zh', uiLocale: 'zh-CN' },
+  );
+  // th-TH → map labels in Thai, but Thai has no UI locale so falls through to en-US
+  assert.deepEqual(
+    getHereLanguagePreferences(['th-TH', 'en-US']),
+    { mapLanguage: 'th', uiLocale: 'en-US' },
+  );
+});
+
+test('getHereLanguagePreferences falls back to secondary locale when primary is unsupported', async () => {
+  const { getHereLanguagePreferences } = await import('../src/map.js');
+
+  // ja has no UI locale, so uiLocale falls through to the secondary fr-FR
+  assert.deepEqual(
+    getHereLanguagePreferences(['ja-JP', 'fr-FR']),
+    { mapLanguage: 'ja', uiLocale: 'fr-FR' },
+  );
+});
+
+test('getHereLanguagePreferences handles pt-BR specially', async () => {
+  const { getHereLanguagePreferences } = await import('../src/map.js');
+
+  assert.deepEqual(
+    getHereLanguagePreferences(['pt-BR']),
+    { mapLanguage: 'pt', uiLocale: 'pt-BR' },
+  );
+  // Plain pt (no region) maps to pt-PT, not pt-BR
+  assert.deepEqual(
+    getHereLanguagePreferences(['pt']),
+    { mapLanguage: 'pt', uiLocale: 'pt-PT' },
+  );
+});
+
+test('getHereLanguagePreferences defaults to en / en-US for empty input', async () => {
+  const { getHereLanguagePreferences } = await import('../src/map.js');
+
+  assert.deepEqual(
+    getHereLanguagePreferences([]),
+    { mapLanguage: 'en', uiLocale: 'en-US' },
+  );
+});
+
+test('getHereLanguagePreferences supports all HERE JS API 3.2 UI locales', async () => {
+  const { getHereLanguagePreferences } = await import('../src/map.js');
+
+  assert.deepEqual(
+    getHereLanguagePreferences(['sv-SE']),
+    { mapLanguage: 'sv', uiLocale: 'sv-SE' },
+  );
+  assert.deepEqual(
+    getHereLanguagePreferences(['nb-NO']),
+    { mapLanguage: 'nb', uiLocale: 'nb-NO' },
+  );
+  assert.deepEqual(
+    getHereLanguagePreferences(['da-DK']),
+    { mapLanguage: 'da', uiLocale: 'da-DK' },
+  );
+  assert.deepEqual(
+    getHereLanguagePreferences(['cs-CZ']),
+    { mapLanguage: 'cs', uiLocale: 'cs-CZ' },
+  );
+  assert.deepEqual(
+    getHereLanguagePreferences(['hu-HU']),
+    { mapLanguage: 'hu', uiLocale: 'hu-HU' },
+  );
+  assert.deepEqual(
+    getHereLanguagePreferences(['hi-IN']),
+    { mapLanguage: 'hi', uiLocale: 'hi-IN' },
+  );
 });
 
 test('HERE uses matching raster day and night layers when available', async () => {
