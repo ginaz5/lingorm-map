@@ -5,7 +5,7 @@
 // Phase 1/2 (docs/archive/notion-migration-and-location-automation-plan.md
 // §6.3, §9.1, §13): reads the Notion "Locations" data source and
 // emits the public location fields that parsePublishedFormat()
-// in src/csv-parser.js understands. Verification-only properties and retired
+// in src/data/csv-parser.js understands. Verification-only properties and retired
 // formal properties are deliberately excluded.
 // The frontend parser is header-based and ignores unknown columns.
 //
@@ -124,7 +124,7 @@ export function pageToRow(page) {
   ];
 }
 
-// RFC 4180-ish CSV writer matching tokenizeCSV()'s escaping in src/csv-parser.js
+// RFC 4180-ish CSV writer matching tokenizeCSV()'s escaping in src/data/csv-parser.js
 export function csvField(v) {
   // Notion rich text can contain invisible spaces immediately before a
   // newline. They have no display meaning but make the committed snapshot

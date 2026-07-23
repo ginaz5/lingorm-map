@@ -1,11 +1,5 @@
-import { lang, setLang, t } from './i18n.js';
-import { state } from './state.js';
-import {
-  updateLangUI, buildCatFilter,
-  applyFilters, buildPopupContent,
-} from './render.js';
-import { updateWhatsNewLangUI } from './whats-new.js';
-import { renderDestinationFilter } from './destination-filter.js';
+import { lang, t } from '../core/i18n.js';
+import { state } from '../core/state.js';
 
 /** @param {string} id @returns {HTMLElement} */
 function requiredElement(id) {
@@ -119,21 +113,4 @@ export function locateMe() {
     },
     { enableHighAccuracy: true, timeout: 8000 }
   );
-}
-
-// ═══════════════════════════════════════════════════
-// i18n TOGGLE
-// ═══════════════════════════════════════════════════
-export function toggleLang() {
-  setLang(lang === 'zh' ? 'en' : 'zh');
-  updateLangUI();
-  updateWhatsNewLangUI();
-  buildCatFilter();
-  renderDestinationFilter();
-  applyFilters();
-  if (state.activeIdx >= 0) {
-    const html = buildPopupContent(state.activeIdx);
-    if (state.provider === 'google' && state.infoWindow) state.infoWindow.setContent(html);
-    else if (state.provider === 'here' && state.infoBubble) state.infoBubble.setContent(html);
-  }
 }

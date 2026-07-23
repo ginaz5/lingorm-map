@@ -24,7 +24,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-import { parseCSV } from '../src/csv-parser.js';
+import { parseCSV } from '../src/data/csv-parser.js';
 import {
   CSV_HEADER,
   assertCurrentFormalSchema,

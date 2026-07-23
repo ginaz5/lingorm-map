@@ -1,14 +1,14 @@
 // Updated for Option B modularisation:
-//   - switchTab extracted from src/ui.js (uses state.map instead of bare map)
+//   - switchTab extracted from src/ui/ui.js (uses state.map instead of bare map)
 //   - static markup check: split on /<script\b[^>]*>/ to handle <script type="module">
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 async function loadSwitchTab(deps) {
-  const src = await readFile(new URL('../src/ui.js', import.meta.url), 'utf8');
+  const src = await readFile(new URL('../src/ui/ui.js', import.meta.url), 'utf8');
   const switchMatch = src.match(/(?:export\s+)?function switchTab\(tab\)\s*\{[\s\S]*?\n\}/);
-  assert.ok(switchMatch, 'switchTab function should exist in src/ui.js');
+  assert.ok(switchMatch, 'switchTab function should exist in src/ui/ui.js');
 
   const code = switchMatch[0].replace(/\bexport\s+/g, '');
   return Function(

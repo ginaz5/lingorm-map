@@ -8,13 +8,13 @@ import {
   LOCATION_STATUSES,
   parseCSV,
   tokenizeCSV,
-} from '../src/csv-parser.js';
+} from '../src/data/csv-parser.js';
 import {
   COUNTRY_CODES,
   DESTINATION_KEYS,
   isValidDestinationPair,
-} from '../src/destinations.js';
-import { PUBLIC_LOCATION_STATUSES } from '../src/render.js';
+} from '../src/data/destinations.js';
+import { PUBLIC_LOCATION_STATUSES } from '../src/ui/render.js';
 import { CSV_HEADER } from './export-snapshot.mjs';
 
 export const EXPECTED_LOCATION_COUNT = 100;

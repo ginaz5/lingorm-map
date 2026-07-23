@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import locationsHandler, {
   serveNotionSnapshot,
 } from '../netlify/functions/locations.mjs';
-import { parseCSV } from '../src/csv-parser.js';
+import { parseCSV } from '../src/data/csv-parser.js';
 
 function withNetlifyEnv(values, fn) {
   const previous = globalThis.Netlify;

@@ -1,7 +1,7 @@
-import { t } from './i18n.js';
-import { state } from './state.js';
-import { parseCSV } from './csv-parser.js';
-import { doNetlifySubmit, resetFeedback } from './submit.js';
+import { t } from '../core/i18n.js';
+import { state } from '../core/state.js';
+import { parseCSV } from '../data/csv-parser.js';
+import { doNetlifySubmit, resetFeedback } from '../services/submit.js';
 
 const LOCATIONS_API = '/api/locations';
 

@@ -24,13 +24,14 @@ when historical investigation is necessary.
 ## Key Files
 
 - `src/main.js`: startup and event wiring
-- `src/state.js`: shared state
-- `src/i18n.js`: zh/en translations and `t()`
-- `src/csv-parser.js`: CSV parsing and normalization
-- `src/render.js`: lists, filters, and popup content
-- `src/ui.js`: theme, tabs, snackbar, and language switching
-- `src/map.js`: Google/HERE maps, markers, and map theme
-- `src/forms.js`, `src/submit.js`: forms and submission
+- `src/app/app-coordinator.js`: filter/map synchronization and language orchestration
+- `src/core/state.js`: shared state
+- `src/core/i18n.js`: zh/en translations and `t()`
+- `src/data/csv-parser.js`, `src/data/destinations.js`: location parsing and destination taxonomy
+- `src/ui/render.js`, `src/ui/ui.js`: rendering, theme, tabs, snackbar, and navigation
+- `src/map/map.js`: Google/HERE maps, markers, popups, and map theme
+- `src/features/`: destination filtering, favorites, forms, and What's New
+- `src/services/submit.js`: shared form submission transport
 - `netlify/functions/`: runtime config and location snapshot APIs
 - `data/locations.csv`: production location snapshot
 - `scripts/`: snapshot export, validation, and location verification
@@ -40,7 +41,7 @@ when historical investigation is necessary.
 
 1. Preserve the Vanilla JS + ES module architecture. Do not add a frontend framework or migrate to TypeScript unless explicitly requested.
 2. Never place API keys, tokens, Notion credentials, or other secrets in client code, HTML, fixtures, or documentation.
-3. Keep user-facing text bilingual. Update both languages in `src/i18n.js` and relevant tests.
+3. Keep user-facing text bilingual. Update both languages in `src/core/i18n.js` and relevant tests.
 4. When changing shared data contracts, inspect consumers in state, CSV parsing, rendering, maps, forms, and Netlify Functions.
 5. Preserve both Google Maps and HERE fallback behavior. Keep provider-specific logic explicit.
 6. Handle missing DOM elements safely and keep strict `checkJs` passing.

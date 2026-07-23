@@ -21,8 +21,8 @@ function makeLocation(status, name = status) {
 }
 
 test('public filters and list show only Published locations', async () => {
-  const { state } = await import('../src/state.js');
-  const { applyFilters } = await import('../src/render.js');
+  const { state } = await import('../src/core/state.js');
+  const { applyFilters } = await import('../src/ui/render.js');
 
   const elements = {
     search: { value: '' },
@@ -77,8 +77,8 @@ test('public filters and list show only Published locations', async () => {
 });
 
 test('map markers use the same public status allowlist', async () => {
-  const { state } = await import('../src/state.js');
-  const { buildMarkers } = await import('../src/map.js');
+  const { state } = await import('../src/core/state.js');
+  const { buildMarkers } = await import('../src/map/map.js');
 
   const createdDataPoints = [];
   const previousDocument = globalThis.document;
@@ -165,8 +165,8 @@ test('map markers use the same public status allowlist', async () => {
 });
 
 test('activateCard centers HERE map and opens info bubble', async () => {
-  const { state } = await import('../src/state.js');
-  const { activateCard } = await import('../src/render.js');
+  const { state } = await import('../src/core/state.js');
+  const { activateCard } = await import('../src/ui/render.js');
 
   const previousDocument = globalThis.document;
   const previousWindow = globalThis.window;

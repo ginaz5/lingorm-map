@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { setLang } from '../src/i18n.js';
-import { buildMarkers } from '../src/map.js';
-import { applyFilters } from '../src/render.js';
-import { state } from '../src/state.js';
+import { setLang } from '../src/core/i18n.js';
+import { buildMarkers, syncVisibleMarkers } from '../src/map/map.js';
+import { applyFilters } from '../src/ui/render.js';
+import { state } from '../src/core/state.js';
 
 function makeLocation(overrides = {}) {
   return {
@@ -251,6 +251,7 @@ test('Google MarkerClusterer uses the same notes search results as the list', ()
     browser.elements.search.value = 'coconut';
 
     applyFilters();
+    syncVisibleMarkers();
 
     assert.deepEqual(state.visIdx, [0]);
     assert.deepEqual(added, [targetMarker]);
@@ -289,6 +290,8 @@ test('Google markers without a cluster use the same notes search results as the 
     browser.elements.search.value = '椰子';
 
     applyFilters();
+    assert.equal(otherMarker.map, map, 'render-only filtering should not mutate map markers');
+    syncVisibleMarkers();
 
     assert.deepEqual(state.visIdx, [0]);
     assert.equal(targetMarker.map, map);

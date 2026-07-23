@@ -8,7 +8,7 @@ import {
   EXPECTED_LOCATION_COUNT,
   validateLocationSnapshot,
 } from '../scripts/validate-location-snapshot.mjs';
-import { tokenizeCSV } from '../src/csv-parser.js';
+import { tokenizeCSV } from '../src/data/csv-parser.js';
 
 const snapshotPath = fileURLToPath(new URL('../data/locations.csv', import.meta.url));
 const snapshotCsv = readFileSync(snapshotPath, 'utf8');

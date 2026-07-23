@@ -1,17 +1,17 @@
-// Updated for Option B modularisation: reads from src/render.js instead of index.html.
+// Updated for Option B modularisation: reads from src/ui/render.js instead of index.html.
 // Helper functions use state.data (via state object) instead of bare data variable.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { T } from '../src/i18n.js';
+import { T } from '../src/core/i18n.js';
 
 async function loadUiHelpers(deps) {
-  const src = await readFile(new URL('../src/render.js', import.meta.url), 'utf8');
+  const src = await readFile(new URL('../src/ui/render.js', import.meta.url), 'utf8');
   const helperMatch = src.match(
     /(?:export\s+)?function rebuildSelect\(sel,\s*html\)\s*\{[\s\S]*$/
   );
-  assert.ok(helperMatch, 'i18n/select helper block should exist in src/render.js');
+  assert.ok(helperMatch, 'i18n/select helper block should exist in src/ui/render.js');
 
   const code = helperMatch[0].replace(/\bexport\s+/g, '');
   return Function(
@@ -127,7 +127,7 @@ test('setLang normalizes unsupported stored languages to zh', async () => {
   };
 
   try {
-    const i18n = await import('../src/i18n.js?invalid-language-normalization');
+    const i18n = await import('../src/core/i18n.js?invalid-language-normalization');
     i18n.setLang('th');
 
     assert.equal(i18n.lang, 'zh');

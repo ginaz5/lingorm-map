@@ -6,7 +6,7 @@
 
 ## 現況
 
-- `src/render.js` 的 `applyFilters()` 已比對：
+- `src/ui/render.js` 的 `applyFilters()` 已比對：
   - 英文名稱 `nameEn`
   - 中文名稱 `nameZh`
   - 別名 `alt`
@@ -138,7 +138,7 @@ Notes 比對已經存在。本次應優先補測試與修正呈現一致性，�
 
 #### 2026-07-23：階段 2 完成
 
-- 在 `src/render.js` 新增共用的 `matchesLocationFilters()`。
+- 在 `src/ui/render.js` 新增共用的 `matchesLocationFilters()`。
 - 搜尋欄位統一涵蓋英文名稱、中文名稱、別名、英文 Notes 與中文 Notes。
 - 搜尋文字使用 NFKC Unicode 正規化、大小寫正規化及前後空白移除。
 - 公開狀態、收藏與分類條件集中在同一個判斷函式。

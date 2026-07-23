@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { parseCSV, tokenizeCSV } from '../src/csv-parser.js';
+import { parseCSV, tokenizeCSV } from '../src/data/csv-parser.js';
 import { CSV_HEADER } from '../scripts/export-snapshot.mjs';
 
 const snapshotPath = fileURLToPath(new URL('../data/locations.csv', import.meta.url));

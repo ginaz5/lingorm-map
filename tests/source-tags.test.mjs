@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { renderSources } from '../src/render.js';
+import { renderSources } from '../src/ui/render.js';
 
 test('renderSources labels repeated Threads tags by handle', () => {
   const row = {

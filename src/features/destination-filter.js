@@ -4,9 +4,9 @@ import {
   DESTINATION_KEYS,
   countryLabel,
   destinationLabel,
-} from './destinations.js';
-import { lang, t } from './i18n.js';
-import { state } from './state.js';
+} from '../data/destinations.js';
+import { lang, t } from '../core/i18n.js';
+import { state } from '../core/state.js';
 
 export const DESTINATION_FILTER_STORAGE_KEY = 'destinationFilters';
 

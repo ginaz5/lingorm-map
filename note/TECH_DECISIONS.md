@@ -71,7 +71,7 @@ export function makeMarkerContent(status, icon) {
 | Needs Review | `.marker-review` | `#c2772a` 橘 |
 | Could Not Find | `.marker-notfound` | `#b1452f` 紅（不顯示於公開清單） |
 
-Emoji 取自 `row.icon`（由 `csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
+Emoji 取自 `row.icon`（由 `src/data/csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
 
 ---
 
@@ -141,7 +141,7 @@ normalize 為 `Paused`（非公開），該路徑會顯示 0 筆地點。`build.
 
 **注意事項：**
 - 需在 Netlify Dashboard → Forms 手動開啟 form detection，再重新 deploy
-- AJAX 提交必須包含 `form-name` 欄位（已實作於 `submit.js`）
+- AJAX 提交必須包含 `form-name` 欄位（已實作於 `src/services/submit.js`）
 - `Content-Type: application/x-www-form-urlencoded` + `URLSearchParams` 編碼（已實作）
 - 本地開發時 submit 為 mock（`console.info`），不實際送出
 
@@ -168,7 +168,7 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 ## 多語支援：i18n 系統
 
 **架構：**
-- 所有 UI 字串集中在 `src/i18n.js` 的 `T` 物件
+- 所有 UI 字串集中在 `src/core/i18n.js` 的 `T` 物件
 - HTML 元素使用 `data-i18n`, `data-i18n-ph`, `data-i18n-html` 屬性
 - `updateLangUI()` 單次 scan 更新全部元素
 - 動態渲染內容（卡片、category filter）在語系切換時重新 render
@@ -205,7 +205,7 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 | 即時更新 | Server-Sent Events 或 Supabase Realtime |
 | 流量超過 quota（>900次/日） | 調高 Cloud Console quota，或升級 Vercel（key 存環境變數） |
 | 更多地點（>200 筆） | 考慮虛擬捲動（virtual scroll） |
-| 泰文支援 | `i18n.js` 加 `th` key，lang toggle 加第三段 |
+| 泰文支援 | `src/core/i18n.js` 加 `th` key，lang toggle 加第三段 |
 
 ---
 
@@ -213,8 +213,8 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 
 **決策：** 保留現有 `.js` ES modules 與 Vite runtime/build 流程；TypeScript 只作為開發期靜態檢查器，以 strict、no-emit `checkJs` 搭配 JSDoc 描述應用程式資料契約，不進行整體 `.ts` 遷移。
 
-**初始範圍：**
-- 主要檢查 `src/state.js`、`src/csv-parser.js`、`src/map.js`、`src/forms.js`
+**目前範圍：**
+- 主要檢查 `src/app/app-coordinator.js`、`src/core/state.js`、`src/data/csv-parser.js`、`src/map/map.js`、`src/features/forms.js`
 - TypeScript 會沿著上述檔案的 ES module imports 檢查相依邊界；必要時只補窄範圍 JSDoc 或 DOM null safety，不重新設計被匯入模組
 - 後續模組依維護需求逐步納入，不要求一次覆蓋全部程式碼
 
@@ -243,6 +243,6 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 - 每次目的地變更後，Google Maps 與 HERE Maps 都縮放至所有篩選結果；
   單一結果使用地點層級 zoom，零結果維持原視窗。
 
-**資料契約：** taxonomy 集中在 `src/destinations.js`。每個 `Published`
+**資料契約：** taxonomy 集中在 `src/data/destinations.js`。每個 `Published`
 地點必須具備受支援且互相匹配的 `Country Code` 與 `Destination Key`；
 匯出快照驗證失敗即阻擋 build/deploy。`Paused`／`Inactive` 草稿可暫時未分類。

@@ -5,7 +5,7 @@ import {
   COUNTRY_CODES,
   DESTINATION_KEYS,
   isValidDestinationPair,
-} from '../src/destinations.js';
+} from '../src/data/destinations.js';
 import {
   DESTINATION_FILTER_STORAGE_KEY,
   countrySelectionState,
@@ -13,8 +13,8 @@ import {
   reconcileDestinationFilter,
   saveDestinationFilter,
   toggleCountryDestinations,
-} from '../src/destination-filter.js';
-import { state } from '../src/state.js';
+} from '../src/features/destination-filter.js';
+import { state } from '../src/core/state.js';
 
 test('destination taxonomy exposes stable countries and valid pairs', () => {
   assert.deepEqual(COUNTRY_CODES, ['TH', 'VN']);

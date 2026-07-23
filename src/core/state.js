@@ -3,7 +3,7 @@
 // All modules read/write via this object so ES-module live-binding
 // semantics are not needed for reassignable references.
 // ═══════════════════════════════════════════════════
-/** @typedef {import('./csv-parser.js').LocationRow} LocationRow */
+/** @typedef {import('../data/csv-parser.js').LocationRow} LocationRow */
 /** @typedef {'google'|'here'|null} MapProvider */
 /**
  * @typedef {Object} AppState

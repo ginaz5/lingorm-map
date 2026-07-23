@@ -1,4 +1,4 @@
-import { t } from './i18n.js';
+import { t } from '../core/i18n.js';
 
 /** @param {string} id @returns {HTMLElement} */
 function requiredElement(id) {

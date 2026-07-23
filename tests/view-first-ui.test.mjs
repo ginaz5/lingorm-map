@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { makeMarkerContent } from '../src/map.js';
-import { buildPopupContent, renderList } from '../src/render.js';
-import { state } from '../src/state.js';
+import { makeMarkerContent } from '../src/map/map.js';
+import { buildPopupContent, renderList } from '../src/ui/render.js';
+import { state } from '../src/core/state.js';
 
 const REMOVED_UI_TOKENS = [
   'add-btn',

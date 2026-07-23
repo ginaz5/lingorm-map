@@ -1,5 +1,6 @@
-import { state } from './state.js';
-import { applyFilters, heartSVG } from './render.js';
+import { state } from '../core/state.js';
+import { heartSVG } from '../ui/render.js';
+import { applyFiltersAndSyncMap } from '../app/app-coordinator.js';
 
 const LS_KEY = 'favorites';
 const STORAGE_NOTICE_KEY = 'favorites-storage-notice-seen-v1';
@@ -82,7 +83,7 @@ export function toggleFavorite(id, event) {
   });
 
   // If "show favorites only" is active, re-run filters so removed items disappear
-  if (state.favFilterOn) applyFilters();
+  if (state.favFilterOn) applyFiltersAndSyncMap();
 
   return isFav;
 }

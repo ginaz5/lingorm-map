@@ -6,8 +6,8 @@ import {
   LEGACY_LOCATION_STATUSES, LOCATION_STATUSES,
   tokenizeCSV, normalizeStatus, sourceLabel,
   normalizeSourceTags, mapsQuery, parseCSV, slugify,
-} from '../src/csv-parser.js';
-import { isApproximateCoords } from '../src/render.js';
+} from '../src/data/csv-parser.js';
+import { isApproximateCoords } from '../src/ui/render.js';
 
 // ─── tokenizeCSV ────────────────────────────────────────────────────────────
 

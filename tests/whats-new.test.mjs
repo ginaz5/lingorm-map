@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { checkWhatsNew, closeWhatsNew } from '../src/whats-new.js';
+import { checkWhatsNew, closeWhatsNew } from '../src/features/whats-new.js';
 
 function makeStorage(initial = {}) {
   const values = new Map(Object.entries(initial));

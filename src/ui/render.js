@@ -1,5 +1,5 @@
-import { lang, t } from './i18n.js';
-import { state } from './state.js';
+import { lang, t } from '../core/i18n.js';
+import { state } from '../core/state.js';
 import { switchTab } from './ui.js';
 
 // ISO commit time of data/locations.csv, injected by Vite (see vite.config.js).
@@ -21,7 +21,7 @@ export function formatUpdated(iso) {
   return `${ymd} (GMT+8)`;
 }
 
-/** @typedef {import('./csv-parser.js').LocationRow} LocationRow */
+/** @typedef {import('../data/csv-parser.js').LocationRow} LocationRow */
 
 /** @param {string} id @returns {HTMLElement} */
 function requiredElement(id) {
@@ -267,8 +267,7 @@ export function matchesLocationFilters(row, query, category) {
   return queryHit && categoryHit && destinationHit;
 }
 
-/** @param {{ fitMap?: boolean }} [options] */
-export function applyFilters(options = {}) {
+export function applyFilters() {
   const query = requiredInput('search').value;
   const category = requiredSelect('cat-filter').value;
   state.visIdx = [];
@@ -276,55 +275,12 @@ export function applyFilters(options = {}) {
     if (matchesLocationFilters(row, query, category)) state.visIdx.push(i);
   });
   renderList();
-  if (state.map) {
-    const visibleIndexes = new Set(state.visIdx);
-    if (state.provider === 'google' && state.markerClusterer) {
-      // Use MarkerClusterer add/remove APIs for Google
-      /** @type {any[]} */
-      const toAdd = [];
-      /** @type {any[]} */
-      const toRemove = [];
-      const currentMarkers = state.markerClusterer.markers;
-      state.markers.forEach((m, i) => {
-        if (!m) return;
-        const visible = visibleIndexes.has(i);
-        const isInCluster = currentMarkers.includes(m);
-        if (visible && !isInCluster) toAdd.push(m);
-        else if (!visible && isInCluster) toRemove.push(m);
-      });
-      if (toRemove.length) state.markerClusterer.removeMarkers(toRemove);
-      if (toAdd.length) state.markerClusterer.addMarkers(toAdd);
-    } else if (state.provider === 'here') {
-      // HERE clustering doesn't support partial add/remove;
-      // rebuild the entire clustering layer via buildMarkers()
-      import('./map.js').then(({ buildMarkers }) => buildMarkers());
-    } else {
-      // Fallback: direct marker visibility toggle
-      state.markers.forEach((m, i) => {
-        if (!m) return;
-        const visible = visibleIndexes.has(i);
-        if (state.provider === 'google') {
-          m.map = visible ? state.map : null;
-        } else {
-          m.setVisibility(visible);
-        }
-      });
-    }
-  }
   const publicTotal = state.data.filter(isPublicLocation).length;
   requiredElement('result-info').textContent = state.isLoading ? '' : t('count', state.visIdx.length, publicTotal);
   const updatedEl = document.getElementById('last-updated');
   if (updatedEl) {
     const updated = formatUpdated(DATA_UPDATED_ISO);
     updatedEl.textContent = state.isLoading || !updated ? '' : t('updated', updated);
-  }
-  if (options.fitMap) {
-    state.pendingDestinationFit = true;
-    if (state.map) {
-      import('./map.js').then(({ fitMapToVisibleLocations }) => {
-        fitMapToVisibleLocations();
-      });
-    }
   }
 }
 

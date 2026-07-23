@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { state } from '../src/state.js';
+import { state } from '../src/core/state.js';
 import {
   loadFavorites,
   saveFavorites,
   toggleFavorite,
   toggleFavoriteWithNotice,
-} from '../src/favorites.js';
-import { applyFilters } from '../src/render.js';
+} from '../src/features/favorites.js';
+import { applyFiltersAndSyncMap } from '../src/app/app-coordinator.js';
 
 function installBrowserState({ search = '', pathname = '/map', stored = null } = {}) {
   const storage = new Map();
@@ -93,7 +93,7 @@ test('saveFavorites removes an empty favorites query while retaining other param
   }
 });
 
-test('applyFilters shows only favorited locations when the favorites filter is active', () => {
+test('coordinated filters show only favorites in both list and map', () => {
   const elements = {
     search: { value: '' },
     'cat-filter': { value: '' },
@@ -122,7 +122,7 @@ test('applyFilters shows only favorited locations when the favorites filter is a
     state.provider = 'google';
     state.markers = [{ map: state.map }, { map: state.map }];
 
-    applyFilters();
+    applyFiltersAndSyncMap();
 
     assert.deepEqual(state.visIdx, [0]);
     assert.match(elements['loc-list'].innerHTML, /Favorite Cafe/);

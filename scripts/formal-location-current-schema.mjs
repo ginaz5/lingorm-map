@@ -144,4 +144,4 @@ export function inspectCurrentFormalLocationProperties(properties) {
     statusOptions,
   };
 }
-import { LOCATION_STATUSES } from '../src/csv-parser.js';
+import { LOCATION_STATUSES } from '../src/data/csv-parser.js';

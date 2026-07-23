@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { fitMapToVisibleLocations } from '../src/map.js';
-import { state } from '../src/state.js';
+import { fitMapToVisibleLocations } from '../src/map/map.js';
+import { state } from '../src/core/state.js';
 
 function resetState() {
   state.data = [];

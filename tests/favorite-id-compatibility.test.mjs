@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { csvRow } from '../scripts/export-snapshot.mjs';
 import { validateFavoriteCompatibility } from '../scripts/validate-favorite-compatibility.mjs';
-import { tokenizeCSV } from '../src/csv-parser.js';
+import { tokenizeCSV } from '../src/data/csv-parser.js';
 
 const snapshotPath = fileURLToPath(new URL('../data/locations.csv', import.meta.url));
 const manifestPath = fileURLToPath(

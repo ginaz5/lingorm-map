@@ -18,7 +18,7 @@ function getIssueReportPayloadKeys(src) {
   const payloadBuilderMatch = src.match(
     /(?:export\s+)?function buildIssueReportPayload\(\)\s*\{[\s\S]*?\n\}/
   );
-  assert.ok(payloadBuilderMatch, 'buildIssueReportPayload function should exist in src/forms.js');
+  assert.ok(payloadBuilderMatch, 'buildIssueReportPayload function should exist in src/features/forms.js');
 
   const payloadMatch = payloadBuilderMatch[0].match(/return \{([\s\S]*?)\};/);
   assert.ok(payloadMatch, 'buildIssueReportPayload should return a payload object');
@@ -29,7 +29,7 @@ function getIssueReportPayloadKeys(src) {
 
 test('issue-report Netlify detection form declares every submitted field', async () => {
   const html = await loadIndexHtml();
-  const formsSrc = await readFile(new URL('../src/forms.js', import.meta.url), 'utf8');
+  const formsSrc = await readFile(new URL('../src/features/forms.js', import.meta.url), 'utf8');
 
   const detectionFields = getHiddenFormFieldNames(html, 'issue-report');
   const submittedFields = getIssueReportPayloadKeys(formsSrc).filter((field) => field !== 'form-name');
@@ -40,8 +40,8 @@ test('issue-report Netlify detection form declares every submitted field', async
 
 test('issue report UI has header button and localized modal copy', async () => {
   const html = await loadIndexHtml();
-  const i18nSrc = await readFile(new URL('../src/i18n.js', import.meta.url), 'utf8');
-  const formsSrc = await readFile(new URL('../src/forms.js', import.meta.url), 'utf8');
+  const i18nSrc = await readFile(new URL('../src/core/i18n.js', import.meta.url), 'utf8');
+  const formsSrc = await readFile(new URL('../src/features/forms.js', import.meta.url), 'utf8');
 
   assert.match(html, /id="issue-btn"/);
   assert.match(html, /id="issue-modal"/);

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════
-// SLUG / ID HELPER
+// DATA — SLUG / ID HELPER
 // ═══════════════════════════════════════════════════
 /** @typedef {'Published'|'Paused'|'Inactive'} LocationStatus */
 /**

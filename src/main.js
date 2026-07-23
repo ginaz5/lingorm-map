@@ -1,30 +1,40 @@
-import { lang, setLang, t } from './i18n.js';
-import { state } from './state.js';
+import { setLang, t } from './core/i18n.js';
+import { state } from './core/state.js';
 import {
   updateLangUI, buildCatFilter,
-  applyFilters, activateCard, buildPopupContent,
-} from './render.js';
+  applyFilters, activateCard,
+} from './ui/render.js';
 import {
   getEffectiveTheme, switchTab,
-  showSnackbar, locateMe, openNavigation, openInGoogleMaps, toggleLang,
-} from './ui.js';
+  showSnackbar, locateMe, openNavigation, openInGoogleMaps,
+} from './ui/ui.js';
 import {
   openIssueModal, closeIssueModal, submitIssueReport,
   tryLoadSheet,
-} from './forms.js';
-import { initMap, loadMapScript, updateMapTheme, buildMarkers } from './map.js';
+} from './features/forms.js';
+import {
+  initMap,
+  loadMapScript,
+  updateMapTheme,
+  buildMarkers,
+  fitMapToVisibleLocations,
+} from './map/map.js';
+import {
+  applyFiltersAndSyncMap,
+  toggleLang,
+} from './app/app-coordinator.js';
 import {
   loadFavorites,
   releasePointerFocus,
   toggleFavoriteWithNotice,
-} from './favorites.js';
-import { heartSVG } from './render.js';
-import { checkWhatsNew, closeWhatsNew } from './whats-new.js';
+} from './features/favorites.js';
+import { heartSVG } from './ui/render.js';
+import { checkWhatsNew, closeWhatsNew } from './features/whats-new.js';
 import {
   initDestinationFilter,
   reconcileDestinationFilter,
   renderDestinationFilter,
-} from './destination-filter.js';
+} from './features/destination-filter.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -57,11 +67,13 @@ function applyCoordinateJitter() {
 
 function rebuild() {
   applyCoordinateJitter();
-  if (state.map) buildMarkers();
   buildCatFilter();
   reconcileDestinationFilter();
   renderDestinationFilter();
-  applyFilters({ fitMap: state.selectedDestinations.size > 0 });
+  applyFilters();
+  // Intentionally do not await: fitting reads only data/visIdx, not markers.
+  if (state.map) void buildMarkers();
+  if (state.selectedDestinations.size > 0) fitMapToVisibleLocations();
 }
 
 // ═══════════════════════════════════════════════════
@@ -122,7 +134,7 @@ function handleFavoriteClick(id, event) {
 window.activateCard = activateCard;
 window.openNavigation = openNavigation;
 window.openInGoogleMaps = openInGoogleMaps;
-window.applyFilters = applyFilters;
+window.applyFilters = applyFiltersAndSyncMap;
 window.toggleFavorite = handleFavoriteClick;
 
 
@@ -134,7 +146,7 @@ setLang(localStorage.getItem('lang') || 'zh');
 
 // Restore favorites from URL or localStorage
 loadFavorites();
-initDestinationFilter(() => applyFilters({ fitMap: true }));
+initDestinationFilter(() => applyFiltersAndSyncMap({ fitMap: true }));
 
 // Static event listeners
 document.getElementById('fav-filter-btn').addEventListener('click', event => {
@@ -143,7 +155,7 @@ document.getElementById('fav-filter-btn').addEventListener('click', event => {
   favBtn.classList.toggle('active', state.favFilterOn);
   favBtn.setAttribute('aria-pressed', String(state.favFilterOn));
   favBtn.innerHTML = heartSVG(state.favFilterOn);
-  applyFilters();
+  applyFiltersAndSyncMap();
   releasePointerFocus(event);
 });
 document.getElementById('issue-btn').addEventListener('click', openIssueModal);

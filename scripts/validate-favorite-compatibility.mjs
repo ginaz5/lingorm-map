@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-import { tokenizeCSV } from '../src/csv-parser.js';
+import { tokenizeCSV } from '../src/data/csv-parser.js';
 
 export function validateFavoriteCompatibility(snapshotCsv, manifest) {
   if (!manifest || manifest.schemaVersion !== 1 || !Array.isArray(manifest.ids)) {

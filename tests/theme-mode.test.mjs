@@ -9,7 +9,7 @@ test('theme mode restores a saved light or dark preference', async () => {
   };
 
   try {
-    const { getEffectiveTheme } = await import('../src/ui.js');
+    const { getEffectiveTheme } = await import('../src/ui/ui.js');
 
     assert.equal(getEffectiveTheme(), 'light');
 

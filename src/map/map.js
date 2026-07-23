@@ -1,6 +1,6 @@
-import { state } from './state.js';
-import { getEffectiveTheme } from './ui.js';
-import { buildPopupContent, activateCard, isPublicLocation } from './render.js';
+import { state } from '../core/state.js';
+import { getEffectiveTheme } from '../ui/ui.js';
+import { buildPopupContent, activateCard, isPublicLocation } from '../ui/render.js';
 // MarkerClusterer is loaded lazily to avoid CJS/ESM issues in Node.js test env
 /** @type {typeof import('@googlemaps/markerclusterer').MarkerClusterer|null} */
 let _MarkerClusterer = null;
@@ -84,6 +84,65 @@ export function fitMapToVisibleLocations() {
     }, true);
   }
   return true;
+}
+
+/**
+ * Keep map markers aligned with the indexes selected by render.applyFilters().
+ * Google can update its cluster incrementally, while HERE must rebuild its
+ * clustering layer because it does not support partial add/remove operations.
+ */
+export function syncVisibleMarkers() {
+  if (!state.map) return;
+
+  const visibleIndexes = new Set(state.visIdx);
+  if (state.provider === 'google' && state.markerClusterer) {
+    /** @type {any[]} */
+    const toAdd = [];
+    /** @type {any[]} */
+    const toRemove = [];
+    const currentMarkers = state.markerClusterer.markers;
+    state.markers.forEach((marker, index) => {
+      if (!marker) return;
+      const visible = visibleIndexes.has(index);
+      const isInCluster = currentMarkers.includes(marker);
+      if (visible && !isInCluster) toAdd.push(marker);
+      else if (!visible && isInCluster) toRemove.push(marker);
+    });
+    if (toRemove.length) state.markerClusterer.removeMarkers(toRemove);
+    if (toAdd.length) state.markerClusterer.addMarkers(toAdd);
+  } else if (state.provider === 'here') {
+    void buildMarkers();
+  } else {
+    state.markers.forEach((marker, index) => {
+      if (!marker) return;
+      const visible = visibleIndexes.has(index);
+      if (state.provider === 'google') {
+        marker.map = visible ? state.map : null;
+      } else {
+        marker.setVisibility(visible);
+      }
+    });
+  }
+}
+
+/**
+ * Re-render the currently open provider popup, for example after a language or
+ * favorites change.
+ * @returns {boolean} whether an active popup was updated
+ */
+export function refreshActivePopup() {
+  if (state.activeIdx < 0) return false;
+
+  const html = buildPopupContent(state.activeIdx);
+  if (state.provider === 'google' && state.infoWindow) {
+    state.infoWindow.setContent(html);
+    return true;
+  }
+  if (state.provider === 'here' && state.infoBubble) {
+    state.infoBubble.setContent(html);
+    return true;
+  }
+  return false;
 }
 
 // ═══════════════════════════════════════════════════
