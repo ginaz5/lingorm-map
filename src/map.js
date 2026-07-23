@@ -80,25 +80,34 @@ export function getGoogleColorScheme(theme) {
  * @type {Record<string, string>}
  */
 const HERE_UI_LOCALES = {
-  cs: 'cs-CZ',
-  da: 'da-DK',
   de: 'de-DE',
   en: 'en-US',
   es: 'es-ES',
   fi: 'fi-FI',
   fr: 'fr-FR',
-  hi: 'hi-IN',
-  hu: 'hu-HU',
   it: 'it-IT',
-  nb: 'nb-NO',
   nl: 'nl-NL',
   pl: 'pl-PL',
   pt: 'pt-PT',
   ru: 'ru-RU',
-  sv: 'sv-SE',
   tr: 'tr-TR',
   zh: 'zh-CN',
 };
+
+/**
+ * @param {string} language
+ * @returns {{ base: string, region: string|undefined }|null}
+ */
+function parseBrowserLanguage(language) {
+  try {
+    const locale = new Intl.Locale(language.trim().replaceAll('_', '-'));
+    const base = locale.language.toLowerCase();
+    if (!/^[a-z]{2}$/.test(base)) return null;
+    return { base, region: locale.region?.toUpperCase() };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Convert the browser's ordered language preferences into the language values
@@ -117,19 +126,17 @@ const HERE_UI_LOCALES = {
 export function getHereLanguagePreferences(browserLanguages = []) {
   const normalized = browserLanguages
     .filter(language => typeof language === 'string' && language.trim())
-    .map(language => language.trim().replaceAll('_', '-'));
+    .map(parseBrowserLanguage)
+    .filter(language => language !== null);
 
-  const primary = normalized.find(language => /^[a-z]{2}(?:-[a-z\d]+)?$/i.test(language));
-  const mapLanguage = primary?.slice(0, 2).toLowerCase() || 'en';
+  const mapLanguage = normalized[0]?.base || 'en';
 
-  for (const language of normalized) {
-    const [base, region] = language.split('-');
-    const normalizedBase = base.toLowerCase();
-    if (normalizedBase === 'pt' && region?.toUpperCase() === 'BR') {
+  for (const { base, region } of normalized) {
+    if (base === 'pt' && region === 'BR') {
       return { mapLanguage, uiLocale: 'pt-BR' };
     }
-    if (HERE_UI_LOCALES[normalizedBase]) {
-      return { mapLanguage, uiLocale: HERE_UI_LOCALES[normalizedBase] };
+    if (HERE_UI_LOCALES[base]) {
+      return { mapLanguage, uiLocale: HERE_UI_LOCALES[base] };
     }
   }
 

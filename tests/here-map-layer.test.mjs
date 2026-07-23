@@ -24,6 +24,11 @@ test('getHereLanguagePreferences uses the primary language for map labels and th
     getHereLanguagePreferences(['th-TH', 'en-US']),
     { mapLanguage: 'th', uiLocale: 'en-US' },
   );
+  // A valid BCP 47 script subtag must not cause the map language to fall back.
+  assert.deepEqual(
+    getHereLanguagePreferences(['zh-Hant-TW']),
+    { mapLanguage: 'zh', uiLocale: 'zh-CN' },
+  );
 });
 
 test('getHereLanguagePreferences falls back to secondary locale when primary is unsupported', async () => {
@@ -59,32 +64,12 @@ test('getHereLanguagePreferences defaults to en / en-US for empty input', async 
   );
 });
 
-test('getHereLanguagePreferences supports all HERE JS API 3.2 UI locales', async () => {
+test('getHereLanguagePreferences does not pass unsupported locales to the HERE UI', async () => {
   const { getHereLanguagePreferences } = await import('../src/map.js');
 
   assert.deepEqual(
-    getHereLanguagePreferences(['sv-SE']),
-    { mapLanguage: 'sv', uiLocale: 'sv-SE' },
-  );
-  assert.deepEqual(
-    getHereLanguagePreferences(['nb-NO']),
-    { mapLanguage: 'nb', uiLocale: 'nb-NO' },
-  );
-  assert.deepEqual(
-    getHereLanguagePreferences(['da-DK']),
-    { mapLanguage: 'da', uiLocale: 'da-DK' },
-  );
-  assert.deepEqual(
-    getHereLanguagePreferences(['cs-CZ']),
-    { mapLanguage: 'cs', uiLocale: 'cs-CZ' },
-  );
-  assert.deepEqual(
-    getHereLanguagePreferences(['hu-HU']),
-    { mapLanguage: 'hu', uiLocale: 'hu-HU' },
-  );
-  assert.deepEqual(
-    getHereLanguagePreferences(['hi-IN']),
-    { mapLanguage: 'hi', uiLocale: 'hi-IN' },
+    getHereLanguagePreferences(['sv-SE', 'de-DE']),
+    { mapLanguage: 'sv', uiLocale: 'de-DE' },
   );
 });
 
