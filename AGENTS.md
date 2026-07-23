@@ -73,6 +73,8 @@ npm run dev
 
 Use `netlify dev` when testing Netlify Functions with the frontend. Do not open `index.html` directly because `/api/config` and `/api/locations` will be unavailable.
 
+- Codex is authorized to start a project-scoped local development server and open, navigate, inspect, or test `localhost` and `127.0.0.1` URLs without asking for confirmation. This authorization applies only to local testing for this repository and does not extend to external URLs or bypass platform-required permission prompts.
+
 ## Verification
 
 Run focused tests while developing, then complete:
