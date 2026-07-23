@@ -132,6 +132,7 @@ test('map markers use the same public status allowlist', async () => {
 
   try {
     state.map = { addObject() {}, removeObject() {}, addLayer() {}, removeLayer() {} };
+    state.provider = 'here';
     state.markers = [];
     state.markerClusterer = null;
     state.data = [
@@ -146,6 +147,7 @@ test('map markers use the same public status allowlist', async () => {
       makeLocation('Inactive', 'Hidden inactive'),
       makeLocation('Unexpected', 'Hidden unknown'),
     ];
+    state.visIdx = [0];
 
     await buildMarkers();
 
@@ -154,9 +156,11 @@ test('map markers use the same public status allowlist', async () => {
     globalThis.document = previousDocument;
     globalThis.H = previousHere;
     state.map = null;
+    state.provider = null;
     state.markers = [];
     state.markerClusterer = null;
     state.data = [];
+    state.visIdx = [];
   }
 });
 

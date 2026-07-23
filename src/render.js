@@ -236,21 +236,44 @@ export function activateCard(i, options = {}) {
   }
 }
 
+/** @param {unknown} value */
+function normalizeSearchText(value) {
+  return String(value ?? '').normalize('NFKC').toLowerCase();
+}
+
+/**
+ * @param {LocationRow} row
+ * @param {string} query
+ * @param {string} category
+ */
+export function matchesLocationFilters(row, query, category) {
+  if (!isPublicLocation(row)) return false;
+  if (state.favFilterOn && !state.favorites.has(row.id)) return false;
+
+  const normalizedQuery = normalizeSearchText(query).trim();
+  const queryHit = !normalizedQuery || [
+    row.nameEn,
+    row.nameZh,
+    row.alt,
+    row.notesEn,
+    row.notesZh,
+  ].some(value => normalizeSearchText(value).includes(normalizedQuery));
+  const categoryValue = lang === 'zh' ? row.catZh : row.catEn;
+  const categoryHit = !category || categoryValue === category;
+
+  return queryHit && categoryHit;
+}
+
 export function applyFilters() {
-  const q = requiredInput('search').value.toLowerCase();
-  const cat = requiredSelect('cat-filter').value;
+  const query = requiredInput('search').value;
+  const category = requiredSelect('cat-filter').value;
   state.visIdx = [];
   state.data.forEach((row, i) => {
-    const nameHit = (row.nameEn + row.nameZh + row.alt).toLowerCase().includes(q);
-    const notesHit = (row.notesEn + row.notesZh).toLowerCase().includes(q);
-    const catVal = lang === 'zh' ? row.catZh : row.catEn;
-    const catHit = !cat || catVal === cat;
-    if (!isPublicLocation(row)) return;
-    if (state.favFilterOn && !state.favorites.has(row.id)) return;
-    if ((nameHit || notesHit) && catHit) state.visIdx.push(i);
+    if (matchesLocationFilters(row, query, category)) state.visIdx.push(i);
   });
   renderList();
   if (state.map) {
+    const visibleIndexes = new Set(state.visIdx);
     if (state.provider === 'google' && state.markerClusterer) {
       // Use MarkerClusterer add/remove APIs for Google
       /** @type {any[]} */
@@ -260,8 +283,7 @@ export function applyFilters() {
       const currentMarkers = state.markerClusterer.markers;
       state.markers.forEach((m, i) => {
         if (!m) return;
-        const row = state.data[i];
-        const visible = !state.favFilterOn || state.favorites.has(row.id);
+        const visible = visibleIndexes.has(i);
         const isInCluster = currentMarkers.includes(m);
         if (visible && !isInCluster) toAdd.push(m);
         else if (!visible && isInCluster) toRemove.push(m);
@@ -276,8 +298,7 @@ export function applyFilters() {
       // Fallback: direct marker visibility toggle
       state.markers.forEach((m, i) => {
         if (!m) return;
-        const row = state.data[i];
-        const visible = !state.favFilterOn || state.favorites.has(row.id);
+        const visible = visibleIndexes.has(i);
         if (state.provider === 'google') {
           m.map = visible ? state.map : null;
         } else {

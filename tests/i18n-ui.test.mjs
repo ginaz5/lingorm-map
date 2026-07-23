@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
+import { T } from '../src/i18n.js';
+
 async function loadUiHelpers(deps) {
   const src = await readFile(new URL('../src/render.js', import.meta.url), 'utf8');
   const helperMatch = src.match(
@@ -67,6 +69,11 @@ test('updateLangUI updates text, HTML, and placeholders without status controls'
   assert.equal(htmlEl.innerHTML, '<strong>Markup</strong>');
   assert.equal(placeholderEl.placeholder, 'Hint');
   assert.equal(langBtnLabel.textContent, 'Language');
+});
+
+test('search placeholders explain that names and notes are searchable', () => {
+  assert.equal(T.zh.search_ph, '搜尋地點或內文關鍵字…');
+  assert.equal(T.en.search_ph, 'Search names or notes…');
 });
 
 test('buildCatFilter preserves the selected category while rebuilding options', async () => {

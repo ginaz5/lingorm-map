@@ -215,7 +215,10 @@ function makeHereClusterTheme() {
   };
 }
 
-export async function buildMarkers() {
+/**
+ * @param {{ markerClustererCtor?: any }} [options]
+ */
+export async function buildMarkers(options = {}) {
   if (!state.map) return;
 
   // --- Tear down old clustering & markers ---
@@ -239,8 +242,6 @@ export async function buildMarkers() {
 
   // --- Build markers per provider ---
   if (state.provider === 'google') {
-    /** @type {any[]} */
-    const clusterMarkers = [];
     state.data.forEach((row, i) => {
       const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
       if (!isPublicLocation(row)) return;
@@ -258,11 +259,15 @@ export async function buildMarkers() {
         activateCard(i, { centerMap: false });
       });
       state.markers[i] = m;
-      clusterMarkers.push(m);
     });
 
-    // Create MarkerClusterer
-    const MCtor = await getMarkerClusterer();
+    // Keep every public marker available for later filter changes, but seed
+    // the cluster with only the locations visible under the current filters.
+    const MCtor = options.markerClustererCtor || await getMarkerClusterer();
+    const visibleIndexes = new Set(state.visIdx);
+    const clusterMarkers = state.markers.filter(
+      (marker, index) => marker && visibleIndexes.has(index)
+    );
     state.markerClusterer = new MCtor({
       map: state.map,
       markers: clusterMarkers,
@@ -273,9 +278,11 @@ export async function buildMarkers() {
     // HERE Maps clustering via H.clustering.Provider
     /** @type {any[]} */
     const dataPoints = [];
+    const visibleIndexes = new Set(state.visIdx);
     state.data.forEach((row, i) => {
       const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
       if (!isPublicLocation(row)) return;
+      if (!visibleIndexes.has(i)) return;
       if (!lat || !lng) return;
       dataPoints.push(new H.clustering.DataPoint(lat, lng, null, { index: i, icon: row.icon }));
     });
