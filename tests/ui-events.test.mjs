@@ -48,6 +48,7 @@ test('static HTML controls are wired without inline event attributes', async () 
 
   assert.doesNotMatch(staticMarkup, /id="add-btn"/);
   assert.match(staticMarkup, /id="issue-btn"/);
+  assert.match(staticMarkup, /id="changelog-btn"/);
   assert.match(staticMarkup, /id="theme-btn"/);
   assert.match(staticMarkup, /class="theme-icon-sun"/);
   assert.match(staticMarkup, /class="theme-icon-moon"/);
@@ -55,16 +56,26 @@ test('static HTML controls are wired without inline event attributes', async () 
   assert.equal(/\son(?:click|keydown)=/i.test(staticMarkup), false);
 });
 
-test('mobile header exposes secondary actions through an overflow menu', async () => {
+test('mobile header keeps language and theme visible while secondary actions use overflow', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const mainSrc = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');
+  const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+  const menuMatch = html.match(/id="mobile-actions-menu"[\s\S]*?<\/div>\s*<\/div>/);
+  assert.ok(menuMatch, 'mobile overflow menu should exist');
+  const menuMarkup = menuMatch[0];
 
   assert.match(html, /id="mobile-actions-btn"/);
   assert.match(html, /id="mobile-actions-menu"/);
-  assert.match(html, /data-mobile-action="issue"/);
-  assert.match(html, /data-mobile-action="locate"/);
-  assert.match(html, /data-mobile-action="lang"/);
-  assert.match(html, /data-mobile-action="theme"/);
+  assert.match(menuMarkup, /href="\.\/changelog\.html"/);
+  assert.match(menuMarkup, /data-mobile-action="issue"/);
+  assert.match(menuMarkup, /data-mobile-action="locate"/);
+  assert.doesNotMatch(menuMarkup, /data-mobile-action="lang"/);
+  assert.doesNotMatch(menuMarkup, /data-mobile-action="theme"/);
+  assert.ok(
+    menuMarkup.indexOf('href="./changelog.html"') < menuMarkup.indexOf('data-mobile-action="issue"'),
+    'changelog should be the first overflow action',
+  );
+  assert.match(styles, /#lang-btn,#theme-btn\{display:flex/);
   assert.match(mainSrc, /mobile-actions-btn/);
   assert.match(mainSrc, /data-mobile-action/);
 });

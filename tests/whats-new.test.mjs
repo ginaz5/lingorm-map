@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { checkWhatsNew, closeWhatsNew } from '../src/features/whats-new.js';
+import {
+  checkWhatsNew,
+  closeWhatsNew,
+  WHATS_NEW_PREVIEW_LIMIT,
+} from '../src/features/whats-new.js';
 
 function makeStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
@@ -26,6 +30,7 @@ function installWhatsNewDom() {
     'wn-title': { textContent: '' },
     'wn-desc': { textContent: '' },
     'wn-got-it-btn': { textContent: '' },
+    'wn-changelog-link': { textContent: '' },
     'wn-list': { innerHTML: '' },
   };
   globalThis.document = { getElementById: id => elements[id] ?? null };
@@ -63,7 +68,7 @@ test('checkWhatsNew records a first visit without opening the modal', () => {
   }
 });
 
-test('checkWhatsNew shows all releases published since the last visit', () => {
+test('checkWhatsNew reports all new releases but previews only the latest three', () => {
   const env = installEnvironment({
     lastVisit: String(Date.parse('2026-06-18T00:00:00Z')),
   });
@@ -71,9 +76,18 @@ test('checkWhatsNew shows all releases published since the last visit', () => {
     checkWhatsNew();
 
     assert.equal(env.dom.modalClasses.has('open'), true);
-    assert.match(env.dom.elements['wn-desc'].textContent, /2/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /點選愛心為收藏景點/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /Google Maps 開啟/);
+    assert.equal(WHATS_NEW_PREVIEW_LIMIT, 3);
+    assert.match(env.dom.elements['wn-desc'].textContent, /5/);
+    assert.equal(
+      env.dom.elements['wn-list'].innerHTML.match(/class="wn-feat"/g)?.length,
+      3,
+    );
+    assert.match(env.dom.elements['wn-list'].innerHTML, /地圖標記自動聚合/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /全新瀏覽體驗/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /點擊標記不再跳回預設縮放/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /點選愛心為收藏景點/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /Google Maps 開啟/);
+    assert.equal(env.dom.elements['wn-changelog-link'].textContent, '查看完整更新紀錄');
   } finally {
     cleanupEnvironment(env.originalSetTimeout);
   }

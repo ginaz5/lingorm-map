@@ -1,52 +1,9 @@
-import { t } from '../core/i18n.js';
-
-/** @typedef {{ id: string, title: string, description: string, badge: string, publishTime: number }} ChangelogItem */
-
-// ═══════════════════════════════════════════════════
-// CHANGELOG — add new entries at the TOP (newest first)
-// publishTime: Unix timestamp in ms (Date.now() at time of release)
-// ═══════════════════════════════════════════════════
-/** @type {ChangelogItem[]} */
-const CHANGELOG = [
-  {
-    id: 'feat-005',
-    title: '地圖標記自動聚合',
-    description: '景點過多時，鄰近標記會自動合併為群組數字，縮放地圖即可展開查看個別地點',
-    badge: '功能',
-    publishTime: 1753027200000, // 2026-07-21
-  },
-  {
-    id: 'feat-004',
-    title: '全新瀏覽體驗，介面更清爽',
-    description: '地圖頁面大幅簡化，移除多餘操作欄位，讓瀏覽曼谷景點更直覺流暢。彈窗樣式與收藏圖示也同步升級。',
-    badge: '設計',
-    publishTime: 1752940800000, // 2026-07-20
-  },
-  {
-    id: 'fix-001',
-    title: '點擊標記不再跳回預設縮放',
-    description: '修正點擊地圖標記後縮放層級被重設的問題，現在點擊標記會保留目前縮放比例。',
-    badge: '修復',
-    publishTime: 1752940800000, // 2026-07-20
-  },
-  {
-    id: 'feat-002',
-    title: '點選愛心為收藏景點 ❤️',
-    description: '點擊愛心即可收藏地點，收藏清單會自動存在裝置上，也可透過網址分享。',
-    badge: '功能',
-    publishTime: 1782000000000, // 2026-06-21
-  },
-  {
-    id: 'feat-001',
-    title: '地點彈窗新增「在 Google Maps 開啟」',
-    description: '點擊地圖標記後，彈窗內新增按鈕可直接在 Google Maps 查看該地點。',
-    badge: '功能',
-    publishTime: 1781827200000, // 2026-06-19
-  }
-];
+import { lang, t } from '../core/i18n.js';
+import { CHANGELOG, localizeChangelogItem } from './changelog-data.js';
 
 const LS_KEY = 'last_visit_time';
 const SS_KEY = 'whats_new_shown';
+export const WHATS_NEW_PREVIEW_LIMIT = 3;
 
 // ═══════════════════════════════════════════════════
 // CLOSE
@@ -79,7 +36,7 @@ export function checkWhatsNew() {
 
   if (newItems.length === 0) return;
 
-  _populateModal(newItems);
+  _populateModal(newItems.slice(0, WHATS_NEW_PREVIEW_LIMIT), newItems.length);
 
   setTimeout(() => {
     document.getElementById('whats-new-modal')?.classList.add('open');
@@ -92,26 +49,36 @@ export function checkWhatsNew() {
 
 /** @type {number} */
 let _lastCount = 0;
+/** @type {typeof CHANGELOG} */
+let _lastItems = [];
 
 /** Call this after lang changes to refresh static text in the modal */
 export function updateWhatsNewLangUI() {
   const titleEl  = document.getElementById('wn-title');
   const descEl   = document.getElementById('wn-desc');
   const gotItBtn = document.getElementById('wn-got-it-btn');
+  const viewAllLink = document.getElementById('wn-changelog-link');
   if (titleEl)  titleEl.textContent  = /** @type {string} */ (t('whats_new_title'));
   if (descEl)   descEl.textContent   = /** @type {string} */ (t('whats_new_desc', _lastCount));
   if (gotItBtn) gotItBtn.textContent = /** @type {string} */ (t('whats_new_got_it'));
+  if (viewAllLink) viewAllLink.textContent = /** @type {string} */ (t('whats_new_view_all'));
+  _renderItems();
 }
 
-/** @param {ChangelogItem[]} items */
-function _populateModal(items) {
+/** @param {typeof CHANGELOG} items @param {number} totalCount */
+function _populateModal(items, totalCount) {
+  _lastItems = items;
+  _lastCount = totalCount;
+  updateWhatsNewLangUI();
+}
+
+function _renderItems() {
   const listEl = document.getElementById('wn-list');
   if (!listEl) return;
 
-  _lastCount = items.length;
-  updateWhatsNewLangUI();
-
-  listEl.innerHTML = items.map(item => `
+  listEl.innerHTML = _lastItems.map(rawItem => {
+    const item = localizeChangelogItem(rawItem, lang);
+    return `
     <div class="wn-feat">
       <div class="wn-dot"></div>
       <div>
@@ -120,5 +87,6 @@ function _populateModal(items) {
         <div class="wn-desc">${item.description}</div>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }

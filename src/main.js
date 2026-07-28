@@ -116,8 +116,6 @@ function runMobileAction(event) {
   closeMobileActions();
   if (action === 'issue') openIssueModal();
   else if (action === 'locate') locateMe();
-  else if (action === 'lang') toggleLang();
-  else if (action === 'theme') cycleTheme();
 }
 
 /** @param {string} id @param {Event & {detail?: number}} [event] */

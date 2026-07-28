@@ -295,11 +295,12 @@ export function rebuildSelect(sel, html) {
 }
 
 export function updateLangUI() {
-  document.querySelectorAll('[data-i18n],[data-i18n-html],[data-i18n-ph]').forEach(rawEl => {
+  document.querySelectorAll('[data-i18n],[data-i18n-html],[data-i18n-ph],[data-i18n-aria]').forEach(rawEl => {
     const el = /** @type {HTMLElement} */ (rawEl);
     if (el.dataset.i18n) { const v = t(el.dataset.i18n); if (v !== el.dataset.i18n) el.textContent = v; }
     else if (el.dataset.i18nHtml) { const v = t(el.dataset.i18nHtml); if (v !== el.dataset.i18nHtml) el.innerHTML = v; }
     else if (el.dataset.i18nPh) { const v = t(el.dataset.i18nPh); if (v !== el.dataset.i18nPh) /** @type {HTMLInputElement|HTMLTextAreaElement} */ (el).placeholder = v; }
+    else if (el.dataset.i18nAria) { const v = t(el.dataset.i18nAria); if (v !== el.dataset.i18nAria) el.setAttribute('aria-label', v); }
   });
   const langBtnLabel = document.getElementById('lang-btn-label');
   if (!langBtnLabel) throw new Error('Missing required element #lang-btn-label');

@@ -136,7 +136,9 @@ graph LR
 | `features/destination-filter.js` | Destination multi-select UI, country grouping, and persisted selection |
 | `features/favorites.js` | Favorite persistence and toggle behavior |
 | `features/forms.js` | Issue report modal, validation, and location-data loading |
-| `features/whats-new.js` | Changelog modal state and rendering |
+| `features/changelog-data.js` | Shared bilingual changelog release data |
+| `features/whats-new.js` | Three-item changelog modal preview state and rendering |
+| `changelog-page.js` | Full changelog page rendering, language, and theme controls |
 | `ui/render.js` | Card list HTML, popup content, and map-independent filter rendering |
 | `ui/ui.js` | Theme primitives, tab switching, snackbar, locate-me, and navigation |
 
@@ -167,9 +169,11 @@ graph LR
 ```
 lingorm_bangkok_map/
 ├── index.html              # HTML markup; loads src/main.js as ES module
+├── changelog.html          # Full bilingual changelog page
 ├── styles.css              # CSS custom properties (light/dark theme)
 ├── src/
 │   ├── main.js             # Entry point — wires event listeners, boot sequence
+│   ├── changelog-page.js   # Full changelog page entry point
 │   ├── app/
 │   │   └── app-coordinator.js # Application/use-case orchestration
 │   ├── core/
@@ -187,6 +191,7 @@ lingorm_bangkok_map/
 │   │   ├── favorites.js    # Favorite persistence and toggles
 │   │   ├── destination-filter.js # Destination multi-select and persistence
 │   │   ├── forms.js        # Issue report modal and location-data loading
+│   │   ├── changelog-data.js # Shared bilingual release data
 │   │   └── whats-new.js    # Changelog modal
 │   └── ui/
 │       ├── render.js       # Card list, popup content, filter helpers

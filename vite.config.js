@@ -1,6 +1,10 @@
 import { execSync } from 'node:child_process';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vite';
+
+const ROOT_DIR = fileURLToPath(new URL('.', import.meta.url));
 
 // Last-updated = the git commit time of the data snapshot. A new location is a
 // new commit to data/locations.csv, so this tracks data freshness exactly and
@@ -27,6 +31,10 @@ export default defineConfig({
     outDir: 'dist',
     // Keep a single JS chunk — deployment is a static site, no code-splitting needed.
     rollupOptions: {
+      input: {
+        main: resolve(ROOT_DIR, 'index.html'),
+        changelog: resolve(ROOT_DIR, 'changelog.html'),
+      },
       output: {
         manualChunks: undefined,
       },

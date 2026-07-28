@@ -41,6 +41,14 @@ test('updateLangUI updates text, HTML, and placeholders without status controls'
   const textEl = { dataset: { i18n: 'label' }, textContent: '' };
   const htmlEl = { dataset: { i18nHtml: 'markup' }, innerHTML: '' };
   const placeholderEl = { dataset: { i18nPh: 'hint' }, placeholder: '' };
+  const ariaEl = {
+    dataset: { i18nAria: 'accessible_name' },
+    ariaLabel: '',
+    setAttribute(name, value) {
+      assert.equal(name, 'aria-label');
+      this.ariaLabel = value;
+    },
+  };
   const langBtnLabel = { textContent: '' };
   const byId = new Map([
     ['lang-btn-label', langBtnLabel],
@@ -48,8 +56,8 @@ test('updateLangUI updates text, HTML, and placeholders without status controls'
   const { updateLangUI } = await loadUiHelpers({
     document: {
       querySelectorAll: (selector) => {
-        assert.equal(selector, '[data-i18n],[data-i18n-html],[data-i18n-ph]');
-        return [textEl, htmlEl, placeholderEl];
+        assert.equal(selector, '[data-i18n],[data-i18n-html],[data-i18n-ph],[data-i18n-aria]');
+        return [textEl, htmlEl, placeholderEl, ariaEl];
       },
       getElementById: (id) => byId.get(id),
     },
@@ -57,6 +65,7 @@ test('updateLangUI updates text, HTML, and placeholders without status controls'
       label: 'Label',
       markup: '<strong>Markup</strong>',
       hint: 'Hint',
+      accessible_name: 'Accessible name',
       lang_btn: 'Language',
     })[key],
     state: { data: [] },
@@ -68,6 +77,7 @@ test('updateLangUI updates text, HTML, and placeholders without status controls'
   assert.equal(textEl.textContent, 'Label');
   assert.equal(htmlEl.innerHTML, '<strong>Markup</strong>');
   assert.equal(placeholderEl.placeholder, 'Hint');
+  assert.equal(ariaEl.ariaLabel, 'Accessible name');
   assert.equal(langBtnLabel.textContent, 'Language');
 });
 
@@ -85,6 +95,13 @@ test('favorite storage notice is available in both supported languages', () => {
     T.en.favorite_storage_notice,
     'Favorites stay in this browser only. They aren’t synced across devices and may be lost if browsing data is cleared.',
   );
+});
+
+test('changelog navigation and page copy are available in both supported languages', () => {
+  assert.equal(T.zh.whats_new_view_all, '查看完整更新紀錄');
+  assert.equal(T.en.whats_new_view_all, 'View full changelog');
+  assert.equal(T.zh.changelog_back, '返回地圖');
+  assert.equal(T.en.changelog_back, 'Back to map');
 });
 
 test('buildCatFilter preserves the selected category while rebuilding options', async () => {

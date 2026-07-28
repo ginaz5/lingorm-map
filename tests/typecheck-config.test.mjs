@@ -14,8 +14,10 @@ test('configures strict JavaScript type checking', async () => {
   assert.equal(config.compilerOptions.strict, true);
   assert.deepEqual(config.include, [
     'src/app/app-coordinator.js',
+    'src/changelog-page.js',
     'src/core/state.js',
     'src/data/csv-parser.js',
+    'src/features/changelog-data.js',
     'src/map/map.js',
     'src/features/forms.js',
     'src/map/map-globals.d.ts',
