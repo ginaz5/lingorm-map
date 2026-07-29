@@ -1,7 +1,12 @@
 import { lang, t } from '../core/i18n.js';
-import { CHANGELOG, localizeChangelogItem } from './changelog-data.js';
+import {
+  CHANGELOG,
+  CURRENT_CHANGELOG_RELEASE_ID,
+  localizeChangelogItem,
+} from './changelog-data.js';
 
 const LS_KEY = 'last_visit_time';
+const RELEASE_LS_KEY = 'last_seen_changelog_release';
 const SS_KEY = 'whats_new_shown';
 export const WHATS_NEW_PREVIEW_LIMIT = 3;
 
@@ -10,6 +15,7 @@ export const WHATS_NEW_PREVIEW_LIMIT = 3;
 // ═══════════════════════════════════════════════════
 export function closeWhatsNew() {
   localStorage.setItem(LS_KEY, String(Date.now()));
+  localStorage.setItem(RELEASE_LS_KEY, CURRENT_CHANGELOG_RELEASE_ID);
   sessionStorage.setItem(SS_KEY, '1');
   document.getElementById('whats-new-modal')?.classList.remove('open');
 }
@@ -23,15 +29,17 @@ export function checkWhatsNew() {
   // First visit: silently record time, don't show anything
   if (!lastVisit) {
     localStorage.setItem(LS_KEY, String(Date.now()));
+    localStorage.setItem(RELEASE_LS_KEY, CURRENT_CHANGELOG_RELEASE_ID);
     return;
   }
 
   // Already shown this session (multi-tab guard)
   if (sessionStorage.getItem(SS_KEY)) return;
 
-  const since = Number(lastVisit);
+  if (localStorage.getItem(RELEASE_LS_KEY) === CURRENT_CHANGELOG_RELEASE_ID) return;
+
   const newItems = CHANGELOG
-    .filter(item => item.publishTime > since)
+    .filter(item => item.releaseId === CURRENT_CHANGELOG_RELEASE_ID)
     .sort((a, b) => b.publishTime - a.publishTime);
 
   if (newItems.length === 0) return;
