@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
   LOCATION_STATUSES,
+  LOCATION_TYPES,
   parseCSV,
   tokenizeCSV,
 } from '../src/data/csv-parser.js';
@@ -17,7 +18,6 @@ import {
 import { PUBLIC_LOCATION_STATUSES } from '../src/ui/render.js';
 import { CSV_HEADER } from './export-snapshot.mjs';
 
-export const EXPECTED_LOCATION_COUNT = 100;
 export const DEFAULT_SNAPSHOT_POLICY_PATH = fileURLToPath(
   new URL('../data/location-snapshot-policy-v1.json', import.meta.url)
 );
@@ -161,17 +161,15 @@ function normalizedPolicy(policyOrExpectedCount) {
   return policyOrExpectedCount || loadSnapshotPolicy();
 }
 
-function isGoogleMapsUrl(value) {
+export function isGoogleMapsUrl(value) {
   try {
     const url = new URL(value);
     if (!['http:', 'https:'].includes(url.protocol)) return false;
     const host = url.hostname.toLowerCase();
-    return (
-      host === 'maps.app.goo.gl' ||
-      host === 'maps.google.com' ||
-      host === 'www.google.com' ||
-      host.endsWith('.google.com')
-    );
+    if (host === 'maps.app.goo.gl') return url.pathname !== '/';
+    if (host === 'maps.google.com') return true;
+    if (!['google.com', 'www.google.com'].includes(host)) return false;
+    return url.pathname === '/maps' || url.pathname.startsWith('/maps/');
   } catch {
     return false;
   }
@@ -267,6 +265,20 @@ function validateDestinations(dataRows, headers, rawStatuses) {
   }
 }
 
+function validateTypes(dataRows, headers) {
+  const typeIndex = headers.indexOf('Type');
+  const supportedTypes = new Set(LOCATION_TYPES);
+
+  for (let index = 0; index < dataRows.length; index += 1) {
+    const type = (dataRows[index][typeIndex] || '').trim();
+    if (type && !supportedTypes.has(type)) {
+      throw new Error(
+        `Location snapshot row ${index + 2} has unsupported Type: ${type}.`
+      );
+    }
+  }
+}
+
 export function validateLocationSnapshot(
   csv,
   policyOrExpectedCount = loadSnapshotPolicy()
@@ -282,6 +294,15 @@ export function validateLocationSnapshot(
   }
 
   const dataRows = rows.slice(1).filter((row) => row.join('').trim());
+  const invalidWidthIndex = dataRows.findIndex(
+    (row) => row.length !== headers.length
+  );
+  if (invalidWidthIndex !== -1) {
+    throw new Error(
+      `Location snapshot row ${invalidWidthIndex + 2} has ` +
+        `${dataRows[invalidWidthIndex].length} fields; expected ${headers.length}.`
+    );
+  }
   if (
     Number.isInteger(policy.exactRowCount) &&
     dataRows.length !== policy.exactRowCount
@@ -338,6 +359,7 @@ export function validateLocationSnapshot(
 
   validateCoordinates(dataRows, headers, rawStatuses);
   validateDestinations(dataRows, headers, rawStatuses);
+  validateTypes(dataRows, headers);
 
   const parsed = parseCSV(csv);
   if (!parsed || parsed.length !== dataRows.length) {

@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 
 import { csvRow } from '../scripts/export-snapshot.mjs';
 import {
-  EXPECTED_LOCATION_COUNT,
   validateLocationSnapshot,
 } from '../scripts/validate-location-snapshot.mjs';
 import { tokenizeCSV } from '../src/data/csv-parser.js';
@@ -14,16 +13,16 @@ const snapshotPath = fileURLToPath(new URL('../data/locations.csv', import.meta.
 const snapshotCsv = readFileSync(snapshotPath, 'utf8');
 const snapshotRows = tokenizeCSV(snapshotCsv);
 
-test('production snapshot validator accepts the committed 130-row snapshot', () => {
+test('production snapshot validator accepts the committed 141-row snapshot', () => {
   assert.deepEqual(validateLocationSnapshot(snapshotCsv), {
     policyId: 'three-status-20260721',
-    rowCount: 130,
-    uniqueSlugCount: 130,
-    publicRowCount: 103,
+    rowCount: 141,
+    uniqueSlugCount: 141,
+    publicRowCount: 111,
     statusCounts: {
-      Published: 103,
+      Published: 111,
       Paused: 26,
-      Inactive: 1,
+      Inactive: 4,
     },
   });
 });
@@ -74,8 +73,8 @@ test('production snapshot validator accepts additions while protecting the basel
   ].join('\r\n');
 
   const result = validateLocationSnapshot(expandedCsv);
-  assert.equal(result.rowCount, 131);
-  assert.equal(result.uniqueSlugCount, 131);
+  assert.equal(result.rowCount, 142);
+  assert.equal(result.uniqueSlugCount, 142);
 });
 
 test('production snapshot validator rejects replacement additions when a protected Slug disappears', () => {
@@ -144,9 +143,9 @@ test('production snapshot validator accepts target Paused and Inactive as non-pu
   ].join('\r\n');
 
   const result = validateLocationSnapshot(changedCsv);
-  assert.equal(result.publicRowCount, 101);
+  assert.equal(result.publicRowCount, 109);
   assert.equal(result.statusCounts.Paused, 27);
-  assert.equal(result.statusCounts.Inactive, 2);
+  assert.equal(result.statusCounts.Inactive, 5);
 });
 
 test('production snapshot validator requires geography for Published rows', () => {
@@ -183,6 +182,48 @@ test('production snapshot validator rejects mismatched country and destination',
   );
 });
 
+test('production snapshot validator accepts TW, HK, and MO geography pairs', () => {
+  const pairs = [
+    ['TW', 'taipei'],
+    ['HK', 'hong-kong'],
+    ['MO', 'macau'],
+  ];
+
+  for (const [countryCode, destinationKey] of pairs) {
+    const changed = changedRow(snapshotRows[1], {
+      'Country Code': countryCode,
+      'Destination Key': destinationKey,
+    });
+    const changedCsv = [
+      csvRow(snapshotRows[0]),
+      csvRow(changed),
+      ...snapshotRows.slice(2).map(csvRow),
+    ].join('\r\n');
+    assert.doesNotThrow(() => validateLocationSnapshot(changedCsv));
+  }
+});
+
+test('production snapshot validator permits blank Type and rejects unsupported values', () => {
+  const blank = changedRow(snapshotRows[1], { Type: '' });
+  const blankCsv = [
+    csvRow(snapshotRows[0]),
+    csvRow(blank),
+    ...snapshotRows.slice(2).map(csvRow),
+  ].join('\r\n');
+  assert.doesNotThrow(() => validateLocationSnapshot(blankCsv));
+
+  const unsupported = changedRow(snapshotRows[1], { Type: 'Bookmark' });
+  const unsupportedCsv = [
+    csvRow(snapshotRows[0]),
+    csvRow(unsupported),
+    ...snapshotRows.slice(2).map(csvRow),
+  ].join('\r\n');
+  assert.throws(
+    () => validateLocationSnapshot(unsupportedCsv),
+    /unsupported Type: Bookmark/
+  );
+});
+
 test('production snapshot validator requires navigation-safe Published rows', () => {
   const publishedWithoutCoordinates = changedRow(snapshotRows[1], {
     'Verification Status': 'Published',
@@ -211,6 +252,36 @@ test('production snapshot validator requires navigation-safe Published rows', ()
   assert.throws(
     () => validateLocationSnapshot(missingMapsCsv),
     /requires a valid Google Maps URL/
+  );
+
+  for (const unrelatedGoogleUrl of [
+    'https://drive.google.com/file/d/not-a-map',
+    'https://mail.google.com/mail/u/0/',
+    'https://www.google.com/',
+  ]) {
+    const unrelatedGoogle = changedRow(snapshotRows[1], {
+      'Google Maps URL': unrelatedGoogleUrl,
+    });
+    const unrelatedGoogleCsv = [
+      csvRow(snapshotRows[0]),
+      csvRow(unrelatedGoogle),
+      ...snapshotRows.slice(2).map(csvRow),
+    ].join('\r\n');
+    assert.throws(
+      () => validateLocationSnapshot(unrelatedGoogleCsv),
+      /requires a valid Google Maps URL/
+    );
+  }
+});
+
+test('production snapshot validator rejects rows outside the 17-field contract', () => {
+  const invalidCsv = [
+    csvRow(snapshotRows[0]),
+    csvRow([...snapshotRows[1], 'unexpected']),
+  ].join('\r\n');
+  assert.throws(
+    () => validateLocationSnapshot(invalidCsv, 1),
+    /row 2 has 18 fields; expected 17/
   );
 });
 

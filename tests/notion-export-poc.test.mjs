@@ -33,8 +33,12 @@ import {
   pageToRow,
 } from '../scripts/export-snapshot.mjs';
 import {
+  CURRENT_FORMAL_COUNTRY_OPTIONS,
+  CURRENT_FORMAL_DESTINATION_OPTIONS,
   CURRENT_FORMAL_LOCATION_PROPERTIES,
   CURRENT_FORMAL_LOCATION_PROPERTY_TYPES,
+  CURRENT_FORMAL_STATUS_OPTIONS,
+  CURRENT_FORMAL_TYPE_OPTIONS,
 } from '../scripts/formal-location-current-schema.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -42,6 +46,27 @@ const fixtureDir = path.join(__dirname, 'fixtures', 'notion-poc');
 
 const sourceCSV = readFileSync(path.join(fixtureDir, 'source-10rows.csv'), 'utf8');
 const exportedCSV = readFileSync(path.join(fixtureDir, 'exported-10rows.csv'), 'utf8');
+
+function currentFormalDataSourceProperties() {
+  const properties = Object.fromEntries(
+    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
+      name,
+      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
+    ])
+  );
+  const optionContracts = [
+    ['Status', CURRENT_FORMAL_STATUS_OPTIONS],
+    ['Type', CURRENT_FORMAL_TYPE_OPTIONS],
+    ['Country Code', CURRENT_FORMAL_COUNTRY_OPTIONS],
+    ['Destination Key', CURRENT_FORMAL_DESTINATION_OPTIONS],
+  ];
+  for (const [field, options] of optionContracts) {
+    properties[field].select = {
+      options: options.map((option) => ({ ...option })),
+    };
+  }
+  return properties;
+}
 
 const sourceRows = parseCSV(sourceCSV);
 const exportedRows = parseCSV(exportedCSV);
@@ -125,6 +150,7 @@ test('snapshot exporter maps native page icon and frozen Slug without credential
       Lng: { number: 100.5089 },
       'Country Code': { select: { name: 'TH' } },
       'Destination Key': { select: { name: 'bangkok' } },
+      Type: { select: { name: 'LingOrm' } },
       Slug: richText('the-siam-hotel'),
     },
   };
@@ -136,7 +162,8 @@ test('snapshot exporter maps native page icon and frozen Slug without credential
   assert.equal(row[12], '🏨');
   assert.equal(row[13], 'TH');
   assert.equal(row[14], 'bangkok');
-  assert.equal(row[15], 'the-siam-hotel');
+  assert.equal(row[15], 'LingOrm');
+  assert.equal(row[16], 'the-siam-hotel');
 });
 
 test('snapshot exporter escapes quotes and commas in CSV output', () => {
@@ -150,26 +177,16 @@ test('snapshot exporter removes only invisible whitespace before rich-text newli
   );
 });
 
-test('snapshot exporter accepts the current 19-property formal schema', () => {
-  const properties = Object.fromEntries(
-    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
-      name,
-      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
-    ])
-  );
+test('snapshot exporter accepts the current 20-property formal schema', () => {
+  const properties = currentFormalDataSourceProperties();
   assert.deepEqual(assertCurrentFormalSchema({ properties }), {
-    propertyCount: 19,
-    requiredPropertyCount: 19,
+    propertyCount: 20,
+    requiredPropertyCount: 20,
   });
 });
 
 test('snapshot exporter fails closed when the current formal schema drifts', () => {
-  const properties = Object.fromEntries(
-    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
-      name,
-      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
-    ])
-  );
+  const properties = currentFormalDataSourceProperties();
   delete properties.Slug;
   properties.Lat = { type: 'rich_text' };
   properties.Legacy = { type: 'rich_text' };
@@ -181,12 +198,7 @@ test('snapshot exporter fails closed when the current formal schema drifts', () 
 });
 
 test('snapshot exporter rejects retired or miscolored Status options', () => {
-  const properties = Object.fromEntries(
-    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
-      name,
-      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
-    ])
-  );
+  const properties = currentFormalDataSourceProperties();
   properties.Status.select = {
     options: [
       { name: 'Published', color: 'blue' },
@@ -201,13 +213,41 @@ test('snapshot exporter rejects retired or miscolored Status options', () => {
   );
 });
 
-test('snapshot exporter reads only the formal data source and emits deterministic rows', async () => {
-  const properties = Object.fromEntries(
-    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
-      name,
-      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
-    ])
+test('snapshot exporter rejects retired or miscolored Type options', () => {
+  const properties = currentFormalDataSourceProperties();
+  properties.Type.select = {
+    options: [
+      { name: 'LingOrm', color: 'red' },
+      { name: 'JKR Picks', color: 'green' },
+      { name: 'Bookmark', color: 'default' },
+    ],
+  };
+
+  assert.throws(
+    () => assertCurrentFormalSchema({ properties }),
+    /Type options: missing JKR Fan Projects, Admin Picks; unexpected Bookmark; wrong colors LingOrm/
   );
+});
+
+test('snapshot exporter reports Country Code and Destination Key option drift', () => {
+  const properties = currentFormalDataSourceProperties();
+  properties['Country Code'].select.options =
+    CURRENT_FORMAL_COUNTRY_OPTIONS.filter(({ name }) => name !== 'MO');
+  properties['Destination Key'].select.options =
+    CURRENT_FORMAL_DESTINATION_OPTIONS.map((option) =>
+      option.name === 'hong-kong'
+        ? { ...option, color: 'yellow' }
+        : { ...option }
+    );
+
+  assert.throws(
+    () => assertCurrentFormalSchema({ properties }),
+    /Country Code options: missing MO; Destination Key options: wrong colors hong-kong/
+  );
+});
+
+test('snapshot exporter reads only the formal data source and emits deterministic rows', async () => {
+  const properties = currentFormalDataSourceProperties();
   const page = (name, slug) => ({
     icon: { type: 'emoji', emoji: '☕' },
     properties: {
@@ -225,6 +265,7 @@ test('snapshot exporter reads only the formal data source and emits deterministi
       Lng: { number: 100.5 },
       'Country Code': { select: { name: 'TH' } },
       'Destination Key': { select: { name: 'bangkok' } },
+      Type: { select: { name: 'JKR Picks' } },
       Slug: { rich_text: [{ plain_text: slug }] },
     },
   });
@@ -255,12 +296,7 @@ test('snapshot exporter reads only the formal data source and emits deterministi
 });
 
 test('snapshot exporter refuses missing or duplicate Notion Slugs before output', async () => {
-  const properties = Object.fromEntries(
-    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
-      name,
-      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
-    ])
-  );
+  const properties = currentFormalDataSourceProperties();
   const page = (name, slug) => ({
     properties: {
       Name: { title: [{ plain_text: name }] },

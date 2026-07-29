@@ -9,7 +9,7 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 ## Features
 
 - Interactive map with consistent brand-color emoji category markers
-- Card list with search, category, destination, and favorites filters
+- Card list with search, category, theme (`Type`), destination, and favorites filters
 - Country-grouped destination multi-select with persisted choices and automatic map fitting
 - Popup with Navigate + Open in Google Maps buttons (responsive: icon-only on mobile)
 - zh / en bilingual UI with one-click toggle
@@ -323,10 +323,10 @@ Production uses the committed Notion snapshot at `data/locations.csv`:
 ```
 "Location Name","Location Name ZH","Thai / Alt Name","Google Maps URL",
 "Category","Notes","Notes ZH","Source URL","Source Tags","Verification Status",
-"Lat","Lng","Icon","Country Code","Destination Key","Slug"
+"Lat","Lng","Icon","Country Code","Destination Key","Type","Slug"
 ```
 
-The current formal Notion data source has 19 properties: 16 content fields and
+The current formal Notion data source has 20 properties: 17 content fields and
 the three verification fields `Review Needed`, `Verification Note`, and
 `Last Verified`. Verification fields are not exported to the public snapshot.
 `Coordinates Approx` and `Branch Group` have been retired from the formal
@@ -345,6 +345,17 @@ Every `Published` row must contain a supported `Country Code` and
 validation and therefore blocks the build/deploy path. Paused and inactive
 drafts may remain unclassified until they are ready to publish.
 
+The supported countries are Thailand (`TH`), Vietnam (`VN`), Taiwan (`TW`),
+Hong Kong (`HK`), and Macau (`MO`). Taiwan destinations are `taipei`,
+`taichung`, `kaohsiung`, `tainan`, and `hualien`; Hong Kong and Macau use
+`hong-kong` and `macau` respectively. The existing Thailand and Vietnam keys
+remain stable.
+
+`Type` is exported as public location metadata and accepts `LingOrm`,
+`JKR Picks`, `JKR Fan Projects`, or `Admin Picks`. A blank Type remains
+parseable and is surfaced as a warning in the localhost verification UI;
+unknown non-empty values fail snapshot validation.
+
 Generate a candidate snapshot from the allowlisted formal data source with:
 
 ```bash
@@ -353,8 +364,20 @@ node scripts/validate-location-snapshot.mjs data/locations.next.csv
 ```
 
 The exporter reads `NOTION_API_KEY` (the sole Notion credential — see
-Environment variables above), verifies the live 19-property schema before
+Environment variables above), verifies the live 20-property schema before
 querying rows, and never writes to Notion.
+
+Before promoting a snapshot, run the read-only full reconciliation:
+
+```bash
+npm run location:verify -- validate --all
+```
+
+It checks the 20-property Notion schema, the minimum/protected-Slug policy,
+live row invariants, and the exact 17-column live export against committed
+`data/locations.csv`. Expected Notion changes remain visible as per-Slug,
+per-field snapshot drift until a newly exported snapshot is reviewed and
+promoted.
 
 ---
 

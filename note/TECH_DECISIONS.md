@@ -234,7 +234,7 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 
 **決策：** 地理篩選採兩層式 `Country Code` → `Destination Key` taxonomy。
 目的地代表城市或旅遊目的地，不代表曼谷行政區或街區。篩選器允許跨國複選；
-同一層目的地之間使用 OR，並與搜尋、類別、收藏條件使用 AND。
+同一層目的地之間使用 OR，並與搜尋、類別、主題、收藏條件使用 AND。
 
 **互動：**
 
@@ -246,3 +246,25 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 **資料契約：** taxonomy 集中在 `src/data/destinations.js`。每個 `Published`
 地點必須具備受支援且互相匹配的 `Country Code` 與 `Destination Key`；
 匯出快照驗證失敗即阻擋 build/deploy。`Paused`／`Inactive` 草稿可暫時未分類。
+目前支援 `TH`、`VN`、`TW`、`HK`、`MO`；台灣目的地為 `taipei`、
+`taichung`、`kaohsiung`、`tainan`、`hualien`，香港與澳門分別使用
+`hong-kong`、`macau`。既有泰國與越南 key 保持不變。
+
+---
+
+## 地點主題篩選
+
+**決策：** 公開網站將正式資料的 `Type` 欄位顯示為「主題」，以單選下拉
+與搜尋、類別、目的地及收藏條件使用 AND。篩選順序固定為
+「類別／主題／目的地」，只顯示目前 `Published` 地點中實際存在的選項。
+英文篩選器沿用正式 schema 名稱 `Type`；地圖 popup 則在類別 badge 旁
+顯示依目前語言轉換的 Type badge。
+
+**顯示契約：** 儲存與篩選仍使用穩定英文值；語言切換只改變顯示標籤：
+
+| Type | 中文 |
+| --- | --- |
+| `LingOrm` | LingOrm |
+| `JKR Picks` | JKR 推薦 |
+| `JKR Fan Projects` | JKR 應援 |
+| `Admin Picks` | 留友看 |

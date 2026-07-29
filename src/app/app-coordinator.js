@@ -2,6 +2,7 @@ import { lang, setLang } from '../core/i18n.js';
 import {
   applyFilters,
   buildCatFilter,
+  buildTypeFilter,
   updateLangUI,
 } from '../ui/render.js';
 import {
@@ -28,6 +29,7 @@ export function toggleLang() {
   updateLangUI();
   updateWhatsNewLangUI();
   buildCatFilter();
+  buildTypeFilter();
   renderDestinationFilter();
   applyFiltersAndSyncMap();
   refreshActivePopup();

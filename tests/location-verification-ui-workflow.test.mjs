@@ -4,6 +4,7 @@ import test from 'node:test';
 
 import {
   candidatePreviewMatchesLocation,
+  filterReviewQueue,
   nextReviewLocationId,
   selectionAfterQueueRefresh,
 } from '../tools/location-verification-ui/workflow.js';
@@ -30,6 +31,53 @@ test('next review location follows queue order and wraps once', () => {
   assert.equal(nextReviewLocationId(queue, 'a'), 'b');
   assert.equal(nextReviewLocationId(queue, 'c'), 'a');
   assert.equal(nextReviewLocationId([queue[0]], 'a'), null);
+});
+
+test('Type filters keep next navigation inside the filtered queue', () => {
+  const queue = [
+    { id: 'a', type: 'JKR Picks', reviewNeeded: true },
+    { id: 'b', type: 'LingOrm', reviewNeeded: true },
+    { id: 'c', type: 'JKR Picks', reviewNeeded: true },
+  ];
+  const filtered = filterReviewQueue(queue, { type: 'JKR Picks' });
+
+  assert.deepEqual(filtered.map(({ id }) => id), ['a', 'c']);
+  assert.equal(nextReviewLocationId(filtered, 'a'), 'c');
+  assert.equal(nextReviewLocationId(filtered, 'c'), 'a');
+});
+
+test('queue filtering searches classification context and exposes missing Type', () => {
+  const queue = [
+    {
+      id: 'a',
+      name: 'Example Cafe',
+      slug: 'example-cafe',
+      type: 'JKR Picks',
+      typeMissing: false,
+      category: 'Cafe',
+      destinationKey: 'bangkok',
+      sourceTags: ['Threads'],
+    },
+    {
+      id: 'b',
+      name: 'Untyped Place',
+      slug: 'untyped-place',
+      type: '',
+      typeMissing: true,
+      category: 'Hotel',
+      destinationKey: 'koh-samui',
+      sourceTags: [],
+    },
+  ];
+
+  assert.deepEqual(
+    filterReviewQueue(queue, { search: 'threads' }).map(({ id }) => id),
+    ['a']
+  );
+  assert.deepEqual(
+    filterReviewQueue(queue, { type: '__MISSING__' }).map(({ id }) => id),
+    ['b']
+  );
 });
 
 test('refresh keeps the selected page when it remains Review Needed', () => {
@@ -96,20 +144,47 @@ test('Candidate preview survives refresh only for the same unchanged location', 
   assert.equal(candidatePreviewMatchesLocation(null, location), false);
 });
 
+test('Candidate preview revision invalidates after any Notion page edit', () => {
+  const location = {
+    id: '842c23158ea28281a3bf81a75de56f72',
+    recordRevision: '2026-07-28T08:00:00.000Z',
+  };
+  const preview = {
+    page: {
+      id: '842c2315-8ea2-8281-a3bf-81a75de56f72',
+      recordRevision: '2026-07-28T08:00:00.000Z',
+    },
+  };
+
+  assert.equal(candidatePreviewMatchesLocation(preview, location), true);
+  assert.equal(
+    candidatePreviewMatchesLocation(preview, {
+      ...location,
+      recordRevision: '2026-07-28T08:01:00.000Z',
+    }),
+    false
+  );
+});
+
 test('the UI exposes only Candidate dry-run and read-only evidence', () => {
   assert.match(appSource, /api\('\/api\/resolve\/preview'/);
   assert.match(htmlSource, /執行 Candidate dry-run/);
+  assert.match(htmlSource, /Country Code／Destination Key/);
+  assert.match(appSource, /Country Code 建議/);
+  assert.match(appSource, /Destination Key 建議/);
+  assert.match(appSource, /Google 類型/);
   assert.match(htmlSource, /開啟 Notion/);
   assert.match(htmlSource, /Notion Automation 會更新 Last\s*Verified/);
   assert.match(htmlSource, /執行全量資料對帳/);
+  assert.match(htmlSource, /Slug policy · Snapshot/);
+  assert.match(appSource, /Notion ↔ committed snapshot/);
+  assert.match(appSource, /Type · \$\{type\}/);
   assert.match(
     htmlSource,
     /同一地點重新同步後會保留/
   );
-  assert.doesNotMatch(
-    appSource,
-    /state\.selectedId = selectionAfterQueueRefresh\([\s\S]*?clearCandidatePreview\(\);\s*renderQueue/
-  );
+  assert.match(htmlSource, /依 Type 篩選/);
+  assert.match(htmlSource, /尚未設定 Type/);
 
   assert.doesNotMatch(appSource, /\/api\/resolve\/confirm/);
   assert.doesNotMatch(appSource, /\/api\/candidate-reset/);

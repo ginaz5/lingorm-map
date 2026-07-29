@@ -1,7 +1,7 @@
 import { setLang, t } from './core/i18n.js';
 import { state } from './core/state.js';
 import {
-  updateLangUI, buildCatFilter,
+  updateLangUI, buildCatFilter, buildTypeFilter,
   applyFilters, activateCard,
 } from './ui/render.js';
 import {
@@ -68,6 +68,7 @@ function applyCoordinateJitter() {
 function rebuild() {
   applyCoordinateJitter();
   buildCatFilter();
+  buildTypeFilter();
   reconcileDestinationFilter();
   renderDestinationFilter();
   applyFilters();
@@ -195,6 +196,7 @@ window.addEventListener('resize', () => {
 applyTheme();
 updateLangUI();
 buildCatFilter();
+buildTypeFilter();
 applyFilters();       // render initial (loading) state
 tryLoadSheet(rebuild);  // loads data; rebuild() triggers buildMarkers + renderList
 loadMapScript(); // tries Google Maps first, falls back to HERE if unavailable

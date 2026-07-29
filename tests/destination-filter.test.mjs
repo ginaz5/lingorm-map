@@ -17,11 +17,30 @@ import {
 import { state } from '../src/core/state.js';
 
 test('destination taxonomy exposes stable countries and valid pairs', () => {
-  assert.deepEqual(COUNTRY_CODES, ['TH', 'VN']);
-  assert.ok(DESTINATION_KEYS.includes('bangkok'));
-  assert.ok(DESTINATION_KEYS.includes('ho-chi-minh-city'));
+  assert.deepEqual(COUNTRY_CODES, ['TH', 'VN', 'TW', 'HK', 'MO']);
+  assert.deepEqual(DESTINATION_KEYS, [
+    'bangkok',
+    'khon-kaen',
+    'chiang-mai',
+    'khao-yai',
+    'koh-samui',
+    'pattaya',
+    'ubon-ratchathani',
+    'ho-chi-minh-city',
+    'taipei',
+    'taichung',
+    'kaohsiung',
+    'tainan',
+    'hualien',
+    'hong-kong',
+    'macau',
+  ]);
   assert.equal(isValidDestinationPair('TH', 'bangkok'), true);
   assert.equal(isValidDestinationPair('VN', 'bangkok'), false);
+  assert.equal(isValidDestinationPair('TW', 'kaohsiung'), true);
+  assert.equal(isValidDestinationPair('HK', 'hong-kong'), true);
+  assert.equal(isValidDestinationPair('MO', 'macau'), true);
+  assert.equal(isValidDestinationPair('TW', 'hong-kong'), false);
 });
 
 test('destination selections persist across reload and ignore unknown keys', () => {

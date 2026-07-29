@@ -24,6 +24,7 @@ function makeLocation() {
     approx: '',
     countryCode: 'TH',
     destinationKey: 'bangkok',
+    type: 'LingOrm',
   };
 }
 
@@ -101,6 +102,7 @@ test('coordinated fit delegates pending-map behavior to map.js', () => {
   const elements = {
     search: { value: '' },
     'cat-filter': { value: '' },
+    'type-filter': { value: '' },
     'loc-list': { innerHTML: '' },
     'result-info': { textContent: '' },
   };

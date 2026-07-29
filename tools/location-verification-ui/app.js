@@ -1,5 +1,6 @@
 import {
   candidatePreviewMatchesLocation,
+  filterReviewQueue,
   nextReviewLocationId,
   selectionAfterQueueRefresh,
 } from './workflow.js';
@@ -9,23 +10,28 @@ const state = {
   queue: [],
   selectedId: null,
   search: '',
+  typeFilter: '',
   resolvePreview: null,
   lastSyncedAt: null,
   sidebarCollapsed: false,
   target: 'formal',
   dataSourceId: '',
   refreshInFlight: false,
+  schema: null,
 };
 
 const elements = Object.fromEntries(
   [
     'review-count',
+    'filtered-count',
     'queue-search',
+    'queue-type-filter',
     'queue-list',
     'sidebar',
     'queue-toggle',
     'refresh-queue',
     'last-synced',
+    'schema-status',
     'environment-banner',
     'environment-badge',
     'environment-title',
@@ -38,6 +44,8 @@ const elements = Object.fromEntries(
     'empty-message',
     'location-workspace',
     'location-category',
+    'location-type',
+    'location-type-warning',
     'location-slug',
     'location-name',
     'location-alt-name',
@@ -55,11 +63,14 @@ const elements = Object.fromEntries(
     'current-place-id',
     'current-coordinates',
     'last-verified',
+    'current-country',
+    'current-destination',
     'current-map-link',
     'notes-zh',
     'notes-en',
     'verification-note-history',
     'source-links',
+    'source-tags',
     'validation-dialog',
     'validation-title',
     'validation-content',
@@ -157,23 +168,56 @@ async function api(
 
 function updateCounters() {
   elements['review-count'].textContent = state.queue.length;
+  elements['filtered-count'].textContent = filteredQueue().length;
   elements['last-synced'].textContent = state.lastSyncedAt
     ? `上次同步：${formatDate(state.lastSyncedAt)}`
     : '尚未同步';
+  elements['schema-status'].textContent = state.schema?.ok
+    ? `Schema ${state.schema.propertyCount}/${state.schema.expectedPropertyCount}`
+    : 'Schema 尚未確認';
 }
 
 function filteredQueue() {
-  const query = state.search.toLocaleLowerCase('zh-Hant');
-  return state.queue.filter((item) => {
-    return (
-      !query ||
-      [item.name, item.nameZh, item.alternateName, item.slug]
-        .filter(Boolean)
-        .some((value) =>
-          value.toLocaleLowerCase('zh-Hant').includes(query)
-        )
-    );
+  return filterReviewQueue(state.queue, {
+    search: state.search,
+    type: state.typeFilter,
   });
+}
+
+function renderTypeFilter() {
+  const select = elements['queue-type-filter'];
+  const selected = state.typeFilter;
+  const counts = new Map();
+  for (const item of state.queue) {
+    const key = item.typeMissing ? '__MISSING__' : item.type;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  const allowedTypes = state.schema?.allowedTypes?.map(({ name }) => name) ||
+    [...new Set(state.queue.map(({ type }) => type).filter(Boolean))];
+  select.replaceChildren();
+
+  const all = document.createElement('option');
+  all.value = '';
+  all.textContent = `全部 Type（${state.queue.length}）`;
+  select.append(all);
+  for (const type of allowedTypes) {
+    const option = document.createElement('option');
+    option.value = type;
+    option.textContent = `${type}（${counts.get(type) || 0}）`;
+    select.append(option);
+  }
+  if (counts.get('__MISSING__')) {
+    const missing = document.createElement('option');
+    missing.value = '__MISSING__';
+    missing.textContent = `未設定 Type（${counts.get('__MISSING__')}）`;
+    select.append(missing);
+  }
+  select.value = [...select.options].some(
+    (option) => option.value === selected
+  )
+    ? selected
+    : '';
+  state.typeFilter = select.value;
 }
 
 function renderQueue() {
@@ -207,7 +251,8 @@ function renderQueue() {
     const name = document.createElement('strong');
     name.textContent = text(item.name);
     const meta = document.createElement('small');
-    meta.textContent = `${item.status} · ${item.slug}`;
+    meta.textContent =
+      `${item.type || '未設定 Type'} · ${item.status} · ${item.slug}`;
     copy.append(name, meta);
 
     const indicator = document.createElement('span');
@@ -284,6 +329,12 @@ function renderLocation() {
   elements['location-workspace'].hidden = false;
 
   elements['location-category'].textContent = text(location.category);
+  elements['location-type'].textContent = text(
+    location.type,
+    '未設定 Type'
+  );
+  elements['location-type'].dataset.type = location.type || 'missing';
+  elements['location-type-warning'].hidden = !location.typeMissing;
   elements['location-slug'].textContent = text(location.slug);
   elements['location-name'].textContent = text(location.name);
   elements['location-alt-name'].textContent = [
@@ -303,6 +354,10 @@ function renderLocation() {
     location.lng
   );
   elements['last-verified'].textContent = formatDate(location.lastVerified);
+  elements['current-country'].textContent = text(location.countryCode);
+  elements['current-destination'].textContent = text(
+    location.destinationKey
+  );
   setLink(elements['current-map-link'], location.currentMapsUrl);
   elements['notes-zh'].textContent = text(location.notesZh);
   elements['notes-en'].textContent = text(location.notesEn);
@@ -310,6 +365,10 @@ function renderLocation() {
     location.verificationNote
   );
   renderSourceLinks(location.sourceUrls);
+  elements['source-tags'].textContent = Array.isArray(location.sourceTags) &&
+    location.sourceTags.length > 0
+    ? location.sourceTags.join(' · ')
+    : '—';
 
   if (candidatePreviewMatchesLocation(state.resolvePreview, location)) {
     renderCandidatePreview(state.resolvePreview);
@@ -321,7 +380,7 @@ function renderLocation() {
     elements['candidate-state'].className = 'card-state';
   }
 
-  const nextId = nextReviewLocationId(state.queue, location.id);
+  const nextId = nextReviewLocationId(filteredQueue(), location.id);
   elements['next-location'].disabled = !nextId;
   elements['next-location'].title = nextId ? '' : '目前沒有下一筆';
 }
@@ -342,6 +401,62 @@ function appendNotice(container, message, warning = false) {
   notice.className = warning ? 'notice is-warning' : 'notice';
   notice.textContent = message;
   container.append(notice);
+}
+
+function renderSuggestionRow(label, suggestion) {
+  const row = document.createElement('div');
+  row.className = `candidate-suggestion ${suggestion?.comparison || 'unavailable'}`;
+
+  const heading = document.createElement('div');
+  heading.className = 'candidate-suggestion-heading';
+  const title = document.createElement('strong');
+  title.textContent = label;
+  const current = document.createElement('span');
+  current.textContent = `目前：${text(suggestion?.currentValue)}`;
+  heading.append(title, current);
+
+  const options = document.createElement('div');
+  options.className = 'candidate-suggestion-options';
+  if (suggestion?.options?.length > 0) {
+    suggestion.options.forEach((option) => {
+      const item = document.createElement('span');
+      item.className = 'candidate-suggestion-option';
+      const confidence =
+        option.confidence === 'high'
+          ? '高'
+          : option.confidence === 'medium'
+            ? '中'
+            : text(option.confidence, '未知');
+      item.textContent =
+        `${option.value} — ${option.label} · 信心 ${confidence}` +
+        (option.value === suggestion.recommendedValue ? '（建議）' : '');
+      item.title = option.evidence || '';
+      options.append(item);
+    });
+  } else {
+    const unavailable = document.createElement('span');
+    unavailable.className = 'candidate-suggestion-unavailable';
+    unavailable.textContent = suggestion?.observedValue
+      ? `Google 值 ${suggestion.observedValue} 不在支援選項內`
+      : '沒有足夠證據提供建議';
+    options.append(unavailable);
+  }
+
+  const reason = document.createElement('p');
+  reason.className = 'candidate-suggestion-reason';
+  reason.textContent = suggestion?.reason || '沒有提供判斷理由。';
+  const evidence = document.createElement('p');
+  evidence.className = 'candidate-suggestion-evidence';
+  evidence.textContent =
+    suggestion?.options?.length > 0
+      ? `Google 證據：${suggestion.options
+          .map((option) => option.evidence)
+          .filter(Boolean)
+          .join('；')}`
+      : '';
+  row.append(heading, options, reason);
+  if (evidence.textContent) row.append(evidence);
+  return row;
 }
 
 function renderCandidatePreview(preview) {
@@ -383,6 +498,11 @@ function renderCandidatePreview(preview) {
       : '距離未知';
     coordinate.textContent =
       `候選座標 ${formatCoordinates(candidate.lat, candidate.lng)} · ${distance}`;
+    const googleTypes = document.createElement('p');
+    googleTypes.textContent =
+      `Google 類型：${
+        candidate.types?.length > 0 ? candidate.types.join(', ') : '未提供'
+      }`;
     const risk = document.createElement('span');
     risk.className = `candidate-risk ${candidate.distanceRisk}`;
     risk.textContent = `距離風險：${candidate.distanceRisk}`;
@@ -392,7 +512,31 @@ function renderCandidatePreview(preview) {
     riskNote.className = 'risk-note';
     riskNote.textContent =
       '仍需核對名稱、地址、Place ID 與地圖上的實際位置。';
-    copy.append(title, address, identity, coordinate, risk, riskNote);
+    const suggestions = document.createElement('section');
+    suggestions.className = 'candidate-suggestions';
+    const suggestionHeading = document.createElement('h5');
+    suggestionHeading.textContent = '正式欄位建議選項';
+    suggestions.append(
+      suggestionHeading,
+      renderSuggestionRow(
+        'Country Code 建議',
+        candidate.locationSuggestions?.countryCode
+      ),
+      renderSuggestionRow(
+        'Destination Key 建議',
+        candidate.locationSuggestions?.destinationKey
+      )
+    );
+    copy.append(
+      title,
+      address,
+      identity,
+      coordinate,
+      googleTypes,
+      risk,
+      riskNote,
+      suggestions
+    );
 
     const link = document.createElement('a');
     link.href = candidate.mapsUrl;
@@ -438,8 +582,10 @@ async function bootstrapSession({ render = true } = {}) {
   state.target = bootstrap.target || 'formal';
   state.dataSourceId = bootstrap.dataSourceId || '';
   state.queue = bootstrap.queue;
+  state.schema = bootstrap.schema || null;
   state.lastSyncedAt = new Date().toISOString();
   renderEnvironment();
+  renderTypeFilter();
   if (render) {
     renderQueue();
     renderLocation();
@@ -457,12 +603,19 @@ async function refreshQueue({ notify = false } = {}) {
   try {
     const result = await api('/api/queue');
     state.queue = result.queue;
+    state.schema = result.schema || state.schema;
     state.lastSyncedAt = new Date().toISOString();
     state.selectedId = selectionAfterQueueRefresh(
       state.queue,
       previousId,
       previousIndex
     );
+    renderTypeFilter();
+    const visible = filteredQueue();
+    if (!visible.some(({ id }) => id === state.selectedId)) {
+      state.selectedId = visible[0]?.id || null;
+      clearCandidatePreview();
+    }
     renderQueue();
     renderLocation();
     if (
@@ -508,34 +661,106 @@ function validationRows(result) {
   const container = document.createElement('div');
   container.className = 'validation-layers';
 
+  const appendLayer = (parent, labelText, valueText, ok = null) => {
+    const row = document.createElement('div');
+    row.className = 'validation-layer';
+    const label = document.createElement('span');
+    label.textContent = labelText;
+    const value = document.createElement('strong');
+    value.textContent = valueText;
+    if (ok !== null) value.className = ok ? 'pass' : 'fail';
+    row.append(label, value);
+    parent.append(row);
+  };
+
   const summary = document.createElement('section');
   summary.className = 'validation-group';
   const heading = document.createElement('h3');
-  heading.textContent = '摘要';
+  heading.textContent = '對帳層';
   summary.append(heading);
 
-  const countRow = document.createElement('div');
-  countRow.className = 'validation-layer';
-  const countLabel = document.createElement('span');
-  countLabel.textContent = '地點總數';
-  const countValue = document.createElement('strong');
-  countValue.textContent = String(result.rowCount ?? '—');
-  countRow.append(countLabel, countValue);
-  summary.append(countRow);
+  if (result.schema) {
+    appendLayer(
+      summary,
+      'Notion schema',
+      `${result.schema.propertyCount}/${result.schema.expectedPropertyCount}`,
+      result.checks?.schema?.ok ?? result.schema.ok
+    );
+  }
+  if (result.checks?.policy) {
+    appendLayer(
+      summary,
+      `Slug policy · ${result.checks.policy.policyId}`,
+      `${result.rowCount} 筆／最低 ${result.checks.policy.minimumRowCount} · ` +
+        `保護 ${result.checks.policy.protectedSlugCount}`,
+      result.checks.policy.ok
+    );
+  } else {
+    appendLayer(summary, '地點總數', String(result.rowCount ?? '—'));
+  }
+  if (result.checks?.live) {
+    appendLayer(
+      summary,
+      'Live Notion invariants',
+      `${result.checks.live.issueCount} 問題 · ` +
+        `${result.checks.live.warningCount} 警告`,
+      result.checks.live.ok
+    );
+  }
+  if (result.checks?.snapshot) {
+    const snapshot = result.checks.snapshot;
+    appendLayer(
+      summary,
+      'Notion ↔ committed snapshot',
+      `${snapshot.liveRowCount}/${snapshot.committedRowCount} 筆 · ` +
+        `${snapshot.changedSlugCount} Slug／${snapshot.changedFieldCount} 欄差異 · ` +
+        `+${snapshot.addedSlugCount}／-${snapshot.removedSlugCount}`,
+      snapshot.ok
+    );
+  }
+  container.append(summary);
 
+  const distributions = document.createElement('section');
+  distributions.className = 'validation-group';
+  const distributionHeading = document.createElement('h3');
+  distributionHeading.textContent = 'Live 分布';
+  distributions.append(distributionHeading);
   Object.entries(result.statusCounts || {})
     .sort(([a], [b]) => a.localeCompare(b))
     .forEach(([status, count]) => {
-      const row = document.createElement('div');
-      row.className = 'validation-layer';
-      const label = document.createElement('span');
-      label.textContent = status;
-      const value = document.createElement('strong');
-      value.textContent = String(count);
-      row.append(label, value);
-      summary.append(row);
+      appendLayer(distributions, `Status · ${status}`, String(count));
     });
-  container.append(summary);
+  Object.entries(result.typeCounts || {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([type, count]) => {
+      appendLayer(distributions, `Type · ${type}`, String(count));
+    });
+  container.append(distributions);
+
+  if ((result.warnings || []).length > 0) {
+    const warnings = document.createElement('section');
+    warnings.className = 'validation-issues is-warning';
+    const heading = document.createElement('h3');
+    heading.textContent = `警告（${result.warnings.length}）`;
+    warnings.append(heading);
+    result.warnings.forEach((item) => {
+      const warning = document.createElement('article');
+      const meta = document.createElement('strong');
+      meta.textContent = [
+        item.layer || 'warning',
+        item.code || 'warning',
+        item.slug,
+        item.field,
+      ]
+        .filter(Boolean)
+        .join(' · ');
+      const message = document.createElement('p');
+      message.textContent = item.message || JSON.stringify(item);
+      warning.append(meta, message);
+      warnings.append(warning);
+    });
+    container.append(warnings);
+  }
 
   if (result.issues.length > 0) {
     const issues = document.createElement('section');
@@ -547,7 +772,8 @@ function validationRows(result) {
       const issue = document.createElement('article');
       const meta = document.createElement('strong');
       meta.textContent = [
-        item.layer || item.code || 'validation',
+        item.layer || 'validation',
+        item.code,
         item.slug,
         item.field,
       ]
@@ -578,7 +804,9 @@ async function handleValidateAll() {
       body: {},
     });
     elements['validation-title'].textContent = result.ok
-      ? '驗證全部通過'
+      ? (result.warnings || []).length > 0
+        ? '驗證通過，另有警告'
+        : '驗證全部通過'
       : '驗證發現問題';
     elements['validation-content'].replaceChildren(validationRows(result));
   } catch (error) {
@@ -602,7 +830,23 @@ function setSidebarCollapsed(collapsed) {
 function bindEvents() {
   elements['queue-search'].addEventListener('input', (event) => {
     state.search = event.target.value;
+    const visible = filteredQueue();
+    if (!visible.some(({ id }) => id === state.selectedId)) {
+      state.selectedId = visible[0]?.id || null;
+      clearCandidatePreview();
+      renderLocation();
+    }
     renderQueue();
+  });
+  elements['queue-type-filter'].addEventListener('change', (event) => {
+    state.typeFilter = event.target.value;
+    const visible = filteredQueue();
+    if (!visible.some(({ id }) => id === state.selectedId)) {
+      state.selectedId = visible[0]?.id || null;
+      clearCandidatePreview();
+    }
+    renderQueue();
+    renderLocation();
   });
   elements['resolve-preview'].addEventListener(
     'click',
@@ -624,7 +868,10 @@ function bindEvents() {
     setSidebarCollapsed(!state.sidebarCollapsed);
   });
   elements['next-location'].addEventListener('click', () => {
-    const nextId = nextReviewLocationId(state.queue, state.selectedId);
+    const nextId = nextReviewLocationId(
+      filteredQueue(),
+      state.selectedId
+    );
     if (nextId) selectLocation(nextId);
   });
   document.addEventListener('visibilitychange', async () => {

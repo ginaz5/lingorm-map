@@ -28,20 +28,32 @@ import {
   workflowRevision,
 } from './location-verification-core.mjs';
 import {
-  EXPECTED_LOCATION_COUNT,
+  reconcileSnapshotCsv,
   validateTargetRows,
 } from './location-verification-validator.mjs';
 import {
   CURRENT_FORMAL_BASELINE_FIELDS,
   CURRENT_FORMAL_WORKFLOW_FIELDS,
+  currentFormalSchemaIssueMessages,
+  inspectCurrentFormalDataSourceProperties,
   inspectCurrentFormalLocationProperties,
 } from './formal-location-current-schema.mjs';
+import { buildSnapshotCsv } from './export-snapshot.mjs';
+import { loadSnapshotPolicy } from './validate-location-snapshot.mjs';
+import {
+  COUNTRIES,
+  DESTINATIONS,
+} from '../src/data/destinations.js';
 
 const NOTION_API_BASE = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2025-09-03';
 const PLACES_API_BASE = 'https://places.googleapis.com/v1';
 const LEGACY_PLACES_API_BASE = 'https://maps.googleapis.com/maps/api/place';
 const REVIEW_TTL_DAYS = 30;
+const COMMITTED_LOCATION_SNAPSHOT_URL = new URL(
+  '../data/locations.csv',
+  import.meta.url
+);
 const APPLY_LOCK_ROOT = join(
   tmpdir(),
   'lingorm-bangkok-map-location-verification-locks'
@@ -95,6 +107,7 @@ const PLACE_FIELD_MASK = [
   'id',
   'displayName',
   'formattedAddress',
+  'addressComponents',
   'location',
   'businessStatus',
   'types',
@@ -104,6 +117,63 @@ const TEXT_SEARCH_FIELD_MASK = PLACE_FIELD_MASK
   .split(',')
   .map((field) => `places.${field}`)
   .join(',');
+
+const DESTINATION_ADDRESS_ALIASES = Object.freeze({
+  bangkok: [
+    'Bangkok',
+    'Krung Thep Maha Nakhon',
+    'กรุงเทพมหานคร',
+  ],
+  'khon-kaen': ['Khon Kaen', 'ขอนแก่น'],
+  'chiang-mai': ['Chiang Mai', 'เชียงใหม่'],
+  'khao-yai': ['Khao Yai', 'เขาใหญ่'],
+  'koh-samui': ['Ko Samui', 'Koh Samui', 'เกาะสมุย'],
+  pattaya: ['Pattaya', 'Pattaya City', 'พัทยา'],
+  'ubon-ratchathani': ['Ubon Ratchathani', 'อุบลราชธานี'],
+  'ho-chi-minh-city': [
+    'Ho Chi Minh City',
+    'Ho Chi Minh',
+    'Thành phố Hồ Chí Minh',
+    'Hồ Chí Minh',
+  ],
+  taipei: ['Taipei', 'Taipei City', '臺北', '台北', '臺北市', '台北市'],
+  taichung: [
+    'Taichung',
+    'Taichung City',
+    '臺中',
+    '台中',
+    '臺中市',
+    '台中市',
+  ],
+  kaohsiung: ['Kaohsiung', 'Kaohsiung City', '高雄', '高雄市'],
+  tainan: ['Tainan', 'Tainan City', '臺南', '台南', '臺南市', '台南市'],
+  hualien: [
+    'Hualien',
+    'Hualien City',
+    'Hualien County',
+    '花蓮',
+    '花蓮市',
+    '花蓮縣',
+  ],
+  'hong-kong': [
+    'Hong Kong',
+    'Hong Kong SAR',
+    'Hong Kong Special Administrative Region',
+    '香港',
+    '香港特別行政區',
+  ],
+  macau: [
+    'Macau',
+    'Macao',
+    'Macau SAR',
+    'Macao SAR',
+    'Macao Special Administrative Region',
+    '澳門',
+    '澳门',
+    '澳門特別行政區',
+    '澳门特别行政区',
+  ],
+});
 
 function normalizeId(value) {
   return String(value || '').replaceAll('-', '').toLowerCase();
@@ -510,6 +580,9 @@ export function notionPageToRow(page) {
     'Notes ZH': richText(properties['Notes ZH']),
     'Source URLs': richText(properties['Source URLs']),
     'Source Tags': multiSelect(properties['Source Tags']),
+    'Country Code': select(properties['Country Code']),
+    'Destination Key': select(properties['Destination Key']),
+    Type: select(properties.Type),
     'Branch Group': richText(properties['Branch Group']),
     Origin: select(properties.Origin),
     Status: select(properties.Status),
@@ -555,6 +628,28 @@ export async function fetchNotionPage({
     },
   });
   return readJsonResponse(response, 'Notion page read');
+}
+
+export async function fetchNotionDataSource({
+  dataSourceId,
+  notionApiKey,
+  fetchImpl = fetch,
+}) {
+  if (!notionApiKey) throw new Error('Missing NOTION_API_KEY');
+  assertSupportedRunnerDataSource(dataSourceId);
+  const response = await fetchImpl(
+    `${NOTION_API_BASE}/data_sources/${dataSourceId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${notionApiKey}`,
+        'Notion-Version': NOTION_VERSION,
+      },
+    }
+  );
+  return readJsonResponse(
+    response,
+    `Notion data source ${dataSourceId} read`
+  );
 }
 
 export async function queryAllNotionDataSourcePages({
@@ -618,19 +713,35 @@ function validatorRow(page, expectedDataSourceId) {
   };
 }
 
-// Validates every live row in the single Notion Locations database against
-// the target invariants (required fields, coordinates, apply metadata,
-// candidate lifecycle — see validateTargetRows). Prior to the 2026-07-21
-// single-source cutover this compared a "Locations (PoC)" workbench against
-// the formal database plus a set of frozen migration-era baseline/approval
-// JSON artifacts; both the PoC database and those artifacts have since been
-// deleted, so this is now a straightforward live read-and-check.
+// Reconciles the current 20-property Notion contract, live row invariants,
+// protected Slug policy, and the exact public export against the committed
+// production snapshot. The operation is read-only and never repairs data.
 export async function validateAllLocations({
   notionApiKey,
   fetchImpl = fetch,
-  expectedCount = EXPECTED_LOCATION_COUNT,
+  snapshotPolicy,
+  committedSnapshotCsv,
 }) {
   requireNotionApiKey(notionApiKey);
+  const activeSnapshotPolicy = snapshotPolicy || loadSnapshotPolicy();
+  const activeCommittedSnapshotCsv =
+    committedSnapshotCsv ??
+    readFileSync(COMMITTED_LOCATION_SNAPSHOT_URL, 'utf8');
+
+  const dataSource = await fetchNotionDataSource({
+    dataSourceId: FORMAL_DATA_SOURCE_ID,
+    notionApiKey,
+    fetchImpl,
+  });
+  const currentSchema = inspectCurrentFormalDataSourceProperties(
+    dataSource.properties
+  );
+  if (!currentSchema.ok) {
+    throw new Error(
+      `Formal Locations schema does not match the current contract: ` +
+        currentFormalSchemaIssueMessages(currentSchema).join('; ')
+    );
+  }
 
   const pages = await queryAllNotionDataSourcePages({
     dataSourceId: FORMAL_DATA_SOURCE_ID,
@@ -638,16 +749,90 @@ export async function validateAllLocations({
     fetchImpl,
   });
   const rows = pages.map((page) => validatorRow(page, FORMAL_DATA_SOURCE_ID));
-  const { issues, statusCounts } = validateTargetRows(rows, { expectedCount });
+  const {
+    issues: targetIssues,
+    warnings,
+    statusCounts,
+    typeCounts,
+    policy,
+  } = validateTargetRows(rows, {
+    snapshotPolicy: activeSnapshotPolicy,
+  });
+
+  let reconciliation;
+  try {
+    reconciliation = reconcileSnapshotCsv(
+      buildSnapshotCsv(pages),
+      activeCommittedSnapshotCsv
+    );
+  } catch (error) {
+    reconciliation = {
+      ok: false,
+      issues: [{
+        layer: 'snapshot',
+        code: 'LIVE_EXPORT_FAILED',
+        slug: null,
+        field: null,
+        message:
+          error instanceof Error ? error.message : 'Live export failed',
+      }],
+      liveRowCount: rows.length,
+      committedRowCount: 0,
+      addedSlugCount: 0,
+      removedSlugCount: 0,
+      changedSlugCount: 0,
+      changedFieldCount: 0,
+    };
+  }
+
+  const issues = [...targetIssues, ...reconciliation.issues];
+  const liveIssueCount = targetIssues.filter(
+    ({ layer }) => layer === 'live'
+  ).length;
+  const policyIssueCount = targetIssues.filter(
+    ({ layer }) => layer === 'policy'
+  ).length;
+  const {
+    issues: _snapshotIssues,
+    ...snapshotCheck
+  } = reconciliation;
 
   return {
     ok: issues.length === 0,
     issues,
+    warnings,
     statusCounts,
+    typeCounts,
     rowCount: rows.length,
     mode: 'live',
     writePerformed: false,
     dataSource: FORMAL_DATA_SOURCE_ID,
+    checks: {
+      schema: {
+        ok: true,
+      },
+      policy: {
+        ok: policyIssueCount === 0,
+        issueCount: policyIssueCount,
+        ...policy,
+      },
+      live: {
+        ok: liveIssueCount === 0,
+        issueCount: liveIssueCount,
+        warningCount: warnings.length,
+      },
+      snapshot: snapshotCheck,
+    },
+    schema: {
+      ok: true,
+      propertyCount: Object.keys(dataSource.properties || {}).length,
+      expectedPropertyCount:
+        ACTIVE_FORMAL_FIELDS.length + ACTIVE_FORMAL_WORKFLOW_FIELDS.length,
+      statusOptions: currentSchema.statusOptions,
+      typeOptions: currentSchema.typeOptions,
+      countryOptions: currentSchema.countryOptions,
+      destinationOptions: currentSchema.destinationOptions,
+    },
   };
 }
 
@@ -710,6 +895,7 @@ export async function productionPreflightPage({
     page: {
       id: page.id,
       url: page.url,
+      recordRevision: page.last_edited_time || null,
       dataSourceId,
       name: row.Name,
       slug: row.Slug,
@@ -726,6 +912,9 @@ export async function productionPreflightPage({
       wrongPropertyTypes: currentSchema.wrongTypes,
       unexpectedProperties: currentSchema.unexpected,
       statusOptions: currentSchema.statusOptions,
+      typeOptions: currentSchema.typeOptions,
+      countryOptions: currentSchema.countryOptions,
+      destinationOptions: currentSchema.destinationOptions,
     },
     proposedPatch,
     gates: {
@@ -815,7 +1004,7 @@ async function fetchLegacyExistingPlace({
   legacyUrl.searchParams.set('place_id', placeId);
   legacyUrl.searchParams.set(
     'fields',
-    'place_id,name,formatted_address,geometry,business_status,type'
+    'place_id,name,formatted_address,address_components,geometry,business_status,type'
   );
   legacyUrl.searchParams.set('key', googlePlacesKey);
   const legacyResponse = await fetchImpl(legacyUrl);
@@ -897,6 +1086,7 @@ function normalizeLegacyPlace(place) {
     id: place?.place_id || '',
     displayName: { text: place?.name || '' },
     formattedAddress: place?.formatted_address || '',
+    addressComponents: normalizeAddressComponents(place?.address_components),
     location: {
       latitude: place?.geometry?.location?.lat ?? null,
       longitude: place?.geometry?.location?.lng ?? null,
@@ -906,8 +1096,210 @@ function normalizeLegacyPlace(place) {
   };
 }
 
+function normalizeSuggestionText(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLocaleLowerCase('en')
+    .replace(/[^\p{Letter}\p{Number}]+/gu, ' ')
+    .trim();
+}
+
+function normalizeAddressComponents(components) {
+  if (!Array.isArray(components)) return [];
+  return components
+    .map((component) => ({
+      longText: String(
+        component?.longText || component?.long_name || ''
+      ).trim(),
+      shortText: String(
+        component?.shortText || component?.short_name || ''
+      ).trim(),
+      types: Array.isArray(component?.types)
+        ? component.types.map((type) => String(type))
+        : [],
+    }))
+    .filter(
+      (component) =>
+        component.longText || component.shortText || component.types.length > 0
+    );
+}
+
+function suggestionComparison(currentValue, recommendedValue) {
+  if (!recommendedValue) return 'unavailable';
+  if (!currentValue) return 'missing';
+  return currentValue === recommendedValue ? 'same' : 'different';
+}
+
+function suggestionField({
+  currentValue,
+  options,
+  reason,
+  observedValue = null,
+}) {
+  const recommendedValue = options.length === 1 ? options[0].value : null;
+  return {
+    currentValue: currentValue || null,
+    recommendedValue,
+    comparison: suggestionComparison(currentValue, recommendedValue),
+    options,
+    observedValue,
+    reason,
+  };
+}
+
+function componentEvidence(component) {
+  const names = [...new Set([component.longText, component.shortText].filter(Boolean))];
+  const type = component.types[0] || 'address component';
+  return `${names.join(' / ')} (${type})`;
+}
+
+/**
+ * Builds read-only taxonomy suggestions from Google address evidence.
+ * Suggestions intentionally stay outside Candidate Payload and never mutate Notion.
+ */
+export function buildCandidateLocationSuggestions({
+  currentCountryCode = '',
+  currentDestinationKey = '',
+  candidate,
+}) {
+  const components = normalizeAddressComponents(candidate?.addressComponents);
+  const countryComponent = components.find((component) =>
+    component.types.includes('country')
+  );
+  const observedCountryCode = String(countryComponent?.shortText || '')
+    .trim()
+    .toUpperCase();
+  const supportedCountry = COUNTRIES.find(
+    (country) => country.code === observedCountryCode
+  );
+  const countryOptions = supportedCountry
+    ? [
+        {
+          value: supportedCountry.code,
+          label: `${supportedCountry.en} / ${supportedCountry.zh}`,
+          confidence: 'high',
+          evidence: componentEvidence(countryComponent),
+        },
+      ]
+    : [];
+  const countryReason = supportedCountry
+    ? 'Google 的 country 地址組成可精確對應既有 Country Code。'
+    : observedCountryCode
+      ? `Google 回傳 ${observedCountryCode}，但不在目前支援的國家 taxonomy。`
+      : 'Google 未回傳 country 地址組成，無法安全建議。';
+
+  const componentNames = components.flatMap((component) =>
+    [component.longText, component.shortText]
+      .map((value) => ({
+        normalized: normalizeSuggestionText(value),
+        evidence: componentEvidence(component),
+      }))
+      .filter((entry) => entry.normalized)
+  );
+  const normalizedAddress = normalizeSuggestionText(candidate?.formattedAddress);
+  const destinationOptions = [];
+
+  for (const destination of DESTINATIONS) {
+    if (
+      !supportedCountry ||
+      destination.countryCode !== supportedCountry.code
+    ) {
+      continue;
+    }
+    const aliases = DESTINATION_ADDRESS_ALIASES[destination.key] || [];
+    const componentMatch = aliases
+      .map(normalizeSuggestionText)
+      .map((alias) =>
+        componentNames.find((entry) => entry.normalized === alias)
+      )
+      .find(Boolean);
+    const addressAlias = aliases
+      .map(normalizeSuggestionText)
+      .find(
+        (alias) =>
+          alias &&
+          ` ${normalizedAddress} `.includes(` ${alias} `)
+      );
+    if (!componentMatch && !addressAlias) continue;
+    destinationOptions.push({
+      value: destination.key,
+      label: `${destination.en} / ${destination.zh}`,
+      confidence: componentMatch ? 'high' : 'medium',
+      evidence: componentMatch
+        ? componentMatch.evidence
+        : `${candidate.formattedAddress} (formatted address)`,
+    });
+  }
+
+  let destinationReason;
+  if (destinationOptions.length === 1) {
+    destinationReason =
+      'Google 地址證據可精確對應一個既有 Destination Key。';
+  } else if (destinationOptions.length > 1) {
+    destinationReason =
+      'Google 地址證據同時符合多個目的地，需要人工選擇。';
+  } else {
+    destinationReason =
+      'Google 地址證據無法安全對應既有 destination taxonomy。';
+  }
+
+  return {
+    countryCode: suggestionField({
+      currentValue: currentCountryCode,
+      options: countryOptions,
+      observedValue: observedCountryCode || null,
+      reason: countryReason,
+    }),
+    destinationKey: suggestionField({
+      currentValue: currentDestinationKey,
+      options: destinationOptions,
+      reason: destinationReason,
+    }),
+  };
+}
+
+async function enrichLegacyCandidateAddressComponents({
+  candidates,
+  googlePlacesKey,
+  fetchImpl,
+}) {
+  return Promise.all(
+    candidates.map(async (candidate) => {
+      if (
+        normalizeAddressComponents(candidate?.addressComponents).length > 0 ||
+        !candidate?.id
+      ) {
+        return candidate;
+      }
+      try {
+        const refreshed = await fetchLegacyExistingPlace({
+          placeId: candidate.id,
+          googlePlacesKey,
+          fetchImpl,
+        });
+        if (!refreshed?.place) return candidate;
+        return {
+          ...candidate,
+          ...refreshed.place,
+          id: candidate.id,
+        };
+      } catch {
+        return candidate;
+      }
+    })
+  );
+}
+
 function buildSearchQuery(row) {
-  return [...new Set([row.Name, row['Thai / Alt Name'], 'Bangkok'].filter(Boolean))]
+  const destination = DESTINATIONS.find(
+    (item) => item.key === row['Destination Key']
+  );
+  return [
+    ...new Set(
+      [row.Name, row['Thai / Alt Name'], destination?.en].filter(Boolean)
+    ),
+  ]
     .join(' ')
     .trim();
 }
@@ -1037,6 +1429,13 @@ export async function resolvePageDryRun({
       searchResult.places,
       rejected
     );
+    if (apiMode === 'places_legacy') {
+      candidates = await enrichLegacyCandidateAddressComponents({
+        candidates,
+        googlePlacesKey,
+        fetchImpl,
+      });
+    }
   }
 
   const resolvedAt = new Date(now).toISOString();
@@ -1099,12 +1498,17 @@ export async function resolvePageDryRun({
     page: {
       id: page.id,
       url: page.url,
+      recordRevision: page.last_edited_time || null,
       dataSourceId,
       name: row.Name,
       slug: row.Slug,
       status: row.Status,
       reviewNeeded: row['Review Needed'],
       currentPlaceId: row['Google Place ID'],
+      countryCode: row['Country Code'],
+      destinationKey: row['Destination Key'],
+      category: row.Category,
+      type: row.Type,
       lat: row.Lat,
       lng: row.Lng,
       formalSnapshot: formalSnapshot(row),
@@ -1126,9 +1530,17 @@ export async function resolvePageDryRun({
           lat: candidate.location?.latitude ?? null,
           lng: candidate.location?.longitude ?? null,
           businessStatus: candidate.businessStatus || '',
+          types: Array.isArray(candidate.types)
+            ? candidate.types.map((type) => String(type))
+            : [],
           distanceMeters,
           distanceRisk: distanceRisk(distanceMeters),
           mapsUrl: mapsUrlForPlaceId(candidate.id),
+          locationSuggestions: buildCandidateLocationSuggestions({
+            currentCountryCode: row['Country Code'],
+            currentDestinationKey: row['Destination Key'],
+            candidate,
+          }),
         };
       }),
       duplicatePages,
@@ -3579,6 +3991,8 @@ export function formatApplyConfirmResult(result) {
 }
 
 export function formatValidationReport(result) {
+  const checks = result.checks || {};
+  const checkStatus = (check) => (check?.ok ? 'PASS' : 'FAIL');
   const lines = [
     'LOCATION VERIFICATION — VALIDATE',
     '',
@@ -3586,13 +4000,35 @@ export function formatValidationReport(result) {
     '  Mode: read-only',
     `  Data source: ${result.dataSource}`,
     '',
-    'Counts',
-    `  Locations: ${result.rowCount}`,
+    'Reconciliation layers',
+    `  Schema: ${checkStatus(checks.schema)} ` +
+      `(${result.schema?.propertyCount || 0}/${result.schema?.expectedPropertyCount || 0})`,
+    `  Slug policy: ${checkStatus(checks.policy)} ` +
+      `(${result.rowCount} rows; minimum ${checks.policy?.minimumRowCount ?? 'n/a'}; ` +
+      `${checks.policy?.protectedSlugCount ?? 0} protected)`,
+    `  Live invariants: ${checkStatus(checks.live)} ` +
+      `(${checks.live?.issueCount ?? 0} issues; ${checks.live?.warningCount ?? 0} warnings)`,
+    `  Committed snapshot: ${checkStatus(checks.snapshot)} ` +
+      `(${checks.snapshot?.liveRowCount ?? 0}/${checks.snapshot?.committedRowCount ?? 0} rows; ` +
+      `${checks.snapshot?.changedSlugCount ?? 0} changed Slugs; ` +
+      `${checks.snapshot?.changedFieldCount ?? 0} changed fields; ` +
+      `+${checks.snapshot?.addedSlugCount ?? 0}/-${checks.snapshot?.removedSlugCount ?? 0})`,
     '',
     'Status distribution',
   ];
   for (const [status, count] of Object.entries(result.statusCounts).sort()) {
     lines.push(`  ${status}: ${count}`);
+  }
+  lines.push('', 'Type distribution');
+  for (const [type, count] of Object.entries(result.typeCounts).sort()) {
+    lines.push(`  ${type}: ${count}`);
+  }
+  lines.push('', `Warnings: ${result.warnings.length}`);
+  for (const item of result.warnings) {
+    const location = [item.slug, item.field].filter(Boolean).join(' / ');
+    lines.push(
+      `  - [${item.layer}:${item.code}]${location ? ` ${location}:` : ''} ${item.message}`
+    );
   }
   lines.push('', `Issues: ${result.issues.length}`);
   for (const item of result.issues) {

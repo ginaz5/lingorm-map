@@ -25,6 +25,7 @@ function makeLocation(overrides = {}) {
     approx: '',
     countryCode: 'TH',
     destinationKey: 'bangkok',
+    type: 'LingOrm',
     ...overrides,
   };
 }
@@ -33,6 +34,7 @@ function installBrowserState() {
   const elements = {
     search: { value: '' },
     'cat-filter': { value: '' },
+    'type-filter': { value: '' },
     'loc-list': { innerHTML: '' },
     'result-info': { textContent: '' },
   };

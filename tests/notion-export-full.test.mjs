@@ -19,14 +19,19 @@ const snapshotRows = parseCSV(snapshotCsv);
 const APPROVED_ADDED_SLUGS = [
   'ama-bakery-silom',
   'auntie-nid-coffee-shop',
+  'baiwago-plus-cafe-kmc',
   'cafe-madeleine-four-seasons-bangkok',
   'chatuchak-weekend-market',
   'chom-arun-restaurant',
+  'chrisly-cafe-tsim-sha-tsui',
   'churn-buttery-lat-krabang',
+  'connie-bakes-anhe',
   'dragon-town-banthat-thong',
   'gourmet-market-siam-paragon',
+  'hechalou-tea-hualien-shangxiao',
   'hint-coffee-khlong-san',
   'hitori-shabu-siam-paragon',
+  'hoho-drinks-taipei-xinyi',
   'iki-haus-sukhumvit-71',
   'james-boulangerie-gaysorn-amarin',
   'kao-man-ban-nok-ramkhamhaeng',
@@ -34,18 +39,24 @@ const APPROVED_ADDED_SLUGS = [
   'khlong-bang-luang-floating-market',
   'long-phung-buffet-seafood-mookata',
   'mae-varee-mango-sticky-rice',
+  'military-dependents-village-cultural-park',
   'mok-ubon-ratchathani',
   'moo-ping-sutra-akong-jae-hoong',
   'nai-ek-roll-noodles',
   'nanaflora',
   'nattaporn-coconut-ice-cream',
+  'naughty-girl-kaohsiung',
   'nguan-soon-no1-hand-brand-yaowarat',
   'pak-khlong-talat',
   'pata-plantation-original-tiwanon',
   'phra-phutthayotfa-bridge-memorial-bridge',
   'plantiful-sukhumvit-61',
   'pungdet-banthat-thong',
+  'rethink-coffee-roasters-broadway-macau',
   'sampeng-market',
+  'shenfangcui-coffee-yunong',
+  'shua-fei-tea-feng-chia',
+  'star-trails-kaohsiung',
   'swu-international-flea-market',
   'titicaca-brunch-club-central-eastville',
   'waraporn-salapao-asoke',
@@ -55,10 +66,10 @@ const APPROVED_REMOVED_SLUGS = [
   'by',
 ];
 
-test('formal snapshot uses the stable CSV contract and contains 130 unique rows', () => {
+test('formal snapshot uses the stable CSV contract and contains 141 unique rows', () => {
   assert.deepEqual(tokenizeCSV(snapshotCsv)[0], CSV_HEADER);
-  assert.equal(snapshotRows.length, 130);
-  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, 130);
+  assert.equal(snapshotRows.length, 141);
+  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, 141);
 });
 
 test('formal snapshot preserves the current publication status distribution', () => {
@@ -70,9 +81,9 @@ test('formal snapshot preserves the current publication status distribution', ()
   );
 
   assert.deepEqual(statusCounts, {
-    Published: 103,
+    Published: 111,
     Paused: 26,
-    Inactive: 1,
+    Inactive: 4,
   });
   assert.equal(snapshotRows.every((row) => row.approx === ''), true);
 });

@@ -1,5 +1,9 @@
 import { lang, t } from '../core/i18n.js';
 import { state } from '../core/state.js';
+import {
+  LOCATION_TYPES,
+  locationTypeLabel,
+} from '../data/location-types.js';
 import { switchTab } from './ui.js';
 
 // ISO commit time of data/locations.csv, injected by Vite (see vite.config.js).
@@ -113,6 +117,7 @@ export function buildPopupContent(i) {
   const name = lang === 'zh' ? row.nameZh : row.nameEn;
   const notes = lang === 'zh' ? row.notesZh : row.notesEn;
   const cat = lang === 'zh' ? row.catZh : row.catEn;
+  const type = row.type ? locationTypeLabel(row.type, lang) : '';
   const approx = isApproximateCoords(row);
   const hasCoords = parseFloat(row.lat) && parseFloat(row.lng);
   return `<div class="popup-content">
@@ -120,6 +125,7 @@ export function buildPopupContent(i) {
     ${row.alt ? `<div class="popup-alt">${row.alt}</div>` : ''}
     <div class="badges popup-badges">
       <span class="badge b-cat">${cat}</span>
+      ${type ? `<span class="badge b-type">${type}</span>` : ''}
     </div>
     <div class="popup-notes">${notes}</div>
     ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
@@ -245,8 +251,9 @@ function normalizeSearchText(value) {
  * @param {LocationRow} row
  * @param {string} query
  * @param {string} category
+ * @param {string} type
  */
-export function matchesLocationFilters(row, query, category) {
+export function matchesLocationFilters(row, query, category, type) {
   if (!isPublicLocation(row)) return false;
   if (state.favFilterOn && !state.favorites.has(row.id)) return false;
 
@@ -260,19 +267,21 @@ export function matchesLocationFilters(row, query, category) {
   ].some(value => normalizeSearchText(value).includes(normalizedQuery));
   const categoryValue = lang === 'zh' ? row.catZh : row.catEn;
   const categoryHit = !category || categoryValue === category;
+  const typeHit = !type || row.type === type;
   const destinationHit =
     state.selectedDestinations.size === 0 ||
     state.selectedDestinations.has(row.destinationKey);
 
-  return queryHit && categoryHit && destinationHit;
+  return queryHit && categoryHit && typeHit && destinationHit;
 }
 
 export function applyFilters() {
   const query = requiredInput('search').value;
   const category = requiredSelect('cat-filter').value;
+  const type = requiredSelect('type-filter').value;
   state.visIdx = [];
   state.data.forEach((row, i) => {
-    if (matchesLocationFilters(row, query, category)) state.visIdx.push(i);
+    if (matchesLocationFilters(row, query, category, type)) state.visIdx.push(i);
   });
   renderList();
   const publicTotal = state.data.filter(isPublicLocation).length;
@@ -318,5 +327,24 @@ export function buildCatFilter() {
     catFilter,
     `<option value="">${t('all_cat')}</option>` +
     [...cats].sort().map(c => `<option value="${c}">${c}</option>`).join('')
+  );
+}
+
+export function buildTypeFilter() {
+  const availableTypes = /** @type {Set<string>} */ (new Set(
+    state.data
+      .filter(isPublicLocation)
+      .map(row => row.type)
+      .filter(Boolean)
+  ));
+  const typeFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('type-filter'));
+  if (!typeFilter) throw new Error('Missing required element #type-filter');
+  rebuildSelect(
+    typeFilter,
+    `<option value="">${t('theme_filter')}</option>` +
+    LOCATION_TYPES
+      .filter(type => availableTypes.has(type))
+      .map(type => `<option value="${type}">${locationTypeLabel(type, lang)}</option>`)
+      .join('')
   );
 }

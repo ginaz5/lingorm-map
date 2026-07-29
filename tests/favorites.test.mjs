@@ -97,6 +97,7 @@ test('coordinated filters show only favorites in both list and map', () => {
   const elements = {
     search: { value: '' },
     'cat-filter': { value: '' },
+    'type-filter': { value: '' },
     'loc-list': { innerHTML: '' },
     'result-info': { textContent: '' },
   };

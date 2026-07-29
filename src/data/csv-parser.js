@@ -2,6 +2,7 @@
 // DATA — SLUG / ID HELPER
 // ═══════════════════════════════════════════════════
 /** @typedef {'Published'|'Paused'|'Inactive'} LocationStatus */
+/** @typedef {'LingOrm'|'JKR Picks'|'JKR Fan Projects'|'Admin Picks'|''} LocationType */
 /**
  * @typedef {Object} LocationRow
  * @property {string} id
@@ -22,6 +23,7 @@
  * @property {string} sourceUrl
  * @property {string} countryCode
  * @property {string} destinationKey
+ * @property {LocationType} type
  */
 /** @typedef {{en: string, zh: string}} CategoryAlias */
 /** @typedef {(row: string[], key: string) => string} ReadCell */
@@ -141,6 +143,13 @@ export const LOCATION_STATUSES = Object.freeze([
   "Inactive",
 ]);
 
+export const LOCATION_TYPES = Object.freeze([
+  "LingOrm",
+  "JKR Picks",
+  "JKR Fan Projects",
+  "Admin Picks",
+]);
+
 /**
  * @param {string} s
  * @returns {LocationStatus}
@@ -249,6 +258,7 @@ export function parsePublishedFormat(rows, idx, read) {
         sourceUrl,
         countryCode: read(r, "Country Code"),
         destinationKey: read(r, "Destination Key"),
+        type: /** @type {LocationType} */ (read(r, "Type")),
       };
     });
 }

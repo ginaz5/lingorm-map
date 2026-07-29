@@ -2,8 +2,8 @@
 
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-07-19
-> - 最後審查：2026-07-20
-> - 狀態：正式檢核 UI 為完全唯讀；正式 schema 現為 17 欄，程式契約、preflight、snapshot bridge 與 UI 已同步
+> - 最後審查：2026-07-28
+> - 狀態：正式檢核 UI 為完全唯讀；正式 schema 現為 20 欄，Type、preflight、公開 snapshot bridge 與 UI 已同步
 > - 目的：記錄地點正確性責任、Notion 檢核流程、工具邊界及後續決策，避免設計散落在對話中。
 > - 執行進度：[地點檢核工具進度紀錄](location-verification-tool-progress.zh-TW.md)
 > - ⚠️ **Artifact 說明**：本文件中所有 `docs/location-verification-*.json`（baseline、change approvals、schema migration、canary、review queue 等機器可讀紀錄）皆為 2026-07-19～07-20 cutover 期間**本機產生的一次性稽核檔案**，事後已從本機刪除，repo 中從未提交、也找不到。以下敘事保留當時的實際檔名與 hash 作為文字紀錄，但這些檔案**不存在於 repo，也不是後續操作所需**——`location-verification-runner.mjs` 的 `validate --all` 路徑若在找不到檔案時仍嘗試讀取，會直接丟出 `Unable to read ...` 錯誤而非靜默略過；日常使用不依賴這些檔案。
@@ -35,7 +35,7 @@ Notion 已經取代 Google Sheet，成為主要資料來源與策展工作台。
 
 ```text
 Notion（編輯、審核、管理來源）
-  → 匯出固定 15 欄 CSV 快照
+  → 匯出固定 17 欄 CSV 快照
   → data/locations.csv
   → /api/locations
   → 地圖與列表
@@ -232,6 +232,38 @@ workflow 契約移除，但仍保留在 PoC 歷史流程中。
 - 全量 validator 仍因正式庫現為 100 筆、`by` 被移除、
   `plantiful-sukhumvit-61` 新增，以及其他未核准內容差異而 FAIL。這些不是 schema
   相容問題，本次沒有自動核准、改寫 baseline 或修改 Notion page。
+
+### 2.3 2026-07-28 現行 20 欄與 Type 契約
+
+2.2 記錄的是 2026-07-20 當時的 17 欄精簡結果。後續正式內容契約加入
+`Country Code`、`Destination Key` 與 `Type`，現行 schema 為 17 個內容欄位
+加上 `Review Needed`、`Verification Note`、`Last Verified` 三個維護欄位，
+合計 20 欄。
+
+`Type` 固定為 `LingOrm`、`JKR Picks`、`JKR Fan Projects`、`Admin Picks`。
+localhost UI 在讀取 queue 前以 data-source metadata 驗證完整 20 欄、欄位型別、
+Status options 與 Type options；不是只依 page property 推測 schema。Type 空白
+仍可進入 queue 並顯示警告，不會阻擋人工檢核；未知的非空 Type 則視為資料錯誤。
+
+公開 snapshot 為 17 欄並包含 `Type`。前端 parser 保留這項 metadata；現階段
+公開網站尚未新增 Type 篩選器。verification UI 可依 Type 篩選，搜尋亦涵蓋
+Type、Category、Destination 與 Source Tags；「下一筆」只在目前篩選結果內
+循環。
+
+### 2.4 Candidate 地理欄位建議
+
+Candidate dry-run 會以 Google Place Details 的 `address_components` 對照專案
+既有 country／destination taxonomy，針對每個候選暫時輸出：
+
+- Country Code 與 Destination Key 的目前值、建議選項及相同／不同狀態。
+- 每個選項的信心等級與實際 Google 地址證據。
+- 地址證據不足、位於未支援國家或無法唯一對應 destination 時，明確顯示沒有
+  安全建議，不以查詢字串或模糊省份名稱猜測。
+
+Legacy Text Search 本身未提供足夠地址組成時，resolver 以候選 Place ID 執行
+Place Details 補查；補查失敗仍保留原 Candidate，但不產生地理欄位建議。這些
+suggestions 與 Google types 只存在本次瀏覽器記憶體，不進入 Candidate Payload、
+Notion、CSV、log 或 Git，也不會自動套用正式欄位。
 
 ---
 
@@ -1062,31 +1094,39 @@ Notion 所有非封存資料
 
 直接檢查完整 Notion page properties：
 
-- 完成遷移後，`Status` 必須是 `Draft` / `Published` / `Paused` / `Inactive` 之一，不接受拼字錯誤或空白；legacy 值只允許存在於有明確期限的遷移模式。
+- `Status` 必須是 `Published` / `Paused` / `Inactive` 之一，不接受拼字錯誤、
+  空白或 legacy 值。
 - `Published` 不允許空白 Lat/Lng，且 Lat/Lng 必須在合法範圍。
-- `Published` 必須有格式合法的 Google Maps URL 或 Google Place ID。
-- `Published` 必須有非空的 `Verification Note`。
+- `Published` 必須有格式合法且 host 受支援的 Google Maps URL；只有 Place ID
+  不足以產生可部署的 public snapshot。
+- `Published` 必須有 Country Code 與 Destination Key，兩者必須符合共用
+  taxonomy pairing。
 - `Published` 必須有 `Last Verified`。
-- `Published` 若有 Google Place ID，必須有 `Place ID Checked At`。
-- `Published + Review Needed = TRUE` 必須有說明尚待補強事項的 `Verification Note`。
-- `Published + Coordinates Approx = TRUE` 必須同時有明確 `Coordinate Type` 與 `Verification Note`。
-- `Draft`、`Paused` 必須為 `Review Needed = TRUE`；`Inactive` 必須為 `Review Needed = FALSE`。
-- `Inactive` 必須有 `Last Verified` 與說明停用原因的 `Verification Note`。
-- 重複 Place ID 預設阻擋；`Branch Group` 不能作為豁免。只有經人工確認為同一實體地點，並列在 code-reviewed `data/place-id-sharing-exceptions.json` 的 Slug 組合與理由才可通過。
-- `Rejected Place IDs` 不得等於目前正式 Google Place ID，除非有人工覆寫備註。
-- `Review Needed = FALSE` 時不得殘留可套用的 Candidate Payload。
-- Candidate Payload 存在、過期或 apply 失敗時，`Review Needed` 必須保持勾選。
-- Candidate Payload 必須符合對應 `result` 的 discriminated-union schema；`place_id_candidate` 只可保存 Place ID 與 workflow metadata，其他 variants 不得殘留候選 Place ID。
-- Candidate Payload、Summary、log 與 baseline artifact 不得包含 Places API 回傳的名稱、地址、Lat/Lng、營業狀態、距離、排名或 match score。
-- `Review Needed` 由 Resolver／Apply worker 管理；人工頁面可以顯示，但不應作為一般手動完成按鈕。
+- 任一 `Review Needed = TRUE` 的資料缺少 `Verification Note` 時列 warning，
+  不阻擋其他三層通過；Review Needed 已取消時不要求 Note。
+- `Paused` 必須為 `Review Needed = TRUE`；`Inactive` 必須為
+  `Review Needed = FALSE`。
+- `Inactive` 必須有 `Last Verified`；因其 `Review Needed = FALSE`，不要求
+  `Verification Note`。
+- 非空 Type 必須屬於四個支援值；空白 Type 列 warning。
+- Country Code 與 Destination Key 若任一存在，另一欄也必須存在且 pairing 正確。
+- 重複 Place ID 預設阻擋。
 
-Phase A 將這些規則實作為可重複執行的 `validate --all`，且同一次執行必須完成三層 fail-closed 對帳：
+現行 `validate --all` 同一次執行完成四層唯讀對帳：
 
-1. 對全部 PoC page 執行上述 target invariants。
-2. 核對基線、PoC 與正式資料的 98 個 Slug 完整且唯一，並要求 PoC 每個 17 欄正式欄位差異都能追溯到 completed action。
-3. 以獨立的 `NOTION_FORMAL_READ_API_KEY` 只讀正式 `Locations`，核對 98 筆、17 欄與 immutable baseline 加上正式變更核准鏈相符。
+1. Notion schema：20 個 properties、型別與 Status／Type／Country／Destination
+   options 完整相符。
+2. Slug policy：至少 98 筆並保護 `legacy-favorite-ids.json` 的 98 個 Slug；
+   正常新增允許，核准刪除由 deletion manifest 調整。
+3. Live invariants：執行上述完整 Notion row 規則。
+4. Committed snapshot：以正式 exporter 的同一套 17 欄 serialization，在記憶體
+   產生 live candidate，逐 Slug／逐欄比對 `data/locations.csv`。
 
-任一層失敗時只輸出問題並回傳非零狀態；不得自動修正資料。`NOTION_API_KEY` 只分享給 PoC，`NOTION_FORMAL_READ_API_KEY` 必須只有 Read content capability 且只分享給正式 `Locations`；缺少任一 token 時，在發出資料查詢前停止。
+任一 blocking layer 失敗時只輸出問題並回傳非零狀態；warning 不使結果失敗，
+且 validator 不會自動修正、寫出 candidate 檔案或呼叫 Notion mutation。
+
+以下 append-only baseline／approval contract 為 Phase A 歷史設計；相關一次性
+artifacts 已刪除，不再是現行四層 validator 的 runtime input：
 
 正式變更核准採 append-only manifest，不直接改寫原始 baseline：
 
@@ -1102,24 +1142,26 @@ Phase A 將這些規則實作為可重複執行的 `validate --all`，且同一�
 保留並擴充目前 CSV gate：
 
 - 保留完整資料列與所有 legacy Slug。
-- 15 欄 CSV header、Slug 唯一性、收藏相容性及前端解析必須通過。
-- 完成遷移後，原始 snapshot status 必須是四個目標值之一；不能只依 parser 將錯字靜默轉成 `Draft`。
+- 17 欄 CSV header、Slug 唯一性、收藏相容性及前端解析必須通過。
+- 原始 snapshot status 必須是 `Published`／`Paused`／`Inactive` 之一。
 - 所有經緯度值必須在合法範圍。
-- `Published` 資料必須有非空 Lat/Lng。
+- `Published` 資料必須有非空 Lat/Lng、合法 Google Maps URL，以及完整且配對
+  正確的 Country Code／Destination Key。
+- 非空 Type 必須屬於四個支援值。
 - 不允許 Candidate 欄位出現在網站 snapshot。
-- 目標狀態測試只將 `Published` 視為可在 UI 呈現；`Draft`、`Paused`、`Inactive` 與未知值均不在 UI 呈現。
-- 遷移相容測試另行確認 legacy `Verified`／`Needs Review` 在切換期間仍會呈現，並在 Notion 遷移完成後刪除相容分支。
+- 只有 `Published` 可在 UI 呈現；`Paused`、`Inactive` 與未知值均不呈現。
 
 2026-07-19 已以 versioned policy 取代網站 snapshot validator 的固定 98 筆判斷：
 
 - [`data/location-snapshot-policy-v1.json`](../data/location-snapshot-policy-v1.json) 設定 `minimumRowCount = 98`，允許正常新增資料。
 - 既有 98 個 Slug 由 `legacy-favorite-ids.json` 保護；新增資料不能取代或掩蓋消失的舊 Slug。
 - 刪除／封存必須在 `deletionManifest` 記錄 `slug`、核准時間、核准者與原因；有效最低筆數才會按核准刪除數調整。收藏相容性仍是另一道獨立 gate。
-- Raw status 必須精確屬於九個遷移期值；所有非空座標都必須在合法範圍。
+- Raw status 必須精確屬於三個現行值；所有非空座標都必須在合法範圍。
 - `Published` 額外要求完整 Lat/Lng 與合法 Google Maps URL。
 - Policy 的 public status 必須與前端 allowlist 完全一致，避免 validator 與 UI 各自漂移。
 
-Legacy Status 歸零後，必須再建立只接受 `Draft`／`Published`／`Paused`／`Inactive` 的下一版 policy；不能在現有 policy 上靜默移除相容規則。
+2026-07-21 三狀態 cutover 後，policy 已只接受
+`Published`／`Paused`／`Inactive`。
 
 Candidate 欄位與被拒絕候選不輸出到網站。
 
@@ -1157,7 +1199,8 @@ Candidate 欄位與被拒絕候選不輸出到網站。
   `Review Needed` 由 checked 變成 unchecked 時把 `Last Verified` 設為觸發時間；
   這是正式操作前必須確認已啟用的 Notion 端設定。
 - UI 仍保留搜尋、正式資料／來源側欄、下一筆、手動與
-  idle refresh、同步時間、responsive layout，以及唯讀的三層全量資料對帳。
+  idle refresh、同步時間、responsive layout，以及 schema／Slug policy／live
+  invariants／committed snapshot 四層唯讀全量資料對帳。
 - localhost、same-origin、session token、no-store 與 CSP 邊界保留；session
   token 現在只保護 read-only queue、resolver dry-run 與 validator request。
 

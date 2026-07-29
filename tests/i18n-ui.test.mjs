@@ -86,6 +86,11 @@ test('search placeholders explain that names and notes are searchable', () => {
   assert.equal(T.en.search_ph, 'Search names or notes…');
 });
 
+test('theme filter label is available in both supported languages', () => {
+  assert.equal(T.zh.theme_filter, '主題');
+  assert.equal(T.en.theme_filter, 'Type');
+});
+
 test('favorite storage notice is available in both supported languages', () => {
   assert.equal(
     T.zh.favorite_storage_notice,

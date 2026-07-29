@@ -30,12 +30,16 @@
         </header>
 
         <section
-          class="queue-summary is-single"
+          class="queue-summary"
           aria-label="待檢核佇列摘要"
         >
           <div>
             <span id="review-count">—</span>
             <small>待檢核</small>
+          </div>
+          <div>
+            <span id="filtered-count">—</span>
+            <small>目前篩選</small>
           </div>
         </section>
 
@@ -50,9 +54,15 @@
             <input
               id="queue-search"
               type="search"
-              placeholder="搜尋名稱或 Slug"
+              placeholder="搜尋名稱、Slug、Type 或目的地"
               autocomplete="off"
             />
+          </label>
+          <label class="type-filter">
+            <span>Type</span>
+            <select id="queue-type-filter" aria-label="依 Type 篩選">
+              <option value="">全部 Type</option>
+            </select>
           </label>
         </div>
 
@@ -67,13 +77,14 @@
             <span class="status-dot" aria-hidden="true"></span>
             <span>
               <strong>執行全量資料對帳</strong>
-              <small>3 層對帳 · 3 項前置檢查</small>
+              <small>Schema · Live · Slug policy · Snapshot</small>
             </span>
           </button>
           <button id="refresh-queue" class="refresh-button" type="button">
             重新整理 Notion
           </button>
           <p id="last-synced">尚未同步</p>
+          <p id="schema-status">Schema 尚未確認</p>
           <p>Legacy Places API · localhost only</p>
         </footer>
       </aside>
@@ -115,6 +126,8 @@
               <div class="location-kicker">
                 <span id="location-category">—</span>
                 <span aria-hidden="true">/</span>
+                <span id="location-type" class="type-badge">—</span>
+                <span aria-hidden="true">/</span>
                 <span id="location-slug">—</span>
               </div>
               <h2 id="location-name">—</h2>
@@ -140,6 +153,15 @@
               </a>
             </div>
           </header>
+
+          <div
+            id="location-type-warning"
+            class="record-warning"
+            role="status"
+            hidden
+          >
+            這筆 Location 尚未設定 Type；可繼續檢核，但請在 Notion 補上分類。
+          </div>
 
           <section class="progress-rail single-step" aria-label="檢核流程">
             <div id="progress-candidate" class="progress-step is-current">
@@ -185,17 +207,18 @@
                   <p class="attribution">
                     候選詳情只保存在本次瀏覽器記憶體；同一地點重新同步後會保留，
                     切換地點、正式比對資料變更或重載頁面時清除。資料來源：Google
-                    Maps；距離僅供人工判斷。
+                    Maps；Country Code 與 Destination Key
+                    建議由地址組成對照既有 taxonomy，距離與欄位建議皆僅供人工判斷。
                   </p>
                 </div>
 
                 <div class="read-only-guidance">
                   <strong>確認方式</strong>
                   <p>
-                    比較名稱、地址、Place ID、座標距離與地圖位置。需要修正時，
-                    請按「開啟 Notion」自行更新；完成後取消
-                    Review Needed，Notion Automation 會更新 Last
-                    Verified。
+                    比較名稱、地址、Place ID、座標距離、Google
+                    類型與 Country Code／Destination Key
+                    建議。建議不會自動套用；需要修正時，請按「開啟
+                    Notion」自行更新。完成後取消 Review Needed，Notion Automation 會更新 Last Verified。
                   </p>
                 </div>
 
@@ -228,6 +251,14 @@
                     <dt>Last Verified</dt>
                     <dd id="last-verified">—</dd>
                   </div>
+                  <div>
+                    <dt>Country Code</dt>
+                    <dd id="current-country">—</dd>
+                  </div>
+                  <div>
+                    <dt>Destination Key</dt>
+                    <dd id="current-destination">—</dd>
+                  </div>
                 </dl>
                 <a
                   id="current-map-link"
@@ -254,6 +285,10 @@
                 <div class="source-block">
                   <span>Verification Note</span>
                   <p id="verification-note-history">—</p>
+                </div>
+                <div class="source-block">
+                  <span>Source Tags</span>
+                  <p id="source-tags">—</p>
                 </div>
                 <div class="source-block">
                   <span>Source URLs</span>
