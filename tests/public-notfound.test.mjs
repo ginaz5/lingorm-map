@@ -21,12 +21,13 @@ function makeLocation(status, name = status) {
 }
 
 test('public filters and list show only Published locations', async () => {
-  const { state } = await import('../src/state.js');
-  const { applyFilters } = await import('../src/render.js');
+  const { state } = await import('../src/core/state.js');
+  const { applyFilters } = await import('../src/ui/render.js');
 
   const elements = {
     search: { value: '' },
     'cat-filter': { value: '' },
+    'type-filter': { value: '' },
     'loc-list': { innerHTML: '' },
     'result-info': { textContent: '' },
   };
@@ -77,8 +78,8 @@ test('public filters and list show only Published locations', async () => {
 });
 
 test('map markers use the same public status allowlist', async () => {
-  const { state } = await import('../src/state.js');
-  const { buildMarkers } = await import('../src/map.js');
+  const { state } = await import('../src/core/state.js');
+  const { buildMarkers } = await import('../src/map/map.js');
 
   const createdDataPoints = [];
   const previousDocument = globalThis.document;
@@ -132,6 +133,7 @@ test('map markers use the same public status allowlist', async () => {
 
   try {
     state.map = { addObject() {}, removeObject() {}, addLayer() {}, removeLayer() {} };
+    state.provider = 'here';
     state.markers = [];
     state.markerClusterer = null;
     state.data = [
@@ -146,6 +148,7 @@ test('map markers use the same public status allowlist', async () => {
       makeLocation('Inactive', 'Hidden inactive'),
       makeLocation('Unexpected', 'Hidden unknown'),
     ];
+    state.visIdx = [0];
 
     await buildMarkers();
 
@@ -154,15 +157,17 @@ test('map markers use the same public status allowlist', async () => {
     globalThis.document = previousDocument;
     globalThis.H = previousHere;
     state.map = null;
+    state.provider = null;
     state.markers = [];
     state.markerClusterer = null;
     state.data = [];
+    state.visIdx = [];
   }
 });
 
 test('activateCard centers HERE map and opens info bubble', async () => {
-  const { state } = await import('../src/state.js');
-  const { activateCard } = await import('../src/render.js');
+  const { state } = await import('../src/core/state.js');
+  const { activateCard } = await import('../src/ui/render.js');
 
   const previousDocument = globalThis.document;
   const previousWindow = globalThis.window;

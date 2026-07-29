@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { state } from '../src/state.js';
-import { loadFavorites, saveFavorites, toggleFavorite } from '../src/favorites.js';
-import { applyFilters } from '../src/render.js';
+import { state } from '../src/core/state.js';
+import {
+  loadFavorites,
+  saveFavorites,
+  toggleFavorite,
+  toggleFavoriteWithNotice,
+} from '../src/features/favorites.js';
+import { applyFiltersAndSyncMap } from '../src/app/app-coordinator.js';
 
 function installBrowserState({ search = '', pathname = '/map', stored = null } = {}) {
   const storage = new Map();
@@ -88,10 +93,11 @@ test('saveFavorites removes an empty favorites query while retaining other param
   }
 });
 
-test('applyFilters shows only favorited locations when the favorites filter is active', () => {
+test('coordinated filters show only favorites in both list and map', () => {
   const elements = {
     search: { value: '' },
     'cat-filter': { value: '' },
+    'type-filter': { value: '' },
     'loc-list': { innerHTML: '' },
     'result-info': { textContent: '' },
   };
@@ -117,10 +123,11 @@ test('applyFilters shows only favorited locations when the favorites filter is a
     state.provider = 'google';
     state.markers = [{ map: state.map }, { map: state.map }];
 
-    applyFilters();
+    applyFiltersAndSyncMap();
 
     assert.deepEqual(state.visIdx, [0]);
     assert.match(elements['loc-list'].innerHTML, /Favorite Cafe/);
+    assert.match(elements['loc-list'].innerHTML, /toggleFavorite\('favorite-cafe', event\)/);
     assert.doesNotMatch(elements['loc-list'].innerHTML, /Other Cafe/);
     assert.equal(state.markers[0].map, state.map);
     assert.equal(state.markers[1].map, null);
@@ -161,6 +168,73 @@ test('toggleFavorite persists state and synchronizes every matching button', () 
       assert.equal(button.attrs.get('aria-label'), '移除最愛');
       assert.match(button.innerHTML, /<svg/);
     }
+  } finally {
+    cleanupBrowserState();
+  }
+});
+
+test('manual favorite addition shows the storage notice only once per browser', () => {
+  const { storage } = installBrowserState();
+  globalThis.document = { querySelectorAll: () => [] };
+  let noticeCount = 0;
+  const showStorageNotice = () => { noticeCount += 1; };
+
+  try {
+    toggleFavoriteWithNotice('the-siam-hotel', undefined, showStorageNotice);
+    assert.equal(noticeCount, 1);
+    assert.equal(storage.get('favorites-storage-notice-seen-v1'), '1');
+
+    toggleFavoriteWithNotice('the-siam-hotel', undefined, showStorageNotice);
+    toggleFavoriteWithNotice('the-siam-hotel', undefined, showStorageNotice);
+
+    assert.equal(noticeCount, 1);
+  } finally {
+    cleanupBrowserState();
+  }
+});
+
+test('loading favorites from a shared URL does not consume the manual storage notice', () => {
+  const { storage } = installBrowserState({
+    search: '?favs=the-siam-hotel',
+  });
+
+  try {
+    loadFavorites();
+
+    assert.equal(storage.has('favorites-storage-notice-seen-v1'), false);
+  } finally {
+    cleanupBrowserState();
+  }
+});
+
+test('pointer favorite clicks release focus while keyboard clicks retain it', () => {
+  installBrowserState();
+  globalThis.document = { querySelectorAll: () => [] };
+  let pointerBlurCount = 0;
+  let keyboardBlurCount = 0;
+
+  try {
+    toggleFavoriteWithNotice(
+      'pointer-favorite',
+      {
+        detail: 1,
+        currentTarget: { blur: () => { pointerBlurCount += 1; } },
+        stopPropagation() {},
+      },
+      () => {},
+    );
+    toggleFavoriteWithNotice(
+      'keyboard-favorite',
+      {
+        detail: 0,
+        currentTarget: { blur: () => { keyboardBlurCount += 1; } },
+        stopPropagation() {},
+      },
+      () => {},
+    );
+
+    assert.equal(pointerBlurCount, 1);
+    assert.equal(keyboardBlurCount, 0);
   } finally {
     cleanupBrowserState();
   }

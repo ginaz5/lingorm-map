@@ -2,9 +2,9 @@
 
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-07-19
-> - 最後更新：2026-07-20
+> - 最後更新：2026-07-29
 > - 目前階段：Phase B 暫緩；正式地點改由 localhost 唯讀 Candidate 工具輔助、Notion 手動維護
-> - 狀態：正式 schema 現為 17 欄；新契約、preflight、export bridge 與唯讀 UI 已同步，既有未核准資料 drift 仍 fail-closed
+> - 狀態：正式 schema 現為 20 欄；全量工具以 schema、Slug policy、live invariants、committed snapshot 四層唯讀對帳
 > - 設計依據：[地點檢核工具設計紀錄](location-verification-tool-design.zh-TW.md)
 > - ⚠️ **Artifact 說明**：文中提到的 `docs/location-verification-*.json` 稽核檔案（baseline、change approvals、schema migration、canary 等）為 cutover 期間本機產生的一次性紀錄，事後已刪除且從未提交，repo 中不存在。
 
@@ -21,8 +21,9 @@
   `NOTION_FORMAL_WRITE_API_KEY`、formal data source allowlist，以及單頁階段旗標或
   workflow 中該頁該段的 preview ticket／UI confirmation。缺少任一條件時
   fail-closed。
-- `validate --all` 使用兩支最小權限 integration：`NOTION_API_KEY` 只分享給 PoC；`NOTION_FORMAL_READ_API_KEY` 只能有 Read content capability，且只分享給正式 `Locations`。不得把 PoC integration 分享給正式資料庫。
-- `production-preflight` 與正式 queue preview 只使用 `NOTION_FORMAL_READ_API_KEY`；沒有 `--write`／`--confirm`，也不讀取 `NOTION_FORMAL_WRITE_API_KEY`。
+- 現行 `validate --all` 與 localhost UI 使用 `NOTION_API_KEY` 讀取單一正式
+  `Locations` data source；validation path 沒有 Notion mutation call，結果固定回報
+  `NOTION_WRITE_PERFORMED=false`。
 - Resolver 只提供候選，不能自動將資料設為 `Published`。
 - 沒有維護者的明確決定，不執行 `Accept Candidate` 或 `Keep Current`。
 - PoC 可以修改完整 98 筆資料，但不得批次偽造 `Last Verified`、`Place ID Checked At`、`Verification Note` 或 `Coordinate Type`。
@@ -53,9 +54,9 @@
 |---|---|---|
 | 寫入前完整基線 | 完成 | 98 筆、98 個唯一 Slug、17 個正式欄位與正式 `Locations` 差異 0 |
 | 本機 apply 核心 | 完成初版 | canonical revisions、PoC allowlist、place-id-only Payload、`pending → completed` patch |
-| 檢核工具測試 | 完成 | 全專案 260/260、typecheck 與 production build 通過 |
+| 檢核工具測試 | 完成 | 全專案 294/294、typecheck 與 production build 通過 |
 | PoC schema | 完成 | 28 properties：17 個正式欄位 + 11 個檢核／恢復欄位 |
-| Status options | 完成 | `Draft` / `Published` / `Paused` / `Inactive` |
+| Status options | 完成 | `Published` / `Paused` / `Inactive` |
 | Derived views | 完成 | `待檢核`、`需要研究`、`已完成`、`過期或失敗` |
 | 98 筆保守狀態遷移 | 完成 | 寫入全部成功，沒有失敗頁面 |
 | 首筆 canary | 完成 | The Siam Hotel：`Keep Current` + `Exact` |
@@ -63,14 +64,14 @@
 | 實際 local runner CLI | 多決策真實執行完成 | resolve dry-run／write 與 apply dry-run／confirm 已實作；八筆真實 canary 已完成 |
 | 真實決策 canary | 完成 | 四筆 `Keep Current`，以及 `Reject Candidate`、`Need Research`、`Could Not Find`、`Deactivate` 各一筆 |
 | 失敗／重試／crash recovery | 完成 Phase A 範圍 | resolver response-loss、apply pending resume、completed response-loss、完成後重放、跨 process lock 與 stale-lock operator 已測試 |
-| `validate --all` | 99 筆正式 live run 完成，結果 PASS | 六項全部通過；7 個核准正式差異、0 個未核准差異；零 Notion write |
+| Phase A `validate --all`（歷史） | 99 筆正式 live run 完成，結果 PASS | 六項全部通過；7 個核准正式差異、0 個未核准差異；零 Notion write |
 | Phase A evidence audit | 技術門檻通過 | 必測案例、PoC write containment、place-id-only persistence 與 artifacts 掃描完成 |
 | localhost operator UI | 已收斂為唯讀 | 只列 Review Needed、legacy Candidate dry-run、正式資料／來源、下一筆與 UI 內全量資料對帳；沒有 Notion write route |
 | Notion Button webhook | 暫緩 | 維護者決定先以 Phase A 本機流程逐筆驗證 Location |
 | Phase C0 正式只讀盤點 | 完成 | 正式目前 99 筆；相對 Phase A baseline 新增 `khlong-bang-luang-floating-market`，沒有移除 Slug |
 | Production Rehearsal | 完成建立與基線比對 | 正式／複本各 99 筆，99 個唯一 Slug，17 欄逐筆差異 0 |
 | Production preflight | 完成 read-only live run | 正式 17 欄完整、目標 workflow 0/11；正確回報 `BLOCKED`，零 Notion write |
-| 現行 `validate --all` | PASS | 29 個觀察差異全數命中 exact approvals；retirement contract 與其餘 6 個 layer 全過、issues 0 |
+| 現行 `validate --all` | 四層對帳已更新；目前 PASS | 141 筆 live；schema／Slug policy／live invariants／committed snapshot 全部 PASS；8 個 Note warnings；零 Notion write |
 | Rehearsal additive schema | 完成 | 新增 11 欄，共 28 properties；legacy＋target Status options 並存 |
 | Rehearsal Review Needed 初始化 | 完成 | 99/99 update 成功；TRUE 98、FALSE 1、mapping mismatch 0 |
 | Rehearsal canary／rollback | 完成 | 32Bar X `Verified → Paused → Verified`；回讀通過，17 欄差異回到 0 |
@@ -1809,6 +1810,68 @@ Apply preview：
   localhost `/api/locations`／地圖 UI 實際顯示 99/99 個公開地點，Kate、
   Khlong 與 Plantiful 均已載入。
 
+### 7.38 Type schema 與 verification UI 優化
+
+- 正式 current schema 更新為 17 個內容欄位＋3 個維護欄位，共 20 欄；`Type`
+  固定四個 options 與 Notion colors。
+- queue 載入前新增 data-source metadata preflight，完整核對 property、型別、
+  Status options 與 Type options；page-level shape check 繼續保留。
+- queue response 新增 Type、Country Code、Destination Key、Source Tags 與
+  `last_edited_time` revision。Type 空白只顯示警告，不阻擋 queue 或 dry-run。
+- UI 新增 Type 計數與篩選、分類上下文、空白 Type 警告；搜尋涵蓋分類與來源。
+  「下一筆」只在目前 Type／搜尋結果內循環。
+- Candidate dry-run 以 Notion page revision 判斷是否仍可保留；任何正式頁編輯
+  都會使舊 preview 失效。
+- 公開 snapshot contract 由 16 欄增為 17 欄，加入 `Type`；parser 保留此欄位，
+  snapshot validator 允許空白但拒絕未知非空值。
+- 2026-07-28 首次唯讀匯出讀到 schema 20/20 與 130 筆，但
+  `ama-bakery-silom` 一度只有 `Country Code = TH`。維護者其後在 Notion 補上
+  `Destination Key = bangkok`；重新匯出的 130 筆已通過 snapshot validator
+  與 favorite compatibility，並晉升為正式 `data/locations.csv`。
+
+### 7.39 Candidate Country／Destination 建議
+
+- Legacy Place Details 增加讀取 `address_components`；由 Legacy Text Search
+  找到候選時，再以 Place ID 補取地址組成。補取失敗不會丟棄原 Candidate。
+- 每個 Candidate 輸出 Country Code、Destination Key 的目前值、建議選項、
+  comparison、信心與 Google 地址證據。只有對應既有 taxonomy 的唯一結果才標示
+  recommended；未知國家、無匹配與多匹配皆 fail-closed。
+- Destination 僅使用明確的地址 component／formatted address aliases；例如
+  不會僅因 Nakhon Ratchasima 省份推測 `khao-yai`。
+- UI 同時顯示 Google place types，協助人工判斷 Category，但尚未建立自動
+  Category mapping。所有建議只存在本次瀏覽器記憶體，不寫入 Notion、
+  Candidate Payload 或 snapshot。
+- 真實 localhost UI 以 `ama-bakery-silom` 執行 read-only dry-run：
+  Google 回傳 `TH` 與 `Krung Thep Maha Nakhon`，分別唯一對應目前正式值
+  `TH`、`bangkok`，兩項皆為高信心且未發生 Notion write。390px viewport
+  無水平 overflow，browser console error／warning 為 0。
+
+### 7.40 現行四層 FULL DATA RECONCILIATION
+
+- 移除 `Coordinate Type`、`Place ID Checked At`、`Apply Metadata`、Candidate
+  lifecycle 與 `Rejected Place IDs` 等已退役 property 的 live 規則。
+- 筆數 gate 改用 `location-snapshot-policy-v1.json`：最低 98 筆、保護 98 個
+  favorite Slug，正常新增不再造成固定筆數誤報。
+- Live invariants 補上 Country Code／Destination Key 必填與 pairing、Google
+  Maps host、Type、三狀態、座標、Last Verified、queue／inactive audit 與
+  duplicate Place ID。
+- 任一 `Review Needed = TRUE` 的資料缺少 `Verification Note` 改列 warning；
+  Review Needed 已取消時（包含 Inactive）不要求 Note。
+- Data-source preflight 必須取得完整 property type 與四組 select options；
+  metadata 缺漏不再視為略過檢查。Exporter 會列出 Status、Type、Country Code
+  與 Destination Key 的缺少、額外及錯色 option。
+- Google Maps URL 僅接受 `maps.app.goo.gl`、`maps.google.com`，或
+  `google.com`／`www.google.com` 的 `/maps` 路徑；其他 Google 服務不再誤判
+  為 Maps URL。
+- 以 exporter 的同一套 17 欄 serialization 產生記憶體內 live candidate，逐
+  Slug／逐欄做 exact-value 比對，並拒絕超出 17 欄的資料列；沒有寫檔或 Notion
+  mutation。
+- 2026-07-29 真實唯讀 rerun：schema 20/20、Slug policy、141 筆 live
+  invariants 與 141 筆 committed snapshot 全部 PASS；只剩 8 個
+  `Review Needed = TRUE` 但 Note 空白的非阻擋 warnings。
+- Focused location-verification tests 123/123 PASS；全專案 294/294、typecheck
+  與 production build PASS。
+
 ---
 
 ## 8. 下一步待辦
@@ -1913,7 +1976,7 @@ Apply preview：
 - [x] server 端只列出 `Review Needed = TRUE`。
 - [x] 只保留 legacy Candidate dry-run；不寫入或清除 Candidate。
 - [x] UI 與 server 移除 Candidate／Review／Apply／座標修正的全部寫入入口。
-- [x] 保留目前正式資料、來源、搜尋／篩選、下一筆、同步與三層全量資料對帳。
+- [x] 保留目前正式資料、來源、搜尋／篩選、下一筆、同步與四層全量資料對帳。
 - [x] 頁面離開 Review Needed queue 時自動前往下一筆。
 - [ ] 在正式 Notion 確認 automation 已啟用：
   `Review Needed checked → unchecked` 時更新 `Last Verified`。

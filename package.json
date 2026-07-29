@@ -10,7 +10,7 @@
     "locations:export:notion": "node --env-file-if-exists=.env scripts/export-snapshot.mjs",
     "location:verify": "node --env-file-if-exists=.env scripts/location-verification-runner.mjs",
     "location:verify:ui": "node --env-file-if-exists=.env scripts/location-verification-ui-server.mjs",
-    "test:location-verification": "node --test tests/formal-location-current-schema.test.mjs tests/location-verification-core.test.mjs tests/location-verification-runner.test.mjs tests/location-verification-ui-server.test.mjs tests/location-verification-validator.test.mjs",
+    "test:location-verification": "node --test tests/formal-location-current-schema.test.mjs tests/location-verification-core.test.mjs tests/location-verification-runner.test.mjs tests/location-verification-ui-server.test.mjs tests/location-verification-ui-workflow.test.mjs tests/location-verification-validator.test.mjs",
     "typecheck": "tsc --noEmit -p jsconfig.json"
   },
   "devDependencies": {

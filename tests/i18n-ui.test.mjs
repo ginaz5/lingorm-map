@@ -1,15 +1,17 @@
-// Updated for Option B modularisation: reads from src/render.js instead of index.html.
+// Updated for Option B modularisation: reads from src/ui/render.js instead of index.html.
 // Helper functions use state.data (via state object) instead of bare data variable.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
+import { T } from '../src/core/i18n.js';
+
 async function loadUiHelpers(deps) {
-  const src = await readFile(new URL('../src/render.js', import.meta.url), 'utf8');
+  const src = await readFile(new URL('../src/ui/render.js', import.meta.url), 'utf8');
   const helperMatch = src.match(
     /(?:export\s+)?function rebuildSelect\(sel,\s*html\)\s*\{[\s\S]*$/
   );
-  assert.ok(helperMatch, 'i18n/select helper block should exist in src/render.js');
+  assert.ok(helperMatch, 'i18n/select helper block should exist in src/ui/render.js');
 
   const code = helperMatch[0].replace(/\bexport\s+/g, '');
   return Function(
@@ -39,6 +41,14 @@ test('updateLangUI updates text, HTML, and placeholders without status controls'
   const textEl = { dataset: { i18n: 'label' }, textContent: '' };
   const htmlEl = { dataset: { i18nHtml: 'markup' }, innerHTML: '' };
   const placeholderEl = { dataset: { i18nPh: 'hint' }, placeholder: '' };
+  const ariaEl = {
+    dataset: { i18nAria: 'accessible_name' },
+    ariaLabel: '',
+    setAttribute(name, value) {
+      assert.equal(name, 'aria-label');
+      this.ariaLabel = value;
+    },
+  };
   const langBtnLabel = { textContent: '' };
   const byId = new Map([
     ['lang-btn-label', langBtnLabel],
@@ -46,8 +56,8 @@ test('updateLangUI updates text, HTML, and placeholders without status controls'
   const { updateLangUI } = await loadUiHelpers({
     document: {
       querySelectorAll: (selector) => {
-        assert.equal(selector, '[data-i18n],[data-i18n-html],[data-i18n-ph]');
-        return [textEl, htmlEl, placeholderEl];
+        assert.equal(selector, '[data-i18n],[data-i18n-html],[data-i18n-ph],[data-i18n-aria]');
+        return [textEl, htmlEl, placeholderEl, ariaEl];
       },
       getElementById: (id) => byId.get(id),
     },
@@ -55,6 +65,7 @@ test('updateLangUI updates text, HTML, and placeholders without status controls'
       label: 'Label',
       markup: '<strong>Markup</strong>',
       hint: 'Hint',
+      accessible_name: 'Accessible name',
       lang_btn: 'Language',
     })[key],
     state: { data: [] },
@@ -66,7 +77,36 @@ test('updateLangUI updates text, HTML, and placeholders without status controls'
   assert.equal(textEl.textContent, 'Label');
   assert.equal(htmlEl.innerHTML, '<strong>Markup</strong>');
   assert.equal(placeholderEl.placeholder, 'Hint');
+  assert.equal(ariaEl.ariaLabel, 'Accessible name');
   assert.equal(langBtnLabel.textContent, 'Language');
+});
+
+test('search placeholders explain that names and notes are searchable', () => {
+  assert.equal(T.zh.search_ph, '搜尋地點或內文關鍵字…');
+  assert.equal(T.en.search_ph, 'Search names or notes…');
+});
+
+test('theme filter label is available in both supported languages', () => {
+  assert.equal(T.zh.theme_filter, '主題');
+  assert.equal(T.en.theme_filter, 'Type');
+});
+
+test('favorite storage notice is available in both supported languages', () => {
+  assert.equal(
+    T.zh.favorite_storage_notice,
+    '收藏僅儲存在此瀏覽器，不會跨裝置同步；清除瀏覽資料後可能遺失。',
+  );
+  assert.equal(
+    T.en.favorite_storage_notice,
+    'Favorites stay in this browser only. They aren’t synced across devices and may be lost if browsing data is cleared.',
+  );
+});
+
+test('changelog navigation and page copy are available in both supported languages', () => {
+  assert.equal(T.zh.whats_new_view_all, '查看完整更新紀錄');
+  assert.equal(T.en.whats_new_view_all, 'View full changelog');
+  assert.equal(T.zh.changelog_back, '返回地圖');
+  assert.equal(T.en.changelog_back, 'Back to map');
 });
 
 test('buildCatFilter preserves the selected category while rebuilding options', async () => {
@@ -109,7 +149,7 @@ test('setLang normalizes unsupported stored languages to zh', async () => {
   };
 
   try {
-    const i18n = await import('../src/i18n.js?invalid-language-normalization');
+    const i18n = await import('../src/core/i18n.js?invalid-language-normalization');
     i18n.setLang('th');
 
     assert.equal(i18n.lang, 'zh');

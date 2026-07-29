@@ -1,158 +1,26 @@
+import { TARGET_STATUSES } from './location-verification-core.mjs';
 import {
-  FORMAL_DATA_SOURCE_ID,
-  REVIEW_DECISIONS,
-  TARGET_STATUSES,
-  basisRevision,
-  validateCandidatePayload,
-  workflowRevision,
-} from './location-verification-core.mjs';
-
-export const EXPECTED_LOCATION_COUNT = 100;
-export const TARGET_COORDINATE_TYPES = new Set([
-  'Exact',
-  'Entrance',
-  'Representative',
-  'Approximate',
-]);
-
-const ACTION_EXPECTED_STATUS = {
-  'Accept Candidate': 'Published',
-  'Keep Current': 'Published',
-  'Could Not Find': 'Inactive',
-  Deactivate: 'Inactive',
-};
+  LOCATION_TYPES,
+  tokenizeCSV,
+} from '../src/data/csv-parser.js';
+import {
+  COUNTRY_CODES,
+  DESTINATION_KEYS,
+  isValidDestinationPair,
+} from '../src/data/destinations.js';
+import { CSV_HEADER } from './export-snapshot.mjs';
+import { isGoogleMapsUrl } from './validate-location-snapshot.mjs';
 
 function issue(layer, code, message, { slug = null, field = null } = {}) {
   return { layer, code, slug, field, message };
 }
+
 function normalizeText(value) {
   if (value === null || value === undefined) return '';
   return String(value)
     .replace(/\r\n?/g, '\n')
     .trim()
     .normalize('NFC');
-}
-
-function normalizeMultiValue(value) {
-  if (value === null || value === undefined || value === '') return [];
-  let values = value;
-  if (typeof values === 'string') {
-    try {
-      const parsed = JSON.parse(values);
-      values = Array.isArray(parsed) ? parsed : [values];
-    } catch {
-      values = values.split(',');
-    }
-  }
-  if (!Array.isArray(values)) values = [values];
-  return [...new Set(values.map(normalizeText).filter(Boolean))].sort();
-}
-
-function normalizeNumber(value) {
-  if (value === null || value === undefined || value === '') return null;
-  const number = Number(value);
-  return Number.isFinite(number) ? Number(number.toFixed(7)) : value;
-}
-
-export function canonicalFormalValue(field, value) {
-  if (field === 'Source Tags') return normalizeMultiValue(value);
-  if (field === 'Lat' || field === 'Lng') return normalizeNumber(value);
-  if (field === 'Coordinates Approx') {
-    return value === '__YES__' ? '__YES__' : '__NO__';
-  }
-  return normalizeText(value);
-}
-
-function comparableFormalFields(row, formalFieldNames) {
-  return Object.fromEntries(
-    formalFieldNames.map((field) => [
-      field,
-      canonicalFormalValue(field, row[field]),
-    ])
-  );
-}
-
-function changedFormalFields(actual, expected, formalFieldNames) {
-  const actualComparable = comparableFormalFields(actual, formalFieldNames);
-  const expectedComparable = comparableFormalFields(expected, formalFieldNames);
-  return formalFieldNames.filter(
-    (field) =>
-      JSON.stringify(actualComparable[field]) !==
-      JSON.stringify(expectedComparable[field])
-  );
-}
-
-export function parseApplyMetadata(value) {
-  const text = normalizeText(value);
-  if (!text) return null;
-  if (!text.startsWith('lv1:')) {
-    throw new Error('Apply Metadata must use the lv1: envelope');
-  }
-  let metadata;
-  try {
-    metadata = JSON.parse(text.slice('lv1:'.length));
-  } catch {
-    throw new Error('Apply Metadata is not valid JSON');
-  }
-  if (
-    !metadata ||
-    typeof metadata !== 'object' ||
-    Array.isArray(metadata) ||
-    metadata.schemaVersion !== 1
-  ) {
-    throw new Error('Unsupported Apply Metadata schema');
-  }
-  if (!String(metadata.actionRunId || '').startsWith('action-')) {
-    throw new Error('Apply Metadata actionRunId is invalid');
-  }
-  if (!REVIEW_DECISIONS.has(metadata.decision)) {
-    throw new Error('Apply Metadata decision is invalid');
-  }
-  if (!['pending', 'completed', 'failed'].includes(metadata.state)) {
-    throw new Error('Apply Metadata state is invalid');
-  }
-  if (!String(metadata.basisRevision || '').startsWith('sha256:')) {
-    throw new Error('Apply Metadata basisRevision is invalid');
-  }
-  if (!Number.isFinite(Date.parse(metadata.updatedAt))) {
-    throw new Error('Apply Metadata updatedAt is invalid');
-  }
-  return metadata;
-}
-
-export function parseCandidatePayload(value) {
-  const text = normalizeText(value);
-  if (!text) return null;
-  if (!text.startsWith('lv2:')) {
-    throw new Error('Candidate Payload must use the lv2: envelope');
-  }
-  let payload;
-  try {
-    payload = JSON.parse(text.slice('lv2:'.length));
-  } catch {
-    throw new Error('Candidate Payload is not valid JSON');
-  }
-  return validateCandidatePayload(payload);
-}
-
-function validHttpUrl(value) {
-  const text = normalizeText(value);
-  if (!text) return false;
-  try {
-    const url = new URL(text);
-    return ['http:', 'https:'].includes(url.protocol);
-  } catch {
-    return false;
-  }
-}
-
-function rejectedPlaceIds(value) {
-  return new Set(
-    String(value || '')
-      .split(/\r?\n/)
-      .map((entry) => entry.trim())
-      .filter(Boolean)
-  );
 }
 
 function rowLabel(row) {
@@ -166,7 +34,7 @@ function validateCoordinates(row, issues) {
   if (hasLat !== hasLng) {
     issues.push(
       issue(
-        'target',
+        'live',
         'COORDINATE_PAIR_INCOMPLETE',
         'Lat and Lng must either both exist or both be blank',
         { slug }
@@ -179,7 +47,7 @@ function validateCoordinates(row, issues) {
   const lng = Number(row.Lng);
   if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
     issues.push(
-      issue('target', 'LAT_INVALID', `Invalid latitude: ${row.Lat}`, {
+      issue('live', 'LAT_INVALID', `Invalid latitude: ${row.Lat}`, {
         slug,
         field: 'Lat',
       })
@@ -187,7 +55,7 @@ function validateCoordinates(row, issues) {
   }
   if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
     issues.push(
-      issue('target', 'LNG_INVALID', `Invalid longitude: ${row.Lng}`, {
+      issue('live', 'LNG_INVALID', `Invalid longitude: ${row.Lng}`, {
         slug,
         field: 'Lng',
       })
@@ -195,261 +63,179 @@ function validateCoordinates(row, issues) {
   }
 }
 
-function validateCandidateLifecycle(row, metadata, issues) {
+function validateGeography(row, issues) {
   const slug = rowLabel(row);
-  const candidateText = normalizeText(row['Candidate Payload']);
-  const hasCandidate = Boolean(candidateText);
-  const hasSummary = Boolean(normalizeText(row['Candidate Summary']));
-  const hasMapsUrl = Boolean(normalizeText(row['Candidate Maps URL']));
-  const decision = normalizeText(row['Review Decision']);
-  let payload = null;
+  const countryCode = normalizeText(row['Country Code']);
+  const destinationKey = normalizeText(row['Destination Key']);
+  const hasCountry = Boolean(countryCode);
+  const hasDestination = Boolean(destinationKey);
 
-  if (hasCandidate) {
-    try {
-      payload = parseCandidatePayload(candidateText);
-    } catch (error) {
-      issues.push(
-        issue('target', 'CANDIDATE_PAYLOAD_INVALID', error.message, {
-          slug,
-          field: 'Candidate Payload',
-        })
-      );
-    }
-    if (row['Review Needed'] !== '__YES__') {
-      issues.push(
-        issue(
-          'target',
-          'CANDIDATE_WITHOUT_REVIEW',
-          'Candidate Payload requires Review Needed = TRUE',
-          { slug, field: 'Review Needed' }
-        )
-      );
-    }
-    if (!hasSummary) {
-      issues.push(
-        issue(
-          'target',
-          'CANDIDATE_SUMMARY_MISSING',
-          'Candidate Payload requires Candidate Summary',
-          { slug, field: 'Candidate Summary' }
-        )
-      );
-    }
-  } else {
-    if (hasSummary || hasMapsUrl) {
-      issues.push(
-        issue(
-          'target',
-          'ORPHAN_CANDIDATE_DISPLAY',
-          'Candidate Summary and Maps URL must be blank without Candidate Payload',
-          { slug }
-        )
-      );
-    }
-    if (decision && decision !== 'Deactivate') {
-      issues.push(
-        issue(
-          'target',
-          'DECISION_WITHOUT_CANDIDATE',
-          `${decision} requires Candidate Payload`,
-          { slug, field: 'Review Decision' }
-        )
-      );
-    }
-  }
-
-  if (decision && !REVIEW_DECISIONS.has(decision)) {
+  if (row.Status === 'Published' && (!hasCountry || !hasDestination)) {
     issues.push(
       issue(
-        'target',
-        'REVIEW_DECISION_INVALID',
-        `Unsupported Review Decision: ${decision}`,
-        { slug, field: 'Review Decision' }
+        'live',
+        'PUBLISHED_GEOGRAPHY_MISSING',
+        'Published requires Country Code and Destination Key',
+        { slug }
+      )
+    );
+    return;
+  }
+  if (hasCountry !== hasDestination) {
+    issues.push(
+      issue(
+        'live',
+        'GEOGRAPHY_PAIR_INCOMPLETE',
+        'Country Code and Destination Key must either both exist or both be blank',
+        { slug }
+      )
+    );
+    return;
+  }
+  if (!hasCountry) return;
+  if (!COUNTRY_CODES.includes(countryCode)) {
+    issues.push(
+      issue(
+        'live',
+        'COUNTRY_CODE_INVALID',
+        `Unsupported Country Code: ${countryCode}`,
+        { slug, field: 'Country Code' }
       )
     );
   }
-
-  if (payload) {
-    if (
-      ['place_id_candidate', 'ambiguous'].includes(payload.result) !==
-      hasMapsUrl
-    ) {
-      issues.push(
-        issue(
-          'target',
-          'CANDIDATE_MAPS_URL_MISMATCH',
-          `Candidate Maps URL does not match payload result=${payload.result}`,
-          { slug, field: 'Candidate Maps URL' }
-        )
-      );
-    }
-    if (payload.basisRevision !== basisRevision(row)) {
-      issues.push(
-        issue(
-          'target',
-          'CANDIDATE_BASIS_STALE',
-          'Candidate basisRevision does not match the current formal fields',
-          { slug, field: 'Candidate Payload' }
-        )
-      );
-    }
-    const expectedWorkflowRevision = workflowRevision({
-      status: row.Status,
-      dataSourceId: row.__dataSourceId || FORMAL_DATA_SOURCE_ID,
-      inTrash: Boolean(row.__inTrash),
-    });
-    if (payload.workflowRevision !== expectedWorkflowRevision) {
-      issues.push(
-        issue(
-          'target',
-          'CANDIDATE_WORKFLOW_STALE',
-          'Candidate workflowRevision does not match the current page state',
-          { slug, field: 'Candidate Payload' }
-        )
-      );
-    }
-  }
-
-  if (metadata?.state === 'completed' && metadata.decision === 'Need Research') {
-    if (
-      decision !== 'Need Research' ||
-      !hasCandidate ||
-      row['Review Needed'] !== '__YES__'
-    ) {
-      issues.push(
-        issue(
-          'target',
-          'NEED_RESEARCH_STATE_INVALID',
-          'Completed Need Research must retain Candidate, decision, and Review Needed',
-          { slug }
-        )
-      );
-    }
-  }
-}
-
-function validateApplyMetadata(row, issues) {
-  const slug = rowLabel(row);
-  let metadata = null;
-  try {
-    metadata = parseApplyMetadata(row['Apply Metadata']);
-  } catch (error) {
-    issues.push(
-      issue('target', 'APPLY_METADATA_INVALID', error.message, {
-        slug,
-        field: 'Apply Metadata',
-      })
-    );
-    return null;
-  }
-  if (!metadata) return null;
-
-  if (metadata.state !== 'completed') {
+  if (!DESTINATION_KEYS.includes(destinationKey)) {
     issues.push(
       issue(
-        'target',
-        'APPLY_NOT_COMPLETED',
-        `Apply Metadata state=${metadata.state}; operator recovery is required`,
-        { slug, field: 'Apply Metadata' }
-      )
-    );
-  }
-  if (!normalizeText(row['Verification Note']).includes(metadata.actionRunId)) {
-    issues.push(
-      issue(
-        'target',
-        'ACTION_AUDIT_MISSING',
-        `Verification Note does not contain ${metadata.actionRunId}`,
-        { slug, field: 'Verification Note' }
-      )
-    );
-  }
-
-  const expectedStatus = ACTION_EXPECTED_STATUS[metadata.decision];
-  if (expectedStatus && row.Status !== expectedStatus) {
-    issues.push(
-      issue(
-        'target',
-        'ACTION_STATUS_MISMATCH',
-        `${metadata.decision} requires Status=${expectedStatus}`,
-        { slug, field: 'Status' }
+        'live',
+        'DESTINATION_KEY_INVALID',
+        `Unsupported Destination Key: ${destinationKey}`,
+        { slug, field: 'Destination Key' }
       )
     );
   }
   if (
-    ['Reject Candidate', 'Need Research'].includes(metadata.decision) &&
-    row['Review Needed'] !== '__YES__'
+    COUNTRY_CODES.includes(countryCode) &&
+    DESTINATION_KEYS.includes(destinationKey) &&
+    !isValidDestinationPair(countryCode, destinationKey)
   ) {
     issues.push(
       issue(
-        'target',
-        'ACTION_REVIEW_QUEUE_MISMATCH',
-        `${metadata.decision} requires Review Needed = TRUE`,
-        { slug, field: 'Review Needed' }
+        'live',
+        'GEOGRAPHY_PAIR_MISMATCH',
+        `${countryCode} does not contain destination ${destinationKey}`,
+        { slug }
       )
     );
   }
-  if (
-    ['Could Not Find', 'Deactivate'].includes(metadata.decision) &&
-    row['Review Needed'] !== '__NO__'
-  ) {
-    issues.push(
-      issue(
-        'target',
-        'ACTION_REVIEW_QUEUE_MISMATCH',
-        `${metadata.decision} requires Review Needed = FALSE`,
-        { slug, field: 'Review Needed' }
-      )
-    );
-  }
-  return metadata;
 }
 
-export function validateTargetRows(rows, { expectedCount = EXPECTED_LOCATION_COUNT } = {}) {
+function validatePolicy(rows, slugs, snapshotPolicy, issues) {
+  if (
+    !snapshotPolicy ||
+    !Number.isInteger(snapshotPolicy.minimumRowCount) ||
+    !Array.isArray(snapshotPolicy.protectedSlugs) ||
+    !Array.isArray(snapshotPolicy.deletionManifest)
+  ) {
+    throw new Error('Snapshot policy is required for live validation');
+  }
+
+  const approvedDeletions = new Set(
+    snapshotPolicy.deletionManifest.map(({ slug }) => slug)
+  );
+  const minimumRowCount =
+    snapshotPolicy.minimumRowCount - approvedDeletions.size;
+  if (rows.length < minimumRowCount) {
+    issues.push(
+      issue(
+        'policy',
+        'LOCATION_COUNT_BELOW_MINIMUM',
+        `Expected at least ${minimumRowCount} rows, found ${rows.length}`
+      )
+    );
+  }
+
+  for (const slug of snapshotPolicy.protectedSlugs) {
+    if (!approvedDeletions.has(slug) && !slugs.has(slug)) {
+      issues.push(
+        issue(
+          'policy',
+          'PROTECTED_SLUG_MISSING',
+          'Protected favorite Slug is missing from live Notion',
+          { slug, field: 'Slug' }
+        )
+      );
+    }
+  }
+
+  return {
+    policyId: snapshotPolicy.policyId,
+    minimumRowCount,
+    protectedSlugCount: snapshotPolicy.protectedSlugs.length,
+  };
+}
+
+export function validateTargetRows(rows, { snapshotPolicy } = {}) {
   const issues = [];
+  const warnings = [];
   const slugs = new Map();
   const placeIds = new Map();
   const statusCounts = {};
-
-  if (rows.length !== expectedCount) {
-    issues.push(
-      issue(
-        'target',
-        'LOCATION_COUNT_MISMATCH',
-        `Expected ${expectedCount} rows, found ${rows.length}`
-      )
-    );
-  }
+  const typeCounts = {};
+  const supportedTypes = new Set(LOCATION_TYPES);
 
   for (const row of rows) {
     const slug = rowLabel(row);
     statusCounts[row.Status || '(blank)'] =
       (statusCounts[row.Status || '(blank)'] || 0) + 1;
-    if (!normalizeText(row.Slug)) {
+    const type = normalizeText(row.Type);
+    typeCounts[type || '(blank)'] =
+      (typeCounts[type || '(blank)'] || 0) + 1;
+
+    if (!type) {
+      warnings.push(
+        issue('live', 'TYPE_MISSING', 'Type is blank', {
+          slug,
+          field: 'Type',
+        })
+      );
+    } else if (!supportedTypes.has(type)) {
       issues.push(
-        issue('target', 'SLUG_MISSING', 'Slug is required', {
+        issue(
+          'live',
+          'TYPE_INVALID',
+          `Unsupported Type: ${type}`,
+          { slug, field: 'Type' }
+        )
+      );
+    }
+
+    const canonicalSlug = normalizeText(row.Slug);
+    if (!canonicalSlug) {
+      issues.push(
+        issue('live', 'SLUG_MISSING', 'Slug is required', {
           slug,
           field: 'Slug',
         })
       );
     } else {
-      const duplicate = slugs.get(row.Slug);
+      const duplicate = slugs.get(canonicalSlug);
       if (duplicate) {
         issues.push(
           issue(
-            'target',
+            'live',
             'SLUG_DUPLICATE',
             `Duplicate Slug shared with ${rowLabel(duplicate)}`,
             { slug, field: 'Slug' }
           )
         );
       } else {
-        slugs.set(row.Slug, row);
+        slugs.set(canonicalSlug, row);
       }
     }
+
     if (!normalizeText(row.Name)) {
       issues.push(
-        issue('target', 'NAME_MISSING', 'Name is required', {
+        issue('live', 'NAME_MISSING', 'Name is required', {
           slug,
           field: 'Name',
         })
@@ -458,17 +244,16 @@ export function validateTargetRows(rows, { expectedCount = EXPECTED_LOCATION_COU
     if (!TARGET_STATUSES.has(row.Status)) {
       issues.push(
         issue(
-          'target',
+          'live',
           'STATUS_INVALID',
-          `Unsupported target Status: ${row.Status || '(blank)'}`,
+          `Unsupported Status: ${row.Status || '(blank)'}`,
           { slug, field: 'Status' }
         )
       );
     }
 
     validateCoordinates(row, issues);
-    const metadata = validateApplyMetadata(row, issues);
-    validateCandidateLifecycle(row, metadata, issues);
+    validateGeography(row, issues);
 
     const hasLat =
       row.Lat !== null &&
@@ -484,87 +269,55 @@ export function validateTargetRows(rows, { expectedCount = EXPECTED_LOCATION_COU
       if (!hasLat || !hasLng) {
         issues.push(
           issue(
-            'target',
+            'live',
             'PUBLISHED_COORDINATES_MISSING',
             'Published requires Lat and Lng',
             { slug }
           )
         );
       }
-      if (
-        !validHttpUrl(row['Google Maps URL']) &&
-        !normalizeText(row['Google Place ID'])
-      ) {
+      if (!isGoogleMapsUrl(row['Google Maps URL'])) {
         issues.push(
           issue(
-            'target',
-            'PUBLISHED_MAP_REFERENCE_MISSING',
-            'Published requires a valid Google Maps URL or Place ID',
-            { slug }
-          )
-        );
-      }
-      if (!normalizeText(row['Verification Note'])) {
-        issues.push(
-          issue(
-            'target',
-            'PUBLISHED_NOTE_MISSING',
-            'Published requires Verification Note',
-            { slug, field: 'Verification Note' }
+            'live',
+            'PUBLISHED_MAP_URL_INVALID',
+            'Published requires a valid Google Maps URL',
+            { slug, field: 'Google Maps URL' }
           )
         );
       }
       if (!normalizeText(row['Last Verified'])) {
         issues.push(
           issue(
-            'target',
+            'live',
             'PUBLISHED_LAST_VERIFIED_MISSING',
             'Published requires Last Verified',
             { slug, field: 'Last Verified' }
           )
         );
       }
-      if (
-        normalizeText(row['Google Place ID']) &&
-        !normalizeText(row['Place ID Checked At'])
-      ) {
-        issues.push(
-          issue(
-            'target',
-            'PUBLISHED_PLACE_ID_CHECK_MISSING',
-            'Published with Place ID requires Place ID Checked At',
-            { slug, field: 'Place ID Checked At' }
-          )
-        );
-      }
-      if (!TARGET_COORDINATE_TYPES.has(row['Coordinate Type'])) {
-        issues.push(
-          issue(
-            'target',
-            'PUBLISHED_COORDINATE_TYPE_MISSING',
-            'Published requires a supported Coordinate Type',
-            { slug, field: 'Coordinate Type' }
-          )
-        );
-      }
-      if (!metadata || metadata.state !== 'completed') {
-        issues.push(
-          issue(
-            'target',
-            'PUBLISHED_ACTION_MISSING',
-            'Published requires a completed human apply action',
-            { slug, field: 'Apply Metadata' }
-          )
-        );
-      }
+    }
+
+    if (
+      row['Review Needed'] === '__YES__' &&
+      !normalizeText(row['Verification Note'])
+    ) {
+      warnings.push(
+        issue(
+          'live',
+          'REVIEW_NOTE_MISSING',
+          'Review Needed is checked but Verification Note is blank',
+          { slug, field: 'Verification Note' }
+        )
+      );
     }
 
     if (row.Status === 'Paused' && row['Review Needed'] !== '__YES__') {
       issues.push(
         issue(
-          'target',
+          'live',
           'QUEUE_STATUS_MISMATCH',
-          `${row.Status} requires Review Needed = TRUE`,
+          'Paused requires Review Needed = TRUE',
           { slug, field: 'Review Needed' }
         )
       );
@@ -573,23 +326,20 @@ export function validateTargetRows(rows, { expectedCount = EXPECTED_LOCATION_COU
       if (row['Review Needed'] !== '__NO__') {
         issues.push(
           issue(
-            'target',
+            'live',
             'INACTIVE_REVIEW_MISMATCH',
             'Inactive requires Review Needed = FALSE',
             { slug, field: 'Review Needed' }
           )
         );
       }
-      if (
-        !normalizeText(row['Last Verified']) ||
-        !normalizeText(row['Verification Note'])
-      ) {
+      if (!normalizeText(row['Last Verified'])) {
         issues.push(
           issue(
-            'target',
+            'live',
             'INACTIVE_AUDIT_MISSING',
-            'Inactive requires Last Verified and Verification Note',
-            { slug }
+            'Inactive requires Last Verified',
+            { slug, field: 'Last Verified' }
           )
         );
       }
@@ -601,7 +351,7 @@ export function validateTargetRows(rows, { expectedCount = EXPECTED_LOCATION_COU
       if (duplicate) {
         issues.push(
           issue(
-            'target',
+            'live',
             'PLACE_ID_DUPLICATE',
             `Google Place ID is also used by ${rowLabel(duplicate)}`,
             { slug, field: 'Google Place ID' }
@@ -611,24 +361,129 @@ export function validateTargetRows(rows, { expectedCount = EXPECTED_LOCATION_COU
         placeIds.set(placeId, row);
       }
     }
+  }
 
-    if (placeId && rejectedPlaceIds(row['Rejected Place IDs']).has(placeId)) {
-      const hasOverride =
-        metadata?.state === 'completed' &&
-        metadata.decision === 'Reject Candidate' &&
-        normalizeText(row['Verification Note']).includes(metadata.actionRunId);
-      if (!hasOverride) {
-        issues.push(
-          issue(
-            'target',
-            'CURRENT_PLACE_ID_REJECTED',
-            'Current Google Place ID appears in Rejected Place IDs without a completed manual override',
-            { slug, field: 'Rejected Place IDs' }
-          )
-        );
+  const policy = validatePolicy(rows, slugs, snapshotPolicy, issues);
+  return { issues, warnings, statusCounts, typeCounts, policy };
+}
+
+function snapshotTable(csv, label) {
+  const rows = tokenizeCSV(csv);
+  const headers = (rows[0] || []).map((header) =>
+    header.replace(/^\uFEFF/, '')
+  );
+  if (
+    headers.length !== CSV_HEADER.length ||
+    headers.some((header, index) => header !== CSV_HEADER[index])
+  ) {
+    throw new Error(`${label} does not match the stable CSV header contract`);
+  }
+
+  const slugIndex = headers.indexOf('Slug');
+  const bySlug = new Map();
+  for (const row of rows.slice(1).filter((value) => value.join('').trim())) {
+    if (row.length !== headers.length) {
+      throw new Error(
+        `${label} contains a row with ${row.length} fields; expected ${headers.length}`
+      );
+    }
+    const slug = row[slugIndex];
+    if (!normalizeText(slug)) {
+      throw new Error(`${label} contains a row without Slug`);
+    }
+    if (bySlug.has(slug)) {
+      throw new Error(`${label} contains duplicate Slug: ${slug}`);
+    }
+    bySlug.set(slug, [...row]);
+  }
+  return { headers, bySlug };
+}
+
+export function reconcileSnapshotCsv(liveCsv, committedCsv) {
+  const issues = [];
+  let live;
+  let committed;
+  try {
+    live = snapshotTable(liveCsv, 'Live Notion export');
+    committed = snapshotTable(committedCsv, 'Committed snapshot');
+  } catch (error) {
+    issues.push(
+      issue(
+        'snapshot',
+        'SNAPSHOT_CONTRACT_INVALID',
+        error instanceof Error ? error.message : 'Snapshot contract is invalid'
+      )
+    );
+    return {
+      ok: false,
+      issues,
+      liveRowCount: live?.bySlug.size || 0,
+      committedRowCount: committed?.bySlug.size || 0,
+      addedSlugCount: 0,
+      removedSlugCount: 0,
+      changedSlugCount: 0,
+      changedFieldCount: 0,
+    };
+  }
+
+  const addedSlugs = [...live.bySlug.keys()]
+    .filter((slug) => !committed.bySlug.has(slug))
+    .sort();
+  const removedSlugs = [...committed.bySlug.keys()]
+    .filter((slug) => !live.bySlug.has(slug))
+    .sort();
+  for (const slug of addedSlugs) {
+    issues.push(
+      issue(
+        'snapshot',
+        'SNAPSHOT_SLUG_MISSING',
+        'Live Notion Slug is not present in committed data/locations.csv',
+        { slug, field: 'Slug' }
+      )
+    );
+  }
+  for (const slug of removedSlugs) {
+    issues.push(
+      issue(
+        'snapshot',
+        'NOTION_SLUG_MISSING',
+        'Committed snapshot Slug is not present in live Notion',
+        { slug, field: 'Slug' }
+      )
+    );
+  }
+
+  const changedSlugs = new Set();
+  let changedFieldCount = 0;
+  const slugIndex = CSV_HEADER.indexOf('Slug');
+  for (const [slug, liveRow] of live.bySlug) {
+    const committedRow = committed.bySlug.get(slug);
+    if (!committedRow) continue;
+    for (let index = 0; index < CSV_HEADER.length; index += 1) {
+      if (index === slugIndex || liveRow[index] === committedRow[index]) {
+        continue;
       }
+      changedSlugs.add(slug);
+      changedFieldCount += 1;
+      issues.push(
+        issue(
+          'snapshot',
+          'SNAPSHOT_FIELD_MISMATCH',
+          'Live Notion export differs from committed data/locations.csv',
+          { slug, field: CSV_HEADER[index] }
+        )
+      );
     }
   }
 
-  return { issues, statusCounts };
+  return {
+    ok: issues.length === 0,
+    issues,
+    liveRowCount: live.bySlug.size,
+    committedRowCount: committed.bySlug.size,
+    addedSlugCount: addedSlugs.length,
+    removedSlugCount: removedSlugs.length,
+    changedSlugCount: changedSlugs.size,
+    changedFieldCount,
+  };
 }

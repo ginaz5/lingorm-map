@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { doNetlifySubmit, shouldMockNetlifySubmit } from '../src/submit.js';
+import { doNetlifySubmit, shouldMockNetlifySubmit } from '../src/services/submit.js';
 
 function installSubmitDom() {
   const elements = {

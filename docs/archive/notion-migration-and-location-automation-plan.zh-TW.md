@@ -7,14 +7,14 @@
 
 ## 1. 摘要
 
-目前系統是一個**靜態 Vite 網站 + 兩個唯讀的 Netlify Functions**。所有地點資料存放在**單一 Google Sheet（1 個工作表、15 欄、約 97 列）**，以 CSV 形式發佈，並透過 `/api/locations` 代理存取。**程式碼庫中沒有任何地方會寫入該 sheet** —— 每一筆新增/更新都是人工完成，來源是手動的研究流程（Threads/Douban/KKday/Trip.com 上的粉絲貼文 → 手動整理成 `sources/` 中的 markdown 表格 → 複製貼上到 sheet）。
+目前系統是一個**靜態 Vite 網站 + 兩個唯讀的 Netlify Functions**。所有地點資料存放在**單一 Google Sheet（1 個工作表、15 欄、約 97 列）**，以 CSV 形式發佈，並透過 `/api/locations` 代理存取。**程式碼庫中沒有任何地方會寫入該 sheet** —— 每一筆新增/更新都是人工完成，來源是手動的研究流程（Threads/Douban/KKday/Trip.com 上的粉絲貼文 → 手動整理成 markdown 表格，現保存於 `docs/archive/` → 複製貼上到 sheet）。
 
 **結論（詳見 §16）：**
 
 1. **遷移到 Notion 是可行的** —— 資料集很小（約 97 列，遠低於任何 Notion 限制），且整合面只有一個唯讀 function。
 2. **只有當 Notion 成為策展工作台時才值得做**，而不只是換個地方存放同樣的 CSV。真正的痛點是手動研究/驗證/貼上的循環，而 Notion 的 Status/Relation/view 功能正好對應這個循環。如果只是要換個儲存位置，繼續用 Sheets 更划算。
 3. **建議角色：Notion = 系統記錄（system of record）+ 策展 UI，但網站永遠不在請求時讀取 Notion。** 由一個同步任務將 Notion database 匯出為經驗證的快照（初期沿用同樣的 CSV schema，之後再改 JSON），供 `/api/locations` 讀取。這樣能維持網站速度、避開 Notion 約 3 req/s 的速率限制與可用性耦合，並讓回滾變得很簡單。
-4. **地點自動化可以自動化約 70–80% 的工作**（擷取、地理編碼、去重檢查、格式化、將草稿寫入 Notion）。最終驗證與升級為 Verified 狀態必須維持人工 —— 專案自己的 `sources/coord_verification_report.md` 說明了原因：**34 筆人工/LLM 推算座標中有 14 筆是錯的**，最嚴重偏差達 18.8 公里。
+4. **地點自動化可以自動化約 70–80% 的工作**（擷取、地理編碼、去重檢查、格式化、將草稿寫入 Notion）。最終驗證與升級為 Verified 狀態必須維持人工 —— 專案自己的 `docs/archive/coord_verification_report.md` 說明了原因：**34 筆人工/LLM 推算座標中有 14 筆是錯的**，最嚴重偏差達 18.8 公里。
 5. **第一個實驗：** 建立 Notion database，遷移 10 列資料，並寫一個快照腳本輸出前端已經在解析的、*完全相同*的 15 欄 CSV。前端零改動；透過現有的 `GOOGLE_SHEET_CSV_URL` 即可立即回滾。
 
 ---
@@ -30,16 +30,16 @@
 | `/api/config` | `netlify/functions/config.mjs` | 執行期回傳地圖 API 金鑰 |
 | CSV 解析器 | `src/csv-parser.js` — `parsePublishedFormat()` | 以標頭為基礎解析；**要求**欄位 `Location Name, Thai / Alt Name, Category, Notes, Source URL, Verification Status, Duplicate Group` |
 | 社群輸入 | 透過 `src/submit.js` 的 Netlify Forms（`suggest-edit`、`add-location`、`issue-report`） | 寫入路徑是**email → 人工審核 → 手動編輯 sheet**（記錄於 `note/TECH_DECISIONS.md`） |
-| 研究產出物 | `sources/` —— `lingorm_location_updated.md`、`Lingorm_Threads_Locations.md`、`coord_verification_report.md`、`Lingorm_Thailand_Locations.py` | 手動流程的工作檔案 |
+| 研究產出物 | `docs/archive/` —— `lingorm_location_updated.md`、`Lingorm_Threads_Locations.md`、`coord_verification_report.md`；已退役的 `Lingorm_Thailand_Locations.py` 仍可從 Git 歷史取得 | 手動流程的封存工作檔案 |
 | 測試 | `tests/*.test.mjs`，node:test，106 個測試；`npm run typecheck`（strict `checkJs`） | 涵蓋解析器、functions、表單、UI |
 
 ### 2.2 CRUD 現實
 
 | 操作 | 目前如何發生 | 是否自動化？ |
 |---|---|---|
-| **建立** | 人工找到粉絲貼文 → 擷取欄位（依 `sources/*.md` 的結構，有時借助 AI） → 貼進 Google Sheet | ❌ 手動 |
+| **建立** | 人工找到粉絲貼文 → 擷取欄位（依封存研究表格的結構，有時借助 AI） → 貼進 Google Sheet | ❌ 手動 |
 | **讀取** | Sheet → 發佈的 CSV → `/api/locations` → `parseCSV()` → `state.data` | ✅ 自動 |
-| **更新** | 人工編輯 sheet 儲存格（例如 `sources/lingorm_location_updated.md` 中 2026-06-13 的同步紀錄） | ❌ 手動 |
+| **更新** | 人工編輯 sheet 儲存格（例如 `docs/archive/lingorm_location_updated.md` 中 2026-06-13 的同步紀錄） | ❌ 手動 |
 | **刪除/隱藏** | 設定 `Verification Status = Could Not Find`（從公開列表隱藏，見 `tests/public-notfound.test.mjs`） | ❌ 手動 |
 | **社群建議** | Netlify Forms → email → 人工分流 → 手動編輯 sheet | ❌ 手動 |
 
@@ -54,7 +54,7 @@
 
 ### 2.4 目前沒有任何自動化
 
-**事實：** 整個 repo（已檢查 `package.json`、`netlify/functions/`、`src/`、`build.sh`）中沒有排程器、爬蟲、第三方地點 API 客戶端、LLM 呼叫或 MCP 整合。`sources/Lingorm_Thailand_Locations.py` 是一個一次性的 `openpyxl` xlsx 產生器，資料是硬編碼的 —— 屬於已被 Google Sheet 取代的舊產出物。
+**事實：** 整個 repo（已檢查 `package.json`、`netlify/functions/`、`src/`、`build.sh`）中沒有排程器、爬蟲、第三方地點 API 客戶端、LLM 呼叫或 MCP 整合。現已從工作樹移除的 `Lingorm_Thailand_Locations.py` 是一個一次性的 `openpyxl` xlsx 產生器，資料是硬編碼的 —— 屬於已被 Google Sheet 取代、仍可從 Git 歷史取得的舊產出物。
 
 ### 2.5 機密資訊與相依項
 
@@ -83,7 +83,7 @@
 ```mermaid
 flowchart LR
     subgraph Manual["Manual research loop (the pain point)"]
-        FP["Fan posts<br/>Threads · Douban · KKday · Trip.com"] --> EX["Human/AI extracts fields<br/>sources/*.md tables"]
+        FP["Fan posts<br/>Threads · Douban · KKday · Trip.com"] --> EX["Human/AI extracts fields<br/>封存研究表格"]
         EX --> GEO["Human finds coords<br/>(goo.gl redirects, embeds, guesses)"]
         GEO --> PASTE["Copy-paste into Google Sheet"]
     end
@@ -229,14 +229,14 @@ seed（粉絲貼文 URL / 地點名稱 / 社群表單）
 
 - `slugify`、`CATEGORY_ALIASES`、`normalizeStatus`、`normalizeSourceTags`、`ICON_BY_CAT`、`ZH_BY_CAT`（`src/csv-parser.js`）—— 正規化層已經寫好且有單元測試。流程應該直接引用這些函式，而非重新實作。
 - 15 欄 schema 及其測試（`tests/parsecsv.test.mjs`、`tests/locations-function.test.mjs`）定義了輸出契約。
-- `sources/*.md` 的欄位表格實質上就是手動執行流程的輸出結果 —— 它們定義了擷取的規格。
+- 現保存於 `docs/archive/` 的欄位表格實質上就是手動執行流程的輸出結果 —— 它們定義了歷史擷取規格。
 
 ### 7.3 基於證據的分工
 
 | 步驟 | 可自動化？ | 證據/原因 |
 |---|---|---|
 | 發掘候選貼文 | ⚠️ 部分 | Threads/Douban 沒有可用的公開 API；爬取在 ToS 上很脆弱。人工把 URL 丟進 Inbox，之後交給自動化接手 |
-| 從貼文擷取欄位 | ✅ 高 | LLM 擅長從散文中做結構化擷取；`sources/*.md` 展示了確切的目標格式 |
+| 從貼文擷取欄位 | ✅ 高 | LLM 擅長從散文中做結構化擷取；封存研究表格展示了確切的目標格式 |
 | 座標/地址 | ✅ **必須是決定性 API，絕不能用 LLM** | `coord_verification_report.md`：34 筆人工/LLM 座標中有 14 筆錯誤，最嚴重偏差 18.8 公里 |
 | 分類 + 雙語備註草稿 | ✅ 高 | LLM 產生草稿，人工潤飾語氣 |
 | 去重 | ✅ 高 | 決定性：place_id 相等 → 同一地點；否則用 haversine + 模糊比對名稱 |
@@ -467,7 +467,7 @@ flowchart TD
 ### 事實、推論、假設的區分
 
 - **事實（已在程式碼/資料中驗證）：** 唯讀資料路徑；15 欄 schema；約 97 列；以 slug 作為 ID；未使用的 `Duplicate Group`；手動寫入流程；座標錯誤歷史（14/34）；目前無自動化；測試/typecheck 設定。
-- **基於證據的推論：** 手動研究循環是主要成本來源（依據 `sources/` 產出物及其時間戳）；座標品質是最大的資料風險；重新命名地點會破壞收藏功能*以及先前已分享的收藏連結*（`favorites.js` 會把 slug ID 存進 localStorage 與 URL）。
+- **基於證據的推論：** 手動研究循環是主要成本來源（依據封存研究產出物及其時間戳）；座標品質是最大的資料風險；重新命名地點會破壞收藏功能*以及先前已分享的收藏連結*（`favorites.js` 會把 slug ID 存進 localStorage 與 URL）。
 - **尚未驗證的假設：** Notion rich-text 對 CJK/多行內容的往返保真度（Phase 1 的測試目標）；Places 解析器對泰文粉絲場所名稱的準確度（Phase 1 的驗證性測試目標）；未來的編輯頻率維持低量；不會有第二位編輯者帶來衝突的工作流程。
 
 ---

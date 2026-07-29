@@ -6,8 +6,8 @@ import {
   LEGACY_LOCATION_STATUSES, LOCATION_STATUSES,
   tokenizeCSV, normalizeStatus, sourceLabel,
   normalizeSourceTags, mapsQuery, parseCSV, slugify,
-} from '../src/csv-parser.js';
-import { isApproximateCoords } from '../src/render.js';
+} from '../src/data/csv-parser.js';
+import { isApproximateCoords } from '../src/ui/render.js';
 
 // ─── tokenizeCSV ────────────────────────────────────────────────────────────
 
@@ -174,7 +174,18 @@ test('parseCSV: published format — maps category, fills icon, normalizes statu
     notesEn: 'Luxury hotel', notesZh: '河畔精品酒店', icon: '🏨',
     lat: '13.7608', lng: '100.5089', maps: 'https://maps.example/the-siam',
     status: 'Paused', src: 'KKday + Threads', approx: 'FALSE', sourceUrl: 'https://example.com',
+    countryCode: '', destinationKey: '', type: '',
   }]);
+});
+
+test('parseCSV: exposes Type from the public snapshot contract', () => {
+  const csv = [
+    'Location Name,Thai / Alt Name,Google Maps URL,Category,Notes,Source URL,Source Tags,Verification Status,Lat,Lng,Icon,Country Code,Destination Key,Type,Slug',
+    'The Siam Hotel,,https://maps.example/the-siam,Hotel,Luxury hotel,https://example.com,KKday,Published,13.7608,100.5089,🏨,TH,bangkok,JKR Picks,the-siam-hotel',
+  ].join('\n');
+
+  const [row] = parseCSV(csv);
+  assert.equal(row.type, 'JKR Picks');
 });
 
 test('parseCSV: published format — preserves repeated source tags for URL mapping', () => {

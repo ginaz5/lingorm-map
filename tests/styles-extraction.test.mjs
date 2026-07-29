@@ -9,6 +9,7 @@ test('index loads app styles from an external stylesheet', async () => {
   assert.match(html, /<link rel="stylesheet" href="\.\/styles\.css"\/?>/);
   assert.equal(html.includes('<style>'), false);
   assert.match(css, /\.loc-card\{/);
+  assert.match(css, /\.btn-ghost\s*\{\s*font-family:\s*inherit;/);
 });
 
 test('index does not keep presentational inline style hooks', async () => {
@@ -18,6 +19,49 @@ test('index does not keep presentational inline style hooks', async () => {
   assert.equal(appMarkup.includes(' style='), false);
   assert.equal(appMarkup.includes('.style.cssText'), false);
   assert.equal(appMarkup.includes('.style.display'), false);
+});
+
+test('HERE popup body stays centered above its map anchor', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(
+    css,
+    /#map \.H_ib_body\{left:0!important;right:auto!important;transform:translateX\(-50%\)\}/,
+  );
+  assert.match(
+    css,
+    /@media\(max-width:700px\)\{[\s\S]*?\.H_ib_body\{max-width:calc\(100vw - 32px\)!important\}/,
+  );
+});
+
+test('result metadata uses the same inline spacing at every viewport', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(
+    css,
+    /\.result-meta\{display:flex;align-items:baseline;gap:6px;padding:0 2px\}/,
+  );
+  assert.match(css, /\.last-updated\{font-size:12px;color:var\(--text-muted\)\}/);
+  assert.match(
+    css,
+    /\.last-updated:not\(:empty\)::before\{content:"·";margin-right:6px;/,
+  );
+  assert.doesNotMatch(css, /\.result-meta\{[^}]*flex-direction:/);
+  assert.doesNotMatch(css, /@media\(min-width:1100px\)[\s\S]*?\.result-meta/);
+});
+
+test('location card actions are visible only at the mobile breakpoint', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(
+    css,
+    /\.card-footer\{display:none;align-items:center;justify-content:flex-end;margin-top:8px\}/,
+  );
+  assert.match(
+    css,
+    /@media\(max-width:700px\)\{\s*\.card-footer\{display:flex\}/,
+  );
+  assert.doesNotMatch(css, /\.popup-footer\{[^}]*display:none/);
 });
 
 test('unused map-link and Leaflet styles are not kept', async () => {
@@ -55,4 +99,21 @@ test('light mode cards have scoped accessible contrast styles', async () => {
   assert.match(lightSection, /\.popup-content \.src-tag\{font-family:inherit!important\}/);
   assert.match(lightSection, /background:#e0f2fe;color:#0369a1;font-weight:600/);
   assert.doesNotMatch(lightSection, /:root\[data-theme="dark"\]/);
+});
+
+test('favorite buttons avoid a black flash while becoming active', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.fav-btn\{[^}]*-webkit-tap-highlight-color:transparent/);
+  assert.match(css, /\.fav-btn:focus\{outline:none\}/);
+  assert.match(css, /\.fav-btn:focus-visible\{outline:2px solid #e05252;outline-offset:2px\}/);
+  assert.match(css, /\.fav-filter-btn\{[^}]*-webkit-tap-highlight-color:transparent/);
+  assert.match(css, /\.fav-filter-btn:focus\{outline:none\}/);
+  assert.match(css, /\.fav-filter-btn:focus-visible\{outline:2px solid #e05252;outline-offset:2px\}/);
+  assert.match(css, /\.fav-filter-btn:hover,\s*\.fav-filter-btn:active\{border-color:#fca5a5;color:#e05252\}/);
+  assert.doesNotMatch(css, /\.fav-filter-btn\{[^}]*transition:all/);
+  assert.doesNotMatch(css, /\.fav-filter-btn:hover\{[^}]*color:var\(--primary\)/);
+  assert.match(css, /\.fav-btn:not\(\.fav-active\):hover\{color:#e05252\}/);
+  assert.match(css, /\.fav-btn:not\(\.fav-active\):hover svg\{stroke:#e05252\}/);
+  assert.doesNotMatch(css, /\.fav-btn:not\(\.fav-active\):hover(?: svg)?\{[^}]*#111827/);
 });

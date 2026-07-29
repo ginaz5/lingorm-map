@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { csvRow } from '../scripts/export-snapshot.mjs';
 import { validateFavoriteCompatibility } from '../scripts/validate-favorite-compatibility.mjs';
-import { tokenizeCSV } from '../src/csv-parser.js';
+import { tokenizeCSV } from '../src/data/csv-parser.js';
 
 const snapshotPath = fileURLToPath(new URL('../data/locations.csv', import.meta.url));
 const manifestPath = fileURLToPath(
@@ -17,8 +17,8 @@ const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 test('Notion snapshot preserves every protected favorite ID', () => {
   assert.deepEqual(validateFavoriteCompatibility(snapshotCsv, manifest), {
     legacyIdCount: 98,
-    notionSlugCount: 104,
-    newSlugCount: 6,
+    notionSlugCount: 141,
+    newSlugCount: 43,
   });
 });
 
@@ -58,8 +58,8 @@ test('favorite compatibility allows new locations without weakening legacy IDs',
 
   assert.deepEqual(validateFavoriteCompatibility(serialize(rows), manifest), {
     legacyIdCount: 98,
-    notionSlugCount: 105,
-    newSlugCount: 7,
+    notionSlugCount: 142,
+    newSlugCount: 44,
   });
 });
 

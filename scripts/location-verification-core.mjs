@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { LOCATION_STATUSES } from '../src/csv-parser.js';
+import { LOCATION_STATUSES } from '../src/data/csv-parser.js';
 
 // The "Locations (PoC)" data source used during the 2026-07 migration has
 // been deleted — there is now a single Notion Locations database, and

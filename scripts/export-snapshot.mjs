@@ -5,7 +5,7 @@
 // Phase 1/2 (docs/archive/notion-migration-and-location-automation-plan.md
 // §6.3, §9.1, §13): reads the Notion "Locations" data source and
 // emits the public location fields that parsePublishedFormat()
-// in src/csv-parser.js understands. Verification-only properties and retired
+// in src/data/csv-parser.js understands. Verification-only properties and retired
 // formal properties are deliberately excluded.
 // The frontend parser is header-based and ignores unknown columns.
 //
@@ -26,7 +26,7 @@ import { pathToFileURL } from "node:url";
 import { FORMAL_DATA_SOURCE_ID } from "./location-verification-core.mjs";
 import {
   CURRENT_FORMAL_LOCATION_PROPERTIES,
-  inspectCurrentFormalLocationProperties,
+  inspectCurrentFormalDataSourceProperties,
 } from "./formal-location-current-schema.mjs";
 
 const NOTION_VERSION = "2025-09-03"; // plan §5.1 — pin the version; databases/data sources split here
@@ -35,6 +35,8 @@ export const CSV_HEADER = [
   "Location Name", "Location Name ZH", "Thai / Alt Name", "Google Maps URL",
   "Category", "Notes", "Notes ZH", "Source URL", "Source Tags",
   "Verification Status", "Lat", "Lng", "Icon",
+  "Country Code", "Destination Key",
+  "Type",
   "Slug", // Slug is the stable public ID; parseCSV() prefers it over slugify(name).
 ];
 
@@ -117,11 +119,14 @@ export function pageToRow(page) {
     fmtCoord(number(p["Lat"])),
     fmtCoord(number(p["Lng"])),
     pageIcon(page),
+    select(p["Country Code"]),
+    select(p["Destination Key"]),
+    select(p["Type"]),
     text(p["Slug"]),
   ];
 }
 
-// RFC 4180-ish CSV writer matching tokenizeCSV()'s escaping in src/csv-parser.js
+// RFC 4180-ish CSV writer matching tokenizeCSV()'s escaping in src/data/csv-parser.js
 export function csvField(v) {
   // Notion rich text can contain invisible spaces immediately before a
   // newline. They have no display meaning but make the committed snapshot
@@ -133,8 +138,35 @@ export function csvRow(fields) {
   return fields.map(csvField).join(",");
 }
 
+export function buildSnapshotCsv(pages) {
+  const rows = pages.map(pageToRow);
+  const nameIndex = CSV_HEADER.indexOf("Location Name");
+  const slugIndex = CSV_HEADER.indexOf("Slug");
+  const seenSlugs = new Set();
+  for (const row of rows) {
+    const name = String(row[nameIndex] || "").trim() || "(untitled)";
+    const slug = String(row[slugIndex] || "").trim();
+    if (!slug) {
+      throw new Error(`Notion location "${name}" has no Slug.`);
+    }
+    if (seenSlugs.has(slug)) {
+      throw new Error(`Notion Locations contains duplicate Slug: ${slug}.`);
+    }
+    seenSlugs.add(slug);
+  }
+  rows.sort((left, right) =>
+    String(left[slugIndex]).localeCompare(
+      String(right[slugIndex]),
+      "en"
+    )
+  );
+  return `${[csvRow(CSV_HEADER), ...rows.map(csvRow)].join("\n")}\n`;
+}
+
 export function assertCurrentFormalSchema(dataSource) {
-  const schema = inspectCurrentFormalLocationProperties(dataSource?.properties);
+  const schema = inspectCurrentFormalDataSourceProperties(
+    dataSource?.properties
+  );
   if (!schema.ok) {
     const parts = [];
     if (schema.missing.length > 0) {
@@ -168,6 +200,57 @@ export function assertCurrentFormalSchema(dataSource) {
       ].filter(Boolean);
       parts.push(`Status options: ${statusProblems.join("; ")}`);
     }
+    if (schema.typeOptions.checked && !schema.typeOptions.ok) {
+      const typeProblems = [
+        schema.typeOptions.missing.length > 0
+          ? `missing ${schema.typeOptions.missing.join(", ")}`
+          : "",
+        schema.typeOptions.unexpected.length > 0
+          ? `unexpected ${schema.typeOptions.unexpected.join(", ")}`
+          : "",
+        schema.typeOptions.wrongColors.length > 0
+          ? `wrong colors ${schema.typeOptions.wrongColors
+              .map(({ name, actual, expected }) =>
+                `${name} (${actual}; expected ${expected})`
+              )
+              .join(", ")}`
+          : "",
+      ].filter(Boolean);
+      parts.push(`Type options: ${typeProblems.join("; ")}`);
+    }
+    if (!schema.statusOptions.checked && !schema.statusOptions.ok) {
+      parts.push("Status options: unavailable");
+    }
+    if (!schema.typeOptions.checked && !schema.typeOptions.ok) {
+      parts.push("Type options: unavailable");
+    }
+    const geographyOptions = [
+      ["Country Code", schema.countryOptions],
+      ["Destination Key", schema.destinationOptions],
+    ];
+    for (const [label, result] of geographyOptions) {
+      if (!result.checked) {
+        if (!result.ok) parts.push(`${label} options: unavailable`);
+        continue;
+      }
+      if (result.ok) continue;
+      const problems = [
+        result.missing.length > 0
+          ? `missing ${result.missing.join(", ")}`
+          : "",
+        result.unexpected.length > 0
+          ? `unexpected ${result.unexpected.join(", ")}`
+          : "",
+        result.wrongColors.length > 0
+          ? `wrong colors ${result.wrongColors
+              .map(({ name, actual, expected }) =>
+                `${name} (${actual}; expected ${expected})`
+              )
+              .join(", ")}`
+          : "",
+      ].filter(Boolean);
+      parts.push(`${label} options: ${problems.join("; ")}`);
+    }
     throw new Error(`Notion Locations schema is incompatible (${parts.join("; ")}).`);
   }
   return {
@@ -193,29 +276,8 @@ export async function exportSnapshot({
   const dataSource = await fetchDataSource(dataSourceId, apiKey, fetchImpl);
   const schema = assertCurrentFormalSchema(dataSource);
   const pages = await queryAllPages(dataSourceId, apiKey, fetchImpl);
-  const rows = pages.map(pageToRow);
-  const nameIndex = CSV_HEADER.indexOf("Location Name");
-  const slugIndex = CSV_HEADER.indexOf("Slug");
-  const seenSlugs = new Set();
-  for (const row of rows) {
-    const name = String(row[nameIndex] || "").trim() || "(untitled)";
-    const slug = String(row[slugIndex] || "").trim();
-    if (!slug) {
-      throw new Error(`Notion location "${name}" has no Slug.`);
-    }
-    if (seenSlugs.has(slug)) {
-      throw new Error(`Notion Locations contains duplicate Slug: ${slug}.`);
-    }
-    seenSlugs.add(slug);
-  }
-  rows.sort((left, right) =>
-    String(left[slugIndex]).localeCompare(
-      String(right[slugIndex]),
-      "en"
-    )
-  );
   return {
-    csv: `${[csvRow(CSV_HEADER), ...rows.map(csvRow)].join("\n")}\n`,
+    csv: buildSnapshotCsv(pages),
     pageCount: pages.length,
     schema,
   };

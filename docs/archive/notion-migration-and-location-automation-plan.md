@@ -7,14 +7,14 @@
 
 ## 1. Executive Summary
 
-The current system is a **static Vite site + two read-only Netlify Functions**. All location data lives in **one Google Sheet (1 worksheet, 15 columns, ~97 rows)**, published as CSV and proxied through `/api/locations`. **Nothing in the codebase writes to the sheet** — every insert/update is manual, fed by a manual research workflow (fan posts on Threads/Douban/KKday/Trip.com → hand-built markdown tables in `sources/` → copy-paste into the sheet).
+The current system is a **static Vite site + two read-only Netlify Functions**. All location data lives in **one Google Sheet (1 worksheet, 15 columns, ~97 rows)**, published as CSV and proxied through `/api/locations`. **Nothing in the codebase writes to the sheet** — every insert/update is manual, fed by a manual research workflow (fan posts on Threads/Douban/KKday/Trip.com → hand-built markdown tables, now retained under `docs/archive/` → copy-paste into the sheet).
 
 **Verdict (details in §16):**
 
 1. **Migration to Notion is feasible** — the dataset is tiny (~97 rows, well under any Notion limit) and the integration surface is one read-only function.
 2. **It is worth it only if Notion becomes the curation workbench**, not just a different place to store the same CSV. The real pain is the manual research/verify/paste loop, and Notion's Status/Relation/view features directly serve that loop. If you only want storage, staying on Sheets is cheaper.
 3. **Recommended role: Notion = system of record + curation UI, but the website never reads Notion at request time.** A sync job exports the Notion database to a validated snapshot (same CSV schema at first, JSON later) that `/api/locations` serves. This keeps the site fast, avoids Notion's ~3 req/s rate limit and uptime coupling, and makes rollback trivial.
-4. **Location automation can automate ~70–80% of the work** (extraction, geocoding, dedup checks, formatting, writing drafts to Notion). Final verification and Verified-status promotion must stay human — the project's own `sources/coord_verification_report.md` shows why: **14 of 34 manually/LLM-derived coordinates were wrong**, one by 18.8 km.
+4. **Location automation can automate ~70–80% of the work** (extraction, geocoding, dedup checks, formatting, writing drafts to Notion). Final verification and Verified-status promotion must stay human — the project's own `docs/archive/coord_verification_report.md` shows why: **14 of 34 manually/LLM-derived coordinates were wrong**, one by 18.8 km.
 5. **First experiment:** create the Notion database with 10 migrated rows + a snapshot script that emits the *identical* 15-column CSV the frontend already parses. Zero frontend changes; instant rollback via the existing `GOOGLE_SHEET_CSV_URL`.
 
 ---
@@ -30,16 +30,16 @@ The current system is a **static Vite site + two read-only Netlify Functions**. 
 | `/api/config` | `netlify/functions/config.mjs` | Returns map API keys at runtime |
 | CSV parser | `src/csv-parser.js` — `parsePublishedFormat()` | Header-based parsing; **requires** columns `Location Name, Thai / Alt Name, Category, Notes, Source URL, Verification Status, Duplicate Group` |
 | Community input | Netlify Forms (`suggest-edit`, `add-location`, `issue-report`) via `src/submit.js` | Write path is **email → human review → manual sheet edit** (documented in `note/TECH_DECISIONS.md`) |
-| Research artifacts | `sources/` — `lingorm_location_updated.md`, `Lingorm_Threads_Locations.md`, `coord_verification_report.md`, `Lingorm_Thailand_Locations.py` | The manual pipeline's working files |
+| Research artifacts | `docs/archive/` — `lingorm_location_updated.md`, `Lingorm_Threads_Locations.md`, `coord_verification_report.md`; the retired `Lingorm_Thailand_Locations.py` generator remains available in Git history | The manual pipeline's archived working files |
 | Tests | `tests/*.test.mjs`, node:test, 106 tests; `npm run typecheck` (strict `checkJs`) | Parser, functions, forms, UI covered |
 
 ### 2.2 CRUD reality
 
 | Operation | How it happens today | Automated? |
 |---|---|---|
-| **Create** | Human finds a fan post → extracts fields (sometimes AI-assisted, per `sources/*.md` structure) → pastes row into Google Sheet | ❌ Manual |
+| **Create** | Human finds a fan post → extracts fields (sometimes AI-assisted, per the archived research-table structure) → pastes row into Google Sheet | ❌ Manual |
 | **Read** | Sheet → published CSV → `/api/locations` → `parseCSV()` → `state.data` | ✅ Automated |
-| **Update** | Human edits sheet cell (e.g., 2026-06-13 sync log in `sources/lingorm_location_updated.md`) | ❌ Manual |
+| **Update** | Human edits sheet cell (e.g., 2026-06-13 sync log in `docs/archive/lingorm_location_updated.md`) | ❌ Manual |
 | **Delete/Hide** | Set `Verification Status = Could Not Find` (hidden from public list, `tests/public-notfound.test.mjs`) | ❌ Manual |
 | **Community suggestions** | Netlify Forms → email → human triage → manual sheet edit | ❌ Manual |
 
@@ -54,7 +54,7 @@ The current system is a **static Vite site + two read-only Netlify Functions**. 
 
 ### 2.4 No existing automation
 
-**Fact:** there is no scheduler, crawler, third-party location API client, LLM call, or MCP integration anywhere in the repo (checked `package.json`, `netlify/functions/`, `src/`, `build.sh`). `sources/Lingorm_Thailand_Locations.py` is a one-off `openpyxl` xlsx generator with hardcoded data — a legacy artifact, superseded by the Google Sheet.
+**Fact:** there is no scheduler, crawler, third-party location API client, LLM call, or MCP integration anywhere in the repo (checked `package.json`, `netlify/functions/`, `src/`, `build.sh`). The now-removed `Lingorm_Thailand_Locations.py` was a one-off `openpyxl` xlsx generator with hardcoded data — a legacy artifact, superseded by the Google Sheet and retained in Git history.
 
 ### 2.5 Secrets & dependencies
 
@@ -83,7 +83,7 @@ This plan introduces a **second, distinct** set of Google/HERE credentials for l
 ```mermaid
 flowchart LR
     subgraph Manual["Manual research loop (the pain point)"]
-        FP["Fan posts<br/>Threads · Douban · KKday · Trip.com"] --> EX["Human/AI extracts fields<br/>sources/*.md tables"]
+        FP["Fan posts<br/>Threads · Douban · KKday · Trip.com"] --> EX["Human/AI extracts fields<br/>archived research tables"]
         EX --> GEO["Human finds coords<br/>(goo.gl redirects, embeds, guesses)"]
         GEO --> PASTE["Copy-paste into Google Sheet"]
     end
@@ -229,14 +229,14 @@ seed (fan post URL / venue name / community form)
 
 - `slugify`, `CATEGORY_ALIASES`, `normalizeStatus`, `normalizeSourceTags`, `ICON_BY_CAT`, `ZH_BY_CAT` (`src/csv-parser.js`) — the normalization layer is written and unit-tested. The pipeline should import these, not reimplement them.
 - The 15-column schema and its tests (`tests/parsecsv.test.mjs`, `tests/locations-function.test.mjs`) define the output contract.
-- `sources/*.md` field tables are effectively hand-run pipeline outputs — they define the extraction spec.
+- The field tables now retained under `docs/archive/` are effectively hand-run pipeline outputs — they define the historical extraction spec.
 
 ### 7.3 Evidence-based division of labor
 
 | Step | Automatable? | Evidence / reason |
 |---|---|---|
 | Discover candidate posts | ⚠️ Semi | Threads/Douban have no usable public APIs; scraping is ToS-fragile. Human drops URLs into an Inbox; automation takes over from there |
-| Extract fields from a post | ✅ High | LLMs are strong at structured extraction from prose; `sources/*.md` shows the exact target shape |
+| Extract fields from a post | ✅ High | LLMs are strong at structured extraction from prose; the archived research tables show the exact target shape |
 | Coordinates / address | ✅ **Must be deterministic API, never LLM** | `coord_verification_report.md`: 14/34 hand/LLM coords wrong, worst 18.8 km off |
 | Categorize + bilingual notes draft | ✅ High | LLM draft, human polishes voice |
 | Dedup | ✅ High | Deterministic: place_id equality → same place; else haversine + fuzzy name |
@@ -487,7 +487,7 @@ After full migration:
 ### Facts vs inference vs assumption
 
 - **Facts (verified in code/data):** read-only data path; 15-column schema; ~97 rows; slug-as-ID; unused `Duplicate Group`; manual write workflow; coordinate error history (14/34); no existing automation; test/typecheck setup.
-- **Evidence-based inferences:** manual research loop is the dominant cost (from `sources/` artifacts and their timestamps); coordinate quality is the top data risk; renaming a location breaks favorites *and previously shared favorite links* (`favorites.js` persists slug IDs to localStorage and the URL).
+- **Evidence-based inferences:** manual research loop is the dominant cost (from the archived research artifacts and their timestamps); coordinate quality is the top data risk; renaming a location breaks favorites *and previously shared favorite links* (`favorites.js` persists slug IDs to localStorage and the URL).
 - **Unverified assumptions:** Notion rich-text round-trip fidelity for CJK/multi-line (Phase 1 test target); Places resolver accuracy for Thai fan-venue names (Phase 1 spike target); your future edit cadence stays low-volume; no second editor with conflicting workflow.
 
 ---

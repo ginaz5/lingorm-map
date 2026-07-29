@@ -29,3 +29,5 @@ migration-output/
 # data/locations.next.csv` (README "Data Schema") — reviewed locally before
 # being promoted to data/locations.csv, never committed as-is.
 data/locations.next.csv
+
+.claude

@@ -3,9 +3,9 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 async function loadOpenInGoogleMaps(deps) {
-  const source = await readFile(new URL('../src/ui.js', import.meta.url), 'utf8');
+  const source = await readFile(new URL('../src/ui/ui.js', import.meta.url), 'utf8');
   const match = source.match(/(?:export\s+)?function openInGoogleMaps\(i\)\s*\{[\s\S]*?\n\}/);
-  assert.ok(match, 'openInGoogleMaps function should exist in src/ui.js');
+  assert.ok(match, 'openInGoogleMaps function should exist in src/ui/ui.js');
 
   const code = match[0].replace(/\bexport\s+/g, '');
   return Function('state', 'window', `${code}; return { openInGoogleMaps };`)(
@@ -22,7 +22,7 @@ test('index UI does not render Google Maps open links', async () => {
 });
 
 test('Google Maps navigation reads the parsed maps field', async () => {
-  const source = await readFile(new URL('../src/ui.js', import.meta.url), 'utf8');
+  const source = await readFile(new URL('../src/ui/ui.js', import.meta.url), 'utf8');
 
   assert.doesNotMatch(source, /\brow\.mapsQuery\b/);
   assert.match(source, /\brow\.maps\b/);

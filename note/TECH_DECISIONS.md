@@ -71,7 +71,7 @@ export function makeMarkerContent(status, icon) {
 | Needs Review | `.marker-review` | `#c2772a` 橘 |
 | Could Not Find | `.marker-notfound` | `#b1452f` 紅（不顯示於公開清單） |
 
-Emoji 取自 `row.icon`（由 `csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
+Emoji 取自 `row.icon`（由 `src/data/csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
 
 ---
 
@@ -141,7 +141,7 @@ normalize 為 `Paused`（非公開），該路徑會顯示 0 筆地點。`build.
 
 **注意事項：**
 - 需在 Netlify Dashboard → Forms 手動開啟 form detection，再重新 deploy
-- AJAX 提交必須包含 `form-name` 欄位（已實作於 `submit.js`）
+- AJAX 提交必須包含 `form-name` 欄位（已實作於 `src/services/submit.js`）
 - `Content-Type: application/x-www-form-urlencoded` + `URLSearchParams` 編碼（已實作）
 - 本地開發時 submit 為 mock（`console.info`），不實際送出
 
@@ -168,7 +168,7 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 ## 多語支援：i18n 系統
 
 **架構：**
-- 所有 UI 字串集中在 `src/i18n.js` 的 `T` 物件
+- 所有 UI 字串集中在 `src/core/i18n.js` 的 `T` 物件
 - HTML 元素使用 `data-i18n`, `data-i18n-ph`, `data-i18n-html` 屬性
 - `updateLangUI()` 單次 scan 更新全部元素
 - 動態渲染內容（卡片、category filter）在語系切換時重新 render
@@ -205,7 +205,7 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 | 即時更新 | Server-Sent Events 或 Supabase Realtime |
 | 流量超過 quota（>900次/日） | 調高 Cloud Console quota，或升級 Vercel（key 存環境變數） |
 | 更多地點（>200 筆） | 考慮虛擬捲動（virtual scroll） |
-| 泰文支援 | `i18n.js` 加 `th` key，lang toggle 加第三段 |
+| 泰文支援 | `src/core/i18n.js` 加 `th` key，lang toggle 加第三段 |
 
 ---
 
@@ -213,8 +213,8 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 
 **決策：** 保留現有 `.js` ES modules 與 Vite runtime/build 流程；TypeScript 只作為開發期靜態檢查器，以 strict、no-emit `checkJs` 搭配 JSDoc 描述應用程式資料契約，不進行整體 `.ts` 遷移。
 
-**初始範圍：**
-- 主要檢查 `src/state.js`、`src/csv-parser.js`、`src/map.js`、`src/forms.js`
+**目前範圍：**
+- 主要檢查 `src/app/app-coordinator.js`、`src/core/state.js`、`src/data/csv-parser.js`、`src/map/map.js`、`src/features/forms.js`
 - TypeScript 會沿著上述檔案的 ES module imports 檢查相依邊界；必要時只補窄範圍 JSDoc 或 DOM null safety，不重新設計被匯入模組
 - 後續模組依維護需求逐步納入，不要求一次覆蓋全部程式碼
 
@@ -227,3 +227,44 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 **限制：** Google Maps 與 HERE Maps SDK 是執行時動態載入，目前只在 ambient declaration 將其 global boundary 標為 `any`。這代表第三方 SDK 內部 API 不在本階段的嚴格型別保證內；應用程式自行擁有的資料與函式邊界仍以 JSDoc 嚴格檢查。若日後需要更完整 SDK 型別，再個別引入官方或維護良好的 declarations。
 
 **擴充方式：** 每次納入新模組時，同步補足其 public JSDoc contract、imported boundaries 與測試，維持 `npm run typecheck`、完整 node tests、`npm run build` 依序通過後才提交。
+
+---
+
+## 國家／目的地複選篩選
+
+**決策：** 地理篩選採兩層式 `Country Code` → `Destination Key` taxonomy。
+目的地代表城市或旅遊目的地，不代表曼谷行政區或街區。篩選器允許跨國複選；
+同一層目的地之間使用 OR，並與搜尋、類別、主題、收藏條件使用 AND。
+
+**互動：**
+
+- 國家 checkbox 全選或取消其所有子目的地；只選部分子項時顯示 indeterminate。
+- 變更立即套用，選擇儲存在 `localStorage`，重新載入後還原。
+- 每次目的地變更後，Google Maps 與 HERE Maps 都縮放至所有篩選結果；
+  單一結果使用地點層級 zoom，零結果維持原視窗。
+
+**資料契約：** taxonomy 集中在 `src/data/destinations.js`。每個 `Published`
+地點必須具備受支援且互相匹配的 `Country Code` 與 `Destination Key`；
+匯出快照驗證失敗即阻擋 build/deploy。`Paused`／`Inactive` 草稿可暫時未分類。
+目前支援 `TH`、`VN`、`TW`、`HK`、`MO`；台灣目的地為 `taipei`、
+`taichung`、`kaohsiung`、`tainan`、`hualien`，香港與澳門分別使用
+`hong-kong`、`macau`。既有泰國與越南 key 保持不變。
+
+---
+
+## 地點主題篩選
+
+**決策：** 公開網站將正式資料的 `Type` 欄位顯示為「主題」，以單選下拉
+與搜尋、類別、目的地及收藏條件使用 AND。篩選順序固定為
+「類別／主題／目的地」，只顯示目前 `Published` 地點中實際存在的選項。
+英文篩選器沿用正式 schema 名稱 `Type`；地圖 popup 則在類別 badge 旁
+顯示依目前語言轉換的 Type badge。
+
+**顯示契約：** 儲存與篩選仍使用穩定英文值；語言切換只改變顯示標籤：
+
+| Type | 中文 |
+| --- | --- |
+| `LingOrm` | LingOrm |
+| `JKR Picks` | JKR 推薦 |
+| `JKR Fan Projects` | JKR 應援 |
+| `Admin Picks` | 留友看 |

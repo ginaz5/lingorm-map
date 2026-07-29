@@ -11,6 +11,7 @@ import {
   applyPageConfirm,
   applyPageDryRun,
   applyPatchToNotionProperties,
+  buildCandidateLocationSuggestions,
   candidateResetPageConfirm,
   candidateResetPageDryRun,
   candidateResetPatchToNotionProperties,
@@ -19,6 +20,7 @@ import {
   coordinateCorrectionPageConfirm,
   coordinateCorrectionPageDryRun,
   coordinateCorrectionPatchToNotionProperties,
+  formatValidationReport,
   inspectPageApplyLock,
   notionPageToRow,
   parsePageReference,
@@ -36,6 +38,15 @@ import {
   buildPendingApplyPatch,
   buildPlaceIdCandidatePatch,
 } from '../scripts/location-verification-core.mjs';
+import {
+  CURRENT_FORMAL_COUNTRY_OPTIONS,
+  CURRENT_FORMAL_DESTINATION_OPTIONS,
+  CURRENT_FORMAL_LOCATION_PROPERTIES,
+  CURRENT_FORMAL_LOCATION_PROPERTY_TYPES,
+  CURRENT_FORMAL_STATUS_OPTIONS,
+  CURRENT_FORMAL_TYPE_OPTIONS,
+} from '../scripts/formal-location-current-schema.mjs';
+import { buildSnapshotCsv } from '../scripts/export-snapshot.mjs';
 
 // Arbitrary data source ID used only in fail-closed tests to represent a
 // page that lives outside the single allowlisted Locations database.
@@ -105,12 +116,16 @@ function page(overrides = {}) {
     },
     archived: false,
     in_trash: false,
+    last_edited_time: '2026-07-28T08:00:00.000Z',
     properties: {
       Name: title('漢王廟 (Han Wang Miao)'),
       Slug: richText('han-wang-miao'),
       'Name ZH': richText('漢王廟'),
       'Thai / Alt Name': richText(''),
       Category: select('Neighbourhood'),
+      'Country Code': select('TH'),
+      'Destination Key': select('bangkok'),
+      Type: select('LingOrm'),
       'Google Maps URL': {
         type: 'url',
         url: 'https://www.google.com/maps/search/?api=1&query=Han+Wang+Miao',
@@ -277,8 +292,163 @@ test('Notion page properties are converted to canonical runner row values', () =
   assert.equal(row.Name, '漢王廟 (Han Wang Miao)');
   assert.equal(row.Slug, 'han-wang-miao');
   assert.equal(row.Status, 'Paused');
+  assert.equal(row['Country Code'], 'TH');
+  assert.equal(row['Destination Key'], 'bangkok');
+  assert.equal(row.Type, 'LingOrm');
   assert.equal(row['Review Needed'], '__YES__');
   assert.deepEqual(row['Source Tags'], ['Threads']);
+});
+
+test('Candidate address evidence suggests supported Country Code and Destination Key options', () => {
+  const suggestions = buildCandidateLocationSuggestions({
+    currentCountryCode: 'TH',
+    currentDestinationKey: '',
+    candidate: {
+      formattedAddress: 'Silom, Bang Rak, Bangkok 10500, Thailand',
+      addressComponents: [
+        {
+          longText: 'Bangkok',
+          shortText: 'Bangkok',
+          types: ['administrative_area_level_1'],
+        },
+        {
+          longText: 'Thailand',
+          shortText: 'TH',
+          types: ['country'],
+        },
+      ],
+    },
+  });
+
+  assert.equal(suggestions.countryCode.recommendedValue, 'TH');
+  assert.equal(suggestions.countryCode.comparison, 'same');
+  assert.deepEqual(
+    suggestions.countryCode.options.map((option) => option.value),
+    ['TH']
+  );
+  assert.equal(suggestions.destinationKey.recommendedValue, 'bangkok');
+  assert.equal(suggestions.destinationKey.comparison, 'missing');
+  assert.equal(
+    suggestions.destinationKey.options[0].confidence,
+    'high'
+  );
+});
+
+test('Candidate address evidence maps TW, HK, and MO destinations', () => {
+  const cases = [
+    {
+      countryCode: 'TW',
+      destinationKey: 'kaohsiung',
+      formattedAddress: 'No. 1, Kaohsiung City, Taiwan',
+      area: {
+        longText: '高雄市',
+        shortText: '高雄市',
+        types: ['administrative_area_level_1'],
+      },
+      country: {
+        longText: 'Taiwan',
+        shortText: 'TW',
+        types: ['country'],
+      },
+    },
+    {
+      countryCode: 'HK',
+      destinationKey: 'hong-kong',
+      formattedAddress: 'Tsim Sha Tsui, Hong Kong',
+      area: {
+        longText: 'Hong Kong',
+        shortText: 'HK',
+        types: ['administrative_area_level_1'],
+      },
+      country: {
+        longText: 'Hong Kong',
+        shortText: 'HK',
+        types: ['country'],
+      },
+    },
+    {
+      countryCode: 'MO',
+      destinationKey: 'macau',
+      formattedAddress: 'Avenida de Almeida Ribeiro, Macao',
+      area: {
+        longText: 'Macao',
+        shortText: 'Macao',
+        types: ['administrative_area_level_1'],
+      },
+      country: {
+        longText: 'Macao',
+        shortText: 'MO',
+        types: ['country'],
+      },
+    },
+  ];
+
+  for (const item of cases) {
+    const suggestions = buildCandidateLocationSuggestions({
+      candidate: {
+        formattedAddress: item.formattedAddress,
+        addressComponents: [item.area, item.country],
+      },
+    });
+    assert.equal(
+      suggestions.countryCode.recommendedValue,
+      item.countryCode
+    );
+    assert.equal(
+      suggestions.destinationKey.recommendedValue,
+      item.destinationKey
+    );
+  }
+});
+
+test('Candidate taxonomy suggestions fail closed for unsupported or unmapped addresses', () => {
+  const suggestions = buildCandidateLocationSuggestions({
+    currentCountryCode: 'TH',
+    currentDestinationKey: 'khao-yai',
+    candidate: {
+      formattedAddress: 'Pak Chong, Nakhon Ratchasima, Thailand',
+      addressComponents: [
+        {
+          longText: 'Nakhon Ratchasima',
+          shortText: 'Nakhon Ratchasima',
+          types: ['administrative_area_level_1'],
+        },
+        {
+          longText: 'Thailand',
+          shortText: 'TH',
+          types: ['country'],
+        },
+      ],
+    },
+  });
+
+  assert.equal(suggestions.countryCode.recommendedValue, 'TH');
+  assert.equal(suggestions.destinationKey.recommendedValue, null);
+  assert.deepEqual(suggestions.destinationKey.options, []);
+  assert.equal(suggestions.destinationKey.comparison, 'unavailable');
+
+  const unsupportedCountry = buildCandidateLocationSuggestions({
+    currentCountryCode: '',
+    currentDestinationKey: '',
+    candidate: {
+      formattedAddress: 'Pattaya Street, Singapore',
+      addressComponents: [
+        {
+          longText: 'Pattaya',
+          shortText: 'Pattaya',
+          types: ['route'],
+        },
+        {
+          longText: 'Singapore',
+          shortText: 'SG',
+          types: ['country'],
+        },
+      ],
+    },
+  });
+  assert.equal(unsupportedCountry.countryCode.observedValue, 'SG');
+  assert.equal(unsupportedCountry.countryCode.recommendedValue, null);
+  assert.deepEqual(unsupportedCountry.destinationKey.options, []);
 });
 
 test('resolve dry-run defaults to legacy Place ID refresh and never writes Notion', async () => {
@@ -293,6 +463,18 @@ test('resolve dry-run defaults to legacy Place ID refresh and never writes Notio
           place_id: 'ChIJcurrent',
           name: 'Han Wang Shrine',
           formatted_address: 'Bangkok',
+          address_components: [
+            {
+              long_name: 'Bangkok',
+              short_name: 'Bangkok',
+              types: ['administrative_area_level_1'],
+            },
+            {
+              long_name: 'Thailand',
+              short_name: 'TH',
+              types: ['country'],
+            },
+          ],
           geometry: {
             location: { lat: 13.7329, lng: 100.5122 },
           },
@@ -321,6 +503,24 @@ test('resolve dry-run defaults to legacy Place ID refresh and never writes Notio
   assert.equal(result.resolver.result, 'place_id_candidate');
   assert.equal(result.resolver.candidateSource, 'existing_place_id');
   assert.equal(result.resolver.apiMode, 'places_legacy');
+  assert.equal(result.page.countryCode, 'TH');
+  assert.equal(result.page.destinationKey, 'bangkok');
+  assert.equal(
+    result.resolver.candidates[0].locationSuggestions.countryCode
+      .recommendedValue,
+    'TH'
+  );
+  assert.equal(
+    result.resolver.candidates[0].locationSuggestions.destinationKey
+      .recommendedValue,
+    'bangkok'
+  );
+  assert.match(
+    new URL(
+      calls.find(({ url }) => url.includes('/place/details/json')).url
+    ).searchParams.get('fields'),
+    /address_components/
+  );
   assert.equal(result.proposedPatch['Candidate Summary'], '[Candidate Ready]');
   assert.match(result.proposedPatch['Candidate Maps URL'], /query_place_id=ChIJcurrent/);
 
@@ -605,6 +805,88 @@ test('multiple Text Search results produce ambiguous payload without a Place ID'
   assert.notEqual(
     result.resolver.candidates[0].mapsUrl,
     result.resolver.candidates[1].mapsUrl
+  );
+});
+
+test('legacy Text Search enriches Candidate suggestions with Place Details address components', async () => {
+  const pageWithoutPlaceId = page();
+  pageWithoutPlaceId.properties['Google Place ID'] = richText('');
+  let detailsCalls = 0;
+
+  const fetchImpl = async (url) => {
+    const value = String(url);
+    if (value.includes('/v1/pages/')) {
+      return jsonResponse(pageWithoutPlaceId);
+    }
+    if (value.includes('/place/textsearch/json')) {
+      return jsonResponse({
+        status: 'OK',
+        results: [
+          {
+            place_id: 'ChIJsearched',
+            name: 'Searched place',
+            formatted_address: 'Bangkok, Thailand',
+            geometry: {
+              location: { lat: 13.7, lng: 100.5 },
+            },
+            business_status: 'OPERATIONAL',
+          },
+        ],
+      });
+    }
+    if (value.includes('/place/details/json')) {
+      detailsCalls += 1;
+      return jsonResponse({
+        status: 'OK',
+        result: {
+          place_id: 'ChIJsearched',
+          name: 'Searched place',
+          formatted_address: 'Bangkok, Thailand',
+          address_components: [
+            {
+              long_name: 'Bangkok',
+              short_name: 'Bangkok',
+              types: ['administrative_area_level_1'],
+            },
+            {
+              long_name: 'Thailand',
+              short_name: 'TH',
+              types: ['country'],
+            },
+          ],
+          geometry: {
+            location: { lat: 13.7, lng: 100.5 },
+          },
+          business_status: 'OPERATIONAL',
+        },
+      });
+    }
+    if (value.includes('/data_sources/')) {
+      return jsonResponse({ results: [pageWithoutPlaceId] });
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  };
+
+  const result = await resolvePageDryRun({
+    pageReference: PAGE_ID,
+    notionApiKey: 'notion-test-key',
+    googlePlacesKey: 'google-test-key',
+    fetchImpl,
+    now: new Date('2026-07-19T08:00:00.000Z'),
+    randomUUIDImpl: () => '00000000-0000-4000-8000-000000000004',
+  });
+
+  assert.equal(detailsCalls, 1);
+  assert.equal(result.resolver.result, 'place_id_candidate');
+  assert.equal(
+    result.resolver.candidates[0].locationSuggestions.countryCode
+      .recommendedValue,
+    'TH'
+  );
+  assert.equal(
+    result.resolver.candidates[0].locationSuggestions.destinationKey
+      .recommendedValue,
+    'bangkok'
   );
 });
 
@@ -2204,12 +2486,12 @@ test('production preflight reads one formal page and previews conservative migra
     Status: 'Paused',
     'Review Needed': '__YES__',
   });
-  assert.equal(result.schema.formalFieldCount, 14);
+  assert.equal(result.schema.formalFieldCount, 17);
   assert.deepEqual(result.schema.missingFormalFields, []);
   assert.equal(result.schema.requiredWorkflowFieldCount, 3);
   assert.equal(result.schema.presentWorkflowFields.length, 0);
   assert.equal(result.schema.missingWorkflowFields.length, 3);
-  assert.equal(result.schema.expectedPropertyCount, 17);
+  assert.equal(result.schema.expectedPropertyCount, 20);
   assert.deepEqual(result.schema.wrongPropertyTypes, []);
   assert.equal(result.gates.formalReadBoundary, true);
   assert.equal(result.gates.canaryWriteReady, false);
@@ -2224,7 +2506,7 @@ test('production preflight reads one formal page and previews conservative migra
   ]);
 });
 
-test('production preflight accepts the current 17-property formal schema', async () => {
+test('production preflight accepts the current 20-property formal schema', async () => {
   const formalPage = page();
   formalPage.parent.data_source_id = FORMAL_DATA_SOURCE_ID;
   formalPage.properties.Status = select('Published');
@@ -2252,7 +2534,7 @@ test('production preflight accepts the current 17-property formal schema', async
 
   assert.deepEqual(result.proposedPatch, {});
   assert.deepEqual(result.schema, {
-    formalFieldCount: 14,
+    formalFieldCount: 17,
     missingFormalFields: [],
     requiredWorkflowFieldCount: 3,
     presentWorkflowFields: [
@@ -2261,10 +2543,31 @@ test('production preflight accepts the current 17-property formal schema', async
       'Last Verified',
     ],
     missingWorkflowFields: [],
-    expectedPropertyCount: 17,
+    expectedPropertyCount: 20,
     wrongPropertyTypes: [],
     unexpectedProperties: [],
     statusOptions: {
+      checked: false,
+      ok: true,
+      missing: [],
+      unexpected: [],
+      wrongColors: [],
+    },
+    typeOptions: {
+      checked: false,
+      ok: true,
+      missing: [],
+      unexpected: [],
+      wrongColors: [],
+    },
+    countryOptions: {
+      checked: false,
+      ok: true,
+      missing: [],
+      unexpected: [],
+      wrongColors: [],
+    },
+    destinationOptions: {
       checked: false,
       ok: true,
       missing: [],
@@ -2373,12 +2676,43 @@ test('validate all queries only the single formal Locations database with NOTION
   const calls = [];
   const formalPage = page();
   formalPage.properties.Status = select('Published');
+  formalPage.properties['Review Needed'] = {
+    type: 'checkbox',
+    checkbox: false,
+  };
+  formalPage.properties['Last Verified'] = {
+    type: 'date',
+    date: { start: '2026-07-29T10:00:00.000Z' },
+  };
+  const schemaProperties = Object.fromEntries(
+    CURRENT_FORMAL_LOCATION_PROPERTIES.map((name) => [
+      name,
+      { type: CURRENT_FORMAL_LOCATION_PROPERTY_TYPES[name] },
+    ])
+  );
+  schemaProperties.Status.select = {
+    options: CURRENT_FORMAL_STATUS_OPTIONS.map((option) => ({ ...option })),
+  };
+  schemaProperties.Type.select = {
+    options: CURRENT_FORMAL_TYPE_OPTIONS.map((option) => ({ ...option })),
+  };
+  schemaProperties['Country Code'].select = {
+    options: CURRENT_FORMAL_COUNTRY_OPTIONS.map((option) => ({ ...option })),
+  };
+  schemaProperties['Destination Key'].select = {
+    options: CURRENT_FORMAL_DESTINATION_OPTIONS.map((option) => ({
+      ...option,
+    })),
+  };
   const fetchImpl = async (url, options = {}) => {
     calls.push({
       url: String(url),
-      method: options.method,
+      method: options.method || 'GET',
       authorization: options.headers.Authorization,
     });
+    if (!options.method) {
+      return jsonResponse({ properties: schemaProperties });
+    }
     return jsonResponse({
       results: [formalPage],
       has_more: false,
@@ -2388,15 +2722,71 @@ test('validate all queries only the single formal Locations database with NOTION
   const result = await validateAllLocations({
     notionApiKey: 'notion-test-key',
     fetchImpl,
-    expectedCount: 1,
+    snapshotPolicy: {
+      policyId: 'test-policy',
+      minimumRowCount: 1,
+      protectedSlugs: ['han-wang-miao'],
+      deletionManifest: [],
+    },
+    committedSnapshotCsv: buildSnapshotCsv([formalPage]),
   });
 
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].method, 'POST');
+  assert.equal(result.ok, true);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].method, 'GET');
   assert.equal(calls[0].url.includes(FORMAL_DATA_SOURCE_ID), true);
   assert.equal(calls[0].authorization, 'Bearer notion-test-key');
+  assert.equal(calls[1].method, 'POST');
+  assert.equal(calls[1].url.includes(FORMAL_DATA_SOURCE_ID), true);
   assert.equal(result.mode, 'live');
   assert.equal(result.writePerformed, false);
   assert.equal(result.dataSource, FORMAL_DATA_SOURCE_ID);
   assert.equal(result.rowCount, 1);
+  assert.equal(result.schema.propertyCount, 20);
+  assert.deepEqual(result.typeCounts, { LingOrm: 1 });
+  assert.equal(result.checks.policy.ok, true);
+  assert.equal(result.checks.live.ok, true);
+  assert.equal(result.checks.snapshot.ok, true);
+});
+
+test('validation report exposes all four layers, Type counts, and warnings', () => {
+  const report = formatValidationReport({
+    ok: true,
+    dataSource: FORMAL_DATA_SOURCE_ID,
+    rowCount: 2,
+    schema: { propertyCount: 20, expectedPropertyCount: 20 },
+    checks: {
+      schema: { ok: true },
+      policy: {
+        ok: true,
+        minimumRowCount: 1,
+        protectedSlugCount: 1,
+      },
+      live: { ok: true, issueCount: 0, warningCount: 1 },
+      snapshot: {
+        ok: true,
+        liveRowCount: 2,
+        committedRowCount: 2,
+        changedSlugCount: 0,
+        changedFieldCount: 0,
+        addedSlugCount: 0,
+        removedSlugCount: 0,
+      },
+    },
+    statusCounts: { Published: 1, Paused: 1 },
+    typeCounts: { LingOrm: 1, '(blank)': 1 },
+    warnings: [{
+      layer: 'live',
+      code: 'TYPE_MISSING',
+      slug: 'paused',
+      field: 'Type',
+      message: 'Type is blank',
+    }],
+    issues: [],
+  });
+  assert.match(report, /Schema: PASS/);
+  assert.match(report, /Committed snapshot: PASS/);
+  assert.match(report, /Type distribution/);
+  assert.match(report, /Warnings: 1/);
+  assert.match(report, /\[live:TYPE_MISSING\]/);
 });

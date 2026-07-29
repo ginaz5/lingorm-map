@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { parseCSV, tokenizeCSV } from '../src/csv-parser.js';
+import { parseCSV, tokenizeCSV } from '../src/data/csv-parser.js';
 import { CSV_HEADER } from '../scripts/export-snapshot.mjs';
 
 const snapshotPath = fileURLToPath(new URL('../data/locations.csv', import.meta.url));
@@ -17,35 +17,73 @@ const snapshotCsv = readFileSync(snapshotPath, 'utf8');
 const snapshotRows = parseCSV(snapshotCsv);
 
 const APPROVED_ADDED_SLUGS = [
+  'ama-bakery-silom',
+  'auntie-nid-coffee-shop',
+  'baiwago-plus-cafe-kmc',
   'cafe-madeleine-four-seasons-bangkok',
+  'chatuchak-weekend-market',
+  'chom-arun-restaurant',
+  'chrisly-cafe-tsim-sha-tsui',
   'churn-buttery-lat-krabang',
+  'connie-bakes-anhe',
+  'dragon-town-banthat-thong',
+  'gourmet-market-siam-paragon',
+  'hechalou-tea-hualien-shangxiao',
+  'hint-coffee-khlong-san',
+  'hitori-shabu-siam-paragon',
+  'hoho-drinks-taipei-xinyi',
+  'iki-haus-sukhumvit-71',
+  'james-boulangerie-gaysorn-amarin',
+  'kao-man-ban-nok-ramkhamhaeng',
   'kate-teaw-boat-noodles-siam-square-soi-3',
   'khlong-bang-luang-floating-market',
+  'long-phung-buffet-seafood-mookata',
+  'mae-varee-mango-sticky-rice',
+  'military-dependents-village-cultural-park',
   'mok-ubon-ratchathani',
+  'moo-ping-sutra-akong-jae-hoong',
+  'nai-ek-roll-noodles',
+  'nanaflora',
+  'nattaporn-coconut-ice-cream',
+  'naughty-girl-kaohsiung',
+  'nguan-soon-no1-hand-brand-yaowarat',
+  'pak-khlong-talat',
   'pata-plantation-original-tiwanon',
+  'phra-phutthayotfa-bridge-memorial-bridge',
   'plantiful-sukhumvit-61',
+  'pungdet-banthat-thong',
+  'rethink-coffee-roasters-broadway-macau',
+  'sampeng-market',
+  'shenfangcui-coffee-yunong',
+  'shua-fei-tea-feng-chia',
+  'star-trails-kaohsiung',
+  'swu-international-flea-market',
+  'titicaca-brunch-club-central-eastville',
+  'waraporn-salapao-asoke',
+  'wat-paknam-phasi-charoen',
 ];
 const APPROVED_REMOVED_SLUGS = [
   'by',
 ];
 
-test('formal snapshot uses the stable CSV contract and contains 104 unique rows', () => {
+test('formal snapshot uses the stable CSV contract and contains 141 unique rows', () => {
   assert.deepEqual(tokenizeCSV(snapshotCsv)[0], CSV_HEADER);
-  assert.equal(snapshotRows.length, 104);
-  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, 104);
+  assert.equal(snapshotRows.length, 141);
+  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, 141);
 });
 
 test('formal snapshot preserves the current publication status distribution', () => {
   const statusCounts = Object.fromEntries(
-    ['Published', 'Inactive'].map((status) => [
+    ['Published', 'Paused', 'Inactive'].map((status) => [
       status,
       snapshotRows.filter((row) => row.status === status).length,
     ])
   );
 
   assert.deepEqual(statusCounts, {
-    Published: 103,
-    Inactive: 1,
+    Published: 111,
+    Paused: 26,
+    Inactive: 4,
   });
   assert.equal(snapshotRows.every((row) => row.approx === ''), true);
 });

@@ -13,10 +13,13 @@ test('configures strict JavaScript type checking', async () => {
   assert.equal(config.compilerOptions.noEmit, true);
   assert.equal(config.compilerOptions.strict, true);
   assert.deepEqual(config.include, [
-    'src/state.js',
-    'src/csv-parser.js',
-    'src/map.js',
-    'src/forms.js',
-    'src/map-globals.d.ts',
+    'src/app/app-coordinator.js',
+    'src/changelog-page.js',
+    'src/core/state.js',
+    'src/data/csv-parser.js',
+    'src/features/changelog-data.js',
+    'src/map/map.js',
+    'src/features/forms.js',
+    'src/map/map-globals.d.ts',
   ]);
 });

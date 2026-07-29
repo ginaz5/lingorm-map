@@ -1,21 +1,40 @@
-import { lang, setLang, t } from './i18n.js';
-import { state } from './state.js';
+import { setLang, t } from './core/i18n.js';
+import { state } from './core/state.js';
 import {
-  updateLangUI, buildCatFilter,
-  applyFilters, activateCard, buildPopupContent,
-} from './render.js';
+  updateLangUI, buildCatFilter, buildTypeFilter,
+  applyFilters, activateCard,
+} from './ui/render.js';
 import {
   getEffectiveTheme, switchTab,
-  showSnackbar, locateMe, openNavigation, openInGoogleMaps, toggleLang,
-} from './ui.js';
+  showSnackbar, locateMe, openNavigation, openInGoogleMaps,
+} from './ui/ui.js';
 import {
   openIssueModal, closeIssueModal, submitIssueReport,
   tryLoadSheet,
-} from './forms.js';
-import { initMap, loadMapScript, updateMapTheme, buildMarkers } from './map.js';
-import { loadFavorites, toggleFavorite } from './favorites.js';
-import { heartSVG } from './render.js';
-import { checkWhatsNew, closeWhatsNew } from './whats-new.js';
+} from './features/forms.js';
+import {
+  initMap,
+  loadMapScript,
+  updateMapTheme,
+  buildMarkers,
+  fitMapToVisibleLocations,
+} from './map/map.js';
+import {
+  applyFiltersAndSyncMap,
+  toggleLang,
+} from './app/app-coordinator.js';
+import {
+  loadFavorites,
+  releasePointerFocus,
+  toggleFavoriteWithNotice,
+} from './features/favorites.js';
+import { heartSVG } from './ui/render.js';
+import { checkWhatsNew, closeWhatsNew } from './features/whats-new.js';
+import {
+  initDestinationFilter,
+  reconcileDestinationFilter,
+  renderDestinationFilter,
+} from './features/destination-filter.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -48,9 +67,14 @@ function applyCoordinateJitter() {
 
 function rebuild() {
   applyCoordinateJitter();
-  if (state.map) buildMarkers();
   buildCatFilter();
+  buildTypeFilter();
+  reconcileDestinationFilter();
+  renderDestinationFilter();
   applyFilters();
+  // Intentionally do not await: fitting reads only data/visIdx, not markers.
+  if (state.map) void buildMarkers();
+  if (state.selectedDestinations.size > 0) fitMapToVisibleLocations();
 }
 
 // ═══════════════════════════════════════════════════
@@ -92,9 +116,13 @@ function runMobileAction(event) {
   const action = event.currentTarget.dataset.mobileAction;
   closeMobileActions();
   if (action === 'issue') openIssueModal();
-  else if (action === 'locate') locateMe();
-  else if (action === 'lang') toggleLang();
-  else if (action === 'theme') cycleTheme();
+}
+
+/** @param {string} id @param {Event & {detail?: number}} [event] */
+function handleFavoriteClick(id, event) {
+  toggleFavoriteWithNotice(id, event, () => {
+    showSnackbar(t('favorite_storage_notice'), 6000);
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -104,8 +132,8 @@ function runMobileAction(event) {
 window.activateCard = activateCard;
 window.openNavigation = openNavigation;
 window.openInGoogleMaps = openInGoogleMaps;
-window.applyFilters = applyFilters;
-window.toggleFavorite = toggleFavorite;
+window.applyFilters = applyFiltersAndSyncMap;
+window.toggleFavorite = handleFavoriteClick;
 
 
 // ═══════════════════════════════════════════════════
@@ -116,15 +144,17 @@ setLang(localStorage.getItem('lang') || 'zh');
 
 // Restore favorites from URL or localStorage
 loadFavorites();
+initDestinationFilter(() => applyFiltersAndSyncMap({ fitMap: true }));
 
 // Static event listeners
-document.getElementById('fav-filter-btn').addEventListener('click', () => {
+document.getElementById('fav-filter-btn').addEventListener('click', event => {
   state.favFilterOn = !state.favFilterOn;
   const favBtn = document.getElementById('fav-filter-btn');
   favBtn.classList.toggle('active', state.favFilterOn);
   favBtn.setAttribute('aria-pressed', String(state.favFilterOn));
   favBtn.innerHTML = heartSVG(state.favFilterOn);
-  applyFilters();
+  applyFiltersAndSyncMap();
+  releasePointerFocus(event);
 });
 document.getElementById('issue-btn').addEventListener('click', openIssueModal);
 document.getElementById('locate-btn').addEventListener('click', locateMe);
@@ -165,6 +195,7 @@ window.addEventListener('resize', () => {
 applyTheme();
 updateLangUI();
 buildCatFilter();
+buildTypeFilter();
 applyFilters();       // render initial (loading) state
 tryLoadSheet(rebuild);  // loads data; rebuild() triggers buildMarkers + renderList
 loadMapScript(); // tries Google Maps first, falls back to HERE if unavailable

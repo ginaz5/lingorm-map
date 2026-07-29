@@ -11,8 +11,15 @@ import {
   assertAllowedDataSource,
   validateCandidatePayload,
 } from './location-verification-core.mjs';
-import { inspectCurrentFormalLocationProperties } from './formal-location-current-schema.mjs';
 import {
+  CURRENT_FORMAL_LOCATION_PROPERTIES,
+  CURRENT_FORMAL_TYPE_OPTIONS,
+  currentFormalSchemaIssueMessages,
+  inspectCurrentFormalDataSourceProperties,
+  inspectCurrentFormalLocationProperties,
+} from './formal-location-current-schema.mjs';
+import {
+  fetchNotionDataSource,
   fetchNotionPage,
   notionPageToRow,
   parsePageReference,
@@ -65,46 +72,72 @@ function parseCandidate(value) {
   }
 }
 
+function schemaMismatchDetails(schema) {
+  return currentFormalSchemaIssueMessages(schema).join('; ');
+}
+
+function schemaSummary(properties, schema) {
+  return {
+    ok: schema.ok,
+    propertyCount: Object.keys(properties || {}).length,
+    expectedPropertyCount: CURRENT_FORMAL_LOCATION_PROPERTIES.length,
+    missingProperties: schema.missing,
+    unexpectedProperties: schema.unexpected,
+    wrongPropertyTypes: schema.wrongTypes,
+    statusOptions: schema.statusOptions,
+    typeOptions: schema.typeOptions,
+    countryOptions: schema.countryOptions,
+    destinationOptions: schema.destinationOptions,
+    allowedTypes: CURRENT_FORMAL_TYPE_OPTIONS.map((option) => ({
+      name: option.name,
+      color: option.color,
+    })),
+  };
+}
+
+export function currentFormalSchemaSummary(properties) {
+  return schemaSummary(
+    properties,
+    inspectCurrentFormalDataSourceProperties(properties)
+  );
+}
+
+function assertCurrentFormalSchema(
+  properties,
+  { requireCompleteDefinitions = false } = {}
+) {
+  const schema = requireCompleteDefinitions
+    ? inspectCurrentFormalDataSourceProperties(properties)
+    : inspectCurrentFormalLocationProperties(properties);
+  if (!schema.ok) {
+    throw new Error(
+      `Formal Locations schema mismatch: ${schemaMismatchDetails(schema)}`
+    );
+  }
+  return schemaSummary(properties, schema);
+}
+
 export function notionPageToQueueItem(
   page,
   expectedDataSourceId = FORMAL_DATA_SOURCE_ID
 ) {
   const dataSourceId = page?.parent?.data_source_id;
   assertAllowedDataSource(dataSourceId, expectedDataSourceId);
-  const schema = inspectCurrentFormalLocationProperties(page?.properties);
-  if (!schema.ok) {
-    const details = [
-      schema.missing.length
-        ? `missing ${schema.missing.join(', ')}`
-        : '',
-      schema.unexpected.length
-        ? `unexpected ${schema.unexpected.join(', ')}`
-        : '',
-      schema.wrongTypes.length
-        ? `wrong types ${schema.wrongTypes
-            .map(
-              ({ field, expected, actual }) =>
-                `${field}:${actual}->${expected}`
-            )
-            .join(', ')}`
-        : '',
-      schema.statusOptions.checked && !schema.statusOptions.ok
-        ? 'Status options do not match Published/Paused/Inactive'
-        : '',
-    ]
-      .filter(Boolean)
-      .join('; ');
-    throw new Error(`Formal Locations schema mismatch: ${details}`);
-  }
+  assertCurrentFormalSchema(page?.properties);
   const row = notionPageToRow(page);
   return {
     id: parsePageReference(page.id),
     url: page.url,
+    recordRevision: page.last_edited_time || null,
     name: row.Name,
     nameZh: row['Name ZH'],
     alternateName: row['Thai / Alt Name'],
     slug: row.Slug,
     category: row.Category,
+    countryCode: row['Country Code'],
+    destinationKey: row['Destination Key'],
+    type: row.Type,
+    typeMissing: !String(row.Type || '').trim(),
     status: row.Status,
     reviewNeeded: row['Review Needed'] === '__YES__',
     verificationNote: row['Verification Note'],
@@ -115,6 +148,7 @@ export function notionPageToQueueItem(
     notesEn: row['Notes EN'],
     notesZh: row['Notes ZH'],
     sourceUrls: row['Source URLs'],
+    sourceTags: row['Source Tags'],
     lastVerified: row['Last Verified'] || null,
   };
 }
@@ -132,7 +166,25 @@ function sortReviewQueue(items) {
         (statusOrder.get(a.status) ?? 99) -
           (statusOrder.get(b.status) ?? 99) ||
         a.name.localeCompare(b.name, 'zh-Hant')
-    );
+  );
+}
+
+function sanitizeSuggestionField(suggestion) {
+  return {
+    currentValue: suggestion?.currentValue || null,
+    recommendedValue: suggestion?.recommendedValue || null,
+    comparison: suggestion?.comparison || 'unavailable',
+    observedValue: suggestion?.observedValue || null,
+    reason: suggestion?.reason || '',
+    options: Array.isArray(suggestion?.options)
+      ? suggestion.options.map((option) => ({
+          value: option.value,
+          label: option.label,
+          confidence: option.confidence,
+          evidence: option.evidence,
+        }))
+      : [],
+  };
 }
 
 function sanitizeResolvePreview(result) {
@@ -140,11 +192,16 @@ function sanitizeResolvePreview(result) {
     page: {
       id: parsePageReference(result.page.id),
       url: result.page.url,
+      recordRevision: result.page.recordRevision || null,
       name: result.page.name,
       slug: result.page.slug,
       status: result.page.status,
       reviewNeeded: result.page.reviewNeeded === '__YES__',
       currentPlaceId: result.page.currentPlaceId || null,
+      countryCode: result.page.countryCode || '',
+      destinationKey: result.page.destinationKey || '',
+      category: result.page.category || '',
+      type: result.page.type || '',
       lat: result.page.lat,
       lng: result.page.lng,
     },
@@ -167,9 +224,18 @@ function sanitizeResolvePreview(result) {
         lat: candidate.lat,
         lng: candidate.lng,
         businessStatus: candidate.businessStatus,
+        types: Array.isArray(candidate.types) ? candidate.types : [],
         distanceMeters: candidate.distanceMeters,
         distanceRisk: candidate.distanceRisk,
         mapsUrl: candidate.mapsUrl,
+        locationSuggestions: {
+          countryCode: sanitizeSuggestionField(
+            candidate.locationSuggestions?.countryCode
+          ),
+          destinationKey: sanitizeSuggestionField(
+            candidate.locationSuggestions?.destinationKey
+          ),
+        },
       })),
       duplicatePages: result.resolver.duplicatePages.map((page) => ({
         id: page.id,
@@ -284,6 +350,10 @@ function validationSummary(result) {
     rowCount: result.rowCount,
     statusCounts: result.statusCounts,
     issues: result.issues,
+    warnings: result.warnings || [],
+    typeCounts: result.typeCounts || {},
+    checks: result.checks || null,
+    schema: result.schema || null,
   };
 }
 
@@ -304,6 +374,7 @@ export function createDefaultUiOperations({
   if (!googlePlacesKey) throw new Error('Missing GOOGLE_PLACE_KEY');
 
   const expectedDataSourceId = FORMAL_DATA_SOURCE_ID;
+  let latestSchemaSummary = null;
   const allowedPageId = pageReference
     ? parsePageReference(pageReference)
     : null;
@@ -325,6 +396,18 @@ export function createDefaultUiOperations({
     });
     return notionPageToQueueItem(page, expectedDataSourceId);
   };
+  const preflightSchema = async () => {
+    const dataSource = await fetchNotionDataSource({
+      dataSourceId: expectedDataSourceId,
+      notionApiKey,
+      fetchImpl,
+    });
+    latestSchemaSummary = assertCurrentFormalSchema(
+      dataSource.properties,
+      { requireCompleteDefinitions: true }
+    );
+    return latestSchemaSummary;
+  };
 
   return {
     configuration: Object.freeze({
@@ -332,7 +415,9 @@ export function createDefaultUiOperations({
       allowedPageId,
       readOnly: true,
     }),
+    schemaSummary: () => latestSchemaSummary,
     async listQueue() {
+      await preflightSchema();
       if (allowedPageId) {
         return sortReviewQueue([await getPage(allowedPageId)]);
       }
@@ -351,6 +436,7 @@ export function createDefaultUiOperations({
     },
     getPage,
     async resolvePreview(reference) {
+      await preflightSchema();
       const pageId = assertAllowedPage(reference);
       const page = await getPage(pageId);
       if (!page.reviewNeeded) {
@@ -412,6 +498,7 @@ export function createLocationVerificationUiServer({
       }
 
       if (request.method === 'GET' && url.pathname === '/api/bootstrap') {
+        const queue = await operations.listQueue();
         sendJson(response, 200, {
           sessionToken,
           apiMode: 'legacy',
@@ -421,14 +508,19 @@ export function createLocationVerificationUiServer({
             mode: 'read-only',
             stages: [],
           },
-          queue: await operations.listQueue(),
+          schema: operations.schemaSummary?.() || null,
+          queue,
         });
         return;
       }
 
       if (request.method === 'GET' && url.pathname === '/api/queue') {
         requireSession(request, sessionToken);
-        sendJson(response, 200, { queue: await operations.listQueue() });
+        const queue = await operations.listQueue();
+        sendJson(response, 200, {
+          schema: operations.schemaSummary?.() || null,
+          queue,
+        });
         return;
       }
 

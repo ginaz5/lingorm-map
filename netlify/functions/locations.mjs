@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-import { parseCSV } from '../../src/csv-parser.js';
+import { parseCSV } from '../../src/data/csv-parser.js';
 
 const DEFAULT_NOTION_SNAPSHOT = new URL('../../data/locations.csv', import.meta.url);
 

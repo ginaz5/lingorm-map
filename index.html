@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>Lingorm Map</title>
+<title>LingOrm Map</title>
 <link rel="icon" type="image/svg+xml" href="./favicon.svg"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,17 +46,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <path d="M4.5 7.5v9h4" stroke="var(--canvas)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       <circle cx="15" cy="12" r="4.5" stroke="var(--canvas)" stroke-width="2" fill="none"/>
     </svg>
-    Lingorm Map
+    LingOrm Map
   </span>
   <div class="hdr-spacer"></div>
   <button class="btn-ghost" id="issue-btn">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     <span data-i18n="issue_btn"></span>
   </button>
-  <button class="btn-ghost" id="locate-btn">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+  <button class="btn-ghost" id="locate-btn" type="button" data-i18n-aria="locate_btn_label">
+    <svg class="locate-icon" width="14" height="14" viewBox="0 0 24 24"
+      fill="currentColor" aria-hidden="true">
+      <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+    </svg>
     <span data-i18n="locate_btn_label"></span>
   </button>
+  <a class="btn-ghost header-link" id="changelog-btn" href="./changelog.html">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
+    <span data-i18n="changelog_title"></span>
+  </a>
   <button class="btn-ghost" id="lang-btn">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
     <span id="lang-btn-label"></span>
@@ -70,35 +77,25 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </button>
   <div class="mobile-actions">
     <button class="mobile-actions-btn" id="mobile-actions-btn" type="button"
-      aria-haspopup="menu" aria-expanded="false" aria-controls="mobile-actions-menu">
+      aria-haspopup="menu" aria-expanded="false" aria-controls="mobile-actions-menu"
+      data-i18n-aria="more_actions">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
     </button>
     <div class="mobile-actions-menu" id="mobile-actions-menu" role="menu" hidden>
+      <a class="mobile-action-item" href="./changelog.html" role="menuitem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
+        <span data-i18n="changelog_title"></span>
+      </a>
       <button type="button" class="mobile-action-item" data-mobile-action="issue" role="menuitem">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         <span data-i18n="issue_btn"></span>
-      </button>
-      <button type="button" class="mobile-action-item" data-mobile-action="locate" role="menuitem">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-        <span data-i18n="locate_btn_label"></span>
-      </button>
-      <button type="button" class="mobile-action-item" data-mobile-action="lang" role="menuitem">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <span data-i18n="lang_btn"></span>
-      </button>
-      <button type="button" class="mobile-action-item" data-mobile-action="theme" role="menuitem">
-        <span class="theme-icon" aria-hidden="true">
-          <svg class="theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg>
-          <svg class="theme-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </span>
-        <span data-i18n="theme_btn"></span>
       </button>
     </div>
   </div>
 </header>
 
 <!-- SNACKBAR -->
-<div class="snackbar" id="snackbar"></div>
+<div class="snackbar" id="snackbar" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- APP BODY -->
 <div class="app-body">
@@ -110,11 +107,36 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <div class="filter-row">
         <select class="filter-sel" id="cat-filter" onchange="applyFilters()"></select>
+        <select class="filter-sel" id="type-filter" onchange="applyFilters()"></select>
+        <div class="destination-filter">
+          <button class="dest-filter-btn" id="dest-filter-btn" type="button"
+            aria-haspopup="dialog" aria-expanded="false" aria-controls="dest-filter-menu">
+            <span id="dest-filter-label"></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5z"/></svg>
+          </button>
+          <div class="dest-filter-menu" id="dest-filter-menu" role="dialog"
+            aria-labelledby="dest-filter-label" hidden>
+            <div class="dest-filter-head">
+              <span data-i18n="dest_filter"></span>
+              <button class="dest-filter-clear" id="dest-filter-clear" type="button"
+                data-i18n="clear"></button>
+            </div>
+            <label class="dest-option dest-all-option">
+              <input type="checkbox" id="dest-filter-all">
+              <span class="dest-check" aria-hidden="true"></span>
+              <span data-i18n="all_destinations"></span>
+            </label>
+            <div class="dest-filter-groups" id="dest-filter-groups"></div>
+          </div>
+        </div>
         <button class="fav-filter-btn" id="fav-filter-btn" aria-pressed="false" aria-label="我的最愛">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
       </div>
-      <div class="result-info" id="result-info"></div>
+      <div class="result-meta">
+        <span class="result-info" id="result-info"></span>
+        <span class="last-updated" id="last-updated"></span>
+      </div>
     </div>
     <div class="loc-list" id="loc-list"></div>
   </div>
@@ -185,6 +207,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <p class="modal-desc" id="wn-desc"></p>
     <div class="modal-body" id="wn-list"></div>
     <div class="modal-footer">
+      <a class="btn-secondary" id="wn-changelog-link" href="./changelog.html"></a>
       <button class="btn-primary" id="wn-got-it-btn"></button>
     </div>
   </div>
