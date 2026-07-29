@@ -151,6 +151,8 @@ http://localhost:8888
 - 篩選順序為「類別／主題／目的地」；英文篩選標籤為 Type，中文主題顯示 LingOrm、JKR 推薦、JKR 應援、留友看，英文維持正式 Type 值
 - 主題可與搜尋、類別、目的地及收藏條件正確交集篩選
 - Google Maps 與 HERE Maps popup 都同時顯示類別與 Type badge
+- 手機版以 `Bar / Rooftop Club`、`JKR Fan Projects`、`酒吧/天台俱樂部` 等最長篩選文字檢查，320px 與一般手機寬度都不裁切或水平溢出
+- 手機版定位按鈕固定顯示於 header，且不再出現在「更多操作」選單
 - 目的地可跨國複選，國家 checkbox 能全選／取消子目的地，部分選取時顯示 indeterminate
 - 目的地變更立即套用，重新整理後保留，且地圖自動縮放至全部篩選結果
 - 手機版 map/list tab 正常

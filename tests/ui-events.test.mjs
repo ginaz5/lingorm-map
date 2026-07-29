@@ -48,6 +48,7 @@ test('static HTML controls are wired without inline event attributes', async () 
 
   assert.doesNotMatch(staticMarkup, /id="add-btn"/);
   assert.match(staticMarkup, /id="issue-btn"/);
+  assert.match(staticMarkup, /id="locate-btn"[\s\S]*?class="locate-icon"[\s\S]*?M12 8c-2\.21 0-4 1\.79-4 4/);
   assert.match(staticMarkup, /id="changelog-btn"/);
   assert.match(staticMarkup, /id="theme-btn"/);
   assert.match(staticMarkup, /class="theme-icon-sun"/);
@@ -56,7 +57,7 @@ test('static HTML controls are wired without inline event attributes', async () 
   assert.equal(/\son(?:click|keydown)=/i.test(staticMarkup), false);
 });
 
-test('mobile header keeps language and theme visible while secondary actions use overflow', async () => {
+test('mobile header keeps locate, language, and theme visible while secondary actions use overflow', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const mainSrc = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');
   const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
@@ -68,16 +69,19 @@ test('mobile header keeps language and theme visible while secondary actions use
   assert.match(html, /id="mobile-actions-menu"/);
   assert.match(menuMarkup, /href="\.\/changelog\.html"/);
   assert.match(menuMarkup, /data-mobile-action="issue"/);
-  assert.match(menuMarkup, /data-mobile-action="locate"/);
+  assert.doesNotMatch(menuMarkup, /data-mobile-action="locate"/);
   assert.doesNotMatch(menuMarkup, /data-mobile-action="lang"/);
   assert.doesNotMatch(menuMarkup, /data-mobile-action="theme"/);
+  assert.match(html, /id="locate-btn"[^>]*data-i18n-aria="locate_btn_label"/);
   assert.ok(
     menuMarkup.indexOf('href="./changelog.html"') < menuMarkup.indexOf('data-mobile-action="issue"'),
     'changelog should be the first overflow action',
   );
-  assert.match(styles, /#lang-btn,#theme-btn\{display:flex/);
+  assert.match(styles, /#locate-btn,#lang-btn,#theme-btn\{display:flex/);
+  assert.match(styles, /#locate-btn>\[data-i18n="locate_btn_label"\]/);
   assert.match(mainSrc, /mobile-actions-btn/);
   assert.match(mainSrc, /data-mobile-action/);
+  assert.doesNotMatch(mainSrc, /action === 'locate'/);
 });
 
 test('switchTab keeps panel and map visibility states aligned', async () => {

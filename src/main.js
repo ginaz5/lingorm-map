@@ -116,7 +116,6 @@ function runMobileAction(event) {
   const action = event.currentTarget.dataset.mobileAction;
   closeMobileActions();
   if (action === 'issue') openIssueModal();
-  else if (action === 'locate') locateMe();
 }
 
 /** @param {string} id @param {Event & {detail?: number}} [event] */

@@ -40,7 +40,15 @@ function makeLocation() {
 }
 
 test('index exposes only the view-first controls and issue report form', async () => {
-  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const [html, notFoundHtml] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../404.html', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(html, /<title>LingOrm Map<\/title>/);
+  assert.match(html, /<span class="logo cal-sans">[\s\S]*?LingOrm Map\s*<\/span>/);
+  assert.match(notFoundHtml, /<title>404 · LingOrm Map<\/title>/);
+  assert.match(notFoundHtml, /<span class="logo">🗺 LingOrm Map<\/span>/);
 
   for (const token of REMOVED_UI_TOKENS) {
     assert.doesNotMatch(html, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));

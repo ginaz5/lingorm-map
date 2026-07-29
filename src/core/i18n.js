@@ -51,9 +51,9 @@ export const T = {
     whats_new_got_it: '我知道了',
     whats_new_view_all: '查看完整更新紀錄',
     changelog_title: '更新紀錄',
-    changelog_intro: '查看 Lingorm Map 的所有功能、設計與修復更新。',
+    changelog_intro: '查看 LingOrm Map 的所有功能、設計與修復更新。',
     changelog_back: '返回地圖',
-    changelog_page_title: '更新紀錄｜Lingorm Map',
+    changelog_page_title: '更新紀錄｜LingOrm Map',
     ph_submitter: '例：@your_ig',
     // Navigation & location
     nav_btn: '導航',
@@ -66,7 +66,7 @@ export const T = {
     sheet_loading: '載入中…',
   },
   en: {
-    hdr_sub: 'Lingorm Bangkok Location Map',
+    hdr_sub: 'LingOrm Bangkok Location Map',
     lang_btn: '中文',
     theme_btn: 'Theme',
     more_actions: 'More actions',
@@ -104,9 +104,9 @@ export const T = {
     whats_new_got_it: 'Got it',
     whats_new_view_all: 'View full changelog',
     changelog_title: 'Changelog',
-    changelog_intro: 'See every feature, design update, and fix released for Lingorm Map.',
+    changelog_intro: 'See every feature, design update, and fix released for LingOrm Map.',
     changelog_back: 'Back to map',
-    changelog_page_title: 'Changelog | Lingorm Map',
+    changelog_page_title: 'Changelog | LingOrm Map',
     ph_submitter: 'e.g. @your_ig',
     // Navigation & location
     nav_btn: 'Navigate',

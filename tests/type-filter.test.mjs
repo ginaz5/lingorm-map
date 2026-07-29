@@ -201,10 +201,45 @@ test('public filter controls are ordered category, theme, then destination', asy
   assert.ok(destinationIndex > themeIndex);
 });
 
-test('desktop panel is wider and gives the longer category filter more space', async () => {
+test('filter layout uses content-aware widths so selected labels are not clipped', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(css, /\.panel\{width:400px;min-width:340px;/);
-  assert.match(css, /#cat-filter\{flex:1\.3\}/);
-  assert.match(css, /#type-filter\{flex:\.75\}/);
+  assert.match(css, /\.filter-row\{display:flex;gap:8px;flex-wrap:wrap\}/);
+  assert.match(
+    css,
+    /#cat-filter,#type-filter\{flex:1 1 calc\(50% - 4px\);min-width:max-content;max-width:100%\}/,
+  );
+  assert.match(
+    css,
+    /\.destination-filter\{position:relative;flex:1 1 calc\(100% - 48px\);min-width:0\}/,
+  );
+  assert.doesNotMatch(css, /#type-filter\{flex:0 0 70px\}/);
+});
+
+test('all three public filters use the same dropdown arrow geometry', async () => {
+  const [html, css] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8'),
+  ]);
+
+  const arrowPath = 'm7 10 5 5 5-5z';
+  assert.match(html, new RegExp(`<path d="${arrowPath}"`));
+  assert.match(css, new RegExp(`d='${arrowPath}'`, 'g'));
+  assert.match(css, /appearance:none;-webkit-appearance:none;/);
+  assert.match(css, /background-position:right 8px center;background-size:16px;/);
+  assert.match(css, /\.dest-filter-btn svg\{width:16px;height:16px;fill:var\(--muted\);/);
+});
+
+test('narrow mobile filters can give category and Type their own rows', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(
+    css,
+    /@media\(max-width:700px\)\{[\s\S]*?\.panel\{width:100%;min-width:0;/,
+  );
+  assert.match(
+    css,
+    /@media\(max-width:340px\)\{\s*#cat-filter,#type-filter\{flex-basis:100%\}/,
+  );
 });

@@ -9,6 +9,7 @@ test('index loads app styles from an external stylesheet', async () => {
   assert.match(html, /<link rel="stylesheet" href="\.\/styles\.css"\/?>/);
   assert.equal(html.includes('<style>'), false);
   assert.match(css, /\.loc-card\{/);
+  assert.match(css, /\.btn-ghost\s*\{\s*font-family:\s*inherit;/);
 });
 
 test('index does not keep presentational inline style hooks', async () => {

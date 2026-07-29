@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
+import { T } from '../src/core/i18n.js';
 import {
   CHANGELOG,
   formatChangelogDate,
@@ -42,6 +43,12 @@ test('modal links to a dedicated changelog page with language and theme controls
   assert.match(changelogHtml, /id="changelog-lang-btn"/);
   assert.match(changelogHtml, /id="changelog-theme-btn"/);
   assert.match(changelogHtml, /href="\.\/index\.html"/);
+  assert.match(changelogHtml, /LingOrm Map/);
+  assert.doesNotMatch(changelogHtml, /Lingorm Map/);
+  assert.match(T.zh.changelog_intro, /LingOrm Map/);
+  assert.match(T.zh.changelog_page_title, /LingOrm Map/);
+  assert.match(T.en.changelog_intro, /LingOrm Map/);
+  assert.match(T.en.changelog_page_title, /LingOrm Map/);
   assert.match(changelogSrc, /changelog-lang-btn.+setAttribute\('aria-label'/);
   assert.match(changelogSrc, /changelog-theme-btn.+setAttribute\('aria-label'/);
 });
