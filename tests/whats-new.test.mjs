@@ -6,6 +6,10 @@ import {
   closeWhatsNew,
   WHATS_NEW_PREVIEW_LIMIT,
 } from '../src/features/whats-new.js';
+import {
+  CHANGELOG,
+  CURRENT_CHANGELOG_RELEASE_ID,
+} from '../src/features/changelog-data.js';
 
 function makeStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
@@ -37,8 +41,11 @@ function installWhatsNewDom() {
   return { elements, modalClasses };
 }
 
-function installEnvironment({ lastVisit, shown } = {}) {
-  const local = makeStorage(lastVisit ? { last_visit_time: lastVisit } : {});
+function installEnvironment({ lastVisit, seenRelease, shown } = {}) {
+  const local = makeStorage({
+    ...(lastVisit ? { last_visit_time: lastVisit } : {}),
+    ...(seenRelease ? { last_seen_changelog_release: seenRelease } : {}),
+  });
   const session = makeStorage(shown ? { whats_new_shown: shown } : {});
   globalThis.localStorage = local.api;
   globalThis.sessionStorage = session.api;
@@ -61,6 +68,10 @@ test('checkWhatsNew records a first visit without opening the modal', () => {
     checkWhatsNew();
 
     assert.ok(Number(env.local.values.get('last_visit_time')) > 0);
+    assert.equal(
+      env.local.values.get('last_seen_changelog_release'),
+      CURRENT_CHANGELOG_RELEASE_ID,
+    );
     assert.equal(env.dom.modalClasses.has('open'), false);
     assert.equal(env.dom.elements['wn-list'].innerHTML, '');
   } finally {
@@ -70,24 +81,44 @@ test('checkWhatsNew records a first visit without opening the modal', () => {
 
 test('checkWhatsNew reports all new releases but previews only the latest three', () => {
   const env = installEnvironment({
-    lastVisit: String(Date.parse('2026-06-18T00:00:00Z')),
+    lastVisit: String(Date.parse('2026-07-30T12:00:00+08:00')),
   });
   try {
     checkWhatsNew();
 
+    const currentReleaseItems = CHANGELOG.filter(
+      item => item.releaseId === CURRENT_CHANGELOG_RELEASE_ID,
+    );
     assert.equal(env.dom.modalClasses.has('open'), true);
     assert.equal(WHATS_NEW_PREVIEW_LIMIT, 3);
-    assert.match(env.dom.elements['wn-desc'].textContent, /5/);
+    assert.match(
+      env.dom.elements['wn-desc'].textContent,
+      new RegExp(String(currentReleaseItems.length)),
+    );
     assert.equal(
       env.dom.elements['wn-list'].innerHTML.match(/class="wn-feat"/g)?.length,
       3,
     );
-    assert.match(env.dom.elements['wn-list'].innerHTML, /地圖標記自動聚合/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /全新瀏覽體驗/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /點擊標記不再跳回預設縮放/);
-    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /點選愛心為收藏景點/);
-    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /Google Maps 開啟/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /篩選新增「主題」與「目的地」/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /手機清單新增地點快捷操作/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /手機版地圖彈窗不再被截斷/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增完整更新紀錄/);
     assert.equal(env.dom.elements['wn-changelog-link'].textContent, '查看完整更新紀錄');
+  } finally {
+    cleanupEnvironment(env.originalSetTimeout);
+  }
+});
+
+test('checkWhatsNew does not repeat a release that was already seen', () => {
+  const env = installEnvironment({
+    lastVisit: String(Date.parse('2026-07-29T00:00:00+08:00')),
+    seenRelease: CURRENT_CHANGELOG_RELEASE_ID,
+  });
+  try {
+    checkWhatsNew();
+
+    assert.equal(env.dom.modalClasses.has('open'), false);
+    assert.equal(env.dom.elements['wn-list'].innerHTML, '');
   } finally {
     cleanupEnvironment(env.originalSetTimeout);
   }
@@ -115,6 +146,10 @@ test('closeWhatsNew records the visit, marks the session, and closes the modal',
     closeWhatsNew();
 
     assert.ok(Number(env.local.values.get('last_visit_time')) > 0);
+    assert.equal(
+      env.local.values.get('last_seen_changelog_release'),
+      CURRENT_CHANGELOG_RELEASE_ID,
+    );
     assert.equal(env.session.values.get('whats_new_shown'), '1');
     assert.equal(env.dom.modalClasses.has('open'), false);
   } finally {

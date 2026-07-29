@@ -6,16 +6,118 @@
  *   title: LocalizedText,
  *   description: LocalizedText,
  *   badge: LocalizedText,
- *   publishTime: number
+ *   publishTime: number,
+ *   releaseId?: string
  * }} ChangelogItem
  */
 
+export const CURRENT_CHANGELOG_RELEASE_ID = '2026-07-30-pr-2';
+
 /**
  * Shared release history for the What's New preview and the full changelog.
- * Add new entries at the top and use an explicit GMT+8 release timestamp.
+ * Add new entries at the top, assign them to the current release, and use an
+ * explicit GMT+8 date for changelog display and ordering.
  * @type {ChangelogItem[]}
  */
 export const CHANGELOG = [
+  {
+    id: 'feat-010',
+    title: {
+      zh: '篩選新增「主題」與「目的地」',
+      en: 'Filter by theme and destination',
+    },
+    description: {
+      zh: '除了類別，現在也能依主題或目的地縮小範圍。地圖標記與清單會一起更新，選過的目的地也會保留。',
+      en: 'Narrow the map by category, theme, or destination. Markers and the location list stay in sync, and destination choices are remembered.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-009',
+    title: {
+      zh: '手機清單新增地點快捷操作',
+      en: 'Quick actions on mobile location cards',
+    },
+    description: {
+      zh: '在手機清單可直接收藏、開啟導航或前往 Google Maps；定位按鈕也移到頁首，隨時都能使用。',
+      en: 'Mobile location cards now offer favorite, directions, and Google Maps shortcuts. Locate Me also stays within reach in the header.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'fix-003',
+    title: {
+      zh: '手機版地圖彈窗不再被截斷',
+      en: 'Map popups stay fully visible on mobile',
+    },
+    description: {
+      zh: '修正從清單切到地圖時彈窗偏移、內容被切掉的問題，地點數量與更新日期也改為同列顯示。',
+      en: 'Fixed popups shifting off-screen after opening a place from the list. Location counts and update dates now share one line as well.',
+    },
+    badge: { zh: '修復', en: 'Fix' },
+    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-008',
+    title: {
+      zh: '新增完整更新紀錄',
+      en: 'A new home for every update',
+    },
+    description: {
+      zh: '新增獨立的更新紀錄頁，可從頁首或新功能視窗查看所有版本內容。',
+      en: 'The new changelog page keeps every release in one place, with links from the header and What’s New.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-007',
+    title: {
+      zh: '搜尋現在也會比對地點筆記',
+      en: 'Search now includes location notes',
+    },
+    description: {
+      zh: '除了店名，也能用中英文筆記裡的關鍵字找地點；清單、標記與聚合結果會保持一致。',
+      en: 'Search by keywords in Chinese or English location notes, not just place names. Lists, markers, and clusters all show the same results.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'fix-002',
+    title: {
+      zh: '地圖文字跟著瀏覽器語言',
+      en: 'Map labels follow your browser language',
+    },
+    description: {
+      zh: 'Google Maps 與 HERE Maps 會依瀏覽器語言顯示合適的標籤；遇到不支援的語系時，也能正常切換到可用語言。',
+      en: 'Google Maps and HERE Maps now use labels that match your browser language, with a safe fallback when a locale is unavailable.',
+    },
+    badge: { zh: '修復', en: 'Fix' },
+    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-006',
+    title: {
+      zh: '清單顯示資料更新日期',
+      en: 'See when location data was updated',
+    },
+    description: {
+      zh: '地點數量旁會顯示資料最後更新日期，查看地圖時更容易確認內容是否為最新版本。',
+      en: 'The location count now shows when the map data was last updated, so you can quickly check how current it is.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
   {
     id: 'feat-005',
     title: {

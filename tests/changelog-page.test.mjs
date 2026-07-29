@@ -5,6 +5,7 @@ import test from 'node:test';
 import { T } from '../src/core/i18n.js';
 import {
   CHANGELOG,
+  CURRENT_CHANGELOG_RELEASE_ID,
   formatChangelogDate,
   localizeChangelogItem,
 } from '../src/features/changelog-data.js';
@@ -17,8 +18,14 @@ test('changelog data is newest-first and has bilingual copy', () => {
 
   const latest = CHANGELOG[0];
   assert.equal(new Date(latest.publishTime).getUTCFullYear(), 2026);
-  assert.equal(localizeChangelogItem(latest, 'zh').title, '地圖標記自動聚合');
-  assert.equal(localizeChangelogItem(latest, 'en').title, 'Automatic marker clustering');
+  assert.equal(localizeChangelogItem(latest, 'zh').title, '篩選新增「主題」與「目的地」');
+  assert.equal(localizeChangelogItem(latest, 'en').title, 'Filter by theme and destination');
+
+  const currentReleaseItems = CHANGELOG.filter(
+    item => item.releaseId === CURRENT_CHANGELOG_RELEASE_ID,
+  );
+  assert.equal(currentReleaseItems.length, 7);
+  assert.ok(currentReleaseItems.every(item => item.publishTime === latest.publishTime));
 });
 
 test('changelog dates render in the selected language and GMT+8 calendar day', () => {
