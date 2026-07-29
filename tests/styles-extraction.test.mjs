@@ -21,6 +21,49 @@ test('index does not keep presentational inline style hooks', async () => {
   assert.equal(appMarkup.includes('.style.display'), false);
 });
 
+test('HERE popup body stays centered above its map anchor', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(
+    css,
+    /#map \.H_ib_body\{left:0!important;right:auto!important;transform:translateX\(-50%\)\}/,
+  );
+  assert.match(
+    css,
+    /@media\(max-width:700px\)\{[\s\S]*?\.H_ib_body\{max-width:calc\(100vw - 32px\)!important\}/,
+  );
+});
+
+test('result metadata uses the same inline spacing at every viewport', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(
+    css,
+    /\.result-meta\{display:flex;align-items:baseline;gap:6px;padding:0 2px\}/,
+  );
+  assert.match(css, /\.last-updated\{font-size:12px;color:var\(--text-muted\)\}/);
+  assert.match(
+    css,
+    /\.last-updated:not\(:empty\)::before\{content:"·";margin-right:6px;/,
+  );
+  assert.doesNotMatch(css, /\.result-meta\{[^}]*flex-direction:/);
+  assert.doesNotMatch(css, /@media\(min-width:1100px\)[\s\S]*?\.result-meta/);
+});
+
+test('location card actions are visible only at the mobile breakpoint', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(
+    css,
+    /\.card-footer\{display:none;align-items:center;justify-content:flex-end;margin-top:8px\}/,
+  );
+  assert.match(
+    css,
+    /@media\(max-width:700px\)\{\s*\.card-footer\{display:flex\}/,
+  );
+  assert.doesNotMatch(css, /\.popup-footer\{[^}]*display:none/);
+});
+
 test('unused map-link and Leaflet styles are not kept', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 

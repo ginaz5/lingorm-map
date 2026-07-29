@@ -12,6 +12,7 @@ import {
   applyFilters,
   buildPopupContent,
   buildTypeFilter,
+  renderList,
 } from '../src/ui/render.js';
 
 function makeLocation(overrides = {}) {
@@ -185,6 +186,63 @@ test('map popup adds the localized Type badge and omits it when Type is blank', 
     assert.match(enPopup, /<span class="badge b-type">JKR Picks<\/span>/);
 
     assert.doesNotMatch(buildPopupContent(1), /b-type/);
+  } finally {
+    restore();
+  }
+});
+
+test('location list adds the localized Type badge and omits it when Type is blank', () => {
+  const list = { innerHTML: '' };
+  const restore = installGlobals({ 'loc-list': list });
+
+  try {
+    state.isLoading = false;
+    state.data = [
+      makeLocation({ type: 'JKR Fan Projects' }),
+      makeLocation({ id: 'blank-type', type: '' }),
+    ];
+    state.visIdx = [0, 1];
+
+    renderList();
+    assert.match(list.innerHTML, /<span class="badge b-cat">咖啡廳<\/span>/);
+    assert.match(list.innerHTML, /<span class="badge b-type">JKR 應援<\/span>/);
+    assert.equal(list.innerHTML.match(/class="badge b-type"/g)?.length, 1);
+
+    setLang('en');
+    renderList();
+    assert.match(list.innerHTML, /<span class="badge b-cat">Cafe<\/span>/);
+    assert.match(list.innerHTML, /<span class="badge b-type">JKR Fan Projects<\/span>/);
+    assert.equal(list.innerHTML.match(/class="badge b-type"/g)?.length, 1);
+  } finally {
+    restore();
+  }
+});
+
+test('location list reuses popup actions without triggering its parent card', () => {
+  const list = { innerHTML: '' };
+  const restore = installGlobals({ 'loc-list': list });
+
+  try {
+    state.isLoading = false;
+    state.data = [
+      makeLocation(),
+      makeLocation({ id: 'no-coordinates', lat: '', lng: '' }),
+    ];
+    state.visIdx = [0, 1];
+
+    renderList();
+
+    assert.equal(list.innerHTML.match(/class="popup-actions"/g)?.length, 2);
+    assert.equal(list.innerHTML.match(/class="fav-btn/g)?.length, 2);
+    assert.match(
+      list.innerHTML,
+      /onclick="event\.stopPropagation\(\);openNavigation\(0\)"/,
+    );
+    assert.match(
+      list.innerHTML,
+      /onclick="event\.stopPropagation\(\);openInGoogleMaps\(0\)"/,
+    );
+    assert.doesNotMatch(list.innerHTML, /openNavigation\(1\)|openInGoogleMaps\(1\)/);
   } finally {
     restore();
   }
