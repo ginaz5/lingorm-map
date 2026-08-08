@@ -236,11 +236,11 @@ test('location list reuses popup actions without triggering its parent card', ()
     assert.equal(list.innerHTML.match(/class="fav-btn/g)?.length, 2);
     assert.match(
       list.innerHTML,
-      /onclick="event\.stopPropagation\(\);openNavigation\(0\)"/,
+      /onclick="event\.stopPropagation\(\);openNavigation\(0, 'list_card'\)"/,
     );
     assert.match(
       list.innerHTML,
-      /onclick="event\.stopPropagation\(\);openInGoogleMaps\(0\)"/,
+      /onclick="event\.stopPropagation\(\);openInGoogleMaps\(0, 'list_card'\)"/,
     );
     assert.doesNotMatch(list.innerHTML, /openNavigation\(1\)|openInGoogleMaps\(1\)/);
   } finally {

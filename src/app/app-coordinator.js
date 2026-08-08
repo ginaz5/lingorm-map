@@ -12,6 +12,7 @@ import {
 } from '../map/map.js';
 import { renderDestinationFilter } from '../features/destination-filter.js';
 import { updateWhatsNewLangUI } from '../features/whats-new.js';
+import { trackLanguageChange } from '../services/analytics.js';
 
 /**
  * Apply list filters, synchronize provider markers, and optionally fit the
@@ -25,7 +26,9 @@ export function applyFiltersAndSyncMap(options = {}) {
 }
 
 export function toggleLang() {
-  setLang(lang === 'zh' ? 'en' : 'zh');
+  const previousLang = lang;
+  const nextLang = previousLang === 'zh' ? 'en' : 'zh';
+  setLang(nextLang);
   updateLangUI();
   updateWhatsNewLangUI();
   buildCatFilter();
@@ -33,4 +36,5 @@ export function toggleLang() {
   renderDestinationFilter();
   applyFiltersAndSyncMap();
   refreshActivePopup();
+  trackLanguageChange(previousLang, nextLang);
 }

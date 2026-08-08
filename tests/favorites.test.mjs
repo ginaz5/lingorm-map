@@ -127,7 +127,10 @@ test('coordinated filters show only favorites in both list and map', () => {
 
     assert.deepEqual(state.visIdx, [0]);
     assert.match(elements['loc-list'].innerHTML, /Favorite Cafe/);
-    assert.match(elements['loc-list'].innerHTML, /toggleFavorite\('favorite-cafe', event\)/);
+    assert.match(
+      elements['loc-list'].innerHTML,
+      /toggleFavorite\('favorite-cafe', event, 'list_card'\)/,
+    );
     assert.doesNotMatch(elements['loc-list'].innerHTML, /Other Cafe/);
     assert.equal(state.markers[0].map, state.map);
     assert.equal(state.markers[1].map, null);

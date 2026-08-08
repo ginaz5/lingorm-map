@@ -57,6 +57,22 @@ test('static HTML controls are wired without inline event attributes', async () 
   assert.equal(/\son(?:click|keydown)=/i.test(staticMarkup), false);
 });
 
+test('search and select filters use module listeners instead of inline analytics wiring', async () => {
+  const [html, mainSrc] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../src/main.js', import.meta.url), 'utf8'),
+  ]);
+  const filtersMatch = html.match(/<div class="filters">[\s\S]*?<div class="result-meta">/);
+  assert.ok(filtersMatch, 'filter markup should exist');
+
+  assert.doesNotMatch(filtersMatch[0], /\son(?:input|change)=/i);
+  assert.match(mainSrc, /getElementById\('search'\)\.addEventListener\('input'/);
+  assert.match(mainSrc, /trackSearchComplete\(queryLength, resultCount\)/);
+  assert.match(mainSrc, /}, 700\)/);
+  assert.match(mainSrc, /getElementById\('cat-filter'\)\.addEventListener\('change'/);
+  assert.match(mainSrc, /getElementById\('type-filter'\)\.addEventListener\('change'/);
+});
+
 test('mobile header keeps locate, language, and theme visible while secondary actions use overflow', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const mainSrc = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');

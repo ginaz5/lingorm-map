@@ -304,7 +304,10 @@ Enable form detection in Netlify Dashboard → **Forms → Enable form detection
 
 ### Analytics
 
-GTM snippet is embedded in `index.html` (`<head>` + noscript `<body>`). All tracking configuration (GA4 tag, triggers) is managed in the GTM dashboard — no code changes needed to add/modify events.
+GTM is embedded in `index.html` (`<head>` + noscript `<body>`). The application
+queues first-party interaction events in `dataLayer`; GTM routes them to GA4.
+The event contract, GTM setup, verification checklist, and future measurement
+plan are documented in [Analytics Tracking](docs/analytics-tracking.md).
 
 ### Google Maps key protection
 

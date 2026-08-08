@@ -167,7 +167,7 @@ export function renderDestinationFilter() {
 }
 
 /**
- * @param {() => void} onSelectionChange
+ * @param {(change: {filterValue: string, filterAction: 'select'|'deselect'|'clear'}) => void} onSelectionChange
  */
 export function initDestinationFilter(onSelectionChange) {
   loadDestinationFilter();
@@ -191,14 +191,14 @@ export function initDestinationFilter(onSelectionChange) {
     state.selectedDestinations.clear();
     saveDestinationFilter();
     renderDestinationFilter();
-    onSelectionChange();
+    onSelectionChange({ filterValue: 'all', filterAction: 'clear' });
   });
 
   clearButton.addEventListener('click', () => {
     state.selectedDestinations.clear();
     saveDestinationFilter();
     renderDestinationFilter();
-    onSelectionChange();
+    onSelectionChange({ filterValue: 'all', filterAction: 'clear' });
   });
 
   groups.addEventListener('change', event => {
@@ -208,15 +208,21 @@ export function initDestinationFilter(onSelectionChange) {
     if (!input) return;
     const availableKeys = availableDestinationKeys();
     const countryCode = input.dataset.countryCode;
+    let filterValue = '';
     if (countryCode) {
       toggleCountryDestinations(countryCode, availableKeys);
+      filterValue = `country:${countryCode}`;
     } else if (input.value) {
       if (input.checked) state.selectedDestinations.add(input.value);
       else state.selectedDestinations.delete(input.value);
+      filterValue = `destination:${input.value}`;
     }
     saveDestinationFilter();
     renderDestinationFilter();
-    onSelectionChange();
+    onSelectionChange({
+      filterValue,
+      filterAction: input.checked ? 'select' : 'deselect',
+    });
   });
 
   document.addEventListener('click', closeDestinationFilter);

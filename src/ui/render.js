@@ -4,6 +4,7 @@ import {
   LOCATION_TYPES,
   locationTypeLabel,
 } from '../data/location-types.js';
+import { trackLocationOpen } from '../services/analytics.js';
 import { switchTab } from './ui.js';
 
 // ISO commit time of data/locations.csv, injected by Vite (see vite.config.js).
@@ -111,22 +112,27 @@ export function renderSources(row) {
 // ═══════════════════════════════════════════════════
 // POPUP CONTENT (used by HERE map bubbles)
 // ═══════════════════════════════════════════════════
-/** @param {number} i @param {import('../data/csv-parser.js').LocationRow} row @returns {string} */
-function renderLocationActions(i, row) {
+/**
+ * @param {number} i
+ * @param {import('../data/csv-parser.js').LocationRow} row
+ * @param {'list_card'|'popup'} source
+ * @returns {string}
+ */
+function renderLocationActions(i, row, source) {
   const hasCoords = parseFloat(row.lat) && parseFloat(row.lng);
   return `<div class="popup-actions">
     <button class="fav-btn${state.favorites.has(row.id) ? ' fav-active' : ''}"
       data-fav-id="${row.id}"
       aria-pressed="${state.favorites.has(row.id)}"
       aria-label="${state.favorites.has(row.id) ? '移除最愛' : '加入最愛'}"
-      onclick="toggleFavorite('${row.id}', event)">
+      onclick="toggleFavorite('${row.id}', event, '${source}')">
       ${heartSVG(state.favorites.has(row.id))}
     </button>
     ${hasCoords ? `
-    <button class="popup-nav-btn" onclick="event.stopPropagation();openNavigation(${i})" aria-label="${t('nav_btn')}">
+    <button class="popup-nav-btn" onclick="event.stopPropagation();openNavigation(${i}, '${source}')" aria-label="${t('nav_btn')}">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 3l-7.5 18-3-7.5L3 11 21 3z"/></svg>
     </button>
-    <button class="popup-maps-btn" onclick="event.stopPropagation();openInGoogleMaps(${i})" aria-label="${t('open_maps_btn')}">
+    <button class="popup-maps-btn" onclick="event.stopPropagation();openInGoogleMaps(${i}, '${source}')" aria-label="${t('open_maps_btn')}">
       <svg width="12" height="14" viewBox="0 0 48 56" aria-hidden="true"><path d="M24 2C13.5 2 5 10.5 5 21c0 14 19 33 19 33S43 35 43 21C43 10.5 34.5 2 24 2z" fill="#34A853"/><path d="M24 2 L5 21 L24 21 Z" fill="#EA4335"/><path d="M24 2 L43 21 L24 21 Z" fill="#4285F4"/><path d="M5 21 L24 21 L24 40 Z" fill="#FBBC04"/><circle cx="24" cy="21" r="8" fill="white"/></svg>
     </button>` : ''}
   </div>`;
@@ -151,7 +157,7 @@ export function buildPopupContent(i) {
     ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
     <div class="popup-footer">
       ${renderSources(row)}
-      ${renderLocationActions(i, row)}
+      ${renderLocationActions(i, row, 'popup')}
     </div>
   </div>`;
 }
@@ -192,7 +198,7 @@ export function renderList() {
       ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
       ${renderSources(row)}
       <div class="card-footer">
-        ${renderLocationActions(i, row)}
+        ${renderLocationActions(i, row, 'list_card')}
       </div>
     </div>`;
   }).join('');
@@ -200,12 +206,13 @@ export function renderList() {
 
 /**
  * @param {number} i
- * @param {{ centerMap?: boolean }} [options]
+ * @param {{ centerMap?: boolean, source?: 'list_card'|'map_marker' }} [options]
  */
 export function activateCard(i, options = {}) {
   const centerMap = options.centerMap !== false;
   state.activeIdx = i;
   const row = state.data[i];
+  trackLocationOpen(row, options.source || 'list_card');
   const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
 
   if (centerMap && lat && lng && state.map) {
