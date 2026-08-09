@@ -123,7 +123,7 @@ export function renderDestinationFilter() {
   const selectedCount = state.selectedDestinations.size;
   buttonLabel.textContent = selectedCount
     ? t('dest_filter_count', selectedCount)
-    : t('dest_filter');
+    : t('all_destinations');
 
   const groups = requiredElement('dest-filter-groups');
   const availableKeys = availableDestinationKeys();
