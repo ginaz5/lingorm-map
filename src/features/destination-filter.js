@@ -167,6 +167,22 @@ export function renderDestinationFilter() {
 }
 
 /**
+ * Keep the destination menu inside the visible list panel so its own scroll
+ * area can reach the final option above the mobile tab bar.
+ * @param {HTMLElement} button
+ * @param {HTMLElement} menu
+ * @param {number} panelBottom
+ * @returns {number}
+ */
+export function fitDestinationMenuHeight(button, menu, panelBottom) {
+  const menuTop = button.getBoundingClientRect().bottom + 6;
+  const availableHeight = Math.max(0, Math.floor(panelBottom - menuTop - 8));
+  const maxHeight = Math.min(460, availableHeight);
+  menu.style.maxHeight = `${maxHeight}px`;
+  return maxHeight;
+}
+
+/**
  * @param {(change: {filterValue: string, filterAction: 'select'|'deselect'|'clear'}) => void} onSelectionChange
  */
 export function initDestinationFilter(onSelectionChange) {
@@ -179,9 +195,15 @@ export function initDestinationFilter(onSelectionChange) {
   const allInput = /** @type {HTMLInputElement} */ (requiredElement('dest-filter-all'));
   const clearButton = requiredElement('dest-filter-clear');
 
+  function fitOpenMenu() {
+    const panel = requiredElement('panel');
+    fitDestinationMenuHeight(button, menu, panel.getBoundingClientRect().bottom);
+  }
+
   button.addEventListener('click', event => {
     event.stopPropagation();
     const willOpen = menu.hidden;
+    if (willOpen) fitOpenMenu();
     menu.hidden = !willOpen;
     button.setAttribute('aria-expanded', String(willOpen));
   });
@@ -230,5 +252,8 @@ export function initDestinationFilter(onSelectionChange) {
     if (event.key !== 'Escape' || menu.hidden) return;
     closeDestinationFilter();
     button.focus();
+  });
+  window.addEventListener('resize', () => {
+    if (!menu.hidden) fitOpenMenu();
   });
 }

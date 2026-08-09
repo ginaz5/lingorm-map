@@ -9,6 +9,7 @@ import {
 import {
   DESTINATION_FILTER_STORAGE_KEY,
   countrySelectionState,
+  fitDestinationMenuHeight,
   loadDestinationFilter,
   reconcileDestinationFilter,
   saveDestinationFilter,
@@ -41,6 +42,33 @@ test('destination taxonomy exposes stable countries and valid pairs', () => {
   assert.equal(isValidDestinationPair('HK', 'hong-kong'), true);
   assert.equal(isValidDestinationPair('MO', 'macau'), true);
   assert.equal(isValidDestinationPair('TW', 'hong-kong'), false);
+});
+
+test('destination menu height stays above the mobile panel boundary', () => {
+  const button = {
+    getBoundingClientRect: () => ({ bottom: 231 }),
+  };
+  const menu = { style: { maxHeight: '' } };
+
+  assert.equal(
+    fitDestinationMenuHeight(
+      /** @type {HTMLElement} */ (/** @type {unknown} */ (button)),
+      /** @type {HTMLElement} */ (/** @type {unknown} */ (menu)),
+      512,
+    ),
+    267,
+  );
+  assert.equal(menu.style.maxHeight, '267px');
+
+  assert.equal(
+    fitDestinationMenuHeight(
+      /** @type {HTMLElement} */ (/** @type {unknown} */ (button)),
+      /** @type {HTMLElement} */ (/** @type {unknown} */ (menu)),
+      900,
+    ),
+    460,
+  );
+  assert.equal(menu.style.maxHeight, '460px');
 });
 
 test('destination selections persist across reload and ignore unknown keys', () => {
