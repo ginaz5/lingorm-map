@@ -102,6 +102,7 @@ test('buildTypeFilter localizes labels, preserves values, and hides unavailable 
   try {
     state.data = [
       makeLocation({ type: 'LingOrm' }),
+      makeLocation({ id: 'lingorm-2', type: 'LingOrm' }),
       makeLocation({ id: 'jkr', type: 'JKR Picks' }),
       makeLocation({ id: 'admin', type: 'Admin Picks' }),
       makeLocation({
@@ -113,18 +114,18 @@ test('buildTypeFilter localizes labels, preserves values, and hides unavailable 
 
     buildTypeFilter();
     assert.equal(typeFilter.value, 'JKR Picks');
-    assert.match(typeFilter.innerHTML, /<option value="">主題<\/option>/);
-    assert.match(typeFilter.innerHTML, /<option value="LingOrm">LingOrm<\/option>/);
-    assert.match(typeFilter.innerHTML, /<option value="JKR Picks">JKR 推薦<\/option>/);
-    assert.match(typeFilter.innerHTML, /<option value="Admin Picks">留友看<\/option>/);
+    assert.match(typeFilter.innerHTML, /<option value="">所有主題<\/option>/);
+    assert.match(typeFilter.innerHTML, /<option value="LingOrm">LingOrm（2）<\/option>/);
+    assert.match(typeFilter.innerHTML, /<option value="JKR Picks">JKR 推薦（1）<\/option>/);
+    assert.match(typeFilter.innerHTML, /<option value="Admin Picks">留友看（1）<\/option>/);
     assert.doesNotMatch(typeFilter.innerHTML, /JKR Fan Projects|JKR 應援/);
 
     setLang('en');
     buildTypeFilter();
     assert.equal(typeFilter.value, 'JKR Picks');
-    assert.match(typeFilter.innerHTML, /<option value="">Type<\/option>/);
-    assert.match(typeFilter.innerHTML, /<option value="JKR Picks">JKR Picks<\/option>/);
-    assert.match(typeFilter.innerHTML, /<option value="Admin Picks">Admin Picks<\/option>/);
+    assert.match(typeFilter.innerHTML, /<option value="">All themes<\/option>/);
+    assert.match(typeFilter.innerHTML, /<option value="JKR Picks">JKR Picks \(1\)<\/option>/);
+    assert.match(typeFilter.innerHTML, /<option value="Admin Picks">Admin Picks \(1\)<\/option>/);
   } finally {
     restore();
   }

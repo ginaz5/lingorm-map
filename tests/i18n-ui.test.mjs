@@ -91,6 +91,18 @@ test('theme filter label is available in both supported languages', () => {
   assert.equal(T.en.theme_filter, 'Type');
 });
 
+test('unrestricted category and theme filters describe that all options are shown', () => {
+  assert.equal(T.zh.all_cat, '所有類別');
+  assert.equal(T.en.all_cat, 'All categories');
+  assert.equal(T.zh.all_themes, '所有主題');
+  assert.equal(T.en.all_themes, 'All themes');
+});
+
+test('filter option counts use language-appropriate spacing and parentheses', () => {
+  assert.equal(T.zh.filter_option_count('Spa', 3), 'Spa（3）');
+  assert.equal(T.en.filter_option_count('Spa', 3), 'Spa (3)');
+});
+
 test('favorite storage notice is available in both supported languages', () => {
   assert.equal(
     T.zh.favorite_storage_notice,
@@ -119,9 +131,12 @@ test('buildCatFilter preserves the selected category while rebuilding options', 
         return catFilter;
       },
     },
-    t: (key) => ({ all_cat: 'All Categories' })[key],
+    t: (key, label, count) => key === 'filter_option_count'
+      ? `${label} (${count})`
+      : ({ all_cat: 'All categories' })[key],
     state: {
       data: [
+        { catEn: 'Cafe', catZh: '咖啡廳', status: 'Published' },
         { catEn: 'Cafe', catZh: '咖啡廳', status: 'Published' },
         { catEn: 'Hotel', catZh: '飯店', status: 'Published' },
         { catEn: 'Internal', catZh: '內部分類', status: 'Paused' },
@@ -133,9 +148,9 @@ test('buildCatFilter preserves the selected category while rebuilding options', 
   buildCatFilter();
 
   assert.equal(catFilter.value, 'Cafe');
-  assert.match(catFilter.innerHTML, /<option value="">All Categories<\/option>/);
-  assert.match(catFilter.innerHTML, /<option value="Cafe">Cafe<\/option>/);
-  assert.match(catFilter.innerHTML, /<option value="Hotel">Hotel<\/option>/);
+  assert.match(catFilter.innerHTML, /<option value="">All categories<\/option>/);
+  assert.match(catFilter.innerHTML, /<option value="Cafe">Cafe \(2\)<\/option>/);
+  assert.match(catFilter.innerHTML, /<option value="Hotel">Hotel \(1\)<\/option>/);
   assert.doesNotMatch(catFilter.innerHTML, /Internal|內部分類/);
 });
 

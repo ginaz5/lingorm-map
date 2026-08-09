@@ -325,34 +325,41 @@ export function updateLangUI() {
 }
 
 export function buildCatFilter() {
-  const cats = new Set();
+  /** @type {Map<string, number>} */
+  const categoryCounts = new Map();
   state.data
     .filter(isPublicLocation)
-    .forEach(r => cats.add(lang === 'zh' ? r.catZh : r.catEn));
+    .forEach(row => {
+      const category = lang === 'zh' ? row.catZh : row.catEn;
+      categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
+    });
   const catFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('cat-filter'));
   if (!catFilter) throw new Error('Missing required element #cat-filter');
   rebuildSelect(
     catFilter,
     `<option value="">${t('all_cat')}</option>` +
-    [...cats].sort().map(c => `<option value="${c}">${c}</option>`).join('')
+    [...categoryCounts.keys()].sort().map(category =>
+      `<option value="${category}">${t('filter_option_count', category, categoryCounts.get(category) ?? 0)}</option>`
+    ).join('')
   );
 }
 
 export function buildTypeFilter() {
-  const availableTypes = /** @type {Set<string>} */ (new Set(
-    state.data
-      .filter(isPublicLocation)
-      .map(row => row.type)
-      .filter(Boolean)
-  ));
+  /** @type {Map<string, number>} */
+  const typeCounts = new Map();
+  state.data
+    .filter(isPublicLocation)
+    .forEach(row => {
+      if (row.type) typeCounts.set(row.type, (typeCounts.get(row.type) ?? 0) + 1);
+    });
   const typeFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('type-filter'));
   if (!typeFilter) throw new Error('Missing required element #type-filter');
   rebuildSelect(
     typeFilter,
-    `<option value="">${t('theme_filter')}</option>` +
+    `<option value="">${t('all_themes')}</option>` +
     LOCATION_TYPES
-      .filter(type => availableTypes.has(type))
-      .map(type => `<option value="${type}">${locationTypeLabel(type, lang)}</option>`)
+      .filter(type => typeCounts.has(type))
+      .map(type => `<option value="${type}">${t('filter_option_count', locationTypeLabel(type, lang), typeCounts.get(type) ?? 0)}</option>`)
       .join('')
   );
 }
