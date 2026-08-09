@@ -11,7 +11,7 @@
  * }} ChangelogItem
  */
 
-export const CURRENT_CHANGELOG_RELEASE_ID = '2026-07-30-pr-2';
+export const CURRENT_CHANGELOG_RELEASE_ID = '2026-08-09-analytics-collections';
 
 /**
  * Shared release history for the What's New preview and the full changelog.
@@ -20,6 +20,34 @@ export const CURRENT_CHANGELOG_RELEASE_ID = '2026-07-30-pr-2';
  * @type {ChangelogItem[]}
  */
 export const CHANGELOG = [
+  {
+    id: 'feat-013',
+    title: {
+      zh: '主題分類更清楚',
+      en: 'Collections are easier to understand',
+    },
+    description: {
+      zh: '類別與主題選項現在會顯示地點數量；主題旁也新增分類說明，方便快速找到想看的內容。',
+      en: 'Category and collection options now show location counts, with a new collection guide to help you find the places you want faster.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-012',
+    title: {
+      zh: '地圖收錄更多踩點',
+      en: 'More locations added to the map',
+    },
+    description: {
+      zh: '新增一批 LingOrm 相關地點與粉絲分享的收藏，並補充既有地點的資訊、座標與分類。',
+      en: 'A new batch of LingOrm locations and fan-shared picks has arrived, along with refreshed details, coordinates, and collections.',
+    },
+    badge: { zh: '內容', en: 'Content' },
+    publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
   {
     id: 'feat-010',
     title: {
@@ -32,7 +60,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'feat-009',
@@ -46,7 +74,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'fix-003',
@@ -60,7 +88,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '修復', en: 'Fix' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'feat-008',
@@ -74,7 +102,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'feat-007',
@@ -88,7 +116,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'fix-002',
@@ -102,7 +130,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '修復', en: 'Fix' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'feat-006',
@@ -116,7 +144,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'feat-005',

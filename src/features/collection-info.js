@@ -14,6 +14,7 @@ export function initCollectionInfo(documentRoot = document) {
   const trigger = requiredElement(documentRoot, 'type-info-btn');
   const popover = requiredElement(documentRoot, 'type-info-popover');
   const closeButton = requiredElement(documentRoot, 'type-info-close');
+  const canHover = documentRoot.defaultView?.matchMedia?.('(hover: hover)').matches ?? false;
   let pinned = false;
   let suppressFocusOpen = false;
   /** @type {ReturnType<typeof setTimeout>|null} */
@@ -46,11 +47,25 @@ export function initCollectionInfo(documentRoot = document) {
     }, 160);
   }
 
+  function schedulePointerClose() {
+    if (!canHover) {
+      scheduleClose();
+      return;
+    }
+    clearCloseTimer();
+    closeTimer = setTimeout(() => {
+      closeTimer = null;
+      if (wrapper.matches(':hover')) return;
+      pinned = false;
+      setOpen(false);
+    }, 160);
+  }
+
   trigger.addEventListener('pointerenter', () => {
     clearCloseTimer();
     setOpen(true);
   });
-  wrapper.addEventListener('pointerleave', scheduleClose);
+  wrapper.addEventListener('pointerleave', schedulePointerClose);
   wrapper.addEventListener('pointerenter', clearCloseTimer);
 
   trigger.addEventListener('focus', () => {
@@ -59,6 +74,10 @@ export function initCollectionInfo(documentRoot = document) {
   wrapper.addEventListener('focusout', scheduleClose);
 
   trigger.addEventListener('click', () => {
+    if (canHover) {
+      setOpen(popover.hidden !== false);
+      return;
+    }
     if (pinned) {
       close();
       return;

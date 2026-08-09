@@ -43,10 +43,13 @@ class FakeElement extends EventTarget {
 }
 
 class FakeDocument extends EventTarget {
-  constructor() {
+  constructor(canHover) {
     super();
     this.activeElement = null;
     this.elements = new Map();
+    this.defaultView = {
+      matchMedia: () => ({ matches: canHover }),
+    };
   }
 
   getElementById(id) {
@@ -54,8 +57,8 @@ class FakeDocument extends EventTarget {
   }
 }
 
-function makeEnvironment() {
-  const documentRoot = new FakeDocument();
+function makeEnvironment({ canHover = false } = {}) {
+  const documentRoot = new FakeDocument(canHover);
   const wrapper = new FakeElement(documentRoot);
   const trigger = new FakeElement(documentRoot);
   const popover = new FakeElement(documentRoot);
@@ -85,7 +88,7 @@ function escapeEvent() {
 }
 
 test('collection guide opens on hover and closes after the pointer leaves', async () => {
-  const { wrapper, trigger, popover } = makeEnvironment();
+  const { wrapper, trigger, popover } = makeEnvironment({ canHover: true });
 
   trigger.dispatchEvent(new Event('pointerenter'));
   assert.equal(popover.hidden, false);
@@ -97,7 +100,7 @@ test('collection guide opens on hover and closes after the pointer leaves', asyn
   assert.equal(trigger.getAttribute('aria-expanded'), 'false');
 });
 
-test('collection guide click pins, toggles, and closes on outside click', () => {
+test('collection guide touch click pins, toggles, and closes on outside click', () => {
   const { documentRoot, trigger, popover } = makeEnvironment();
 
   trigger.dispatchEvent(new Event('click'));
@@ -108,6 +111,18 @@ test('collection guide click pins, toggles, and closes on outside click', () => 
 
   trigger.dispatchEvent(new Event('click'));
   documentRoot.dispatchEvent(new Event('click'));
+  assert.equal(popover.hidden, true);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+});
+
+test('collection guide desktop click does not keep it open after hover ends', async () => {
+  const { wrapper, trigger, popover } = makeEnvironment({ canHover: true });
+
+  trigger.dispatchEvent(new Event('click'));
+  assert.equal(popover.hidden, false);
+
+  wrapper.dispatchEvent(new Event('pointerleave'));
+  await waitForClose();
   assert.equal(popover.hidden, true);
   assert.equal(trigger.getAttribute('aria-expanded'), 'false');
 });

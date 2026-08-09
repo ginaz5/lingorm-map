@@ -285,6 +285,14 @@ test('all filter-row controls share a 35px height', async () => {
   assert.match(css, /\.fav-filter-btn\{[^}]*height:\s*35px/);
 });
 
+test('search and select filters share the destination hover border', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.search-input:hover\{border-color:var\(--primary\)\}/);
+  assert.match(css, /\.filter-sel:hover\{border-color:var\(--primary\)\}/);
+  assert.match(css, /\.dest-filter-btn:hover\{border-color:var\(--primary\)\}/);
+});
+
 test('all three public filters use the same dropdown arrow geometry', async () => {
   const [html, css] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
