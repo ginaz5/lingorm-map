@@ -73,6 +73,18 @@ test('search and select filters use module listeners instead of inline analytics
   assert.match(mainSrc, /getElementById\('type-filter'\)\.addEventListener\('change'/);
 });
 
+test('collection guide exposes accessible static markup', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(html, /id="type-filter"[^>]*data-i18n-aria="theme_filter"/);
+  assert.match(html, /id="type-info-btn"[^>]*aria-expanded="false"[^>]*aria-haspopup="dialog"[^>]*aria-controls="type-info-popover"/);
+  assert.match(html, /id="type-info-popover"[^>]*role="dialog"[^>]*aria-labelledby="type-info-title"[^>]*hidden/);
+  assert.match(html, /data-i18n="collection_info_lingorm"/);
+  assert.match(html, /data-i18n="collection_info_jkr_picks"/);
+  assert.match(html, /data-i18n="collection_info_jkr_projects"/);
+  assert.match(html, /data-i18n="collection_info_admin"/);
+});
+
 test('mobile header keeps locate, language, and theme visible while secondary actions use overflow', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const mainSrc = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');

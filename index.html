@@ -107,7 +107,45 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <div class="filter-row">
         <select class="filter-sel" id="cat-filter"></select>
-        <select class="filter-sel" id="type-filter"></select>
+        <div class="type-filter">
+          <select class="filter-sel" id="type-filter" data-i18n-aria="theme_filter"></select>
+          <button class="type-info-btn" id="type-info-btn" type="button"
+            data-i18n-aria="collection_info_btn" aria-expanded="false"
+            aria-haspopup="dialog" aria-controls="type-info-popover">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 11v5M12 8h.01"></path>
+            </svg>
+          </button>
+          <div class="type-info-popover" id="type-info-popover" role="dialog"
+            aria-labelledby="type-info-title" hidden>
+            <div class="type-info-head">
+              <strong id="type-info-title" data-i18n="collection_info_title"></strong>
+              <button class="type-info-close" id="type-info-close" type="button"
+                data-i18n-aria="collection_info_close">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg>
+              </button>
+            </div>
+            <dl class="type-info-list">
+              <div class="type-info-item">
+                <dt><span class="badge b-type">LingOrm</span></dt>
+                <dd data-i18n="collection_info_lingorm"></dd>
+              </div>
+              <div class="type-info-item">
+                <dt><span class="badge b-type" data-i18n="collection_label_jkr_picks"></span></dt>
+                <dd data-i18n="collection_info_jkr_picks"></dd>
+              </div>
+              <div class="type-info-item">
+                <dt><span class="badge b-type" data-i18n="collection_label_jkr_projects"></span></dt>
+                <dd data-i18n="collection_info_jkr_projects"></dd>
+              </div>
+              <div class="type-info-item">
+                <dt><span class="badge b-type" data-i18n="collection_label_admin"></span></dt>
+                <dd data-i18n="collection_info_admin"></dd>
+              </div>
+            </dl>
+          </div>
+        </div>
         <div class="destination-filter">
           <button class="dest-filter-btn" id="dest-filter-btn" type="button"
             aria-haspopup="dialog" aria-expanded="false" aria-controls="dest-filter-menu">

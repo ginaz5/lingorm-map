@@ -260,8 +260,10 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 **決策：** 公開網站將正式資料的 `Type` 欄位顯示為「主題」，以單選下拉
 與搜尋、類別、目的地及收藏條件使用 AND。篩選順序固定為
 「類別／主題／目的地」，只顯示目前 `Published` 地點中實際存在的選項。
-英文篩選器沿用正式 schema 名稱 `Type`；地圖 popup 則在類別 badge 旁
-顯示依目前語言轉換的 Type badge。
+英文篩選器顯示為 `Collection`，避免和地點類別混淆；正式資料欄位仍維持
+`Type`。篩選器旁的資訊按鈕會在 hover、focus 或點擊時顯示雙語分類說明，
+並支援點擊外部或按 Escape 關閉。地圖 popup 則在類別 badge 旁顯示依目前
+語言轉換的 Type badge。
 
 **顯示契約：** 儲存與篩選仍使用穩定英文值；語言切換只改變顯示標籤：
 

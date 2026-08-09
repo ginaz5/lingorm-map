@@ -41,6 +41,7 @@ import {
   reconcileDestinationFilter,
   renderDestinationFilter,
 } from './features/destination-filter.js';
+import { initCollectionInfo } from './features/collection-info.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -209,6 +210,7 @@ initDestinationFilter(change => {
     state.selectedDestinations.size,
   );
 });
+initCollectionInfo();
 
 // Static event listeners
 document.getElementById('fav-filter-btn').addEventListener('click', event => {

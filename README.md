@@ -9,7 +9,7 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 ## Features
 
 - Interactive map with consistent brand-color emoji category markers
-- Card list with search, category, theme (`Type`), destination, and favorites filters
+- Card list with search, category, collection (stored as `Type`), destination, and favorites filters
 - Country-grouped destination multi-select with persisted choices and automatic map fitting
 - Popup with Navigate + Open in Google Maps buttons (responsive: icon-only on mobile)
 - zh / en bilingual UI with one-click toggle
@@ -102,6 +102,7 @@ graph LR
     COORD["app/app-coordinator.js"]
     UI["ui/ui.js"]
     DEST["features/destination-filter.js"]
+    COLL["features/collection-info.js"]
     TAX["data/destinations.js"]
     FORMS["features/forms.js"]
     SUBMIT["services/submit.js"]
@@ -109,6 +110,7 @@ graph LR
     WHATS["features/whats-new.js"]
 
     MAIN --> STATE & I18N & RENDER & UI & FORMS & MAP & COORD & FAV & DEST & WHATS
+    MAIN --> COLL
     COORD --> I18N & RENDER & MAP & DEST & WHATS
     MAP --> STATE & UI & RENDER
     RENDER --> STATE & I18N & UI
@@ -134,6 +136,7 @@ graph LR
 | `map/map.js` | Google / HERE map init, marker synchronization, popup refresh, and theme sync |
 | `map/map-globals.d.ts` | Ambient types for dynamically loaded Google and HERE SDK globals |
 | `features/destination-filter.js` | Destination multi-select UI, country grouping, and persisted selection |
+| `features/collection-info.js` | Collection guide hover, focus, click, and dismissal behavior |
 | `features/favorites.js` | Favorite persistence and toggle behavior |
 | `features/forms.js` | Issue report modal, validation, and location-data loading |
 | `features/changelog-data.js` | Shared bilingual changelog release data |
@@ -190,6 +193,7 @@ lingorm_bangkok_map/
 │   ├── features/
 │   │   ├── favorites.js    # Favorite persistence and toggles
 │   │   ├── destination-filter.js # Destination multi-select and persistence
+│   │   ├── collection-info.js # Collection guide interactions
 │   │   ├── forms.js        # Issue report modal and location-data loading
 │   │   ├── changelog-data.js # Shared bilingual release data
 │   │   └── whats-new.js    # Changelog modal

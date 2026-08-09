@@ -150,7 +150,8 @@ http://localhost:8888
 - 沒有空白卡片
 - marker popup 不再顯示「在 Google Maps 開啟 / Open in Google Maps」
 - 語言切換正常
-- 篩選順序為「類別／主題／目的地」；英文篩選標籤為 Type，中文主題顯示 LingOrm、JKR 推薦、JKR 應援、留友看，英文維持正式 Type 值
+- 篩選順序為「類別／主題／目的地」；英文篩選標籤為 Collection，中文主題顯示 LingOrm、JKR 推薦、JKR 應援、留友看，英文維持正式 Type 值
+- 主題旁的資訊按鈕可透過桌機 hover／focus 或點擊開啟分類說明，並能以點擊外部、再次點擊或 Escape 關閉；手機點擊可正常操作
 - 主題可與搜尋、類別、目的地及收藏條件正確交集篩選
 - Google Maps 與 HERE Maps popup 都同時顯示類別與 Type badge
 - 手機版以 `Bar / Rooftop Club`、`JKR Fan Projects`、`酒吧/天台俱樂部` 等最長篩選文字檢查，320px 與一般手機寬度都不裁切或水平溢出
