@@ -178,6 +178,7 @@ test('activateCard centers HERE map and opens info bubble', async () => {
   const activeClassOps = [];
   const cardClassOps = [];
   const markerClassOps = [];
+  const cardScrollOps = [];
 
   globalThis.document = {
     querySelectorAll: () => [
@@ -187,7 +188,7 @@ test('activateCard centers HERE map and opens info bubble', async () => {
       if (id !== 'card-0') return null;
       return {
         classList: { add: (name) => cardClassOps.push(['add', name]) },
-        scrollIntoView() {},
+        scrollIntoView: (options) => cardScrollOps.push(options),
       };
     },
   };
@@ -234,6 +235,7 @@ test('activateCard centers HERE map and opens info bubble', async () => {
     assert.deepEqual(activeClassOps, [['remove', 'active']]);
     assert.deepEqual(cardClassOps, [['add', 'active']]);
     assert.deepEqual(markerClassOps, [['active', true]]);
+    assert.deepEqual(cardScrollOps, [{ behavior: 'smooth', block: 'center' }]);
   } finally {
     globalThis.document = previousDocument;
     globalThis.window = previousWindow;

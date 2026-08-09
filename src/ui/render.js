@@ -246,7 +246,7 @@ export function activateCard(i, options = {}) {
   if (card) {
     card.classList.add('active');
     const raf = typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame : (/** @type {FrameRequestCallback} */ cb) => { cb(0); return 0; };
-    raf(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+    raf(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }));
   }
 }
 
