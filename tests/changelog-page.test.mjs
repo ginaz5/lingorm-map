@@ -7,6 +7,7 @@ import {
   CHANGELOG,
   CURRENT_CHANGELOG_RELEASE_ID,
   formatChangelogDate,
+  groupChangelogByDate,
   localizeChangelogItem,
 } from '../src/features/changelog-data.js';
 
@@ -18,18 +19,28 @@ test('changelog data is newest-first and has bilingual copy', () => {
 
   const latest = CHANGELOG[0];
   assert.equal(new Date(latest.publishTime).getUTCFullYear(), 2026);
-  assert.equal(localizeChangelogItem(latest, 'zh').title, '主題分類更清楚');
-  assert.equal(localizeChangelogItem(latest, 'en').title, 'Collections are easier to understand');
+  assert.equal(localizeChangelogItem(latest, 'zh').title, '手機版篩選與卡片定位更順手');
+  assert.equal(localizeChangelogItem(latest, 'en').title, 'Smoother mobile filters and card positioning');
 
   const currentReleaseItems = CHANGELOG.filter(
     item => item.releaseId === CURRENT_CHANGELOG_RELEASE_ID,
   );
-  assert.equal(currentReleaseItems.length, 2);
+  assert.equal(currentReleaseItems.length, 3);
   assert.ok(currentReleaseItems.every(item => item.publishTime === latest.publishTime));
   assert.equal(
     CHANGELOG.filter(item => item.releaseId === '2026-07-30-pr-2').length,
     7,
   );
+});
+
+test('changelog entries with the same GMT+8 date share one group', () => {
+  const groups = groupChangelogByDate(CHANGELOG);
+
+  assert.equal(groups[0].dateKey, '2026-08-09');
+  assert.equal(groups[0].items.length, 3);
+  assert.equal(groups[1].dateKey, '2026-07-30');
+  assert.equal(groups[1].items.length, 7);
+  assert.equal(groups.length < CHANGELOG.length, true);
 });
 
 test('changelog dates render in the selected language and GMT+8 calendar day', () => {
@@ -62,4 +73,6 @@ test('modal links to a dedicated changelog page with language and theme controls
   assert.match(T.en.changelog_page_title, /LingOrm Map/);
   assert.match(changelogSrc, /changelog-lang-btn.+setAttribute\('aria-label'/);
   assert.match(changelogSrc, /changelog-theme-btn.+setAttribute\('aria-label'/);
+  assert.match(changelogSrc, /groupChangelogByDate\(CHANGELOG\)/);
+  assert.match(changelogSrc, /class="changelog-entry-items"/);
 });

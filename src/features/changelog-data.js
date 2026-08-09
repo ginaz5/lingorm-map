@@ -10,6 +10,7 @@
  *   releaseId?: string
  * }} ChangelogItem
  */
+/** @typedef {{ dateKey: string, publishTime: number, items: ChangelogItem[] }} ChangelogDateGroup */
 
 export const CURRENT_CHANGELOG_RELEASE_ID = '2026-08-09-analytics-collections';
 
@@ -20,6 +21,20 @@ export const CURRENT_CHANGELOG_RELEASE_ID = '2026-08-09-analytics-collections';
  * @type {ChangelogItem[]}
  */
 export const CHANGELOG = [
+  {
+    id: 'fix-004',
+    title: {
+      zh: '手機版篩選與卡片定位更順手',
+      en: 'Smoother mobile filters and card positioning',
+    },
+    description: {
+      zh: '修正目的地下拉選單底部被遮住的問題，最後一個地點現在可完整顯示；點選地點後，對應卡片也會平滑捲動至畫面中央。',
+      en: 'The destination menu now stays above the mobile tab bar so every option remains accessible. Selected location cards also scroll smoothly into the center of the screen.',
+    },
+    badge: { zh: '修復', en: 'Fix' },
+    publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
   {
     id: 'feat-013',
     title: {
@@ -224,6 +239,40 @@ export function localizeChangelogItem(item, language) {
     description: item.description[language],
     badge: item.badge[language],
   };
+}
+
+/** @param {number} publishTime */
+function changelogDateKey(publishTime) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'Asia/Taipei',
+  }).formatToParts(new Date(publishTime));
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+/**
+ * Group newest-first changelog items by their GMT+8 calendar date.
+ * @param {ChangelogItem[]} items
+ * @returns {ChangelogDateGroup[]}
+ */
+export function groupChangelogByDate(items) {
+  /** @type {ChangelogDateGroup[]} */
+  const groups = [];
+  [...items]
+    .sort((a, b) => b.publishTime - a.publishTime)
+    .forEach(item => {
+      const dateKey = changelogDateKey(item.publishTime);
+      const currentGroup = groups.at(-1);
+      if (currentGroup?.dateKey === dateKey) {
+        currentGroup.items.push(item);
+        return;
+      }
+      groups.push({ dateKey, publishTime: item.publishTime, items: [item] });
+    });
+  return groups;
 }
 
 /**

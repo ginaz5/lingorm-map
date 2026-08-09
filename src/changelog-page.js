@@ -2,6 +2,7 @@ import { lang, setLang, t } from './core/i18n.js';
 import {
   CHANGELOG,
   formatChangelogDate,
+  groupChangelogByDate,
   localizeChangelogItem,
 } from './features/changelog-data.js';
 
@@ -23,18 +24,27 @@ function renderChangelog() {
   const listEl = document.getElementById('changelog-list');
   if (!listEl) return;
 
-  const items = [...CHANGELOG].sort((a, b) => b.publishTime - a.publishTime);
-  listEl.innerHTML = items.map(rawItem => {
-    const item = localizeChangelogItem(rawItem, lang);
+  const groups = groupChangelogByDate(CHANGELOG);
+  listEl.innerHTML = groups.map(group => {
+    const itemsHtml = group.items.map(rawItem => {
+      const item = localizeChangelogItem(rawItem, lang);
+      return `
+        <article class="changelog-item">
+          <div class="changelog-item-meta">
+            <span class="wn-badge">${item.badge}</span>
+          </div>
+          <h2>${item.title}</h2>
+          <p>${item.description}</p>
+        </article>
+      `;
+    }).join('');
     return `
-      <article class="changelog-entry">
+      <section class="changelog-entry">
         <div class="changelog-entry-meta">
-          <time datetime="${new Date(item.publishTime).toISOString()}">${formatChangelogDate(item.publishTime, lang)}</time>
-          <span class="wn-badge">${item.badge}</span>
+          <time datetime="${group.dateKey}">${formatChangelogDate(group.publishTime, lang)}</time>
         </div>
-        <h2>${item.title}</h2>
-        <p>${item.description}</p>
-      </article>
+        <div class="changelog-entry-items">${itemsHtml}</div>
+      </section>
     `;
   }).join('');
 }
