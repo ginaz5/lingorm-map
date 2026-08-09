@@ -27,8 +27,8 @@ export const CHANGELOG = [
       en: 'Collections are easier to understand',
     },
     description: {
-      zh: '類別與主題選項現在會顯示地點數量；主題旁也新增分類說明，方便快速找到想看的內容。',
-      en: 'Category and collection options now show location counts, with a new collection guide to help you find the places you want faster.',
+      zh: '類別與主題選項現在會顯示地點數量，搜尋與篩選也有一致的 hover 回饋。主題分類說明在桌機移開游標後會自動收合，手機版則會保持開啟，直到使用者自行關閉。',
+      en: 'Category and collection options now show location counts with consistent hover feedback across search and filters. The collection guide closes when the pointer leaves on desktop, while staying open on touch devices until you dismiss it.',
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
