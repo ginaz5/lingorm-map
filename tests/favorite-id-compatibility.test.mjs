@@ -17,8 +17,8 @@ const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 test('Notion snapshot preserves every protected favorite ID', () => {
   assert.deepEqual(validateFavoriteCompatibility(snapshotCsv, manifest), {
     legacyIdCount: 98,
-    notionSlugCount: 141,
-    newSlugCount: 43,
+    notionSlugCount: 148,
+    newSlugCount: 50,
   });
 });
 
@@ -58,8 +58,8 @@ test('favorite compatibility allows new locations without weakening legacy IDs',
 
   assert.deepEqual(validateFavoriteCompatibility(serialize(rows), manifest), {
     legacyIdCount: 98,
-    notionSlugCount: 142,
-    newSlugCount: 44,
+    notionSlugCount: 149,
+    newSlugCount: 51,
   });
 });
 

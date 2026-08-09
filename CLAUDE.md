@@ -52,7 +52,7 @@ Vanilla JS + ES modules + Vite static site on Netlify. No framework, no runtime 
 **Two independent boot flows in `src/main.js`:**
 
 1. **Data** — `/api/locations` (`netlify/functions/locations.mjs`) serves the committed `data/locations.csv` snapshot → `src/data/csv-parser.js` → `src/core/state.js` → `rebuild()` fans out to `src/ui/render.js` and `src/map/map.js`.
-2. **Map** — `/api/config` (`netlify/functions/config.mjs`) returns the Maps key/Map ID from `process.env`, never bundled. Google Maps loads as primary; on missing key or script failure `src/map/map.js` falls back to HERE Maps. Both paths converge on `initMap()` + `buildMarkers()`.
+2. **Map** — `/api/config` (`netlify/functions/config.mjs`) reads the browser SDK keys and Map ID through `globalThis.Netlify.env.get()`. They are not committed or bundled into `dist/`, but the keys remain visible in browser network traffic by design and must be protected with provider-side website/API restrictions and quotas. Google Maps loads as primary; on missing configuration or script failure `src/map/map.js` falls back to HERE Maps. Each provider initializes its map before `buildMarkers()` runs.
 
 `src/app/app-coordinator.js` sits between the two: filter/map synchronization and language-change orchestration. `src/core/state.js` is a single mutable object imported by nearly everything — changing its shape means auditing state, CSV parsing, render, map, forms, and both Netlify Functions.
 

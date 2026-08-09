@@ -13,15 +13,15 @@ const snapshotPath = fileURLToPath(new URL('../data/locations.csv', import.meta.
 const snapshotCsv = readFileSync(snapshotPath, 'utf8');
 const snapshotRows = tokenizeCSV(snapshotCsv);
 
-test('production snapshot validator accepts the committed 141-row snapshot', () => {
+test('production snapshot validator accepts the committed 148-row snapshot', () => {
   assert.deepEqual(validateLocationSnapshot(snapshotCsv), {
     policyId: 'three-status-20260721',
-    rowCount: 141,
-    uniqueSlugCount: 141,
-    publicRowCount: 111,
+    rowCount: 148,
+    uniqueSlugCount: 148,
+    publicRowCount: 125,
     statusCounts: {
-      Published: 111,
-      Paused: 26,
+      Published: 125,
+      Paused: 19,
       Inactive: 4,
     },
   });
@@ -73,8 +73,8 @@ test('production snapshot validator accepts additions while protecting the basel
   ].join('\r\n');
 
   const result = validateLocationSnapshot(expandedCsv);
-  assert.equal(result.rowCount, 142);
-  assert.equal(result.uniqueSlugCount, 142);
+  assert.equal(result.rowCount, 149);
+  assert.equal(result.uniqueSlugCount, 149);
 });
 
 test('production snapshot validator rejects replacement additions when a protected Slug disappears', () => {
@@ -143,8 +143,8 @@ test('production snapshot validator accepts target Paused and Inactive as non-pu
   ].join('\r\n');
 
   const result = validateLocationSnapshot(changedCsv);
-  assert.equal(result.publicRowCount, 109);
-  assert.equal(result.statusCounts.Paused, 27);
+  assert.equal(result.publicRowCount, 123);
+  assert.equal(result.statusCounts.Paused, 20);
   assert.equal(result.statusCounts.Inactive, 5);
 });
 

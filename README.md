@@ -31,7 +31,7 @@ On page load, `main.js` kicks off two parallel flows:
 
 1. **Data flow** — `tryLoadSheet()` calls `/api/locations`, which serves the committed Notion export snapshot (`DATA_SOURCE=notion`, the only supported value; the legacy published Google Sheets CSV path is retired — see Deploy section). The response is tokenised by `data/csv-parser.js`, normalised into a flat array, and stored in `core/state.js`. Once loaded, `rebuild()` triggers `ui/render.js` (card list + filters) and `map/map.js` (place markers).
 
-2. **Map flow** — `loadMapScript()` calls `/api/config` to retrieve the Google Maps API key and Map ID (never exposed client-side directly). It injects the Google Maps JS script; if that fails or the key is absent, it falls back to the HERE Maps JS API. Either way, `initMap()` runs and markers are placed via `buildMarkers()`.
+2. **Map flow** — `loadMapScript()` calls `/api/config` to retrieve the browser SDK configuration, including the Google Maps API key and Map ID. These values are not bundled into `dist/`, but they are visible to browser users because the Google Maps and HERE JavaScript SDKs require them client-side. The app injects the Google Maps JS script; if that fails or the Google configuration is absent, it falls back to the HERE Maps JS API. Either way, `initMap()` runs and markers are placed via `buildMarkers()`.
 
 ```mermaid
 flowchart TD
@@ -144,7 +144,7 @@ graph LR
 
 ### Key constraints
 
-- **No secrets in client JS.** The Google Maps key is fetched at runtime from `/api/config` (a Netlify Function that reads `process.env`), never bundled into `dist/`.
+- **Keep secrets server-side; restrict browser SDK keys.** `/api/config` reads the map configuration from Netlify environment variables, so credentials are not committed or bundled into `dist/`. The Google Maps and HERE JavaScript SDK keys are nevertheless browser-visible by design and must be treated as public identifiers protected by application restrictions, API restrictions, quotas, and monitoring. Server-only credentials such as `NOTION_API_KEY` and `GOOGLE_PLACE_KEY` must never be returned by this endpoint.
 - **HERE as fallback, not primary.** If `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` are absent or the script load fails, the app transparently switches to HERE Maps.
 - **No framework.** Vanilla JS + Vite — no React/Vue/Angular. DOM updates are string-templated HTML re-renders (card list) or direct marker manipulation (map).
 
@@ -309,13 +309,20 @@ queues first-party interaction events in `dataLayer`; GTM routes them to GA4.
 The event contract, GTM setup, verification checklist, and future measurement
 plan are documented in [Analytics Tracking](docs/analytics-tracking.md).
 
-### Google Maps key protection
+### Browser map key protection
 
-The Maps key is delivered via `/api/config` (Netlify Function). Protect it with:
+`/api/config` reads configuration from Netlify environment variables, but its response is requested by the browser. The Google Maps and HERE JavaScript SDK keys therefore remain visible in DevTools and network traffic. Moving the fetch into another function, injecting the values into HTML, or changing the response format would not make these browser SDK keys secret.
 
-1. **HTTP Referrer restriction** in Cloud Console → Credentials (allow `https://lingorm-map.netlify.app/*`)
-2. **Daily quota cap** — Maps JS API → Quotas → Map loads/day = 900
-3. **Billing alert** at $5
+Protect the Google Maps browser key with:
+
+1. **Website application restrictions** in Google Cloud Console → Credentials. Allow only the production site, required Netlify Deploy Preview origins, and `http://localhost:8888/*` for local development.
+2. **API restrictions** that allow only the Maps JavaScript API and any explicitly required client-side Maps libraries. Do not reuse this key for Places or other server-side web-service calls.
+3. **A separate server key** for server-side Google APIs, protected independently and never returned by `/api/config`.
+4. **Quota limits, billing alerts, and usage monitoring** appropriate for the project.
+
+Apply the equivalent website/domain restrictions and usage limits to the HERE browser key wherever the HERE project settings support them. An interactive client-rendered map cannot keep its SDK credential secret; a genuinely private key requires a different architecture, such as server-rendered static maps or a server proxy for supported web-service calls.
+
+See [Google Maps Platform security guidance](https://developers.google.com/maps/api-security-best-practices) and [Maps JavaScript API setup](https://developers.google.com/maps/documentation/javascript/get-api-key).
 
 ---
 

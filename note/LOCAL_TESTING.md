@@ -100,10 +100,12 @@ http://localhost:8888
 http://localhost:8888/api/config
 ```
 
+這個 endpoint 是由 Netlify Function 執行，但回應會提供給前端地圖 SDK，因此在瀏覽器 Network 面板看見 `googleMapsKey`／`hereApiKey` 是預期行為。Browser SDK key 必須設定網站與 API restriction；`NOTION_API_KEY`、`GOOGLE_PLACE_KEY` 等 server-only credential 則絕對不應出現在此回應。
+
 預期：
 
 ```json
-{"googleMapsKey":"...","googleMapId":"..."}
+{"hereApiKey":"...","googleMapsKey":"...","googleMapId":"..."}
 ```
 
 再確認 location CSV endpoint：
