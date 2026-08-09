@@ -132,7 +132,7 @@ npm run build
 With `DATA_SOURCE=notion`, `build.sh` enforces:
 
 - The stable CSV header contract.
-- The expected snapshot row count.
+- The policy minimum row count, adjusted only by approved deletions.
 - Every published row has a supported, matching country/destination pair.
 - Non-empty, unique Notion slugs.
 - Preservation of all spreadsheet-derived legacy favorite IDs.

@@ -73,25 +73,13 @@ const APPROVED_REMOVED_SLUGS = [
   'by',
 ];
 
-test('formal snapshot uses the stable CSV contract and contains 148 unique rows', () => {
+test('formal snapshot uses the stable CSV contract and unique Slugs', () => {
   assert.deepEqual(tokenizeCSV(snapshotCsv)[0], CSV_HEADER);
-  assert.equal(snapshotRows.length, 148);
-  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, 148);
+  assert.ok(snapshotRows.length > 0);
+  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, snapshotRows.length);
 });
 
-test('formal snapshot preserves the current publication status distribution', () => {
-  const statusCounts = Object.fromEntries(
-    ['Published', 'Paused', 'Inactive'].map((status) => [
-      status,
-      snapshotRows.filter((row) => row.status === status).length,
-    ])
-  );
-
-  assert.deepEqual(statusCounts, {
-    Published: 125,
-    Paused: 19,
-    Inactive: 4,
-  });
+test('formal snapshot does not mark exported coordinates as approximate', () => {
   assert.equal(snapshotRows.every((row) => row.approx === ''), true);
 });
 

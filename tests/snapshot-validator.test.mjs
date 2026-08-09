@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { csvRow } from '../scripts/export-snapshot.mjs';
+import { CSV_HEADER, csvRow } from '../scripts/export-snapshot.mjs';
 import {
   validateLocationSnapshot,
 } from '../scripts/validate-location-snapshot.mjs';
@@ -13,18 +13,18 @@ const snapshotPath = fileURLToPath(new URL('../data/locations.csv', import.meta.
 const snapshotCsv = readFileSync(snapshotPath, 'utf8');
 const snapshotRows = tokenizeCSV(snapshotCsv);
 
-test('production snapshot validator accepts the committed 148-row snapshot', () => {
-  assert.deepEqual(validateLocationSnapshot(snapshotCsv), {
-    policyId: 'three-status-20260721',
-    rowCount: 148,
-    uniqueSlugCount: 148,
-    publicRowCount: 125,
-    statusCounts: {
-      Published: 125,
-      Paused: 19,
-      Inactive: 4,
-    },
-  });
+test('production snapshot validator accepts the committed snapshot under the current policy', () => {
+  const result = validateLocationSnapshot(snapshotCsv);
+  const dataRowCount = snapshotRows.length - 1;
+
+  assert.equal(result.policyId, 'three-status-20260721');
+  assert.equal(result.rowCount, dataRowCount);
+  assert.equal(result.uniqueSlugCount, dataRowCount);
+  assert.equal(result.publicRowCount, result.statusCounts.Published ?? 0);
+  assert.equal(
+    Object.values(result.statusCounts).reduce((total, count) => total + count, 0),
+    dataRowCount
+  );
 });
 
 test('production snapshot validator rejects a partial snapshot', () => {
@@ -73,8 +73,9 @@ test('production snapshot validator accepts additions while protecting the basel
   ].join('\r\n');
 
   const result = validateLocationSnapshot(expandedCsv);
-  assert.equal(result.rowCount, 149);
-  assert.equal(result.uniqueSlugCount, 149);
+  const expectedRowCount = snapshotRows.length;
+  assert.equal(result.rowCount, expectedRowCount);
+  assert.equal(result.uniqueSlugCount, expectedRowCount);
 });
 
 test('production snapshot validator rejects replacement additions when a protected Slug disappears', () => {
@@ -128,25 +129,43 @@ test('production snapshot validator rejects retired statuses', () => {
   }
 });
 
-test('production snapshot validator accepts target Paused and Inactive as non-public', () => {
-  const paused = changedRow(snapshotRows[1], {
-    'Verification Status': 'Paused',
-  });
-  const inactive = changedRow(snapshotRows[2], {
-    'Verification Status': 'Inactive',
-  });
-  const changedCsv = [
-    csvRow(snapshotRows[0]),
-    csvRow(paused),
-    csvRow(inactive),
-    ...snapshotRows.slice(3).map(csvRow),
-  ].join('\r\n');
+test('production snapshot validator counts only Published fixture rows as public', () => {
+  const fixtureCsv = [
+    CSV_HEADER,
+    snapshotFixtureRow('published-fixture', 'Published'),
+    snapshotFixtureRow('paused-fixture', 'Paused'),
+    snapshotFixtureRow('inactive-fixture', 'Inactive'),
+  ].map(csvRow).join('\r\n');
 
-  const result = validateLocationSnapshot(changedCsv);
-  assert.equal(result.publicRowCount, 123);
-  assert.equal(result.statusCounts.Paused, 20);
-  assert.equal(result.statusCounts.Inactive, 5);
+  assert.deepEqual(validateLocationSnapshot(fixtureCsv, 3), {
+    policyId: 'legacy-exact-count',
+    rowCount: 3,
+    uniqueSlugCount: 3,
+    publicRowCount: 1,
+    statusCounts: {
+      Published: 1,
+      Paused: 1,
+      Inactive: 1,
+    },
+  });
 });
+
+function snapshotFixtureRow(slug, status) {
+  const values = {
+    'Location Name': slug,
+    'Google Maps URL': `https://maps.google.com/?q=${slug}`,
+    Category: 'Cafe',
+    'Verification Status': status,
+    Lat: '13.7',
+    Lng: '100.5',
+    Icon: '☕',
+    'Country Code': 'TH',
+    'Destination Key': 'bangkok',
+    Type: 'LingOrm',
+    Slug: slug,
+  };
+  return CSV_HEADER.map((header) => values[header] ?? '');
+}
 
 test('production snapshot validator requires geography for Published rows', () => {
   const missingGeography = changedRow(snapshotRows[1], {

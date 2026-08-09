@@ -433,4 +433,4 @@ node --test tests/*.test.mjs
 | `locations-function.test.mjs` | `/api/locations` Netlify Function |
 | `notion-export-full.test.mjs` | Formal Notion snapshot contract and approved slug-delta reconciliation |
 | `notion-export-poc.test.mjs` | Notion snapshot round-trip and exporter serialization |
-| `snapshot-validator.test.mjs` | Production snapshot contract, row-count, and slug validation |
+| `snapshot-validator.test.mjs` | Production snapshot contract, policy, and Slug validation |

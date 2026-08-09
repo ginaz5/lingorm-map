@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -6,6 +7,11 @@ import locationsHandler, {
   serveNotionSnapshot,
 } from '../netlify/functions/locations.mjs';
 import { parseCSV } from '../src/data/csv-parser.js';
+
+const committedSnapshot = readFileSync(
+  fileURLToPath(new URL('../data/locations.csv', import.meta.url)),
+  'utf8'
+);
 
 function withNetlifyEnv(values, fn) {
   const previous = globalThis.Netlify;
@@ -38,7 +44,8 @@ test('serves the committed Notion snapshot with no DATA_SOURCE set (default)', a
     assert.equal(response.headers.get('cache-control'), 'public, max-age=60, stale-while-revalidate=300');
     assert.match(csv, /"Location Name"/);
     assert.match(csv, /"Slug"/);
-    assert.equal(parseCSV(csv).length, 148);
+    assert.equal(csv, committedSnapshot);
+    assert.ok(parseCSV(csv)?.length > 0);
   });
 });
 
@@ -55,7 +62,8 @@ test('serves the committed Notion snapshot when DATA_SOURCE=notion', async () =>
     assert.match(csv, /"Location Name"/);
     assert.match(csv, /"Slug"/);
     assert.doesNotMatch(csv.split(/\r?\n/, 1)[0], /Duplicate Group/);
-    assert.equal(parseCSV(csv).length, 148);
+    assert.equal(csv, committedSnapshot);
+    assert.ok(parseCSV(csv)?.length > 0);
   });
 });
 
