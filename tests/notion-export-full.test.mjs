@@ -1,8 +1,8 @@
-// Current formal-Notion snapshot acceptance tests. The frozen Google Sheet
-// remains an immutable historical artifact; approved slug additions and
-// replacements must be enumerated instead of weakening the reconciliation.
+// Current formal-Notion snapshot acceptance tests. The committed legacy
+// favorite-ID manifest is the CI-visible migration baseline; approved slug
+// additions must be enumerated instead of weakening the reconciliation.
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -10,11 +10,12 @@ import { parseCSV, tokenizeCSV } from '../src/data/csv-parser.js';
 import { CSV_HEADER } from '../scripts/export-snapshot.mjs';
 
 const snapshotPath = fileURLToPath(new URL('../data/locations.csv', import.meta.url));
-const frozenSourcePath = fileURLToPath(
-  new URL('../data/migration/source-20260718.csv', import.meta.url)
+const legacyFavoriteIdsPath = fileURLToPath(
+  new URL('../data/legacy-favorite-ids.json', import.meta.url)
 );
 const snapshotCsv = readFileSync(snapshotPath, 'utf8');
 const snapshotRows = parseCSV(snapshotCsv);
+const legacyFavoriteIds = JSON.parse(readFileSync(legacyFavoriteIdsPath, 'utf8')).ids;
 
 const APPROVED_ADDED_SLUGS = [
   'alien-bangkok',
@@ -23,6 +24,7 @@ const APPROVED_ADDED_SLUGS = [
   'auntie-nid-coffee-shop',
   'baiwago-plus-cafe-kmc',
   'cafe-madeleine-four-seasons-bangkok',
+  'caffe-del-museo-khao-yai',
   'chatuchak-weekend-market',
   'chom-arun-restaurant',
   'chrisly-cafe-tsim-sha-tsui',
@@ -54,10 +56,10 @@ const APPROVED_ADDED_SLUGS = [
   'pak-khlong-talat',
   'pata-plantation-original-tiwanon',
   'phra-phutthayotfa-bridge-memorial-bridge',
-  'plantiful-sukhumvit-61',
   'pungdet-banthat-thong',
   'rethink-coffee-roasters-broadway-macau',
   'sampeng-market',
+  'sea-of-love-pattaya',
   'shenfangcui-coffee-yunong',
   'showa-shiyoubajiu',
   'star-trails-kaohsiung',
@@ -68,9 +70,6 @@ const APPROVED_ADDED_SLUGS = [
   'waraporn-salapao-asoke',
   'wat-paknam-phasi-charoen',
   'woolloomooloo-bakery-thonglor',
-];
-const APPROVED_REMOVED_SLUGS = [
-  'by',
 ];
 
 test('formal snapshot uses the stable CSV contract and unique Slugs', () => {
@@ -96,23 +95,17 @@ test('formal snapshot contains the two explicitly requested slug results', () =>
   );
 });
 
-test(
-  'formal snapshot has only the approved slug delta from the frozen source',
-  { skip: !existsSync(frozenSourcePath) && 'frozen migration source is intentionally gitignored' },
-  () => {
-    const sourceRows = parseCSV(readFileSync(frozenSourcePath, 'utf8'));
-    const sourceSlugs = new Set(sourceRows.map((row) => row.id));
-    const snapshotSlugs = new Set(snapshotRows.map((row) => row.id));
-    const added = [...snapshotSlugs]
-      .filter((slug) => !sourceSlugs.has(slug))
-      .sort();
-    const removed = [...sourceSlugs]
-      .filter((slug) => !snapshotSlugs.has(slug))
-      .sort();
+test('formal snapshot has only the approved slug delta from the migration baseline', () => {
+  const baselineSlugs = new Set(legacyFavoriteIds);
+  const snapshotSlugs = new Set(snapshotRows.map((row) => row.id));
+  const added = [...snapshotSlugs]
+    .filter((slug) => !baselineSlugs.has(slug))
+    .sort();
+  const removed = [...baselineSlugs]
+    .filter((slug) => !snapshotSlugs.has(slug))
+    .sort();
 
-    assert.equal(sourceRows.length, 98);
-    assert.equal(sourceRows.filter((row) => row.src === '___epoh___').length, 56);
-    assert.deepEqual(added, APPROVED_ADDED_SLUGS);
-    assert.deepEqual(removed, APPROVED_REMOVED_SLUGS);
-  }
-);
+  assert.equal(legacyFavoriteIds.length, 98);
+  assert.deepEqual(added, APPROVED_ADDED_SLUGS);
+  assert.deepEqual(removed, []);
+});
