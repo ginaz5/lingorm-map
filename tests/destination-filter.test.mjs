@@ -9,11 +9,14 @@ import {
 import {
   DESTINATION_FILTER_STORAGE_KEY,
   countrySelectionState,
+  fitDestinationMenuHeight,
   loadDestinationFilter,
   reconcileDestinationFilter,
+  renderDestinationFilter,
   saveDestinationFilter,
   toggleCountryDestinations,
 } from '../src/features/destination-filter.js';
+import { t } from '../src/core/i18n.js';
 import { state } from '../src/core/state.js';
 
 test('destination taxonomy exposes stable countries and valid pairs', () => {
@@ -41,6 +44,71 @@ test('destination taxonomy exposes stable countries and valid pairs', () => {
   assert.equal(isValidDestinationPair('HK', 'hong-kong'), true);
   assert.equal(isValidDestinationPair('MO', 'macau'), true);
   assert.equal(isValidDestinationPair('TW', 'hong-kong'), false);
+});
+
+test('destination menu height stays above the mobile panel boundary', () => {
+  const button = {
+    getBoundingClientRect: () => ({ bottom: 231 }),
+  };
+  const menu = { style: { maxHeight: '' } };
+
+  assert.equal(
+    fitDestinationMenuHeight(
+      /** @type {HTMLElement} */ (/** @type {unknown} */ (button)),
+      /** @type {HTMLElement} */ (/** @type {unknown} */ (menu)),
+      512,
+    ),
+    267,
+  );
+  assert.equal(menu.style.maxHeight, '267px');
+
+  assert.equal(
+    fitDestinationMenuHeight(
+      /** @type {HTMLElement} */ (/** @type {unknown} */ (button)),
+      /** @type {HTMLElement} */ (/** @type {unknown} */ (menu)),
+      900,
+    ),
+    460,
+  );
+  assert.equal(menu.style.maxHeight, '460px');
+});
+
+test('empty destination selection displays the all destinations label', () => {
+  const buttonLabel = { textContent: '' };
+  const groups = {
+    innerHTML: '',
+    querySelectorAll: () => [],
+  };
+  const allInput = { checked: false };
+  const elements = new Map([
+    ['dest-filter-label', buttonLabel],
+    ['dest-filter-groups', groups],
+    ['dest-filter-all', allInput],
+  ]);
+  const previousDocumentDescriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    'document'
+  );
+  Object.defineProperty(globalThis, 'document', {
+    configurable: true,
+    value: { getElementById: id => elements.get(id) ?? null },
+  });
+  state.data = [];
+  state.selectedDestinations = new Set();
+
+  try {
+    renderDestinationFilter();
+    assert.equal(buttonLabel.textContent, t('all_destinations'));
+    assert.equal(allInput.checked, true);
+  } finally {
+    if (previousDocumentDescriptor) {
+      Object.defineProperty(globalThis, 'document', previousDocumentDescriptor);
+    } else {
+      delete globalThis.document;
+    }
+    state.data = [];
+    state.selectedDestinations = new Set();
+  }
 });
 
 test('destination selections persist across reload and ignore unknown keys', () => {

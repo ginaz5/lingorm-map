@@ -178,6 +178,8 @@ test('the UI exposes only Candidate dry-run and read-only evidence', () => {
   assert.match(htmlSource, /執行全量資料對帳/);
   assert.match(htmlSource, /Slug policy · Snapshot/);
   assert.match(appSource, /Notion ↔ committed snapshot/);
+  assert.match(appSource, /'data\/locations\.csv'/);
+  assert.match(appSource, /snapshot\.ok \? '已是最新' : '需要更新'/);
   assert.match(appSource, /Type · \$\{type\}/);
   assert.match(
     htmlSource,

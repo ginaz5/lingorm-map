@@ -100,10 +100,12 @@ http://localhost:8888
 http://localhost:8888/api/config
 ```
 
+這個 endpoint 是由 Netlify Function 執行，但回應會提供給前端地圖 SDK，因此在瀏覽器 Network 面板看見 `googleMapsKey`／`hereApiKey` 是預期行為。Browser SDK key 必須設定網站與 API restriction；`NOTION_API_KEY`、`GOOGLE_PLACE_KEY` 等 server-only credential 則絕對不應出現在此回應。
+
 預期：
 
 ```json
-{"googleMapsKey":"...","googleMapId":"..."}
+{"hereApiKey":"...","googleMapsKey":"...","googleMapId":"..."}
 ```
 
 再確認 location CSV endpoint：
@@ -148,7 +150,8 @@ http://localhost:8888
 - 沒有空白卡片
 - marker popup 不再顯示「在 Google Maps 開啟 / Open in Google Maps」
 - 語言切換正常
-- 篩選順序為「類別／主題／目的地」；英文篩選標籤為 Type，中文主題顯示 LingOrm、JKR 推薦、JKR 應援、留友看，英文維持正式 Type 值
+- 篩選順序為「類別／主題／目的地」；英文篩選標籤為 Collection，中文主題顯示 LingOrm、JKR 推薦、JKR 應援、留友看，英文維持正式 Type 值
+- 主題旁的資訊按鈕可透過桌機 hover／focus 或點擊開啟分類說明，並能以點擊外部、再次點擊或 Escape 關閉；手機點擊可正常操作
 - 主題可與搜尋、類別、目的地及收藏條件正確交集篩選
 - Google Maps 與 HERE Maps popup 都同時顯示類別與 Type badge
 - 手機版以 `Bar / Rooftop Club`、`JKR Fan Projects`、`酒吧/天台俱樂部` 等最長篩選文字檢查，320px 與一般手機寬度都不裁切或水平溢出

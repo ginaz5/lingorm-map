@@ -86,9 +86,35 @@ test('search placeholders explain that names and notes are searchable', () => {
   assert.equal(T.en.search_ph, 'Search names or notes…');
 });
 
-test('theme filter label is available in both supported languages', () => {
+test('collection filter label is available in both supported languages', () => {
   assert.equal(T.zh.theme_filter, '主題');
-  assert.equal(T.en.theme_filter, 'Type');
+  assert.equal(T.en.theme_filter, 'Collection');
+});
+
+test('unrestricted category and collection filters describe that all options are shown', () => {
+  assert.equal(T.zh.all_cat, '所有類別');
+  assert.equal(T.en.all_cat, 'All categories');
+  assert.equal(T.zh.all_themes, '所有主題');
+  assert.equal(T.en.all_themes, 'All collections');
+});
+
+test('collection guide explains every collection in both supported languages', () => {
+  assert.equal(T.zh.collection_info_title, '主題怎麼分類？');
+  assert.match(T.zh.collection_info_lingorm, /劇集、綜藝節目取景地/);
+  assert.equal(T.zh.collection_info_jkr_picks, '同擔分享的地點，必須得存個！');
+  assert.match(T.zh.collection_info_jkr_projects, /曾經或正在進行應援活動/);
+  assert.match(T.zh.collection_info_admin, /特別留給她看的哈哈/);
+
+  assert.equal(T.en.collection_info_title, 'What are collections?');
+  assert.match(T.en.collection_info_lingorm, /filming locations/);
+  assert.match(T.en.collection_info_jkr_picks, /fellow fans/);
+  assert.match(T.en.collection_info_jkr_projects, /fan support projects/);
+  assert.match(T.en.collection_info_admin, /travel companion/);
+});
+
+test('filter option counts use language-appropriate spacing and parentheses', () => {
+  assert.equal(T.zh.filter_option_count('Spa', 3), 'Spa（3）');
+  assert.equal(T.en.filter_option_count('Spa', 3), 'Spa (3)');
 });
 
 test('favorite storage notice is available in both supported languages', () => {
@@ -119,9 +145,12 @@ test('buildCatFilter preserves the selected category while rebuilding options', 
         return catFilter;
       },
     },
-    t: (key) => ({ all_cat: 'All Categories' })[key],
+    t: (key, label, count) => key === 'filter_option_count'
+      ? `${label} (${count})`
+      : ({ all_cat: 'All categories' })[key],
     state: {
       data: [
+        { catEn: 'Cafe', catZh: '咖啡廳', status: 'Published' },
         { catEn: 'Cafe', catZh: '咖啡廳', status: 'Published' },
         { catEn: 'Hotel', catZh: '飯店', status: 'Published' },
         { catEn: 'Internal', catZh: '內部分類', status: 'Paused' },
@@ -133,9 +162,9 @@ test('buildCatFilter preserves the selected category while rebuilding options', 
   buildCatFilter();
 
   assert.equal(catFilter.value, 'Cafe');
-  assert.match(catFilter.innerHTML, /<option value="">All Categories<\/option>/);
-  assert.match(catFilter.innerHTML, /<option value="Cafe">Cafe<\/option>/);
-  assert.match(catFilter.innerHTML, /<option value="Hotel">Hotel<\/option>/);
+  assert.match(catFilter.innerHTML, /<option value="">All categories<\/option>/);
+  assert.match(catFilter.innerHTML, /<option value="Cafe">Cafe \(2\)<\/option>/);
+  assert.match(catFilter.innerHTML, /<option value="Hotel">Hotel \(1\)<\/option>/);
   assert.doesNotMatch(catFilter.innerHTML, /Internal|內部分類/);
 });
 

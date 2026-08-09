@@ -15,10 +15,11 @@ const snapshotCsv = readFileSync(snapshotPath, 'utf8');
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 
 test('Notion snapshot preserves every protected favorite ID', () => {
+  const notionSlugCount = tokenizeCSV(snapshotCsv).length - 1;
   assert.deepEqual(validateFavoriteCompatibility(snapshotCsv, manifest), {
-    legacyIdCount: 98,
-    notionSlugCount: 141,
-    newSlugCount: 43,
+    legacyIdCount: manifest.ids.length,
+    notionSlugCount,
+    newSlugCount: notionSlugCount - manifest.ids.length,
   });
 });
 
@@ -56,11 +57,12 @@ test('favorite compatibility allows new locations without weakening legacy IDs',
   extra[slugIndex] = 'future-location';
   rows.push(extra);
 
-  assert.deepEqual(validateFavoriteCompatibility(serialize(rows), manifest), {
-    legacyIdCount: 98,
-    notionSlugCount: 142,
-    newSlugCount: 44,
-  });
+  const result = validateFavoriteCompatibility(serialize(rows), manifest);
+  const original = validateFavoriteCompatibility(snapshotCsv, manifest);
+
+  assert.equal(result.legacyIdCount, original.legacyIdCount);
+  assert.equal(result.notionSlugCount, original.notionSlugCount + 1);
+  assert.equal(result.newSlugCount, original.newSlugCount + 1);
 });
 
 function changeSlug(csv, currentSlug, nextSlug) {

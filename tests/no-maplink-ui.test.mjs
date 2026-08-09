@@ -4,13 +4,14 @@ import test from 'node:test';
 
 async function loadOpenInGoogleMaps(deps) {
   const source = await readFile(new URL('../src/ui/ui.js', import.meta.url), 'utf8');
-  const match = source.match(/(?:export\s+)?function openInGoogleMaps\(i\)\s*\{[\s\S]*?\n\}/);
+  const match = source.match(/(?:export\s+)?function openInGoogleMaps\(i, source = 'unknown'\)\s*\{[\s\S]*?\n\}/);
   assert.ok(match, 'openInGoogleMaps function should exist in src/ui/ui.js');
 
   const code = match[0].replace(/\bexport\s+/g, '');
-  return Function('state', 'window', `${code}; return { openInGoogleMaps };`)(
+  return Function('state', 'window', 'trackLocationAction', `${code}; return { openInGoogleMaps };`)(
     deps.state,
     deps.window,
+    () => {},
   );
 }
 

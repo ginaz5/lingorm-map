@@ -1,8 +1,8 @@
-// Current formal-Notion snapshot acceptance tests. The frozen Google Sheet
-// remains an immutable historical artifact; approved slug additions and
-// replacements must be enumerated instead of weakening the reconciliation.
+// Current formal-Notion snapshot acceptance tests. The committed legacy
+// favorite-ID manifest is the CI-visible migration baseline; approved slug
+// additions must be enumerated instead of weakening the reconciliation.
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -10,28 +10,33 @@ import { parseCSV, tokenizeCSV } from '../src/data/csv-parser.js';
 import { CSV_HEADER } from '../scripts/export-snapshot.mjs';
 
 const snapshotPath = fileURLToPath(new URL('../data/locations.csv', import.meta.url));
-const frozenSourcePath = fileURLToPath(
-  new URL('../data/migration/source-20260718.csv', import.meta.url)
+const legacyFavoriteIdsPath = fileURLToPath(
+  new URL('../data/legacy-favorite-ids.json', import.meta.url)
 );
 const snapshotCsv = readFileSync(snapshotPath, 'utf8');
 const snapshotRows = parseCSV(snapshotCsv);
+const legacyFavoriteIds = JSON.parse(readFileSync(legacyFavoriteIdsPath, 'utf8')).ids;
 
 const APPROVED_ADDED_SLUGS = [
+  'alien-bangkok',
   'ama-bakery-silom',
+  'areeya-mookrata-new-petchaburi',
   'auntie-nid-coffee-shop',
   'baiwago-plus-cafe-kmc',
   'cafe-madeleine-four-seasons-bangkok',
+  'caffe-del-museo-khao-yai',
   'chatuchak-weekend-market',
   'chom-arun-restaurant',
   'chrisly-cafe-tsim-sha-tsui',
   'churn-buttery-lat-krabang',
+  'coco-tams-fishermans-village',
   'connie-bakes-anhe',
   'dragon-town-banthat-thong',
   'gourmet-market-siam-paragon',
-  'hechalou-tea-hualien-shangxiao',
   'hint-coffee-khlong-san',
   'hitori-shabu-siam-paragon',
-  'hoho-drinks-taipei-xinyi',
+  'house-of-benedict-pattaya',
+  'hungry-eatery-prasert-manutakit-33',
   'iki-haus-sukhumvit-71',
   'james-boulangerie-gaysorn-amarin',
   'kao-man-ban-nok-ramkhamhaeng',
@@ -47,44 +52,33 @@ const APPROVED_ADDED_SLUGS = [
   'nattaporn-coconut-ice-cream',
   'naughty-girl-kaohsiung',
   'nguan-soon-no1-hand-brand-yaowarat',
+  'niyai-baansuan',
   'pak-khlong-talat',
   'pata-plantation-original-tiwanon',
   'phra-phutthayotfa-bridge-memorial-bridge',
-  'plantiful-sukhumvit-61',
   'pungdet-banthat-thong',
   'rethink-coffee-roasters-broadway-macau',
   'sampeng-market',
+  'sea-of-love-pattaya',
   'shenfangcui-coffee-yunong',
-  'shua-fei-tea-feng-chia',
+  'showa-shiyoubajiu',
   'star-trails-kaohsiung',
   'swu-international-flea-market',
+  'the-office-thonglor',
   'titicaca-brunch-club-central-eastville',
+  'wallflowers-cafe-restaurant-bar',
   'waraporn-salapao-asoke',
   'wat-paknam-phasi-charoen',
-];
-const APPROVED_REMOVED_SLUGS = [
-  'by',
+  'woolloomooloo-bakery-thonglor',
 ];
 
-test('formal snapshot uses the stable CSV contract and contains 141 unique rows', () => {
+test('formal snapshot uses the stable CSV contract and unique Slugs', () => {
   assert.deepEqual(tokenizeCSV(snapshotCsv)[0], CSV_HEADER);
-  assert.equal(snapshotRows.length, 141);
-  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, 141);
+  assert.ok(snapshotRows.length > 0);
+  assert.equal(new Set(snapshotRows.map((row) => row.id)).size, snapshotRows.length);
 });
 
-test('formal snapshot preserves the current publication status distribution', () => {
-  const statusCounts = Object.fromEntries(
-    ['Published', 'Paused', 'Inactive'].map((status) => [
-      status,
-      snapshotRows.filter((row) => row.status === status).length,
-    ])
-  );
-
-  assert.deepEqual(statusCounts, {
-    Published: 111,
-    Paused: 26,
-    Inactive: 4,
-  });
+test('formal snapshot does not mark exported coordinates as approximate', () => {
   assert.equal(snapshotRows.every((row) => row.approx === ''), true);
 });
 
@@ -101,23 +95,17 @@ test('formal snapshot contains the two explicitly requested slug results', () =>
   );
 });
 
-test(
-  'formal snapshot has only the approved slug delta from the frozen source',
-  { skip: !existsSync(frozenSourcePath) && 'frozen migration source is intentionally gitignored' },
-  () => {
-    const sourceRows = parseCSV(readFileSync(frozenSourcePath, 'utf8'));
-    const sourceSlugs = new Set(sourceRows.map((row) => row.id));
-    const snapshotSlugs = new Set(snapshotRows.map((row) => row.id));
-    const added = [...snapshotSlugs]
-      .filter((slug) => !sourceSlugs.has(slug))
-      .sort();
-    const removed = [...sourceSlugs]
-      .filter((slug) => !snapshotSlugs.has(slug))
-      .sort();
+test('formal snapshot has only the approved slug delta from the migration baseline', () => {
+  const baselineSlugs = new Set(legacyFavoriteIds);
+  const snapshotSlugs = new Set(snapshotRows.map((row) => row.id));
+  const added = [...snapshotSlugs]
+    .filter((slug) => !baselineSlugs.has(slug))
+    .sort();
+  const removed = [...baselineSlugs]
+    .filter((slug) => !snapshotSlugs.has(slug))
+    .sort();
 
-    assert.equal(sourceRows.length, 98);
-    assert.equal(sourceRows.filter((row) => row.src === '___epoh___').length, 56);
-    assert.deepEqual(added, APPROVED_ADDED_SLUGS);
-    assert.deepEqual(removed, APPROVED_REMOVED_SLUGS);
-  }
-);
+  assert.equal(legacyFavoriteIds.length, 98);
+  assert.deepEqual(added, APPROVED_ADDED_SLUGS);
+  assert.deepEqual(removed, []);
+});

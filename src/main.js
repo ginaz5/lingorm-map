@@ -31,10 +31,17 @@ import {
 import { heartSVG } from './ui/render.js';
 import { checkWhatsNew, closeWhatsNew } from './features/whats-new.js';
 import {
+  trackFavoriteToggle,
+  trackFilterApply,
+  trackSearchComplete,
+  trackTabView,
+} from './services/analytics.js';
+import {
   initDestinationFilter,
   reconcileDestinationFilter,
   renderDestinationFilter,
 } from './features/destination-filter.js';
+import { initCollectionInfo } from './features/collection-info.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -118,11 +125,60 @@ function runMobileAction(event) {
   if (action === 'issue') openIssueModal();
 }
 
-/** @param {string} id @param {Event & {detail?: number}} [event] */
-function handleFavoriteClick(id, event) {
+/**
+ * @param {string} id
+ * @param {Event & {detail?: number}} [event]
+ * @param {'list_card'|'popup'|'unknown'} [source]
+ */
+function handleFavoriteClick(id, event, source = 'unknown') {
   toggleFavoriteWithNotice(id, event, () => {
     showSnackbar(t('favorite_storage_notice'), 6000);
   });
+  const row = state.data.find(location => location.id === id);
+  if (row) {
+    trackFavoriteToggle(row, state.favorites.has(id) ? 'add' : 'remove', source);
+  }
+}
+
+/** @param {string} value @returns {string} */
+function canonicalCategory(value) {
+  if (!value) return 'all';
+  const row = state.data.find(location =>
+    location.catEn === value || location.catZh === value
+  );
+  return row?.catEn || value;
+}
+
+/** @type {ReturnType<typeof setTimeout>|null} */
+let searchAnalyticsTimer = null;
+
+function handleSearchInput() {
+  applyFiltersAndSyncMap();
+  if (searchAnalyticsTimer !== null) clearTimeout(searchAnalyticsTimer);
+
+  const queryLength = document.getElementById('search').value.trim().length;
+  if (queryLength === 0 || state.isLoading) {
+    searchAnalyticsTimer = null;
+    return;
+  }
+  searchAnalyticsTimer = setTimeout(() => {
+    trackSearchComplete(queryLength, state.visIdx.length);
+    searchAnalyticsTimer = null;
+  }, 700);
+}
+
+/** @param {'category'|'type'} filterType @param {HTMLSelectElement} select */
+function handleSelectFilter(filterType, select) {
+  applyFiltersAndSyncMap();
+  const value = filterType === 'category'
+    ? canonicalCategory(select.value)
+    : select.value || 'all';
+  trackFilterApply(
+    filterType,
+    value,
+    state.visIdx.length,
+    value === 'all' ? 'clear' : 'set',
+  );
 }
 
 // ═══════════════════════════════════════════════════
@@ -132,7 +188,6 @@ function handleFavoriteClick(id, event) {
 window.activateCard = activateCard;
 window.openNavigation = openNavigation;
 window.openInGoogleMaps = openInGoogleMaps;
-window.applyFilters = applyFiltersAndSyncMap;
 window.toggleFavorite = handleFavoriteClick;
 
 
@@ -144,7 +199,17 @@ setLang(localStorage.getItem('lang') || 'zh');
 
 // Restore favorites from URL or localStorage
 loadFavorites();
-initDestinationFilter(() => applyFiltersAndSyncMap({ fitMap: true }));
+initDestinationFilter(change => {
+  applyFiltersAndSyncMap({ fitMap: true });
+  trackFilterApply(
+    'destination',
+    change.filterValue,
+    state.visIdx.length,
+    change.filterAction,
+    state.selectedDestinations.size,
+  );
+});
+initCollectionInfo();
 
 // Static event listeners
 document.getElementById('fav-filter-btn').addEventListener('click', event => {
@@ -154,7 +219,21 @@ document.getElementById('fav-filter-btn').addEventListener('click', event => {
   favBtn.setAttribute('aria-pressed', String(state.favFilterOn));
   favBtn.innerHTML = heartSVG(state.favFilterOn);
   applyFiltersAndSyncMap();
+  trackFilterApply(
+    'favorites',
+    state.favFilterOn ? 'on' : 'off',
+    state.visIdx.length,
+    state.favFilterOn ? 'enable' : 'disable',
+    state.favFilterOn ? state.favorites.size : 0,
+  );
   releasePointerFocus(event);
+});
+document.getElementById('search').addEventListener('input', handleSearchInput);
+document.getElementById('cat-filter').addEventListener('change', event => {
+  handleSelectFilter('category', /** @type {HTMLSelectElement} */ (event.currentTarget));
+});
+document.getElementById('type-filter').addEventListener('change', event => {
+  handleSelectFilter('type', /** @type {HTMLSelectElement} */ (event.currentTarget));
 });
 document.getElementById('issue-btn').addEventListener('click', openIssueModal);
 document.getElementById('locate-btn').addEventListener('click', locateMe);
@@ -168,8 +247,14 @@ document.addEventListener('click', closeMobileActions);
 document.getElementById('mobile-actions-menu').addEventListener('click', e => e.stopPropagation());
 
 // Mobile tabs
-document.getElementById('tab-map').addEventListener('click', () => switchTab('map'));
-document.getElementById('tab-list').addEventListener('click', () => switchTab('list'));
+document.getElementById('tab-map').addEventListener('click', () => {
+  switchTab('map');
+  trackTabView('map');
+});
+document.getElementById('tab-list').addEventListener('click', () => {
+  switchTab('list');
+  trackTabView('list');
+});
 
 // Modal backdrops (click outside = close)
 document.getElementById('issue-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeIssueModal(); });

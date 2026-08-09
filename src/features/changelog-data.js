@@ -10,8 +10,9 @@
  *   releaseId?: string
  * }} ChangelogItem
  */
+/** @typedef {{ dateKey: string, publishTime: number, items: ChangelogItem[] }} ChangelogDateGroup */
 
-export const CURRENT_CHANGELOG_RELEASE_ID = '2026-07-30-pr-2';
+export const CURRENT_CHANGELOG_RELEASE_ID = '2026-08-09-analytics-collections';
 
 /**
  * Shared release history for the What's New preview and the full changelog.
@@ -20,6 +21,48 @@ export const CURRENT_CHANGELOG_RELEASE_ID = '2026-07-30-pr-2';
  * @type {ChangelogItem[]}
  */
 export const CHANGELOG = [
+  {
+    id: 'fix-004',
+    title: {
+      zh: '手機版篩選與卡片定位更順手',
+      en: 'Smoother mobile filters and card positioning',
+    },
+    description: {
+      zh: '修正目的地下拉選單底部被遮住的問題，最後一個地點現在可完整顯示；點選地點後，對應卡片也會平滑捲動至畫面中央。',
+      en: 'The destination menu now stays above the mobile tab bar so every option remains accessible. Selected location cards also scroll smoothly into the center of the screen.',
+    },
+    badge: { zh: '修復', en: 'Fix' },
+    publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-013',
+    title: {
+      zh: '主題分類更清楚',
+      en: 'Collections are easier to understand',
+    },
+    description: {
+      zh: '類別與主題選項現在會顯示地點數量，搜尋與篩選也有一致的 hover 回饋。主題分類說明在桌機移開游標後會自動收合，手機版則會保持開啟，直到使用者自行關閉。',
+      en: 'Category and collection options now show location counts with consistent hover feedback across search and filters. The collection guide closes when the pointer leaves on desktop, while staying open on touch devices until you dismiss it.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-012',
+    title: {
+      zh: '地圖收錄更多踩點',
+      en: 'More locations added to the map',
+    },
+    description: {
+      zh: '新增一批 LingOrm 相關地點與粉絲分享的收藏，並補充既有地點的資訊、座標與分類。',
+      en: 'A new batch of LingOrm locations and fan-shared picks has arrived, along with refreshed details, coordinates, and collections.',
+    },
+    badge: { zh: '內容', en: 'Content' },
+    publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
   {
     id: 'feat-010',
     title: {
@@ -32,7 +75,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'feat-009',
@@ -46,7 +89,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'fix-003',
@@ -60,7 +103,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '修復', en: 'Fix' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'feat-008',
@@ -74,7 +117,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'feat-007',
@@ -88,7 +131,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'fix-002',
@@ -102,7 +145,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '修復', en: 'Fix' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'feat-006',
@@ -116,7 +159,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-07-30-pr-2',
   },
   {
     id: 'feat-005',
@@ -196,6 +239,40 @@ export function localizeChangelogItem(item, language) {
     description: item.description[language],
     badge: item.badge[language],
   };
+}
+
+/** @param {number} publishTime */
+function changelogDateKey(publishTime) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'Asia/Taipei',
+  }).formatToParts(new Date(publishTime));
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+/**
+ * Group newest-first changelog items by their GMT+8 calendar date.
+ * @param {ChangelogItem[]} items
+ * @returns {ChangelogDateGroup[]}
+ */
+export function groupChangelogByDate(items) {
+  /** @type {ChangelogDateGroup[]} */
+  const groups = [];
+  [...items]
+    .sort((a, b) => b.publishTime - a.publishTime)
+    .forEach(item => {
+      const dateKey = changelogDateKey(item.publishTime);
+      const currentGroup = groups.at(-1);
+      if (currentGroup?.dateKey === dateKey) {
+        currentGroup.items.push(item);
+        return;
+      }
+      groups.push({ dateKey, publishTime: item.publishTime, items: [item] });
+    });
+  return groups;
 }
 
 /**

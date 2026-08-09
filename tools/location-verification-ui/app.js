@@ -717,6 +717,12 @@ function validationRows(result) {
         `+${snapshot.addedSlugCount}／-${snapshot.removedSlugCount}`,
       snapshot.ok
     );
+    appendLayer(
+      summary,
+      'data/locations.csv',
+      snapshot.ok ? '已是最新' : '需要更新',
+      snapshot.ok
+    );
   }
   container.append(summary);
 

@@ -374,7 +374,7 @@ export async function buildMarkers(options = {}) {
       m.addListener('click', () => {
         state.infoWindow.setContent(buildPopupContent(i));
         state.infoWindow.open({ anchor: m, map: state.map });
-        activateCard(i, { centerMap: false });
+        activateCard(i, { centerMap: false, source: 'map_marker' });
       });
       state.markers[i] = m;
     });
@@ -436,7 +436,7 @@ export async function buildMarkers(options = {}) {
           }
           state.infoBubble = new H.ui.InfoBubble({ lat, lng }, { content: buildPopupContent(i) });
           state.hereUi.addBubble(state.infoBubble);
-          activateCard(i, { centerMap: false });
+          activateCard(i, { centerMap: false, source: 'map_marker' });
         }
       }
     });

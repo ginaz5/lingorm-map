@@ -30,14 +30,17 @@ loadMapScript()
 
 **Key 安全策略：**
 
-兩個 provider 的 key 都透過 Netlify Function `/api/config` 在 runtime 傳遞，不 hardcode 於 HTML。
+兩個 provider 的瀏覽器 SDK key 都由 Netlify Function `/api/config` 從環境變數讀取，在 runtime 傳給瀏覽器，因此不會 hardcode 在 HTML、commit 進 repository，或 bundle 進 `dist/`。但 Google Maps JS 與 HERE Maps JS 都在瀏覽器執行，key 仍會出現在 DevTools／Network；`/api/config` 不是隱藏 key 的安全邊界。這類 key 必須視為公開識別碼，以網站、API、quota 與監控限制保護。
 
-Google Maps 三層保護：
-1. **HTTP Referrer 白名單**（Cloud Console → Credentials）：限制 key 僅接受 `https://lingorm-map.netlify.app/*` ✅
-2. **API Quota 硬停**（Maps JS API → Quotas）：`Map loads per day` = 900 ✅
-3. **Budget Alert**（Billing → Budgets & alerts）：$5 觸發 email 通知 ✅
+Google Maps 保護：
+1. **Website application restriction**（Cloud Console → Credentials）：僅允許 `https://lingorm-map.netlify.app/*`、實際需要的 Netlify Deploy Preview origin，以及本機開發用的 `http://localhost:8888/*`。
+2. **API restriction**：僅允許 Maps JavaScript API 與前端確實使用的 Maps library；不得與 server-side Places／Geocoding 等 web-service key 共用。
+3. **Server key 分離**：`GOOGLE_PLACE_KEY` 等 server-only credential 必須使用獨立 key 與限制，且永遠不可由 `/api/config` 回傳。
+4. **Quota 與監控**：維持 Maps JS API quota、billing alert 與 usage monitoring；實際門檻依 Cloud Console 的現行設定為準。
 
-HERE Maps：免費方案 250,000 map transactions/月，無需信用卡，在 [developer.here.com](https://developer.here.com) 建立 project → REST API key。
+HERE Maps 的 browser key 同樣會由 SDK request 暴露；應在 HERE project 設定支援的範圍內套用網站／domain restriction 與用量限制。若需求是讓 credential 真正保密，必須改用 server-rendered static map，或只針對 provider 支援的 web-service API 建立 server proxy；單純改寫 `/api/config` 回應格式無法達成。
+
+參考：[Google Maps Platform security guidance](https://developers.google.com/maps/api-security-best-practices)、[Maps JavaScript API setup](https://developers.google.com/maps/documentation/javascript/get-api-key)。
 
 **Netlify env vars：**
 
@@ -257,8 +260,10 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 **決策：** 公開網站將正式資料的 `Type` 欄位顯示為「主題」，以單選下拉
 與搜尋、類別、目的地及收藏條件使用 AND。篩選順序固定為
 「類別／主題／目的地」，只顯示目前 `Published` 地點中實際存在的選項。
-英文篩選器沿用正式 schema 名稱 `Type`；地圖 popup 則在類別 badge 旁
-顯示依目前語言轉換的 Type badge。
+英文篩選器顯示為 `Collection`，避免和地點類別混淆；正式資料欄位仍維持
+`Type`。篩選器旁的資訊按鈕會在 hover、focus 或點擊時顯示雙語分類說明，
+並支援點擊外部或按 Escape 關閉。地圖 popup 則在類別 badge 旁顯示依目前
+語言轉換的 Type badge。
 
 **顯示契約：** 儲存與篩選仍使用穩定英文值；語言切換只改變顯示標籤：
 

@@ -34,6 +34,14 @@ test('HERE popup body stays centered above its map anchor', async () => {
   );
 });
 
+test('popup badges use compact spacing without changing list badges', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.popup-badges\{margin-top:4px;margin-bottom:6px\}/);
+  assert.match(css, /\.popup-badges \.badge\{padding:2px 7px;line-height:1\.2\}/);
+  assert.match(css, /\.badge\{\s*font-size:11px;font-weight:500;\s*padding:3px 8px;/);
+});
+
 test('result metadata uses the same inline spacing at every viewport', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 

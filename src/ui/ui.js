@@ -1,5 +1,9 @@
 import { lang, t } from '../core/i18n.js';
 import { state } from '../core/state.js';
+import {
+  trackLocateResult,
+  trackLocationAction,
+} from '../services/analytics.js';
 
 /** @param {string} id @returns {HTMLElement} */
 function requiredElement(id) {
@@ -50,8 +54,8 @@ export function showSnackbar(msg, duration = 4000) {
 // ═══════════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════════
-/** @param {number} i */
-export function openNavigation(i) {
+/** @param {number} i @param {'list_card'|'popup'|'unknown'} [source] */
+export function openNavigation(i, source = 'unknown') {
   const row = state.data[i];
   const name = lang === 'zh' ? row.nameZh : row.nameEn;
   const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
@@ -59,11 +63,12 @@ export function openNavigation(i) {
     + '&destination=' + lat + ',' + lng
     + '&destination_place_name=' + encodeURIComponent(name)
     + '&travelmode=transit';
+  trackLocationAction(row, 'directions', source);
   window.open(url, '_blank');
 }
 
-/** @param {number} i */
-export function openInGoogleMaps(i) {
+/** @param {number} i @param {'list_card'|'popup'|'unknown'} [source] */
+export function openInGoogleMaps(i, source = 'unknown') {
   const row = state.data[i];
   let url;
   if (row.maps && /^https?:\/\//i.test(row.maps)) {
@@ -74,6 +79,7 @@ export function openInGoogleMaps(i) {
     const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
     url = 'https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng;
   }
+  trackLocationAction(row, 'open_google_maps', source);
   window.open(url, '_blank');
 }
 
@@ -81,8 +87,15 @@ export function openInGoogleMaps(i) {
 // USER LOCATION
 // ═══════════════════════════════════════════════════
 export function locateMe() {
-  if (!state.map) { return; }
-  if (!navigator.geolocation) { alert(t('locate_err')); return; }
+  if (!state.map) {
+    trackLocateResult('map_unavailable');
+    return;
+  }
+  if (!navigator.geolocation) {
+    trackLocateResult('unsupported');
+    alert(t('locate_err'));
+    return;
+  }
   navigator.geolocation.getCurrentPosition(
     pos => {
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
@@ -105,11 +118,17 @@ export function locateMe() {
         state.map.addObject(state.userLocationMarker);
         state.map.setCenter({ lat, lng });
       }
+      trackLocateResult('success');
       showSnackbar(t('locate_snack'));
     },
     err => {
-      if (err.code === 1) alert(t('locate_deny'));
-      else alert(t('locate_err'));
+      if (err.code === 1) {
+        trackLocateResult('denied');
+        alert(t('locate_deny'));
+      } else {
+        trackLocateResult(err.code === 3 ? 'timeout' : 'unavailable');
+        alert(t('locate_err'));
+      }
     },
     { enableHighAccuracy: true, timeout: 8000 }
   );

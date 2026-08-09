@@ -123,7 +123,7 @@ export function renderDestinationFilter() {
   const selectedCount = state.selectedDestinations.size;
   buttonLabel.textContent = selectedCount
     ? t('dest_filter_count', selectedCount)
-    : t('dest_filter');
+    : t('all_destinations');
 
   const groups = requiredElement('dest-filter-groups');
   const availableKeys = availableDestinationKeys();
@@ -167,7 +167,23 @@ export function renderDestinationFilter() {
 }
 
 /**
- * @param {() => void} onSelectionChange
+ * Keep the destination menu inside the visible list panel so its own scroll
+ * area can reach the final option above the mobile tab bar.
+ * @param {HTMLElement} button
+ * @param {HTMLElement} menu
+ * @param {number} panelBottom
+ * @returns {number}
+ */
+export function fitDestinationMenuHeight(button, menu, panelBottom) {
+  const menuTop = button.getBoundingClientRect().bottom + 6;
+  const availableHeight = Math.max(0, Math.floor(panelBottom - menuTop - 8));
+  const maxHeight = Math.min(460, availableHeight);
+  menu.style.maxHeight = `${maxHeight}px`;
+  return maxHeight;
+}
+
+/**
+ * @param {(change: {filterValue: string, filterAction: 'select'|'deselect'|'clear'}) => void} onSelectionChange
  */
 export function initDestinationFilter(onSelectionChange) {
   loadDestinationFilter();
@@ -179,9 +195,15 @@ export function initDestinationFilter(onSelectionChange) {
   const allInput = /** @type {HTMLInputElement} */ (requiredElement('dest-filter-all'));
   const clearButton = requiredElement('dest-filter-clear');
 
+  function fitOpenMenu() {
+    const panel = requiredElement('panel');
+    fitDestinationMenuHeight(button, menu, panel.getBoundingClientRect().bottom);
+  }
+
   button.addEventListener('click', event => {
     event.stopPropagation();
     const willOpen = menu.hidden;
+    if (willOpen) fitOpenMenu();
     menu.hidden = !willOpen;
     button.setAttribute('aria-expanded', String(willOpen));
   });
@@ -191,14 +213,14 @@ export function initDestinationFilter(onSelectionChange) {
     state.selectedDestinations.clear();
     saveDestinationFilter();
     renderDestinationFilter();
-    onSelectionChange();
+    onSelectionChange({ filterValue: 'all', filterAction: 'clear' });
   });
 
   clearButton.addEventListener('click', () => {
     state.selectedDestinations.clear();
     saveDestinationFilter();
     renderDestinationFilter();
-    onSelectionChange();
+    onSelectionChange({ filterValue: 'all', filterAction: 'clear' });
   });
 
   groups.addEventListener('change', event => {
@@ -208,15 +230,21 @@ export function initDestinationFilter(onSelectionChange) {
     if (!input) return;
     const availableKeys = availableDestinationKeys();
     const countryCode = input.dataset.countryCode;
+    let filterValue = '';
     if (countryCode) {
       toggleCountryDestinations(countryCode, availableKeys);
+      filterValue = `country:${countryCode}`;
     } else if (input.value) {
       if (input.checked) state.selectedDestinations.add(input.value);
       else state.selectedDestinations.delete(input.value);
+      filterValue = `destination:${input.value}`;
     }
     saveDestinationFilter();
     renderDestinationFilter();
-    onSelectionChange();
+    onSelectionChange({
+      filterValue,
+      filterAction: input.checked ? 'select' : 'deselect',
+    });
   });
 
   document.addEventListener('click', closeDestinationFilter);
@@ -224,5 +252,8 @@ export function initDestinationFilter(onSelectionChange) {
     if (event.key !== 'Escape' || menu.hidden) return;
     closeDestinationFilter();
     button.focus();
+  });
+  window.addEventListener('resize', () => {
+    if (!menu.hidden) fitOpenMenu();
   });
 }
