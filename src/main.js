@@ -161,9 +161,8 @@ function handleSearchInput() {
     searchAnalyticsTimer = null;
     return;
   }
-  const resultCount = state.visIdx.length;
   searchAnalyticsTimer = setTimeout(() => {
-    trackSearchComplete(queryLength, resultCount);
+    trackSearchComplete(queryLength, state.visIdx.length);
     searchAnalyticsTimer = null;
   }, 700);
 }

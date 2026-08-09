@@ -67,7 +67,8 @@ test('search and select filters use module listeners instead of inline analytics
 
   assert.doesNotMatch(filtersMatch[0], /\son(?:input|change)=/i);
   assert.match(mainSrc, /getElementById\('search'\)\.addEventListener\('input'/);
-  assert.match(mainSrc, /trackSearchComplete\(queryLength, resultCount\)/);
+  assert.match(mainSrc, /trackSearchComplete\(queryLength, state\.visIdx\.length\)/);
+  assert.doesNotMatch(mainSrc, /const resultCount = state\.visIdx\.length/);
   assert.match(mainSrc, /}, 700\)/);
   assert.match(mainSrc, /getElementById\('cat-filter'\)\.addEventListener\('change'/);
   assert.match(mainSrc, /getElementById\('type-filter'\)\.addEventListener\('change'/);
