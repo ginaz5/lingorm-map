@@ -18,6 +18,7 @@ const snapshotRows = parseCSV(snapshotCsv);
 const legacyFavoriteIds = JSON.parse(readFileSync(legacyFavoriteIdsPath, 'utf8')).ids;
 
 const APPROVED_ADDED_SLUGS = [
+  'ace-of-clubs-rama-iv',
   'alien-bangkok',
   'ama-bakery-silom',
   'areeya-mookrata-new-petchaburi',
@@ -42,6 +43,7 @@ const APPROVED_ADDED_SLUGS = [
   'kao-man-ban-nok-ramkhamhaeng',
   'kate-teaw-boat-noodles-siam-square-soi-3',
   'khlong-bang-luang-floating-market',
+  'ku-thai-krung-thep-kaohsiung',
   'long-phung-buffet-seafood-mookata',
   'mae-varee-mango-sticky-rice',
   'military-dependents-village-cultural-park',
@@ -52,11 +54,13 @@ const APPROVED_ADDED_SLUGS = [
   'nattaporn-coconut-ice-cream',
   'naughty-girl-kaohsiung',
   'nguan-soon-no1-hand-brand-yaowarat',
+  'nittaya-bamee-kiao-charoen-rat-4',
   'niyai-baansuan',
   'pak-khlong-talat',
   'pata-plantation-original-tiwanon',
   'phra-phutthayotfa-bridge-memorial-bridge',
   'pungdet-banthat-thong',
+  'restaurante-litoral-macau',
   'rethink-coffee-roasters-broadway-macau',
   'sampeng-market',
   'sea-of-love-pattaya',
@@ -70,6 +74,7 @@ const APPROVED_ADDED_SLUGS = [
   'waraporn-salapao-asoke',
   'wat-paknam-phasi-charoen',
   'woolloomooloo-bakery-thonglor',
+  'yole-siam-paragon',
 ];
 
 test('formal snapshot uses the stable CSV contract and unique Slugs', () => {
