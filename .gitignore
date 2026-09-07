@@ -31,3 +31,7 @@ migration-output/
 data/locations.next.csv
 
 .claude
+
+# Local-only demo/preview renders (map update walkthrough videos, etc.)
+demo-output/
+lingorm-map-update-demo-threads-9x16.mp4
