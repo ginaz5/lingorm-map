@@ -13,6 +13,7 @@ import {
   renderExchangeRates,
   sortVisibleIndexes,
 } from '../src/ui/render.js';
+import { lang, setLang } from '../src/core/i18n.js';
 
 const slugs = Object.keys(BRANCH_MAPPING.branches);
 
@@ -159,9 +160,11 @@ test('exchange panel always contains three rows, disclaimer, source, and Maps li
   state.exchangeRatesBySlug = parseExchangeRatesPayload(apiPayload()).snapshot.bySlug;
 
   const html = renderExchangeRates(row);
-  assert.match(html, /USD 100 美元鈔/);
-  assert.match(html, /USD 50 美元鈔/);
-  assert.match(html, /TWD 鈔票 100–2,000/);
+  assert.match(html, /USD 100/);
+  assert.match(html, /USD 50/);
+  assert.match(html, /TWD 100–2,000/);
+  assert.doesNotMatch(html, /美元鈔/);
+  assert.doesNotMatch(html, /鈔票/);
   assert.match(html, /匯率僅供參考/);
   assert.match(html, /superrichthailand\.com\/exchange-rate/);
   assert.match(html, /https:\/\/maps\.google\.com\/example/);
@@ -171,4 +174,21 @@ test('exchange panel always contains three rows, disclaimer, source, and Maps li
   const unavailable = renderExchangeRates(row);
   assert.equal((unavailable.match(/暫無報價/g) || []).length, 3);
   assert.match(unavailable, /匯率僅供參考/);
+
+  const previousLang = lang;
+  const previousLocalStorage = globalThis.localStorage;
+  globalThis.localStorage = { setItem() {} };
+  try {
+    setLang('en');
+    state.exchangeHasUsableSnapshot = true;
+    const enHtml = renderExchangeRates(row);
+    assert.match(enHtml, /USD 100/);
+    assert.match(enHtml, /USD 50/);
+    assert.match(enHtml, /TWD 100–2,000/);
+    assert.doesNotMatch(enHtml, /banknote/);
+  } finally {
+    setLang(previousLang);
+    if (previousLocalStorage === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = previousLocalStorage;
+  }
 });

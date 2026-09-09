@@ -58,16 +58,20 @@ test('result metadata uses the same inline spacing at every viewport', async () 
   assert.doesNotMatch(css, /@media\(min-width:1100px\)[\s\S]*?\.result-meta/);
 });
 
-test('location card actions are visible only at the mobile breakpoint', async () => {
+test('location card favorite heart is visible at every viewport; nav/maps buttons stay mobile-only', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(
     css,
-    /\.card-footer\{display:none;align-items:center;justify-content:flex-end;margin-top:8px\}/,
+    /\.card-footer\{display:flex;align-items:center;justify-content:flex-end;margin-top:8px\}/,
   );
   assert.match(
     css,
-    /@media\(max-width:700px\)\{\s*\.card-footer\{display:flex\}/,
+    /\.card-footer \.popup-nav-btn,\.card-footer \.popup-maps-btn\{display:none\}/,
+  );
+  assert.match(
+    css,
+    /@media\(max-width:700px\)\{\s*\.card-footer \.popup-nav-btn,\.card-footer \.popup-maps-btn\{display:inline-flex\}/,
   );
   assert.doesNotMatch(css, /\.popup-footer\{[^}]*display:none/);
 });

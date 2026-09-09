@@ -352,7 +352,8 @@ header {
 .fx-links a:hover{text-decoration:underline}
 .card-notes{font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-footer{display:none;align-items:center;justify-content:flex-end;margin-top:8px}
+.card-footer{display:flex;align-items:center;justify-content:flex-end;margin-top:8px}
+.card-footer .popup-nav-btn,.card-footer .popup-maps-btn{display:none}
 .approx-tag{font-size:11px;color:var(--review);margin-top:4px}
 .src-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .src-tags .src-tag{font-size:10px!important;font-family:inherit!important;line-height:1.2!important;font-weight:500;padding:2px 6px!important;border-radius:6px;
@@ -602,7 +603,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
 
 /* Mobile: hide button text, icon only */
 @media(max-width:700px){
-  .card-footer{display:flex}
+  .card-footer .popup-nav-btn,.card-footer .popup-maps-btn{display:inline-flex}
   .popup-btn-label{display:none}
   .popup-nav-btn,.popup-maps-btn{padding:6px 8px;}
 }
