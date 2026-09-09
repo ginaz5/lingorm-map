@@ -126,7 +126,7 @@ Phase A 基線建立時（2026-07-19）：
 - `docs/location-verification-production-rehearsal-20260719.json`
 - `docs/location-verification-formal-change-approvals.json`
 - `docs/notion-migration-progress.md`
-- `docs/notion-deploy-workflow.md`
+- ~~`docs/notion-deploy-workflow.md`~~ — 已封存至 `docs/archive/`；改為直接更新 `data/locations.csv` 後部署
 - ~~`scripts/resolve.mjs`~~ / ~~`scripts/resolve-legacy-batch.mjs`~~ — 已刪除；resolve 邏輯併入 `scripts/location-verification-runner.mjs` 的 `resolve` 子命令
 - `scripts/location-verification-runner.mjs`
 - `tests/location-verification-runner.test.mjs`

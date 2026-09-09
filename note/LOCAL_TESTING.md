@@ -2,8 +2,9 @@
 
 本專案使用 Netlify 免費方案時，建議先在本機完整測試，確認沒問題後才 push 到 GitHub 觸發 Netlify deploy，以節省 deploy credits。
 
-Notion snapshot 的完整 export → preview → production → rollback 流程請參考
-[`docs/notion-deploy-workflow.md`](../docs/notion-deploy-workflow.md)。
+Location 資料以已驗證的 CSV 快照隨程式版本部署：由 Notion 匯出 → 驗證 → 更新
+`data/locations.csv` → 提交部署；回滾即 `git revert` 該筆 `data/locations.csv` 變更。
+指令見 `CLAUDE.md` 的 Location data workflow。
 
 ## 目標
 

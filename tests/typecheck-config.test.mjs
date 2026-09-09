@@ -17,6 +17,7 @@ test('configures strict JavaScript type checking', async () => {
     'src/changelog-page.js',
     'src/core/state.js',
     'src/data/csv-parser.js',
+    'src/data/exchange-rates.js',
     'src/features/changelog-data.js',
     'src/features/collection-info.js',
     'src/map/map.js',

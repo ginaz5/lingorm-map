@@ -119,7 +119,7 @@ data/locations.csv（隨版本提交）
 
 **選用理由：**
 - Notion 作為可協作的主要資料來源，但 production request 不直接依賴 Notion API
-- 已驗證的 CSV 快照會隨程式版本保存，部署與回滾都可重現（回滾＝ git revert `data/locations.csv`，見 `docs/notion-deploy-workflow.md`）
+- 已驗證的 CSV 快照會隨程式版本保存，部署與回滾都可重現（回滾＝ git revert `data/locations.csv`）
 - 前端不會暴露 Notion 憑證
 
 **限制：**

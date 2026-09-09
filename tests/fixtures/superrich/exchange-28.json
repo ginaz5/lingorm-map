@@ -1,0 +1,23 @@
+{
+  "statusCode": 200,
+  "code": "SUCCESS",
+  "message": "success",
+  "timestamp": "2026-09-09T00:12:08.269Z",
+  "data": {
+    "exchange": {
+      "USD": [
+        { "id": 101, "currencyId": 1, "branchCode": "M17", "denomCode": "USD100", "unit": "USD", "denomRem": "100", "buyText": "32.83", "sellText": "33.15", "image": "https://cdn.example/usd.png", "isFavorite": false },
+        { "id": 102, "currencyId": 1, "branchCode": "M17", "denomCode": "USD50", "unit": "USD", "denomRem": "50", "buyText": "32.83", "sellText": "33.15", "image": "https://cdn.example/usd.png", "isFavorite": false },
+        { "id": 103, "currencyId": 1, "branchCode": "M17", "denomCode": "USD20", "unit": "USD", "denomRem": "20 - 10", "buyText": "32.75", "sellText": "33.15", "image": "https://cdn.example/usd.png", "isFavorite": false },
+        { "id": 104, "currencyId": 1, "branchCode": "M17", "denomCode": "USD5", "unit": "USD", "denomRem": "5", "buyText": "32.65", "sellText": "33.15", "image": "https://cdn.example/usd.png", "isFavorite": false },
+        { "id": 105, "currencyId": 1, "branchCode": "M17", "denomCode": "USD1", "unit": "USD", "denomRem": "1", "buyText": "32.30", "sellText": "33.15", "image": "https://cdn.example/usd.png", "isFavorite": false }
+      ],
+      "TWD": [
+        { "id": 301, "currencyId": 12, "branchCode": "M17", "denomCode": "TWD2000", "unit": "TWD", "denomRem": "2000 - 100", "buyText": "0.99500", "sellText": "1.05000", "image": "https://cdn.example/twd.png", "isFavorite": false }
+      ],
+      "EUR": [
+        { "id": 201, "currencyId": 2, "branchCode": "M17", "denomCode": "EUR500", "unit": "EUR", "denomRem": "500 - 5", "buyText": "38.10", "sellText": "38.90", "image": "https://cdn.example/eur.png", "isFavorite": false }
+      ]
+    }
+  }
+}

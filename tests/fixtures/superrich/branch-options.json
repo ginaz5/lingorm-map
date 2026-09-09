@@ -1,0 +1,15 @@
+{
+  "statusCode": 200,
+  "code": "SUCCESS",
+  "message": "success",
+  "timestamp": "2026-09-09T00:12:08.269Z",
+  "data": [
+    { "label": "Headquarter Rajdamri 1", "value": 10 },
+    { "label": "Vibhavadi 22", "value": 11 },
+    { "label": "Terminal 21 Asok G Floor", "value": 28 },
+    { "label": "Central Pattaya 1st Floor (Nearby Hilton Hotel Lobby)", "value": 30 },
+    { "label": "Central Chonburi, 1st Floor, Banking Zone, opposite Krungthai Bank", "value": 32 },
+    { "label": "Central Si Racha, 2nd Floor, Central Si Racha Opposite TTB Bank", "value": 33 },
+    { "label": "Suvarnabhumi Airport, B floor (Airport Rail Link)", "value": 35 }
+  ]
+}

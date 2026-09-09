@@ -288,8 +288,9 @@ Use a feature branch and PR Deploy Preview. After preview verification, merge
 the PR into `main`; Netlify runs `bash build.sh && npm run build` and publishes
 `dist/`.
 
-For the complete Notion snapshot, preview, production, and rollback procedure,
-see [Notion Data Source Deployment Workflow](docs/notion-deploy-workflow.md).
+Location data ships as a committed snapshot: export from Notion, validate, then
+update `data/locations.csv` and deploy. See the Location data workflow commands
+in `CLAUDE.md`. Rollback is `git revert` of the `data/locations.csv` change.
 
 Required Netlify environment variables (Dashboard → Site Settings → Environment Variables):
 
