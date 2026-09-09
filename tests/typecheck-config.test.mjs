@@ -18,6 +18,7 @@ test('configures strict JavaScript type checking', async () => {
     'src/core/state.js',
     'src/data/csv-parser.js',
     'src/data/exchange-rates.js',
+    'src/data/exchange-rates-1965.js',
     'netlify/functions/_shared/exchange-rates-*.mjs',
     'netlify/functions/exchange-rates-fetch.mjs',
     'netlify/functions/exchange-rates.mjs',
