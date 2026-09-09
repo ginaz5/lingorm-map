@@ -420,6 +420,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
   border:2px solid var(--marker-ring);box-shadow:0 4px 12px rgba(0,0,0,.4);
   cursor:pointer;transition:transform .15s ease}
 .marker-cluster:hover{transform:scale(1.12)}
+.marker-cluster.is-exchange{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7}
 
 /* HERE Maps InfoBubble overrides */
 .H_ib_body{background:var(--canvas)!important;border:1px solid var(--hairline)!important;

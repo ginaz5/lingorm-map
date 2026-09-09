@@ -55,26 +55,31 @@ HERE Maps 的 browser key 同樣會由 SDK request 暴露；應在 HERE project 
 
 ## 地圖 Marker：Emoji 圓形 badge
 
-**架構：** `AdvancedMarkerElement` + 自訂 HTML content（28px 圓形 div）
+> 本節先前記錄的「依 Verification Status 上色」模型已隨換匯功能改版；
+> 目前程式**不再**依審核狀態決定 marker 顏色，一律以下列現行行為為準。
+
+**架構：** `AdvancedMarkerElement` + 自訂 HTML content（28px 圓形 div），由
+`src/map/map.js` 的 `makeMarkerContent(icon, isExchange)` 產生：
 
 ```js
-export function makeMarkerContent(status, icon) {
+export function makeMarkerContent(icon, isExchange = false) {
   const el = document.createElement('div');
-  el.className = `marker-dot ${getBadgeClass(status).replace('b-', 'marker-')}`;
+  el.className = `marker-dot${isExchange ? ' is-exchange' : ''}`;
   el.textContent = icon || '📍';
   return el;
 }
 ```
 
-**顏色對應 status：**
+- Emoji 取自 `row.icon`（由 `src/data/csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
+- 公開狀態刻意不編碼進顏色（`Published` 才會出現在地圖上，篩選已在更上游處理）。
+- 唯一的顏色變體是 `.is-exchange`（`--marker-bg:#16835b` 綠），套用在
+  `Category = Currency Exchange` 的分店（`isExchangeLocation(row)`）。
 
-| Status | CSS class | 顏色 |
-|--------|-----------|------|
-| Verified | `.marker-verified` | `#2f7d4f` 綠 |
-| Needs Review | `.marker-review` | `#c2772a` 橘 |
-| Could Not Find | `.marker-notfound` | `#b1452f` 紅（不顯示於公開清單） |
+**群聚著色（Phase D2）：** 單店綠色標記之外，全部由換匯分店組成的群聚也會顯示同一組綠色，混合群聚維持原有樣式（可接受的降級，先於 Phase D1 就這樣約定）：
 
-Emoji 取自 `row.icon`（由 `src/data/csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
+- **Google：** `MarkerClusterer` 的 `renderer.render(cluster, stats, map)` 收到的 `cluster.markers` 就是建立單店 marker 時保留的同一批物件（`m.__markerContent = el`），因此 `isExchangeOnlyCluster(markers)` 只需檢查每個 marker 的 `__markerContent.classList.contains('is-exchange')`。
+- **HERE：** `H.clustering.ICluster` 沒有現成的「成分清單」，改用 `cluster.forEachDataPoint(cb)` 走訪葉節點，`isExchangeOnlyDataPoints(forEachDataPoint)` 依此判斷是否每個 `DataPoint` 的 `getData().isExchange` 都是 `true`。
+- 兩個判斷函式都刻意設計成純函式（不依賴 Google／HERE 全域物件），方便在 Node 測試環境下單獨驗證，見 `tests/view-first-ui.test.mjs`。
 
 ---
 
@@ -273,3 +278,45 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 | `JKR Picks` | JKR 推薦 |
 | `JKR Fan Projects` | JKR 應援 |
 | `Admin Picks` | 留友看 |
+
+---
+
+## 換匯匯率：排程快照 + 執行期控制旗標（而非即時代理）
+
+**決策：** 前端**不會**在使用者每次開啟換匯開關時直接打 SuperRich 官方
+API；由獨立的 Netlify 排程 Function（`exchange-rates-fetch.mjs`，每 30
+分鐘）向來源抓一次、正規化後寫入 `@netlify/blobs` 快照，前端只打站內
+`/api/exchange-rates`（`exchange-rates.mjs`）讀最新快照。完整規格見
+[SuperRich 換匯地圖實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md)
+§4－§5；本節只記錄「為什麼這樣選」與上線／維運要點，執行細節與驗證見
+[換匯功能進度紀錄](../docs/superrich-exchange-map-progress.zh-TW.md)。
+
+**為什麼不做即時代理：**
+
+| 考量 | 排程快照（現行） | 每次請求即時代理 |
+| --- | --- | --- |
+| 對來源的負載 | 固定、可預期（≤ 每 30 分鐘 1 次） | 隨訪客流量線性成長，容易被來源限流或封鎖 |
+| 來源故障時的使用者體驗 | 只影響「下一次更新」，舊快照或「暫無報價」照常顯示 | 來源逾時／出錯會直接拖慢或打斷使用者的請求 |
+| Netlify Function 執行時間 | 抓取與前端讀取互不影響（各自的 function） | 前端請求必須等來源回應，容易撞到 10 秒執行上限 |
+
+**執行期停用 vs. 環境變數：兩者不是同一層開關。** 這是刻意的分工，
+避免「改完環境變數卻沒生效」或「想暫停卻要重新部署」：
+
+- **執行期控制旗標**（`scripts/exchange-rates-control.mjs` → `npm run
+  fx:control -- status|enable|disable`）寫入 Blobs 裡的控制物件，**立即生
+  效、不需重新部署**。用於日常開關、來源出問題時先緊急停用。
+- **`EXCHANGE_RATES_ENABLED` 環境變數**只在控制旗標**尚未存在**時作為
+  預設回退；改環境變數之後必須另外觸發一次部署才會被讀到新值。這層只
+  用於「這個站台一開始要不要有這個功能」，日常開關一律用控制旗標。
+
+**Circuit breaker 不是「重新啟用就重抓」。** 403／429 會立即封鎖
+6h→24h→自動停用；`npm run fx:control -- enable` 只清除連續失敗計數，
+**保留尚未到期的 `blockedUntil`**——這樣管理者才不會在來源還在限流時，
+因為手動重新啟用而立刻又觸發一次封鎖。封鎖期滿後，下一輪排程（或人工
+觸發一次）就會自動恢復抓取；等待期間 API 回 `enabled: true, snapshot:
+null`，前端顯示「暫無報價」而不是隱藏整張卡片。
+
+**來源故障時的降級路徑，全部發生在既有 UI 骨架內：** 換匯開關、分店卡
+片、綠色標記、Google Maps／導航連結、收藏都不受影響；只有三列報價本
+身在 `enabled:false` 或快照過期時顯示「暫無報價」並回到一般排序。沒有
+額外的錯誤畫面或彈窗。

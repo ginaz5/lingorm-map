@@ -96,6 +96,19 @@ test('map markers keep their light style and use coral with contrast in dark mod
   assert.doesNotMatch(css, /\.marker-cluster\{[^}]*background:var\(--primary\)/);
 });
 
+test('all-exchange clusters reuse the single-marker green variant (Phase D2)', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(
+    css,
+    /\.marker-cluster\.is-exchange\{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7\}/,
+  );
+  assert.match(
+    css,
+    /\.marker-dot\.is-exchange\{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7\}/,
+  );
+});
+
 test('light mode cards have scoped accessible contrast styles', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
   const lightSection = css.match(/\/\* Light mode card contrast \*\/([\s\S]*?)\/\* User location blue dot \*\//)?.[1];

@@ -1,6 +1,6 @@
 # SuperRich USD／TWD 換匯地圖實作計畫
 
-建立日期：2026-09-08；更新日期：2026-09-09。狀態：M1、M2 與 M3 程式實作完成，待 PR Deploy Preview 驗收；正式發布與匯率服務啟用排在驗收之後。進度與驗證見 [進度紀錄](superrich-exchange-map-progress.zh-TW.md)。
+建立日期：2026-09-08；更新日期：2026-09-09。狀態：M1－M4 程式與文件皆已完成，M3 停在 PR Deploy Preview；正式發布與匯率服務啟用時機由使用者決定。進度與驗證見 [進度紀錄](superrich-exchange-map-progress.zh-TW.md)。
 
 版本：第十版（2026-09-09）。完整變更歷程見 [修訂摘要](superrich-exchange-map-plan-revisions.zh-TW.md)。
 

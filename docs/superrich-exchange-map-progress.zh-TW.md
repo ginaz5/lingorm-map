@@ -3,7 +3,7 @@
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-09-09
 > - 最後更新：2026-09-09
-> - 目前里程碑：M3 實作完成，待 PR Deploy Preview 驗收；正式站台發布與啟用排在最後
+> - 目前里程碑：M1－M4 程式與文件皆完成；M3 停在 PR Deploy Preview，正式站台發布與啟用時機由使用者決定
 > - 規格依據：[SuperRich USD／TWD 換匯地圖實作計畫](superrich-exchange-map-plan.zh-TW.md)
 
 本文件只追蹤執行進度、驗證結果與待辦。資料模型、決策語意與階段設計以計畫文件為準；兩份衝突時先改計畫，再同步這裡。
@@ -23,7 +23,7 @@
 | M1 | Phase A（來源契約）+ Phase B（分店建檔，`Paused`） | 無 | **完成** |
 | M2 | Phase C（排程、Blobs、breaker、控制旗標；預設停用） | 無 | **完成** |
 | M3 | Phase D1a／D1b + 分店轉 `Published` + 啟用服務 | **上線** | **待 PR Preview 驗收** |
-| M4 | Phase D2（群聚著色）+ Phase E（手冊） | 群聚樣式 | 未開始 |
+| M4 | Phase D2（群聚著色）+ Phase E（手冊） | 群聚樣式 | **完成** |
 
 M1 與 M2 對使用者零可見變更，可安全停在任一處。M3 中途停會留下半成品 UI，建議 D1a、D1b 各自做完再停。
 
@@ -166,8 +166,33 @@ npm run location:verify -- validate --all                    # schema 20/20；18
 本機實際來源抓取                                             # 26 branches；27 requests；complete
 ```
 
-**剩餘事項：** 建立 PR Deploy Preview 並由使用者完成驗收。Production 維持舊版本與停用狀態；正式 deploy 與啟用服務排在所有功能驗收通過之後。
+**剩餘事項：** 停在 PR Deploy Preview 這一步即可；PR 驗收與正式上線（合併、確認 disabled、建立/更新 production control、首輪抓取、API 與前台數字驗證）由使用者自行決定時機，不由這裡代為執行或代為判斷「可以上線」。
 
 ## M4 · Phase D2／E — 群聚著色與手冊
 
-**狀態：未開始。**
+**狀態：完成（2026-09-09）。**
+
+| 完成條件（計畫 §3.3、§6） | 結果 |
+| --- | --- |
+| D2 群聚著色：Google `clusterRenderer` 解構 `markers` 判斷成分 | 完成：新增 `isExchangeOnlyCluster(markers)`，讀取每個 marker 建立時保留的 `__markerContent` class list；全綠才套用 `.marker-cluster.is-exchange` |
+| D2 群聚著色：HERE 改用 `cluster.forEachDataPoint` 檢查 | 完成：新增 `isExchangeOnlyDataPoints(forEachDataPoint)`，走訪葉節點確認每個 `DataPoint.getData().isExchange` 皆為 `true` |
+| 混合群聚沿用現有樣式 | 完成：兩個判斷函式在任一成員非換匯點時回傳 `false`，維持預設 `.marker-cluster` 樣式 |
+| Phase E：驗證通過、資料來源故障可降級、排程首次啟用、breaker 復原、執行期停用與環境變數差異寫入手冊 | 完成：新增 [note/LOCAL_TESTING.md「換匯功能上線與維運手冊」](../note/LOCAL_TESTING.md#換匯功能上線與維運手冊)；[note/TECH_DECISIONS.md](../note/TECH_DECISIONS.md) 更新過時的 marker 章節並新增排程快照/控制旗標架構決策；README 補充功能說明 |
+
+**產出**
+
+- `src/map/map.js` — `isExchangeOnlyCluster`、`isExchangeOnlyDataPoints`，接入 `clusterRenderer` 與 `makeHereClusterTheme`
+- `styles.css` — `.marker-cluster.is-exchange`
+- `tests/view-first-ui.test.mjs`、`tests/styles-extraction.test.mjs` 新增對應測試
+- `note/LOCAL_TESTING.md`、`note/TECH_DECISIONS.md`、`README.md` 文件更新
+
+**驗證**
+
+```text
+npm test          # 398 pass / 0 fail
+npm run typecheck # pass
+```
+
+`npm run build` 在本次工作環境的 Linux VM 因既有的 `@rollup/rollup-linux-arm64-gnu`（npm optional-dependency 已知問題）無法安裝而略過；未改動 build 設定或依賴版本，非本次程式變更所致。
+
+**未解問題：無。**

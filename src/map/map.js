@@ -285,15 +285,31 @@ export function makeMarkerContent(icon, isExchange = false) {
 }
 
 /**
+ * Whether every marker in a Google cluster is a currency-exchange location.
+ * Reads the class MarkerClusterer's own `markers` list carries (set on
+ * `__markerContent` when each marker is created in {@link buildMarkers}), so
+ * this stays a pure, easily testable check independent of the Google Maps
+ * runtime.
+ * @param {readonly {__markerContent?: {classList?: {contains: (cls: string) => boolean}}}[]} markers
+ * @returns {boolean}
+ */
+export function isExchangeOnlyCluster(markers) {
+  return markers.length > 0 &&
+    markers.every(marker => marker?.__markerContent?.classList?.contains('is-exchange') === true);
+}
+
+/**
  * Custom renderer for Google MarkerClusterer.
- * Draws a circle with the cluster count.
- * @param {{ count: number, position: any }} param0
+ * Draws a circle with the cluster count; clusters made up entirely of
+ * currency-exchange markers get the green `.is-exchange` treatment (Phase D2
+ * — mixed clusters keep the default style).
+ * @param {{ count: number, position: any, markers: any[] }} param0
  * @returns {any}
  */
-function clusterRenderer({ count, position }) {
+function clusterRenderer({ count, position, markers }) {
   const size = count >= 100 ? 48 : count >= 10 ? 40 : 32;
   const el = document.createElement('div');
-  el.className = 'marker-cluster';
+  el.className = `marker-cluster${isExchangeOnlyCluster(markers) ? ' is-exchange' : ''}`;
   el.textContent = String(count);
   el.style.width = `${size}px`;
   el.style.height = `${size}px`;
@@ -305,6 +321,25 @@ function clusterRenderer({ count, position }) {
 }
 
 /**
+ * Whether every leaf data point inside a HERE cluster is a currency-exchange
+ * location (Phase D2). HERE's `H.clustering.ICluster` exposes `forEachDataPoint`
+ * to walk its leaves recursively; this helper takes that iterator function
+ * directly (rather than the cluster object) so it can be unit-tested without
+ * the HERE Maps runtime.
+ * @param {(callback: (dataPoint: {getData: () => any}) => void) => void} forEachDataPoint
+ * @returns {boolean}
+ */
+export function isExchangeOnlyDataPoints(forEachDataPoint) {
+  let sawDataPoint = false;
+  let allExchange = true;
+  forEachDataPoint(dataPoint => {
+    sawDataPoint = true;
+    if (dataPoint?.getData?.()?.isExchange !== true) allExchange = false;
+  });
+  return sawDataPoint && allExchange;
+}
+
+/**
  * Custom theme for HERE Maps clustering.
  * Provides consistent visual style with Google clustering.
  * @returns {any}
@@ -313,9 +348,10 @@ function makeHereClusterTheme() {
   return {
     getClusterPresentation: (/** @type {any} */ cluster) => {
       const weight = cluster.getWeight();
+      const isExchangeCluster = isExchangeOnlyDataPoints(cluster.forEachDataPoint.bind(cluster));
       const size = weight >= 100 ? 48 : weight >= 10 ? 40 : 32;
       const el = document.createElement('div');
-      el.className = 'marker-cluster';
+      el.className = `marker-cluster${isExchangeCluster ? ' is-exchange' : ''}`;
       el.textContent = String(weight);
       el.style.width = `${size}px`;
       el.style.height = `${size}px`;
