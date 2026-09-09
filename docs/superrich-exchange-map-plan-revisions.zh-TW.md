@@ -75,7 +75,7 @@
 | 生效範圍 | 區分後端下一次讀取控制旗標與前端下一次成功 API 查詢，不再承諾所有頁面於數秒內同步 |
 | 待完成的工程修正 | 本次未處理快取期限、前端同步時限、報價過期後的恢復查詢、來源請求速率與時間預算，以及前次 review 的條款查證補正；這些不需要再確認產品選擇 |
 
-## 第八版（現行）
+## 第八版
 
 | 項目 | 現行規則 |
 | --- | --- |
@@ -88,7 +88,7 @@
 | 查證補正 | 補入官網 Terms & Conditions，其對公開匯率介面的適用範圍尚未確認；撤回「沒有明文禁止」及平均流量足以保證不造成負擔的推論 |
 | 驗收與界線 | 第七版所列待補工程規則已寫入本文與驗收案例；仍需在實作時驗證來源時區、分店位置與正式環境執行時間。本次僅修訂計畫，未實作或部署 |
 
-## 第九版（現行）
+## 第九版
 
 開工前複查。三次唯讀查證修正兩處來源事實，並補上會擋住 Phase A／B 的待決項目。
 
@@ -107,3 +107,16 @@
 | 排序選項初始態 | 未定義 | 開關開啟後、首次 API 結果前一律 disabled 而非隱藏 |
 | 前端排程可測性 | §7 有十餘條時序驗收但無測試策略 | 要求實作為純函式 `nextExchangeAction(now, state) => { action, delayMs }`，計時器只是薄殼 |
 | 命名與位置 | 未定 | `src/data/exchange-rates.js`（`RATE_SCALE` 與型別）、`scripts/exchange-rates-control.mjs` + `npm run fx:control`；`getDeployStore()` 也須帶 `consistency: 'strong'` |
+
+## 第十版（現行）
+
+M1 實作與全量驗證回填。
+
+| 項目 | 結果 |
+| --- | --- |
+| 來源 envelope | 確認 `/branch-client/{id}` 的分店欄位位於成功 envelope 的 `data` 內；修正解析器與 fixture，並驗證失敗業務狀態會被拒絕 |
+| 分店代碼 | 收齊 26 店的 `H01`、`B01`、`M01`–`M24`，寫入唯一對照並加入全量 fixture |
+| Notion schema | Category 新增 `Currency Exchange`；Destination Key 新增 `chonburi`／`si-racha`。全量驗證抓到 Type 曾誤加同名選項，已移除並恢復既有四選項契約 |
+| 分店建檔 | 26 筆以 `Paused`、`Review Needed=true` 建立並逐頁讀回；正式 CSV 為 181 筆，其中公開數維持 135 |
+| 待發布確認 | 24 店有專屬 Place ID；Happitat 與素萬那普機場店保留來源連結與待審註記，發布前須補完櫃位身分 |
+| 驗證 | 新增 Slug／官方 ID／分店代碼／快照關聯 validator，接入 Netlify build；型別、361 項測試與 Vite build 通過 |

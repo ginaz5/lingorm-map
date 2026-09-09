@@ -10,14 +10,20 @@
     "locations:export:notion": "node --env-file-if-exists=.env scripts/export-snapshot.mjs",
     "location:verify": "node --env-file-if-exists=.env scripts/location-verification-runner.mjs",
     "location:verify:ui": "node --env-file-if-exists=.env scripts/location-verification-ui-server.mjs",
+    "fx:control": "node --env-file-if-exists=.env scripts/exchange-rates-control.mjs",
     "test:location-verification": "node --test tests/formal-location-current-schema.test.mjs tests/location-verification-core.test.mjs tests/location-verification-runner.test.mjs tests/location-verification-ui-server.test.mjs tests/location-verification-ui-workflow.test.mjs tests/location-verification-validator.test.mjs",
     "typecheck": "tsc --noEmit -p jsconfig.json"
   },
   "devDependencies": {
+    "@types/node": "^22.20.1",
     "typescript": "^6.0.3",
     "vite": "^6.3.5"
   },
   "dependencies": {
-    "@googlemaps/markerclusterer": "^2.6.2"
+    "@googlemaps/markerclusterer": "^2.6.2",
+    "@netlify/blobs": "^11.0.3"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

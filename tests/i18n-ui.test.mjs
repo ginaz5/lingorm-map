@@ -91,6 +91,11 @@ test('collection filter label is available in both supported languages', () => {
   assert.equal(T.en.theme_filter, 'Collection');
 });
 
+test('currency exchange category has bilingual labels', () => {
+  assert.equal(T.zh.category_currency_exchange, '換匯');
+  assert.equal(T.en.category_currency_exchange, 'Currency Exchange');
+});
+
 test('unrestricted category and collection filters describe that all options are shown', () => {
   assert.equal(T.zh.all_cat, '所有類別');
   assert.equal(T.en.all_cat, 'All categories');

@@ -8,7 +8,8 @@
     "checkJs": true,
     "noEmit": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["node"]
   },
   "include": [
     "src/app/app-coordinator.js",
@@ -16,6 +17,10 @@
     "src/core/state.js",
     "src/data/csv-parser.js",
     "src/data/exchange-rates.js",
+    "netlify/functions/_shared/exchange-rates-*.mjs",
+    "netlify/functions/exchange-rates-fetch.mjs",
+    "netlify/functions/exchange-rates.mjs",
+    "scripts/exchange-rates-control.mjs",
     "src/features/changelog-data.js",
     "src/features/collection-info.js",
     "src/map/map.js",

@@ -1,8 +1,8 @@
 # SuperRich USD／TWD 換匯地圖實作計畫
 
-建立日期：2026-09-08；更新日期：2026-09-09。狀態：規劃，需求與連結方案已確認；尚未實作、寫入 Notion 或部署。
+建立日期：2026-09-08；更新日期：2026-09-09。狀態：M1 來源契約與 26 店 Paused 建檔完成；排程、匯率服務與前端尚未實作。進度與驗證見 [進度紀錄](superrich-exchange-map-progress.zh-TW.md)。
 
-版本：第九版（2026-09-09）。完整變更歷程見 [修訂摘要](superrich-exchange-map-plan-revisions.zh-TW.md)。
+版本：第十版（2026-09-09）。完整變更歷程見 [修訂摘要](superrich-exchange-map-plan-revisions.zh-TW.md)。
 
 本功能讓使用者在現有踩點地圖上找到 SuperRich Thailand 分店，查看美金與台幣換成泰銖的分店買入價，並比較同幣別、同面額的匯率。
 
@@ -34,7 +34,7 @@
 
 - [官方匯率頁](https://www.superrichthailand.com/exchange-rate) 的分店選單目前有 26 間分店。
 - 26／26 間都成功取得 USD 100、USD 50、TWD 買入價。
-- 26／26 間都取得座標及個別 Google Maps 連結。這是資料完整性檢查，尚未逐店人工核對店面位置與商場樓層。
+- 26／26 間都取得官方座標與 Google Maps 連結；2026-09-09 建檔核對確認其中 24 店有專屬 Place ID，Happitat 與機場店的來源連結只指向場館／車站，仍需發布前複核。詳見 [逐店查證紀錄](superrich-branch-verification.zh-TW.md)。
 - 本店與 Terminal 21 Asok 的官網畫面報價和對應介面一致，分店間確實有價差。
 - 本次所有分店的 TWD 都使用 `2000 - 100` 面額組。USD 100、50 即使同價，仍需各自保存和顯示。
 - 地點涵蓋曼谷、芭達雅、Chonburi、Si Racha 與機場，不能只收曼谷市區。
@@ -45,18 +45,18 @@
 | 用途 | GET 路徑 | 已確認欄位 |
 | --- | --- | --- |
 | 分店清單 | `/branch-client/options` | `data[].value` 為分店 ID，`label` 為名稱 |
-| 分店資料 | `/branch-client/{id}` | `id`、`latitude`、`longitude`、`googleLink`、`address`、營業文字 |
+| 分店資料 | `/branch-client/{id}` | 根層成功狀態與 `data`；`data` 內含 `id`、`latitude`、`longitude`、`googleLink`、`address` 等。營業文字與無關欄位不採用 |
 | 最新報價 | `/exchange-client/list?branchId={id}&type=exchange` | 根層 `statusCode`／`code`／`message`／`timestamp`／`data`；報價位於 `data.exchange.<幣別>[]`（見 §2.2） |
 
 分店與匯率查詢使用 `X-Language-Code: en`。單店報價回傳所有貨幣，以 `unit`／幣別與 `denomRem` 辨識目標資料，讀取 `buyText`；`sellText` 不進入公開換匯資料。已測試最新報價可不傳日期；日期版亦可使用 `date=YYYY-MM-DD`。不得由空結果自行代入本店價格或向前搜尋歷史價格。
 
 來源回傳的營業文字**不採用**：格式不保證、假日與商場調整不會即時反映，維護 26 店營業時間的成本與出錯風險都高於效益。營業時間一律由使用者透過 Google Maps 連結自行確認。
 
-`branchCode` 位於**匯率回應的每一筆報價項目**（`data.exchange.<幣別>[]` 之內），**不在** `/branch-client/{id}`；2026-09-09 實測分店 28 為 `M17`。建立對照時保存來源 ID 與分店代碼，抓取時核對，避免誤把本店資料套用到其他分店。
+`branchCode` 位於**匯率回應的每一筆報價項目**（`data.exchange.<幣別>[]` 之內），**不在** `/branch-client/{id}`；2026-09-09 已收齊 26 店代碼：10 為 `H01`、11 為 `B01`、12–35 依序為 `M01`–`M24`。對照檔保存來源 ID 與分店代碼，抓取時核對，避免誤把本店資料套用到其他分店。
 
 ### 2.2 2026-09-09 實測的欄位值（Phase A 契約依據）
 
-以分店 28（Terminal 21 Asok）為主、10（本店）與 34（Happitat）抽驗，供 Phase A 的 adapter 與 fixture 使用：
+先以分店 28（Terminal 21 Asok）為主、10（本店）與 34（Happitat）抽驗；M1 再對全 26 店確認分店詳情、代碼與三種目標買入價，供 adapter 與 fixture 使用：
 
 | 項目 | 實測值 |
 | --- | --- |
@@ -65,9 +65,9 @@
 | USD 的 `denomRem` 全集 | `100`、`50`、`20 - 10`、`5`、`1`。本計畫只取 `100` 與 `50` |
 | TWD 的 `denomRem` | `2000 - 100` |
 | `buyText` 小數位 | USD 100／50 為 2 位（`32.83`）；TWD 為 5 位（`0.99500`）。`displayDecimals` 依實際字串決定，不寫死 |
-| `branchCode` | 分店 28 為 `M17`，符合 `/^[A-Z]{1,3}\d{1,3}$/`。Phase A 必須對 26 店全數收集後才把此樣式固定為驗證條件，避免用單一樣本擋掉合法代碼 |
+| `branchCode` | 26／26 店的 `H01`、`B01`、`M01`–`M24` 均符合 `/^[A-Z]{1,3}\d{1,3}$/`，全量代碼 fixture 已納入測試 |
 | `googleLink` 網域 | **不只一種**：分店 10 為 `https://www.google.com/maps?cid=...`，分店 34 為 `https://maps.app.goo.gl/...`。白名單見 §4.3 |
-| `/branch-client/{id}` 欄位 | 實測只有 `id`、`latitude`、`longitude`、`googleLink`、`address`；**沒有** `branchCode` |
+| `/branch-client/{id}` 欄位 | 分店欄位在 `data` 內，非根層；**沒有** `branchCode`。解析器先確認 `statusCode: 200` 與 `code: SUCCESS`，再取 ID、座標與連結，丟棄地址、營業文字等來源顯示字串 |
 
 **已確認：來源沒有報價發布時間，不顯示「官網報價時間」。** 2026-09-09 兩次查詢確認 `data` 的直接子鍵只有 `exchange`，**沒有 `data.time`**；報價項目本身也只有 `id`、`currencyId`、`branchCode`、`denomCode`、`unit`、`denomRem`、`buyText`、`image`、`isFavorite`，沒有時間欄位。根層 `timestamp` 在兩次查詢間由 `2026-09-09T00:07:05.977Z` 變為 `00:12:08.269Z`，而報價數字未變，可判定它是 **API 回應產生時間**，不是報價發布時間。
 
@@ -118,7 +118,7 @@
 
 使用者已核准新增開關且**預設關閉**。原始需求「分店與踩點地點直接一起顯示」現理解為「開關開啟後一起顯示」。
 
-目前 `data/locations.csv` 有 155 筆地點、其中 135 筆 `Published`。加入 26 間分店後公開地點為 161 筆，換匯點約佔 16%，因此以獨立開關控制是否顯示。`src/ui/render.js` 的 `buildCatFilter` 由資料動態生成選項；換匯點的顯示與計數必須明確接入這條路徑。
+M1 匯出後 `data/locations.csv` 有 181 筆地點、其中 135 筆 `Published`，26 間新分店全為 `Paused`。若原有公開數不變且 26 店全通過審核，公開地點將為 161 筆，換匯點約佔 16%，因此以獨立開關控制是否顯示。`src/ui/render.js` 的 `buildCatFilter` 由資料動態生成選項；換匯點的顯示與計數必須明確接入這條路徑。
 
 行為定義：
 
@@ -261,7 +261,7 @@
 | `displayDecimals` | `number` | 顯示用小數位數，不參與比較 |
 | `denom` | `'USD_100' \| 'USD_50' \| 'TWD'` | 列舉，不是來源字串。來源對照：`unit`+`denomRem` 為 `USD`+`100` → `USD_100`、`USD`+`50` → `USD_50`、`TWD`+`2000 - 100` → `TWD`。字串需完全相符（含空白），不做模糊比對；`20 - 10`、`5`、`1` 等其他面額一律忽略。來源若改動面額字串，該列記為 `missing` 而非猜測對應 |
 | `unavailableReason` | `'timeout' \| 'invalid' \| 'missing' \| 'http_error' \| 'expired' \| null` | 列舉，不是來源錯誤訊息 |
-| `branchCode` | `string \| null` | 取自匯率回應的報價項目（§2.2），非 `/branch-client/{id}`。同一店所有取用列的 `branchCode` 必須一致；格式白名單 `/^[A-Z]{1,3}\d{1,3}$/` 需在 Phase A 收齊 26 店代碼後定案，不符則視為身分不明並整店標記失敗 |
+| `branchCode` | `string \| null` | 取自匯率回應的報價項目（§2.2），非 `/branch-client/{id}`。同一店所有取用列的 `branchCode` 必須一致；格式白名單 `/^[A-Z]{1,3}\d{1,3}$/` 已由 26 店驗證，不符則視為身分不明並整店標記失敗；對照設定必須非空，失敗的報價結果可為 null |
 | `googleLink` | `string \| null` | 需 `new URL()` 解析成功、protocol 為 `https:`，且 host 屬於白名單 `maps.app.goo.gl`、`www.google.com`、`google.com`、`maps.google.com`、`goo.gl`（兩種型式均已實測出現，見 §2.2），否則 `null` |
 
 來源的營業文字不進入快照。顯示文字（面額標籤、無報價說明、免責、來源標示、營業時間提示）全部由 `src/core/i18n.js` 的雙語字典產生，不從來源帶入。
@@ -458,11 +458,11 @@ npm run location:verify -- validate --all
 
 ## 8. 本次交付界線
 
-本次完成唯讀可行性調查與本計畫；沒有修改功能程式、Notion、正式 CSV、雲端設定或部署。26 店來源資料目前可取得，但不代表新功能已實作或排程已啟用。執行期測試本次不跑，因為只有規劃文件變更。
+使用者已核准並完成 M1、M2：來源契約、26 店正式 Notion Paused 建檔、快照與對照驗證，以及停用狀態下的排程、Blobs、breaker、控制旗標與唯讀 API 均已完成。兩店的櫃位連結待發布前確認，全部分店保持 Review Needed。尚未供應匯率或部署；後續 M3–M4 與實際驗證結果見 [進度紀錄](superrich-exchange-map-progress.zh-TW.md)。
 
-## 9. 開工前待決清單
+## 9. 建檔與識別決定
 
-以下三項在 Phase A／B 一開工就會擋住，各附建議預設值；未另行指示即依建議值實作。
+以下三項已於 M1 依核准預設值實作；逐店證據與 Notion 頁面見 [建檔查證](superrich-branch-verification.zh-TW.md)。
 
 ### 9.1 換匯分店的識別方式與對照檔
 
@@ -470,7 +470,7 @@ npm run location:verify -- validate --all
 
 | 方案 | 做法 | 取捨 |
 | --- | --- | --- |
-| **A（建議）獨立 JSON** | 新增 `data/superrich-branches.json`，前端與 function 同時 import（比照 `locations.mjs` 已 import `src/data/csv-parser.js` 的既有作法）；`netlify.toml` 的 `included_files` 加入此檔 | 單一 source of truth，可寫獨立 validator；需記得改 `included_files`，目前只有 `data/locations.csv` |
+| **A（採用）獨立 JSON** | `data/superrich-branches.json` 供後續前端與 function 共用；`netlify.toml` 的 `included_files` 已加入此檔 | 單一 source of truth；獨立 validator 已接入建置檢查 |
 | B 前端用 Category 判斷 | 前端看 `catEn === 'Currency Exchange'`，function 另存 ID 清單 | 兩份判斷邏輯；改 Notion 類別名即失效；違反 §3.1「不依名稱猜測」 |
 | C CSV 加欄位 | 加第 18 欄 | 破壞 17 欄契約與既有 parser／validator 測試，排除 |
 
@@ -485,7 +485,7 @@ npm run location:verify -- validate --all
 }
 ```
 
-`branchCode` 於 Phase A 收齊後填入；填入前留 `null`，不影響 Phase B 建檔。另加 `scripts/validate-superrich-mapping.mjs`：檢查 Slug 唯一、`officialId` 唯一、每個 Slug 都存在於 `data/locations.csv`、且該列類別為 `Currency Exchange`。
+26 店 `branchCode` 已收齊，對照設定不得留 `null`。`scripts/validate-superrich-mapping.mjs` 檢查 Slug、`officialId` 與分店代碼唯一，逐筆核對 CSV 存在且類別為 `Currency Exchange`，具有有效泰國目的地與座標；可另傳來源 options JSON，檢查新增／消失的來源 ID。
 
 ### 9.2 26 店的 Notion 欄位填寫範本
 
@@ -499,21 +499,23 @@ npm run location:verify -- validate --all
 | `Location Name ZH` | 人工中文名（例：`SuperRich Terminal 21 Asok 分店`） |
 | `Notes` / `Notes ZH` | 來源 `address` 的樓層／位置描述雙語化；**不得**填入營業時間（§2） |
 | `Source URL` | 官方匯率頁 `https://www.superrichthailand.com/exchange-rate` |
-| `Source Tags` | `official`（需先確認 `tests/source-tags.test.mjs` 既有預期是否接受此值，不接受則沿用既有標籤字彙） |
+| `Source Tags` | 留空；正式 schema 無 `official` 選項，不新增標籤字彙，官方來源保存在 `Source URLs` |
 | `Verification Status` | 先 `Paused`，逐店核對商場樓層後才改 `Published` |
 | `Type` | 留空（§4.2） |
+
+Notion 實際屬性為 `Name`／`Name ZH`、`Notes EN`／`Notes ZH`、`Source URLs`、`Status`；上表對應既有 CSV 17 欄。`Icon` 為頁面 emoji，非新增屬性。`Review Needed=true`、`Last Verified` 留空；Happitat 與機場店未確認櫃位專屬 Place ID，先保留官網提供連結與待審註記，發布前須解決。
 
 `Verification Status` 先設 `Paused` 不影響抓取：抓取目標來自 §9.1 的對照檔，不是 CSV 的公開狀態；未公開的分店不會出現在地圖上，但排程仍會為它們取得報價。這是刻意的，讓資料核對與匯率管線可以並行。
 
 ### 9.3 26 店的目的地歸屬
 
-規則：芭達雅用 `pattaya`；曼谷都會區與機場歸 `bangkok`；Chonburi 市區用 `chonburi`；Si Racha 用 `si-racha`。逐店對照見 §10。四筆標註「需確認」的是行政區與都會區判定不一致者，Phase B 需人工確認後定案。
+規則：芭達雅用 `pattaya`；曼谷都會區與機場歸 `bangkok`；Chonburi 市區用 `chonburi`；Si Racha 用 `si-racha`。Westgate／Westville 位於 Nonthaburi，Happitat／素萬那普機場位於 Samut Prakan，已依都會區／機場規則定案為 `bangkok`；證據見建檔查證。
 
 ## 10. 附錄：26 間分店清單（2026-09-09 唯讀查證）
 
-來源 `GET /branch-client/options`，官方 ID 為連續的 10–35，共 26 間，與 §2 的計數一致。`branchCode` 待 Phase A 收齊後補入 §9.1 的對照檔。
+來源 `GET /branch-client/options`，官方 ID 為連續的 10–35，共 26 間，與 §2 的計數一致。`branchCode` 已全數填入 §9.1 的對照檔。
 
-| 官方 ID | Slug | 來源 label | 建議 Destination Key |
+| 官方 ID | Slug | 來源 label | Destination Key |
 | --- | --- | --- | --- |
 | 10 | `superrich-thailand-10` | Headquarter Rajdamri 1 | `bangkok` |
 | 11 | `superrich-thailand-11` | Vibhavadi 22 | `bangkok` |
@@ -525,10 +527,10 @@ npm run location:verify -- validate --all
 | 17 | `superrich-thailand-17` | Central World 1st floor | `bangkok` |
 | 18 | `superrich-thailand-18` | Central Ramindra 3rd floor | `bangkok` |
 | 19 | `superrich-thailand-19` | Central Ladprao 2nd Floor | `bangkok` |
-| 20 | `superrich-thailand-20` | Central Westgate 3rd Floor | `bangkok`（需確認：行政區屬 Nonthaburi） |
+| 20 | `superrich-thailand-20` | Central Westgate 3rd Floor | `bangkok`（Nonthaburi，曼谷都會區） |
 | 21 | `superrich-thailand-21` | Central Rama 3 4th Floor | `bangkok` |
 | 22 | `superrich-thailand-22` | Paradise Park 2nd Floor | `bangkok` |
-| 23 | `superrich-thailand-23` | Central Westville 1st Floor | `bangkok`（需確認：行政區屬 Nonthaburi） |
+| 23 | `superrich-thailand-23` | Central Westville 1st Floor | `bangkok`（Nonthaburi，曼谷都會區） |
 | 24 | `superrich-thailand-24` | Mahanakhon Cube G floor | `bangkok` |
 | 25 | `superrich-thailand-25` | The Mall Bangkapi 2nd Floor | `bangkok` |
 | 26 | `superrich-thailand-26` | Fashion Island B Floor | `bangkok` |
@@ -539,7 +541,7 @@ npm run location:verify -- validate --all
 | 31 | `superrich-thailand-31` | Central Pinklao 4th Floor | `bangkok` |
 | 32 | `superrich-thailand-32` | Central Chonburi 1st Floor | `chonburi` |
 | 33 | `superrich-thailand-33` | Central Si Racha 2nd Floor | `si-racha` |
-| 34 | `superrich-thailand-34` | Happitat 3rd Floor, Bloominas Building | `bangkok`（需確認：實測座標 13.6576, 100.6676，Bang Na 一帶） |
-| 35 | `superrich-thailand-35` | Suvarnabhumi Airport B floor | `bangkok`（需確認：行政區屬 Samut Prakan，依「機場歸 bangkok」規則） |
+| 34 | `superrich-thailand-34` | Happitat 3rd Floor, Bloominas Building | `bangkok`（Samut Prakan，曼谷都會區） |
+| 35 | `superrich-thailand-35` | Suvarnabhumi Airport B floor | `bangkok`（Samut Prakan，機場規則） |
 
 來源 label 只作為建檔起點，正式名稱、樓層與座標仍須依 §9.2 逐店人工核對；本表不取代 Phase B 的驗證。

@@ -140,15 +140,35 @@ test('parseBranchDetail: keeps coordinates and link, drops the address string', 
 test('parseBranchDetail: rejects out-of-range or unparsable coordinates', async () => {
   const base = await fixture('branch-28');
   for (const patch of [{ latitude: '999' }, { longitude: 'x' }, { latitude: '' }, { id: 0 }]) {
-    assert.equal(parseBranchDetail({ ...base, ...patch }), null);
+    assert.equal(parseBranchDetail({ ...base, data: { ...base.data, ...patch } }), null);
   }
 });
 
 test('parseBranchDetail: a non-whitelisted link becomes null without failing the branch', async () => {
   const base = await fixture('branch-28');
-  const detail = parseBranchDetail({ ...base, googleLink: 'https://evil.example/x' });
+  const detail = parseBranchDetail({ ...base, data: { ...base.data, googleLink: 'https://evil.example/x' } });
   assert.equal(detail?.officialId, 28);
   assert.equal(detail?.googleLink, null);
+});
+
+test('source parsers reject unsuccessful business responses even if data is present', async () => {
+  const options = await fixture('branch-options');
+  const detail = await fixture('branch-10');
+  const exchange = await fixture('exchange-28');
+  for (const patch of [{ code: 'FAILED' }, { statusCode: 500 }, { code: undefined }]) {
+    assert.equal(parseBranchOptions({ ...options, ...patch }), null);
+    assert.equal(parseBranchDetail({ ...detail, ...patch }), null);
+    assert.equal(parseBranchExchange({ ...exchange, ...patch }, { officialId: 28 }).status, 'failed');
+  }
+  assert.equal(parseBranchDetail(detail.data), null, 'an unwrapped fixture must not impersonate an API response');
+});
+
+test('branch code validation accepts the full observed 26-branch inventory', async () => {
+  const codes = await fixture('branch-codes');
+  assert.equal(codes.length, 26);
+  assert.equal(new Set(codes.map(row => row.officialId)).size, 26);
+  assert.equal(new Set(codes.map(row => row.branchCode)).size, 26);
+  for (const row of codes) assert.equal(normalizeBranchCode(row.branchCode), row.branchCode);
 });
 
 // ─── exchange parsing ───────────────────────────────────────────────────────

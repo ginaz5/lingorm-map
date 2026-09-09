@@ -5,7 +5,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  included_files = ["data/locations.csv"]
+  included_files = ["data/locations.csv", "data/superrich-branches.json"]
 
 [[redirects]]
   from = "/api/*"
@@ -13,8 +13,10 @@
   status = 200
 
 [build.environment]
+  NODE_VERSION = "22.12.0"
   # Set runtime secrets in Netlify Dashboard:
   # Site Settings → Environment Variables → Add variable
   # Required: HERE_API_KEY
   # Data: DATA_SOURCE=notion (default; only supported value — sheet is retired)
   # Optional: GOOGLE_MAPS_KEY, GOOGLE_MAP_ID
+  # Exchange rates: EXCHANGE_RATES_ENABLED is intentionally unset/false until M3

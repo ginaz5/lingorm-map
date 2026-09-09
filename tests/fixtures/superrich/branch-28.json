@@ -1,7 +1,13 @@
 {
-  "id": 28,
-  "latitude": "13.737762",
-  "longitude": "100.560421",
-  "googleLink": "https://maps.app.goo.gl/dqWjKM8ZMEVxPJ2VA",
-  "address": "Terminal 21 Asok G Floor"
+  "statusCode": 200,
+  "code": "SUCCESS",
+  "message": "Success",
+  "timestamp": "2026-09-09T01:07:26.477Z",
+  "data": {
+    "id": 28,
+    "latitude": "13.738335145655695 ",
+    "longitude": "100.56052724602925",
+    "googleLink": "https://maps.app.goo.gl/hQwNUL9VWq1XviVt6",
+    "address": "Terminal 21 Asok G Floor"
+  }
 }

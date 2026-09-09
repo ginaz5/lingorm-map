@@ -3,7 +3,7 @@
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-09-09
 > - 最後更新：2026-09-09
-> - 目前里程碑：M1（Phase A 完成，Phase B 未開始）
+> - 目前里程碑：M2 完成，下一步為 M3（Phase D1a／D1b）
 > - 規格依據：[SuperRich USD／TWD 換匯地圖實作計畫](superrich-exchange-map-plan.zh-TW.md)
 
 本文件只追蹤執行進度、驗證結果與待辦。資料模型、決策語意與階段設計以計畫文件為準；兩份衝突時先改計畫，再同步這裡。
@@ -20,8 +20,8 @@
 
 | 里程碑 | 內容 | 使用者可見 | 狀態 |
 | --- | --- | --- | --- |
-| M1 | Phase A（來源契約）+ Phase B（分店建檔，`Paused`） | 無 | 進行中 |
-| M2 | Phase C（排程、Blobs、breaker、控制旗標；`EXCHANGE_RATES_ENABLED=false`） | 無 | 未開始 |
+| M1 | Phase A（來源契約）+ Phase B（分店建檔，`Paused`） | 無 | **完成** |
+| M2 | Phase C（排程、Blobs、breaker、控制旗標；預設停用） | 無 | **完成** |
 | M3 | Phase D1a／D1b + 分店轉 `Published` + 啟用服務 | **上線** | 未開始 |
 | M4 | Phase D2（群聚著色）+ Phase E（手冊） | 群聚樣式 | 未開始 |
 
@@ -45,16 +45,16 @@ M1 與 M2 對使用者零可見變更，可安全停在任一處。M3 中途停�
 **產出**
 
 - `src/data/exchange-rates.js` — `RATE_SCALE`（單一全域 1e6）、`SOURCE_DENOMS`、`GOOGLE_MAPS_HOSTS`、`BRANCH_CODE_PATTERN`、`parseRateText`、`normalizeGoogleLink`、`normalizeBranchCode`、`parseBranchOptions`、`parseBranchDetail`、`parseBranchExchange`、`branchQuoteFailure`
-- `tests/exchange-rates-source.test.mjs` — 29 項
+- `tests/exchange-rates-source.test.mjs` — 含 26 店完整分店代碼與實際成功 envelope 測試
 - `tests/fixtures/superrich/{branch-options,branch-10,branch-28,exchange-28}.json`
 - `jsconfig.json` 與 `tests/typecheck-config.test.mjs` 加入新模組
 
 **驗證**
 
 ```
-node --test tests/exchange-rates-source.test.mjs   # 29 pass
+node --test tests/exchange-rates-source.test.mjs   # pass
 npm run typecheck                                   # pass
-npm test                                            # 352 pass / 0 fail
+npm test                                            # 361 pass / 0 fail
 ```
 
 **實作期間的決定**（未改變計畫語意，僅補齊細節）
@@ -62,32 +62,82 @@ npm test                                            # 352 pass / 0 fail
 - `buyText` 小數位超過 6 位時採**整數字串四捨五入**而非判為無效：靜默截斷會改變顯示給使用者的匯率，直接作廢又會因來源多一位小數而整站失效。縮放全程用 `BigInt` 字串運算，不經過浮點數。
 - `parseBranchOptions` 只回傳官方 ID，不回傳來源 `label`；`parseBranchDetail` 丟棄 `address`。兩者都是來源顯示字串，名稱與地址一律以 Notion 為準。
 - **測試抓到一個真 bug**：`Number('')` 為 `0`，空白座標會通過範圍檢查變成 lat 0。已改為嚴格數字字串比對後才轉數值。
+- M1 全量讀取又抓到來源契約差異：`/branch-client/{id}` 的分店內容位於成功 envelope 的 `data` 內。解析器與 fixture 已修正，並拒絕 HTTP 成功但業務狀態失敗的資料。
 
-**未解問題**
-
-- `BRANCH_CODE_PATTERN` 目前只由分店 28（`M17`）佐證。Phase A 沒有逐店收集 26 個代碼；**在 Phase C 首次全量抓取後必須複查**，若有合法代碼被此樣式擋掉即放寬。
+**未解問題：無。** 26／26 店代碼已收齊為 `H01`、`B01`、`M01`–`M24`，目前樣式全數通過；Phase C 仍會在每輪抓取比對來源 ID 與代碼。
 
 ---
 
 ## M1 · Phase B — 分店建檔
 
-**狀態：未開始**
+**狀態：完成（2026-09-09）**
 
 | 完成條件（計畫 §6、§9） | 狀態 |
 | --- | --- |
-| `DESTINATIONS`、`DESTINATION_OPTION_COLORS`、Notion select 三處一致，通過 exporter schema gate | 未開始 |
-| 新增 `data/superrich-branches.json` 與 `scripts/validate-superrich-mapping.mjs`（計畫 §9.1） | 未開始 |
-| 26 筆依 §9.2 範本建入 Notion，`Verification Status` 先 `Paused` | 未開始 |
-| 目的地依 §10 附錄歸屬，四筆「需確認」已人工定案 | 未開始 |
-| 快照通過 `validate-location-snapshot.mjs` 與 `validate-favorite-compatibility.mjs` | 未開始 |
+| `DESTINATIONS`、`DESTINATION_OPTION_COLORS`、Notion select 三處一致，通過 exporter schema gate | 完成：新增 `chonburi`／`si-racha`；Category 新增 `Currency Exchange`；誤加到 Type 的同名選項已由全量驗證抓出並移除 |
+| 新增 `data/superrich-branches.json` 與 `scripts/validate-superrich-mapping.mjs`（計畫 §9.1） | 完成：26 個來源 ID 與分店代碼唯一，並核對快照、類別、目的地、座標及來源 inventory |
+| 26 筆依 §9.2 範本建入 Notion，`Verification Status` 先 `Paused` | 完成：26／26 頁面已逐筆讀回，20 個屬性及頁面 icon 與草稿一致 |
+| 目的地依 §10 附錄歸屬，四筆「需確認」已人工定案 | 完成：Westgate／Westville／Happitat／機場店依都會區與機場規則歸 `bangkok` |
+| 快照通過 `validate-location-snapshot.mjs` 與 `validate-favorite-compatibility.mjs` | 完成：181 筆、181 個唯一 Slug、135 筆公開；98 個既有收藏 ID 全數保留 |
 
-**開工前要先做的一件事**：在 Notion 新增 `chonburi`、`si-racha` 兩個 Destination select 選項並選定顏色，再把同樣的顏色字串填進 `DESTINATION_OPTION_COLORS`。三處缺一，`npm run locations:export:notion` 會整個失敗，連不相干的地點更新都匯不出來。
+**驗證與查證**
+
+```text
+npm run locations:export:notion -- --output data/locations.csv  # 181 rows；schema 20/20
+node scripts/validate-superrich-mapping.mjs ...                  # 26 branches；0 Published
+node scripts/validate-location-snapshot.mjs data/locations.csv   # 181 valid；135 public
+node scripts/validate-favorite-compatibility.mjs                 # 98 protected IDs preserved
+npm run typecheck                                                # pass
+npm test                                                         # 361 pass / 0 fail
+npm run build                                                    # pass
+```
+
+逐店資料與來源判定見 [SuperRich 分店建檔查證](superrich-branch-verification.zh-TW.md)。本次匯出也保留了 Notion 同時更新的 `baiwago-plus-cafe-kmc` 與 `somtam-nua` 既有內容。
+
+修正誤加的 Type 選項時，Notion 將原有 16 筆 Paused 頁面移入垃圾桶；已用建檔前頁面 ID 與完整屬性快照逐筆比對、還原。最終唯讀全量驗證為 181／181 筆、0 個變更欄位、0 筆增減；該驗證本身未執行 Notion 寫入。
+
+**發布前待辦**
+
+- `superrich-thailand-34`（Happitat）：官網連結目前指向商場，需確認櫃位專屬 Place ID。
+- `superrich-thailand-35`（素萬那普機場）：官網連結目前指向機場快線站，需確認櫃位專屬 Place ID 與現場品牌身分。
+- 全部 26 店仍為 `Paused`、`Review Needed=true`，前台公開數維持 135。
 
 ---
 
 ## M2 · Phase C — 排程、儲存與控制
 
-**狀態：未開始。** 完成條件見計畫 §6 的 C 列與 §5。`EXCHANGE_RATES_ENABLED` 初次上線設 `false`，本里程碑結束時仍為 `false`。
+**狀態：完成（2026-09-09）。** 控制 key 尚未建立且 `EXCHANGE_RATES_ENABLED` 未設定時一律視為 `false`；本里程碑未觸發來源、未寫正式 Blobs，也未部署。
+
+| 完成條件（計畫 §5、§6） | 結果 |
+| --- | --- |
+| 排程與來源預算 | `0,30 * * * *`；來源截止 25 秒、單次 5 秒、最多 2 個同時請求、全域啟動間隔至少 200ms、全輪至多 1 次額外重試 |
+| 快照與 API | 三個獨立 Blob key；固定 API 外層與雙 no-store 標頭；停用、過期、版本不符或啟用前快照均不供應數字 |
+| 儲存隔離與競態 | Production 使用站台 store，Preview／本機使用 deploy store；全部強一致讀取；snapshot／breaker／control 使用 ETag 條件寫入，舊輪次不能復活 |
+| breaker | 403／429 立即優先並取消同輪；6h → 24h → 自動停用；連續 3 輪全失敗退避 1h；部分成功保留層級並清除連續失敗數 |
+| 管理控制 | `npm run fx:control -- status|enable|disable [--reason code]`；每次切換產生新版本，重新啟用保留尚未到期的封鎖期限 |
+
+**主要產出**
+
+- `netlify/functions/exchange-rates-fetch.mjs`、`netlify/functions/exchange-rates.mjs`
+- `netlify/functions/_shared/exchange-rates-{contract,storage,source,runner,breaker,control}.mjs`
+- `scripts/exchange-rates-control.mjs`
+- `tests/exchange-rates-{backend-contract,control-api,source-runner}.test.mjs`
+- `@netlify/blobs`、Node.js 22.12+ 執行條件與 Netlify 打包設定
+
+**驗證**
+
+```text
+node --test tests/exchange-rates-*.test.mjs                 # pass
+npm run typecheck                                           # pass（含 M2 後端與管理指令）
+npm test                                                    # 386 pass / 0 fail
+npm run build                                               # pass
+netlify functions:build --src netlify/functions --functions /private/tmp/...  # 只產生 4 個正式 function；pass
+HERE_API_KEY=test-key DATA_SOURCE=notion bash build.sh      # 181 筆、26 分店對照、98 收藏 ID；pass
+npm run location:verify -- validate --all                   # schema 20/20、181/181、0 issues；唯讀
+npm audit                                                   # 0 vulnerabilities
+```
+
+**未解問題：無。** 26 筆分店仍為 `Paused`，前台沒有 M2 可見變更；正式服務仍停用。
 
 ## M3 · Phase D1a／D1b — 前端
 

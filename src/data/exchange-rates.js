@@ -5,8 +5,8 @@
 // scheduled Netlify Function and the browser bundle.
 //
 // Contract reference: docs/superrich-exchange-map-plan.zh-TW.md §2.2, §4.3.
-// Every value that leaves this module is a number, a boolean, or a value
-// drawn from a fixed enum. Raw source display strings never escape, because
+// Quotes contain numbers, fixed enums and validated branch codes. Branch
+// details additionally contain validated Google Maps URLs. Raw display strings never escape, because
 // src/ui/render.js builds markup with innerHTML and performs no escaping.
 // ═══════════════════════════════════════════════════
 
@@ -73,8 +73,8 @@ export const GOOGLE_MAPS_HOSTS = Object.freeze([
 ]);
 
 /**
- * Provisional until Phase A collects all 26 branch codes (plan §2.2).
- * Verified sample: branch 28 → "M17".
+ * Verified against all 26 branches on 2026-09-09 (plan §2.2).
+ * Branch 10 → H01, branch 11 → B01; mall/airport branches use M codes.
  */
 export const BRANCH_CODE_PATTERN = /^[A-Z]{1,3}\d{1,3}$/;
 
@@ -83,6 +83,11 @@ const RATE_TEXT_PATTERN = /^(\d+)(?:\.(\d+))?$/;
 /** @param {unknown} value @returns {value is Record<string, unknown>} */
 function isPlainObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** @param {unknown} value @returns {value is Record<string, unknown>} */
+function isSuccessfulResponse(value) {
+  return isPlainObject(value) && value.statusCode === 200 && value.code === 'SUCCESS';
 }
 
 /**
@@ -169,7 +174,7 @@ function toCoordinate(value, limit) {
 
 /** @param {unknown} value @returns {number|null} */
 function toOfficialId(value) {
-  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : null;
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : null;
 }
 
 /**
@@ -179,7 +184,7 @@ function toOfficialId(value) {
  * @returns {number[]|null} null when the payload does not match the contract
  */
 export function parseBranchOptions(payload) {
-  if (!isPlainObject(payload) || !Array.isArray(payload.data)) return null;
+  if (!isSuccessfulResponse(payload) || !Array.isArray(payload.data)) return null;
   /** @type {number[]} */
   const ids = [];
   for (const entry of payload.data) {
@@ -193,21 +198,23 @@ export function parseBranchOptions(payload) {
 }
 
 /**
- * `GET /branch-client/{id}`. `address` is a source display string and is
+ * `GET /branch-client/{id}` returns a success envelope with details in `data`.
+ * `address` is a source display string and is
  * intentionally dropped; branch names and addresses come from Notion.
  * @param {unknown} payload
  * @returns {BranchDetail|null}
  */
 export function parseBranchDetail(payload) {
-  if (!isPlainObject(payload)) return null;
-  const officialId = toOfficialId(payload.id);
+  if (!isSuccessfulResponse(payload) || !isPlainObject(payload.data)) return null;
+  const detail = payload.data;
+  const officialId = toOfficialId(detail.id);
   if (officialId === null) return null;
 
-  const lat = toCoordinate(payload.latitude, 90);
-  const lng = toCoordinate(payload.longitude, 180);
+  const lat = toCoordinate(detail.latitude, 90);
+  const lng = toCoordinate(detail.longitude, 180);
   if (lat === null || lng === null) return null;
 
-  return { officialId, lat, lng, googleLink: normalizeGoogleLink(payload.googleLink) };
+  return { officialId, lat, lng, googleLink: normalizeGoogleLink(detail.googleLink) };
 }
 
 /**
@@ -263,7 +270,7 @@ export function branchQuoteFailure(officialId, reason) {
 export function parseBranchExchange(payload, options) {
   const { officialId, expectedBranchCode = null } = options;
 
-  if (!isPlainObject(payload) || !isPlainObject(payload.data)) {
+  if (!isSuccessfulResponse(payload) || !isPlainObject(payload.data)) {
     return failedQuote('invalid', officialId);
   }
   const exchange = payload.data.exchange;
