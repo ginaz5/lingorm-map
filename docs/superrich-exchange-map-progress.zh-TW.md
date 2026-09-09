@@ -3,7 +3,7 @@
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-09-09
 > - 最後更新：2026-09-09
-> - 目前里程碑：M2 完成，下一步為 M3（Phase D1a／D1b）
+> - 目前里程碑：M3 實作完成，待 PR Deploy Preview 驗收；正式站台發布與啟用排在最後
 > - 規格依據：[SuperRich USD／TWD 換匯地圖實作計畫](superrich-exchange-map-plan.zh-TW.md)
 
 本文件只追蹤執行進度、驗證結果與待辦。資料模型、決策語意與階段設計以計畫文件為準；兩份衝突時先改計畫，再同步這裡。
@@ -22,7 +22,7 @@
 | --- | --- | --- | --- |
 | M1 | Phase A（來源契約）+ Phase B（分店建檔，`Paused`） | 無 | **完成** |
 | M2 | Phase C（排程、Blobs、breaker、控制旗標；預設停用） | 無 | **完成** |
-| M3 | Phase D1a／D1b + 分店轉 `Published` + 啟用服務 | **上線** | 未開始 |
+| M3 | Phase D1a／D1b + 分店轉 `Published` + 啟用服務 | **上線** | **待 PR Preview 驗收** |
 | M4 | Phase D2（群聚著色）+ Phase E（手冊） | 群聚樣式 | 未開始 |
 
 M1 與 M2 對使用者零可見變更，可安全停在任一處。M3 中途停會留下半成品 UI，建議 D1a、D1b 各自做完再停。
@@ -96,11 +96,11 @@ npm run build                                                    # pass
 
 修正誤加的 Type 選項時，Notion 將原有 16 筆 Paused 頁面移入垃圾桶；已用建檔前頁面 ID 與完整屬性快照逐筆比對、還原。最終唯讀全量驗證為 181／181 筆、0 個變更欄位、0 筆增減；該驗證本身未執行 Notion 寫入。
 
-**發布前待辦**
+**發布核對已於 M3 完成**
 
-- `superrich-thailand-34`（Happitat）：官網連結目前指向商場，需確認櫃位專屬 Place ID。
-- `superrich-thailand-35`（素萬那普機場）：官網連結目前指向機場快線站，需確認櫃位專屬 Place ID 與現場品牌身分。
-- 全部 26 店仍為 `Paused`、`Review Needed=true`，前台公開數維持 135。
+- `superrich-thailand-34`（Happitat）：官方仍列 Bloominas Building 3 樓；無法確認獨立櫃位 listing，保留官方場館導航連結。
+- `superrich-thailand-35`（素萬那普機場）：已確認綠色 SuperRich Thailand 獨立 listing，更新 Place ID 與導航連結。
+- 全部 26 店已轉為 `Published`、`Review Needed=false`、`Last Verified=2026-09-09`；正式 exporter 讀回 181 筆、161 筆公開。
 
 ---
 
@@ -137,15 +137,36 @@ npm run location:verify -- validate --all                   # schema 20/20、181
 npm audit                                                   # 0 vulnerabilities
 ```
 
-**未解問題：無。** 26 筆分店仍為 `Paused`，前台沒有 M2 可見變更；正式服務仍停用。
+**未解問題：無。** M2 完成時前台沒有可見變更；M3 才發布分店與使用者介面。
 
 ## M3 · Phase D1a／D1b — 前端
 
-**狀態：未開始。**
+**狀態：實作完成（2026-09-09）；待 PR Deploy Preview 驗收。正式發布與服務啟用必須在驗收完成後才執行。**
 
-- D1a：換匯點開關、綠色標記、卡片（三列固定「暫無報價」）、免責元素、篩選規則。不依賴 M2。
-- D1b：接 `/api/exchange-rates`、純函式排程 `nextExchangeAction`、最佳匯率排序。
-- 上線動作：分店轉 `Published` → 重新匯出 CSV → 部署 → `npm run fx:control -- enable`。
+| 完成條件（計畫 §6、§7） | 結果 |
+| --- | --- |
+| D1a 使用者介面 | 完成：持久化換匯開關、26 個綠色標記、固定三列報價、載入／無資料狀態、免責、官方來源與 Maps 營業時間連結 |
+| 篩選語意 | 完成：換匯點略過類別與主題；保留 Published、搜尋、目的地與收藏；選「換匯」只看分店；關閉會清除換匯類別、排序與作用中分店 |
+| D1b 匯率與排序 | 完成：嚴格驗證 `/api/exchange-rates`、60 秒輪詢、截止時間與 10／20／40／60 秒重試、同輪次不延長期限、USD 100／USD 50／TWD 最佳匯率排序與同率標示 |
+| 雙語與窄螢幕 | 完成：中文／英文完整；320px 實測無水平溢位 |
+| 分店發布 | 完成：Notion 26 筆轉 Published，正式 exporter 更新 `data/locations.csv`；Happitat 與機場店發布核對完成 |
+| Deploy Preview | 手動預覽 `6aa147bf2146714c7423a20a` 已通過初驗；下一步由 PR 建立正式 Deploy Preview，供完整功能驗收 |
+| 正式發布與啟用 | 待使用者驗收通過後執行：合併／正式 deploy → 確認 disabled → 建立／更新 production control → 首輪抓取 → API 與前台數字驗證 |
+
+**驗證**
+
+```text
+npm run typecheck                                            # pass
+npm test                                                     # 395 pass / 0 fail
+npm run build                                                # pass
+node scripts/validate-location-snapshot.mjs data/locations.csv # 181 valid；161 public
+node scripts/validate-favorite-compatibility.mjs             # 98 protected IDs preserved
+node scripts/validate-superrich-mapping.mjs ...              # 26 Published
+npm run location:verify -- validate --all                    # schema 20/20；181/181；0 issues
+本機實際來源抓取                                             # 26 branches；27 requests；complete
+```
+
+**剩餘事項：** 建立 PR Deploy Preview 並由使用者完成驗收。Production 維持舊版本與停用狀態；正式 deploy 與啟用服務排在所有功能驗收通過之後。
 
 ## M4 · Phase D2／E — 群聚著色與手冊
 

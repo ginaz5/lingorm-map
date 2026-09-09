@@ -102,3 +102,18 @@ test('markers use one status-independent marker class', () => {
     globalThis.document = previousDocument;
   }
 });
+
+test('exchange markers use the dedicated green marker variant', () => {
+  const previousDocument = globalThis.document;
+  globalThis.document = {
+    createElement: () => ({ className: '', textContent: '' }),
+  };
+
+  try {
+    const marker = makeMarkerContent('💱', true);
+    assert.equal(marker.className, 'marker-dot is-exchange');
+    assert.equal(marker.textContent, '💱');
+  } finally {
+    globalThis.document = previousDocument;
+  }
+});

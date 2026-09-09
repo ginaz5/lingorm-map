@@ -1,6 +1,7 @@
 import { state } from '../core/state.js';
 import { getEffectiveTheme } from '../ui/ui.js';
 import { buildPopupContent, activateCard, isPublicLocation } from '../ui/render.js';
+import { isExchangeLocation } from '../features/exchange-rates.js';
 // MarkerClusterer is loaded lazily to avoid CJS/ESM issues in Node.js test env
 /** @type {typeof import('@googlemaps/markerclusterer').MarkerClusterer|null} */
 let _MarkerClusterer = null;
@@ -145,6 +146,17 @@ export function refreshActivePopup() {
   return false;
 }
 
+export function clearActiveLocation() {
+  state.activeIdx = -1;
+  document.querySelectorAll('.loc-card').forEach(card => card.classList.remove('active'));
+  state.markers.forEach(marker => marker?.__markerContent?.classList.remove('active'));
+  if (state.provider === 'google') state.infoWindow?.close?.();
+  if (state.provider === 'here' && state.infoBubble && state.hereUi) {
+    state.hereUi.removeBubble(state.infoBubble);
+    state.infoBubble = null;
+  }
+}
+
 // ═══════════════════════════════════════════════════
 // PROVIDER BADGE
 // ═══════════════════════════════════════════════════
@@ -264,10 +276,10 @@ export function getHereLanguagePreferences(browserLanguages = []) {
 // ═══════════════════════════════════════════════════
 // MARKERS & CLUSTERING
 // ═══════════════════════════════════════════════════
-/** @param {string} icon @returns {HTMLDivElement} */
-export function makeMarkerContent(icon) {
+/** @param {string} icon @param {boolean} [isExchange] @returns {HTMLDivElement} */
+export function makeMarkerContent(icon, isExchange = false) {
   const el = document.createElement('div');
-  el.className = 'marker-dot';
+  el.className = `marker-dot${isExchange ? ' is-exchange' : ''}`;
   el.textContent = icon || '📍';
   return el;
 }
@@ -318,7 +330,7 @@ function makeHereClusterTheme() {
     },
     getNoisePresentation: (/** @type {any} */ noisePoint) => {
       const data = noisePoint.getData();
-      const el = makeMarkerContent(data?.icon || '📍');
+      const el = makeMarkerContent(data?.icon || '📍', data?.isExchange === true);
       if (data?.index === state.activeIdx) el.classList.add('active');
       const domIcon = new H.map.DomIcon(el);
       const marker = new H.map.DomMarker(noisePoint.getPosition(), {
@@ -363,8 +375,9 @@ export async function buildMarkers(options = {}) {
     state.data.forEach((row, i) => {
       const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
       if (!isPublicLocation(row)) return;
+      if (isExchangeLocation(row) && !state.exchangeLocationsOn) return;
       if (!lat || !lng) return;
-      const el = makeMarkerContent(row.icon);
+      const el = makeMarkerContent(row.icon, isExchangeLocation(row));
       if (state.activeIdx === i) el.classList.add('active');
       // NOTE: do NOT set map here; MarkerClusterer will manage it
       const m = new google.maps.marker.AdvancedMarkerElement({
@@ -400,9 +413,14 @@ export async function buildMarkers(options = {}) {
     state.data.forEach((row, i) => {
       const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
       if (!isPublicLocation(row)) return;
+      if (isExchangeLocation(row) && !state.exchangeLocationsOn) return;
       if (!visibleIndexes.has(i)) return;
       if (!lat || !lng) return;
-      dataPoints.push(new H.clustering.DataPoint(lat, lng, null, { index: i, icon: row.icon }));
+      dataPoints.push(new H.clustering.DataPoint(lat, lng, null, {
+        index: i,
+        icon: row.icon,
+        isExchange: isExchangeLocation(row),
+      }));
     });
 
     const clusterProvider = new H.clustering.Provider(dataPoints, {

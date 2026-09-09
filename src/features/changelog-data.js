@@ -12,7 +12,7 @@
  */
 /** @typedef {{ dateKey: string, publishTime: number, items: ChangelogItem[] }} ChangelogDateGroup */
 
-export const CURRENT_CHANGELOG_RELEASE_ID = '2026-08-09-analytics-collections';
+export const CURRENT_CHANGELOG_RELEASE_ID = '2026-09-09-superrich-exchange';
 
 /**
  * Shared release history for the What's New preview and the full changelog.
@@ -21,6 +21,20 @@ export const CURRENT_CHANGELOG_RELEASE_ID = '2026-08-09-analytics-collections';
  * @type {ChangelogItem[]}
  */
 export const CHANGELOG = [
+  {
+    id: 'feat-014',
+    title: {
+      zh: '新增 SuperRich 換匯地圖',
+      en: 'SuperRich exchange locations are now on the map',
+    },
+    description: {
+      zh: '開啟「顯示換匯點」即可查看 26 間 SuperRich Thailand 分店、USD 100／USD 50／TWD 買入匯率，以及各幣別的最佳匯率排序。',
+      en: 'Turn on Show currency exchange to browse 26 SuperRich Thailand branches, compare USD 100, USD 50, and TWD buying rates, and sort by the best available rate.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-09-09T00:00:00+08:00'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
   {
     id: 'fix-004',
     title: {
@@ -33,7 +47,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '修復', en: 'Fix' },
     publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-08-09-analytics-collections',
   },
   {
     id: 'feat-013',
@@ -47,7 +61,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-08-09-analytics-collections',
   },
   {
     id: 'feat-012',
@@ -61,7 +75,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '內容', en: 'Content' },
     publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-08-09-analytics-collections',
   },
   {
     id: 'feat-010',

@@ -1,6 +1,11 @@
 import { lang, t } from '../core/i18n.js';
 import { state } from '../core/state.js';
 import {
+  EXCHANGE_CATEGORY,
+  getExchangeRateCell,
+  isExchangeLocation,
+} from '../features/exchange-rates.js';
+import {
   LOCATION_TYPES,
   locationTypeLabel,
 } from '../data/location-types.js';
@@ -74,6 +79,7 @@ export function isApproximateCoords(row) {
 // ═══════════════════════════════════════════════════
 /** @param {LocationRow} row @returns {string} */
 export function renderSources(row) {
+  if (isExchangeLocation(row)) return '';
   const src = row.src || '';
   const srcUrl = row.sourceUrl || '';
   if (!src) return '';
@@ -107,6 +113,96 @@ export function renderSources(row) {
     return `<span class="src-tag src-tag-plain">${token}</span>`;
   });
   return `<div class="src-tags">${tags.join('')}</div>`;
+}
+
+const OFFICIAL_EXCHANGE_URL = 'https://www.superrichthailand.com/exchange-rate';
+const EXCHANGE_DENOMS = /** @type {const} */ (['USD_100', 'USD_50', 'TWD']);
+
+/** @param {string} value */
+function escapeAttribute(value) {
+  return String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+/** @param {string|null} iso */
+export function formatExchangeCheckedAt(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${new Intl.DateTimeFormat(lang === 'zh' ? 'zh-TW' : 'en-GB', {
+    timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(date)} (UTC+7)`;
+}
+
+/** @param {'USD_100'|'USD_50'|'TWD'} denom */
+function bestVisibleRate(denom) {
+  let best = null;
+  for (const index of state.visIdx) {
+    const row = state.data[index];
+    if (!isExchangeLocation(row)) continue;
+    const value = getExchangeRateCell(row.id, denom)?.rateScaledE6;
+    if (Number.isSafeInteger(value) && (best === null || value > best)) best = value;
+  }
+  return best;
+}
+
+/** @param {LocationRow} row */
+export function renderExchangeRates(row) {
+  if (!isExchangeLocation(row)) return '';
+  const checked = formatExchangeCheckedAt(state.exchangeCompletedAt);
+  const activeSort = state.exchangeRatesEnabled === true && state.exchangeSort !== 'default'
+    ? state.exchangeSort : null;
+  const best = activeSort ? bestVisibleRate(activeSort) : null;
+  const rows = EXCHANGE_DENOMS.map(denom => {
+    const cell = state.exchangeHasUsableSnapshot ? getExchangeRateCell(row.id, denom) : null;
+    const valid = Number.isSafeInteger(cell?.rateScaledE6) && Number.isInteger(cell?.displayDecimals);
+    const value = valid
+      ? (cell.rateScaledE6 / 1_000_000).toFixed(cell.displayDecimals)
+      : t('fx_unavailable');
+    const currency = denom === 'TWD' ? 'TWD' : 'USD';
+    const isBest = activeSort === denom && valid && best !== null && cell.rateScaledE6 === best;
+    return `<div class="fx-rate-row">
+      <span class="fx-denom">${t(`fx_denom_${denom.toLowerCase()}`)}</span>
+      <span class="fx-value${valid ? '' : ' is-unavailable'}">${valid ? t('fx_rate_value', currency, value) : value}${isBest ? ` <span class="fx-best">${t('fx_best')}</span>` : ''}</span>
+    </div>`;
+  }).join('');
+  const loading = state.exchangeRatesLoading && !state.exchangeHasUsableSnapshot
+    ? `<div class="fx-loading">${t('fx_loading')}</div>` : '';
+  const mapsUrl = escapeAttribute(row.maps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${row.nameEn} ${row.notesEn}`)}`);
+  return `<section class="fx-panel" aria-label="${t('fx_panel_label')}">
+    ${loading}
+    <div class="fx-rates${loading ? ' is-loading' : ''}">${rows}</div>
+    ${checked && state.exchangeHasUsableSnapshot ? `<div class="fx-checked">${t('fx_checked', checked)}</div>` : ''}
+    <p class="fx-disclaimer">${t('fx_disclaimer')}</p>
+    <div class="fx-links">
+      <a href="${OFFICIAL_EXCHANGE_URL}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${t('fx_source_note')}</a>
+      <a href="${mapsUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${t('fx_hours_note')}</a>
+    </div>
+    <div class="fx-branch-hint">${t('fx_branch_hint', row.nameEn)}</div>
+  </section>`;
+}
+
+/**
+ * @param {number[]} indexes
+ * @param {'default'|'USD_100'|'USD_50'|'TWD'} sort
+ */
+export function sortVisibleIndexes(indexes, sort) {
+  if (sort === 'default') return [...indexes];
+  return [...indexes].sort((leftIndex, rightIndex) => {
+    const left = state.data[leftIndex];
+    const right = state.data[rightIndex];
+    const leftExchange = isExchangeLocation(left);
+    const rightExchange = isExchangeLocation(right);
+    if (leftExchange !== rightExchange) return leftExchange ? -1 : 1;
+    if (!leftExchange) return leftIndex - rightIndex;
+    const leftRate = getExchangeRateCell(left.id, sort)?.rateScaledE6;
+    const rightRate = getExchangeRateCell(right.id, sort)?.rateScaledE6;
+    const leftValid = Number.isSafeInteger(leftRate);
+    const rightValid = Number.isSafeInteger(rightRate);
+    if (leftValid !== rightValid) return leftValid ? -1 : 1;
+    if (leftValid && rightValid && leftRate !== rightRate) return rightRate - leftRate;
+    return left.id.localeCompare(right.id);
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -150,10 +246,11 @@ export function buildPopupContent(i) {
     <div class="popup-name">${row.icon} ${name}</div>
     ${row.alt ? `<div class="popup-alt">${row.alt}</div>` : ''}
     <div class="badges popup-badges">
-      <span class="badge b-cat">${cat}</span>
+      <span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-cat'}">${cat}</span>
       ${type ? `<span class="badge b-type">${type}</span>` : ''}
     </div>
     <div class="popup-notes">${notes}</div>
+    ${renderExchangeRates(row)}
     ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
     <div class="popup-footer">
       ${renderSources(row)}
@@ -191,10 +288,11 @@ export function renderList() {
         </div>
       </div>
       <div class="badges">
-        <span class="badge b-cat">${cat}</span>
+        <span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-cat'}">${cat}</span>
         ${type ? `<span class="badge b-type">${type}</span>` : ''}
       </div>
       <div class="card-notes">${notes}</div>
+      ${renderExchangeRates(row)}
       ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
       ${renderSources(row)}
       <div class="card-footer">
@@ -280,6 +378,11 @@ export function matchesLocationFilters(row, query, category, type) {
     state.selectedDestinations.size === 0 ||
     state.selectedDestinations.has(row.destinationKey);
 
+  const exchangeCategorySelected = category === EXCHANGE_CATEGORY || category === t('category_currency_exchange');
+  if (isExchangeLocation(row)) {
+    return state.exchangeLocationsOn && queryHit && destinationHit;
+  }
+  if (exchangeCategorySelected) return false;
   return queryHit && categoryHit && typeHit && destinationHit;
 }
 
@@ -291,8 +394,13 @@ export function applyFilters() {
   state.data.forEach((row, i) => {
     if (matchesLocationFilters(row, query, category, type)) state.visIdx.push(i);
   });
+  if (state.exchangeRatesEnabled === true && state.exchangeSort !== 'default') {
+    state.visIdx = sortVisibleIndexes(state.visIdx, state.exchangeSort);
+  }
   renderList();
-  const publicTotal = state.data.filter(isPublicLocation).length;
+  const publicTotal = state.data.filter(row =>
+    isPublicLocation(row) && (state.exchangeLocationsOn || !isExchangeLocation(row))
+  ).length;
   requiredElement('result-info').textContent = state.isLoading ? '' : t('count', state.visIdx.length, publicTotal);
   const updatedEl = document.getElementById('last-updated');
   if (updatedEl) {
@@ -328,7 +436,7 @@ export function buildCatFilter() {
   /** @type {Map<string, number>} */
   const categoryCounts = new Map();
   state.data
-    .filter(isPublicLocation)
+    .filter(row => isPublicLocation(row) && (state.exchangeLocationsOn || !isExchangeLocation(row)))
     .forEach(row => {
       const category = lang === 'zh' ? row.catZh : row.catEn;
       categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);

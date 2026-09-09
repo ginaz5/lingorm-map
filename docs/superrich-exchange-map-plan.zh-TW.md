@@ -1,6 +1,6 @@
 # SuperRich USD／TWD 換匯地圖實作計畫
 
-建立日期：2026-09-08；更新日期：2026-09-09。狀態：M1 來源契約與 26 店 Paused 建檔完成；排程、匯率服務與前端尚未實作。進度與驗證見 [進度紀錄](superrich-exchange-map-progress.zh-TW.md)。
+建立日期：2026-09-08；更新日期：2026-09-09。狀態：M1、M2 與 M3 程式實作完成，待 PR Deploy Preview 驗收；正式發布與匯率服務啟用排在驗收之後。進度與驗證見 [進度紀錄](superrich-exchange-map-progress.zh-TW.md)。
 
 版本：第十版（2026-09-09）。完整變更歷程見 [修訂摘要](superrich-exchange-map-plan-revisions.zh-TW.md)。
 
@@ -458,7 +458,7 @@ npm run location:verify -- validate --all
 
 ## 8. 本次交付界線
 
-使用者已核准並完成 M1、M2：來源契約、26 店正式 Notion Paused 建檔、快照與對照驗證，以及停用狀態下的排程、Blobs、breaker、控制旗標與唯讀 API 均已完成。兩店的櫃位連結待發布前確認，全部分店保持 Review Needed。尚未供應匯率或部署；後續 M3–M4 與實際驗證結果見 [進度紀錄](superrich-exchange-map-progress.zh-TW.md)。
+使用者已核准並完成 M1、M2 與 M3 程式實作：來源契約、26 店建檔與發布、快照與對照驗證、停用狀態下的排程、Blobs、breaker、控制旗標、唯讀 API，以及前端換匯點與匯率比較介面均已完成。正式站台仍維持既有版本，匯率服務尚未在 production 啟用；PR Deploy Preview 驗收、正式發布、服務啟用及 M4 的實際進度見 [進度紀錄](superrich-exchange-map-progress.zh-TW.md)。
 
 ## 9. 建檔與識別決定
 

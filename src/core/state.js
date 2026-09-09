@@ -28,6 +28,20 @@
  * @property {boolean} favFilterOn
  * @property {Set<string>} selectedDestinations
  * @property {boolean} pendingDestinationFit
+ * @property {boolean} exchangeLocationsOn
+ * @property {'default'|'USD_100'|'USD_50'|'TWD'} exchangeSort
+ * @property {boolean|null} exchangeRatesEnabled
+ * @property {string|null} exchangeControlVersion
+ * @property {string|null} exchangeRunId
+ * @property {Record<string, any>} exchangeRatesBySlug
+ * @property {string|null} exchangeCompletedAt
+ * @property {number|null} exchangeNextUpdateAtMs
+ * @property {number|null} exchangeExpiresAtMs
+ * @property {number} exchangeRetryLevel
+ * @property {number|null} exchangeLastAttemptAtMs
+ * @property {boolean} exchangeUpdateCheckPending
+ * @property {boolean} exchangeRatesLoading
+ * @property {boolean} exchangeHasUsableSnapshot
  */
 
 /** @type {AppState} */
@@ -78,4 +92,22 @@ export const state = {
   selectedDestinations: new Set(),
   // Fit the map after it becomes available (used when restoring a saved filter).
   pendingDestinationFit: false,
+
+  // Currency exchange locations are opt-in and persist per browser.
+  exchangeLocationsOn: false,
+  exchangeSort: 'default',
+  // null means the public API has not confirmed the service state yet.
+  exchangeRatesEnabled: null,
+  exchangeControlVersion: null,
+  exchangeRunId: null,
+  exchangeRatesBySlug: {},
+  exchangeCompletedAt: null,
+  // Local monotonic-ish deadlines derived from server checkedAt deltas.
+  exchangeNextUpdateAtMs: null,
+  exchangeExpiresAtMs: null,
+  exchangeRetryLevel: 0,
+  exchangeLastAttemptAtMs: null,
+  exchangeUpdateCheckPending: false,
+  exchangeRatesLoading: false,
+  exchangeHasUsableSnapshot: false,
 };

@@ -1,6 +1,6 @@
 # SuperRich 分店建檔查證（2026-09-09）
 
-本批次依核准計畫建檔，初始全部 Paused。名稱、位置說明與座標取自官方分店清單／詳情；Google Places 僅用於核對身分與 Place ID，未採用其座標。建檔前以 Notion 原有 155 筆去重：名稱、Slug、來源、Google Maps URL、Place ID 均無既有同店。建檔後 26 筆逐頁讀回，20 個屬性與頁面 icon 均符合草稿；正式資料庫共 181 筆。
+本批次依核准計畫建檔，Phase B 初始全部 Paused；M3 發布前已再次核對並轉為 Published。名稱、位置說明與座標取自官方分店清單／詳情；Google Places 僅用於核對身分與 Place ID，未採用其座標。建檔前以 Notion 原有 155 筆去重：名稱、Slug、來源、Google Maps URL、Place ID 均無既有同店。發布後 26 筆經正式 exporter 讀回，快照共 181 筆，其中 161 筆公開。
 
 [開啟 Notion Locations 資料庫](https://app.notion.com/p/ec7c23158ea283fda548813eb677e2bd)
 
@@ -11,19 +11,19 @@
 | Category | Currency Exchange |
 | Type | （空白） |
 | Country Code | TH |
-| Status | Paused |
-| Review Needed | 是 |
-| Last Verified | （空白） |
+| Status | Published |
+| Review Needed | 否 |
+| Last Verified | 2026-09-09 |
 | Thai / Alt Name | （空白） |
 | Source Tags | （空白） |
 | Source URLs | https://www.superrichthailand.com/exchange-rate |
 | Icon | 💱 |
 
-## 發布前需處理
+## M3 發布核對結果
 
-- Happitat（34）：官方連結為商場，櫃位專屬 Place ID 尚未確認。
-- 素萬那普機場（35）：官方連結為機場快線站，櫃位專屬 Place ID 與綠色品牌現場身分尚待確認。
-- 所有分店保持 Review Needed；來源提供的室內座標不等於已完成現場櫃位審核。
+- Happitat（34）：當日官方 API 仍列出 Happitat、Bloominas Building 3 樓；Google Places 未提供可確定為該櫃位的獨立 listing，因此保留官方提供的場館導航連結。
+- 素萬那普機場（35）：確認綠色 SuperRich Thailand 的獨立 Places listing，更新為 Place ID `ChIJrXR-eRNnHTERI6gsOGjAkdk` 與對應導航連結。
+- 26 間分店全部轉為 Published、Review Needed=false、Last Verified=2026-09-09；每頁另追加 M3 發布查證紀錄。下方逐店 Verification Note 保留 Phase B 建檔當時內容，供稽核前後狀態。
 
 ## 目的地判定
 
@@ -455,7 +455,7 @@
 | Notes ZH | Happitat 的 Bloominas 大樓 3 樓。 |
 | Slug | superrich-thailand-34 |
 | Notion 頁面 | [開啟分店資料](https://app.notion.com/p/3d6c23158ea281168cdafd0c0e842760) |
-| Verification Note | 2026-09-09 Phase B 官網查證。官方 ID 34／分店代碼 M23。座標成對取自 SuperRich 官方分店介面的 data.latitude/data.longitude：https://api.superrichthailand.com/api/v1/branch-client/34；未使用 Google 回傳座標。樓層／位置依官方分店清單與 address。目的地依計畫採曼谷都會區 bangkok；場館官網地址為 Bang Kaeo, Bang Phli, Samut Prakan。官網 Google Maps 連結指向 Happitat 商場，尚無法確認 SuperRich 櫃位專屬 Place ID；發布前須核對 Bloominas 3 樓櫃位位置。本階段保持 Paused、Review Needed=true，Last Verified 留空，待發布前完成櫃位審核。 |
+| Verification Note | 2026-09-09 Phase B 官網查證。官方 ID 34／分店代碼 M23。座標成對取自 SuperRich 官方分店介面的 data.latitude/data.longitude；未使用 Google 回傳座標。M3 發布前再次確認官方 API 仍列出 Happitat、Bloominas Building 3 樓。Google Places 無法確認獨立櫃位 listing，保留官方提供的 Happitat 場館導航連結；已轉 Published、Review Needed=false、Last Verified=2026-09-09。 |
 
 ## superrich-thailand-35 · SuperRich 素萬那普機場分店
 
@@ -464,12 +464,12 @@
 | Name | Suvarnabhumi Airport, B floor (Airport Rail Link) |
 | Name ZH | SuperRich 素萬那普機場分店 |
 | Destination Key | bangkok |
-| Google Maps URL | https://www.google.com/maps/place/%E0%B8%AA%E0%B8%B8%E0%B8%A7%E0%B8%A3%E0%B8%A3%E0%B8%93%E0%B8%A0%E0%B8%B9%E0%B8%A1%E0%B8%B4/@13.6946099,100.7514411,20.75z/data=!4m10!1m2!2m1!1zYWlycG9ydCByYWlsIGxpbmsg4Liq4Li44Lin4Lij4Lij4LiT4Lig4Li54Lih4Li0!3m6!1s0x311d6775b5aca503:0xe5b835db20c4176f!8m2!3d13.6947712!4d100.7515303!15sCjBhaXJwb3J0IHJhaWwgbGluayDguKrguLjguKfguKPguKPguJPguKDguLnguKHguLRaMiIwYWlycG9ydCByYWlsIGxpbmsg4Liq4Li44Lin4Lij4Lij4LiT4Lig4Li54Lih4Li0kgENdHJhaW5fc3RhdGlvbpoBJENoZERTVWhOTUc5blMwVkpRMEZuU1VOb05uSXpNM2xSUlJBQuABAPoBBAgAEDo!16s%2Fm%2F0z2q33l?entry=ttu&g_ep=EgoyMDI2MDgyNi4wIKXMDSoASAFQAw%3D%3D |
-| Google Place ID |  |
+| Google Maps URL | https://www.google.com/maps/search/?api=1&query=Superrich%20Thailand%20Suvarnabhumi&query_place_id=ChIJrXR-eRNnHTERI6gsOGjAkdk |
+| Google Place ID | ChIJrXR-eRNnHTERI6gsOGjAkdk |
 | Lat | 13.694802461681016 |
 | Lng | 100.75153125078722 |
 | Notes EN | Suvarnabhumi Airport, B floor (Airport Rail Link) |
 | Notes ZH | 素萬那普機場 B 樓，Airport Rail Link 區域。 |
 | Slug | superrich-thailand-35 |
 | Notion 頁面 | [開啟分店資料](https://app.notion.com/p/3d6c23158ea281e3bed3d79e67a1d831) |
-| Verification Note | 2026-09-09 Phase B 官網查證。官方 ID 35／分店代碼 M24。座標成對取自 SuperRich 官方分店介面的 data.latitude/data.longitude：https://api.superrichthailand.com/api/v1/branch-client/35；未使用 Google 回傳座標。樓層／位置依官方分店清單與 address。目的地依計畫的機場規則歸 bangkok；行政區為 Samut Prakan。官網 Google Maps 連結指向 Airport Rail Link 車站，搜尋結果尚無法排除 SuperRich 1965 同名店；Google Place ID 留空，發布前須確認綠色 SuperRich Thailand 櫃位及精確導航點。本階段保持 Paused、Review Needed=true，Last Verified 留空，待發布前完成櫃位審核。 |
+| Verification Note | 2026-09-09 Phase B 官網查證。官方 ID 35／分店代碼 M24。座標成對取自 SuperRich 官方分店介面的 data.latitude/data.longitude；未使用 Google 回傳座標。M3 發布前確認綠色 SuperRich Thailand 獨立 Places listing，品牌官網為 superrichthailand.com，Place ID 為 ChIJrXR-eRNnHTERI6gsOGjAkdk；已更新導航連結並轉 Published、Review Needed=false、Last Verified=2026-09-09。 |

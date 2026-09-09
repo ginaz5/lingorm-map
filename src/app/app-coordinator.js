@@ -13,6 +13,7 @@ import {
 import { renderDestinationFilter } from '../features/destination-filter.js';
 import { updateWhatsNewLangUI } from '../features/whats-new.js';
 import { trackLanguageChange } from '../services/analytics.js';
+import { syncExchangeControls } from '../features/exchange-rates.js';
 
 /**
  * Apply list filters, synchronize provider markers, and optionally fit the
@@ -31,6 +32,7 @@ export function toggleLang() {
   setLang(nextLang);
   updateLangUI();
   updateWhatsNewLangUI();
+  syncExchangeControls();
   buildCatFilter();
   buildTypeFilter();
   renderDestinationFilter();

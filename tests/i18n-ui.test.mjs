@@ -20,6 +20,7 @@ async function loadUiHelpers(deps) {
     'state',
     'lang',
     'isPublicLocation',
+    'isExchangeLocation',
     `${code}; return { rebuildSelect, updateLangUI, buildCatFilter };`,
   )(
     deps.document,
@@ -27,6 +28,7 @@ async function loadUiHelpers(deps) {
     deps.state,
     deps.lang,
     deps.isPublicLocation ?? ((row) => row.status === 'Published'),
+    deps.isExchangeLocation ?? (() => false),
   );
 }
 
@@ -94,6 +96,22 @@ test('collection filter label is available in both supported languages', () => {
 test('currency exchange category has bilingual labels', () => {
   assert.equal(T.zh.category_currency_exchange, '換匯');
   assert.equal(T.en.category_currency_exchange, 'Currency Exchange');
+});
+
+test('currency exchange controls and required notices are bilingual', () => {
+  const keys = [
+    'fx_toggle', 'fx_filter_note', 'fx_loading', 'fx_unavailable',
+    'fx_sort_default', 'fx_sort_usd_100', 'fx_sort_usd_50', 'fx_sort_twd',
+    'fx_denom_usd_100', 'fx_denom_usd_50', 'fx_denom_twd',
+    'fx_disclaimer', 'fx_source_note', 'fx_hours_note',
+  ];
+  for (const key of keys) {
+    assert.equal(typeof T.zh[key], 'string', `missing zh ${key}`);
+    assert.equal(typeof T.en[key], 'string', `missing en ${key}`);
+    assert.notEqual(T.zh[key], T.en[key], `${key} should be translated`);
+  }
+  assert.equal(T.zh.fx_rate_value('USD', '32.83'), '1 USD = 32.83 THB');
+  assert.equal(T.en.fx_checked('09/09/2026 10:30 (UTC+7)'), 'Last checked: 09/09/2026 10:30 (UTC+7)');
 });
 
 test('unrestricted category and collection filters describe that all options are shown', () => {

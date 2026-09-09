@@ -17,7 +17,9 @@ import {
   loadMapScript,
   updateMapTheme,
   buildMarkers,
+  clearActiveLocation,
   fitMapToVisibleLocations,
+  refreshActivePopup,
 } from './map/map.js';
 import {
   applyFiltersAndSyncMap,
@@ -42,6 +44,11 @@ import {
   renderDestinationFilter,
 } from './features/destination-filter.js';
 import { initCollectionInfo } from './features/collection-info.js';
+import {
+  EXCHANGE_CATEGORY,
+  initExchangeRates,
+  isExchangeLocation,
+} from './features/exchange-rates.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -210,6 +217,23 @@ initDestinationFilter(change => {
   );
 });
 initCollectionInfo();
+initExchangeRates(change => {
+  if (change.exchangeHidden) {
+    const category = /** @type {HTMLSelectElement} */ (document.getElementById('cat-filter'));
+    if (category.value === EXCHANGE_CATEGORY || category.value === t('category_currency_exchange')) {
+      category.value = '';
+    }
+    if (isExchangeLocation(state.data[state.activeIdx])) clearActiveLocation();
+  }
+  buildCatFilter();
+  if (change.locationsChanged && state.map) {
+    applyFilters();
+    void buildMarkers();
+  } else {
+    applyFiltersAndSyncMap();
+  }
+  refreshActivePopup();
+});
 
 // Static event listeners
 document.getElementById('fav-filter-btn').addEventListener('click', event => {
