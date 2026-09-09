@@ -122,17 +122,17 @@ Phase A 基線建立時（2026-07-19）：
 
 相關文件與程式：
 
-- `docs/location-verification-tool-progress.zh-TW.md`
+- `location-verification-tool-progress.zh-TW.md`
 - `docs/location-verification-production-rehearsal-20260719.json`
 - `docs/location-verification-formal-change-approvals.json`
 - `docs/notion-migration-progress.md`
-- ~~`docs/notion-deploy-workflow.md`~~ — 已封存至 `docs/archive/`；改為直接更新 `data/locations.csv` 後部署
-- ~~`scripts/resolve.mjs`~~ / ~~`scripts/resolve-legacy-batch.mjs`~~ — 已刪除；resolve 邏輯併入 `scripts/location-verification-runner.mjs` 的 `resolve` 子命令
-- `scripts/location-verification-runner.mjs`
-- `tests/location-verification-runner.test.mjs`
-- `scripts/export-snapshot.mjs`
-- `scripts/validate-location-snapshot.mjs`
-- `data/locations.csv`
+- ~~`docs/notion-deploy-workflow.md`~~ — 已封存至 ``；改為直接更新 `data/locations.csv` 後部署
+- ~~`scripts/resolve.mjs`~~ / ~~`scripts/resolve-legacy-batch.mjs`~~ — 已刪除；resolve 邏輯併入 `../../scripts/location-verification-runner.mjs` 的 `resolve` 子命令
+- `../../scripts/location-verification-runner.mjs`
+- `../../tests/location-verification-runner.test.mjs`
+- `../../scripts/export-snapshot.mjs`
+- `../../scripts/validate-location-snapshot.mjs`
+- `../../data/locations.csv`
 
 ### 2.1 正式 Locations 的 28→20 欄精簡
 
@@ -922,7 +922,7 @@ Apply worker 不自行猜測；它依人工填寫的兩個欄位保存結果，U
 
 ## 10. Resolver 的搜尋順序
 
-目前 `scripts/resolve.mjs`（歷史檔名；已刪除，邏輯後併入 `scripts/location-verification-runner.mjs` 的 `resolve` 子命令）仍採用 Google Text Search 回傳的第一筆。Phase A 必須先替換這個行為；不能只把第一筆重新命名為「最佳候選」。
+目前 `scripts/resolve.mjs`（歷史檔名；已刪除，邏輯後併入 `../../scripts/location-verification-runner.mjs` 的 `resolve` 子命令）仍採用 Google Text Search 回傳的第一筆。Phase A 必須先替換這個行為；不能只把第一筆重新命名為「最佳候選」。
 
 建議順序：
 
@@ -985,7 +985,7 @@ Apply worker 必須用同一個 `revisionSchemaVersion`、正規化與雜湊規�
 
 ### 10.2 現有 41 筆報告的用途
 
-現有 `migration-output/place-id-resolution.json` 沒有保存候選 Lat/Lng，因此：
+現有 `../../migration-output/place-id-resolution.json` 沒有保存候選 Lat/Lng，因此：
 
 - 它只能作為建立 41 筆 review queue 的種子。
 - 不可把它補成包含候選 Lat/Lng 的舊版 Candidate Payload。
@@ -1120,7 +1120,7 @@ Notion 所有非封存資料
    正常新增允許，核准刪除由 deletion manifest 調整。
 3. Live invariants：執行上述完整 Notion row 規則。
 4. Committed snapshot：以正式 exporter 的同一套 17 欄 serialization，在記憶體
-   產生 live candidate，逐 Slug／逐欄比對 `data/locations.csv`。
+   產生 live candidate，逐 Slug／逐欄比對 `../../data/locations.csv`。
 
 任一 blocking layer 失敗時只輸出問題並回傳非零狀態；warning 不使結果失敗，
 且 validator 不會自動修正、寫出 candidate 檔案或呼叫 Notion mutation。
@@ -1153,7 +1153,7 @@ artifacts 已刪除，不再是現行四層 validator 的 runtime input：
 
 2026-07-19 已以 versioned policy 取代網站 snapshot validator 的固定 98 筆判斷：
 
-- [`data/location-snapshot-policy-v1.json`](../data/location-snapshot-policy-v1.json) 設定 `minimumRowCount = 98`，允許正常新增資料。
+- [`../../data/location-snapshot-policy-v1.json`](../../data/location-snapshot-policy-v1.json) 設定 `minimumRowCount = 98`，允許正常新增資料。
 - 既有 98 個 Slug 由 `legacy-favorite-ids.json` 保護；新增資料不能取代或掩蓋消失的舊 Slug。
 - 刪除／封存必須在 `deletionManifest` 記錄 `slug`、核准時間、核准者與原因；有效最低筆數才會按核准刪除數調整。收藏相容性仍是另一道獨立 gate。
 - Raw status 必須精確屬於三個現行值；所有非空座標都必須在合法範圍。

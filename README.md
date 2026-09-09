@@ -312,7 +312,7 @@ Enable form detection in Netlify Dashboard → **Forms → Enable form detection
 GTM is embedded in `index.html` (`<head>` + noscript `<body>`). The application
 queues first-party interaction events in `dataLayer`; GTM routes them to GA4.
 The event contract, GTM setup, verification checklist, and future measurement
-plan are documented in [Analytics Tracking](docs/analytics-tracking.md).
+plan are documented in [Analytics Tracking](docs/archive/analytics-tracking.md).
 
 ### Browser map key protection
 
