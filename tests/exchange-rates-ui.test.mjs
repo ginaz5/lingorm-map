@@ -5,8 +5,11 @@ import BRANCH_MAPPING from '../data/superrich-branches.json' with { type: 'json'
 import { state } from '../src/core/state.js';
 import {
   applyExchangeRatesPayload,
+  initExchangeRates,
   nextExchangeAction,
   parseExchangeRatesPayload,
+  scheduleExchangeAction,
+  setExchangeLocationsVisible,
 } from '../src/features/exchange-rates.js';
 import {
   matchesLocationFilters,
@@ -73,7 +76,7 @@ test('public exchange payload accepts all 26 mapped branches and rejects missing
   assert.equal(parseExchangeRatesPayload(incomplete), null);
 });
 
-test('scheduler pauses when hidden and expires before the next poll', () => {
+test('scheduler pauses polling but retains expiration when hidden, offline, or fetching', () => {
   const base = {
     enabled: true, controlVersion: 'v1', runId: 'r1',
     nextUpdateAtMs: 80_000, expiresAtMs: 10_500,
@@ -81,8 +84,12 @@ test('scheduler pauses when hidden and expires before the next poll', () => {
     visible: true, online: true, toggleOn: true,
     hasUsableSnapshot: true, updateCheckPending: true,
   };
-  assert.deepEqual(nextExchangeAction(10_000, { ...base, visible: false }), { action: 'idle', delayMs: null });
+  for (const paused of [{ visible: false }, { online: false }, { toggleOn: false }, { requestInFlight: true }]) {
+    assert.deepEqual(nextExchangeAction(10_000, { ...base, ...paused }), { action: 'expire', delayMs: 500 });
+    assert.deepEqual(nextExchangeAction(10_000, { ...base, ...paused, hasUsableSnapshot: false }), { action: 'idle', delayMs: null });
+  }
   assert.deepEqual(nextExchangeAction(10_000, base), { action: 'expire', delayMs: 500 });
+  assert.deepEqual(nextExchangeAction(100_000, base), { action: 'expire', delayMs: 0 });
 });
 
 test('scheduler uses retry delay instead of immediately rechecking a stale run', () => {
@@ -191,4 +198,93 @@ test('exchange panel always contains three rows, disclaimer, source, and Maps li
     if (previousLocalStorage === undefined) delete globalThis.localStorage;
     else globalThis.localStorage = previousLocalStorage;
   }
+});
+
+function browserHarness(t, onChange = () => {}) {
+  t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1_000 });
+  const listeners = {};
+  const browserDocument = { visibilityState: 'visible', getElementById: () => null, addEventListener: (name, fn) => { listeners[name] = fn; } };
+  const browserNavigator = { onLine: true };
+  const globals = {
+    document: browserDocument,
+    navigator: browserNavigator,
+    window: { addEventListener: (name, fn) => { listeners[name] = fn; } },
+    localStorage: { getItem: () => 'true', setItem() {} },
+  };
+  const descriptors = Object.fromEntries(Object.keys(globals).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  for (const [key, value] of Object.entries(globals)) {
+    Object.defineProperty(globalThis, key, { value, writable: true, configurable: true });
+  }
+  t.after(async () => {
+    setExchangeLocationsVisible(false);
+    state.exchangeHasUsableSnapshot = false;
+    scheduleExchangeAction();
+    await new Promise(resolve => setImmediate(resolve));
+    for (const [key, descriptor] of Object.entries(descriptors)) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+  });
+  const payload = apiPayload();
+  payload.checkedAt = '2026-09-09T00:31:25.000Z';
+  applyExchangeRatesPayload(parseExchangeRatesPayload(payload), {
+    requestStartedAtMs: Date.now(), responseReceivedAtMs: Date.now(), waitingForNewRun: false,
+  });
+  state.exchangeSort = 'USD_100';
+  const row = { id: slugs[0], nameEn: 'Fixture branch', notesEn: '', maps: '' };
+  state.data = [row];
+  state.visIdx = [0];
+  initExchangeRates(onChange);
+  return { listeners, browserDocument, browserNavigator, row };
+}
+
+test('going offline expires rendered rates and best badges without another API request', t => {
+  const fetchMock = t.mock.method(globalThis, 'fetch', async () => { throw new Error('unexpected fetch'); });
+  let rendered = '';
+  const { listeners, browserNavigator, row } = browserHarness(t, () => { rendered = renderExchangeRates(state.data[0]); });
+  assert.match(renderExchangeRates(row), /32\.83 THB/);
+  assert.match(renderExchangeRates(row), /fx-best/);
+  browserNavigator.onLine = false;
+  listeners.offline();
+  t.mock.timers.tick(5_000);
+  assert.equal(state.exchangeHasUsableSnapshot, false);
+  assert.equal(state.exchangeSort, 'default');
+  assert.equal((rendered.match(/暫無報價/g) || []).length, 3);
+  assert.doesNotMatch(rendered, /32\.83 THB|fx-best/);
+  assert.equal(fetchMock.mock.callCount(), 0);
+});
+
+test('expiration still runs while an API request is pending', async t => {
+  let finish;
+  const fetchMock = t.mock.method(globalThis, 'fetch', () => new Promise(resolve => { finish = resolve; }));
+  browserHarness(t);
+  state.exchangeLastAttemptAtMs = Date.now() - 60_000;
+  scheduleExchangeAction();
+  t.mock.timers.tick(0);
+  assert.equal(fetchMock.mock.callCount(), 1);
+  t.mock.timers.tick(5_000);
+  assert.equal(state.exchangeHasUsableSnapshot, false);
+  assert.equal(fetchMock.mock.callCount(), 1);
+  const payload = apiPayload({ runId: 'new-run' });
+  finish(Response.json(payload));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(state.exchangeHasUsableSnapshot, true);
+  assert.equal(state.exchangeRunId, 'new-run');
+});
+
+test('returning from a suspended tab clears expired prices before fetching', t => {
+  const observed = [];
+  t.mock.method(globalThis, 'fetch', async () => {
+    observed.push(state.exchangeHasUsableSnapshot);
+    return Response.json({ schemaVersion: 1, checkedAt: new Date().toISOString(), enabled: false, controlVersion: null, snapshot: null });
+  });
+  const { listeners, browserDocument } = browserHarness(t);
+  browserDocument.visibilityState = 'hidden';
+  listeners.visibilitychange();
+  t.mock.timers.setTime(Date.now() + 120_000);
+  browserDocument.visibilityState = 'visible';
+  listeners.visibilitychange();
+  assert.equal(state.exchangeHasUsableSnapshot, false);
+  t.mock.timers.tick(0);
+  assert.deepEqual(observed, [false]);
 });

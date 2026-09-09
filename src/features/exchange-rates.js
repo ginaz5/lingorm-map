@@ -31,6 +31,7 @@ const UNAVAILABLE_REASONS = new Set(['timeout', 'invalid', 'missing', 'http_erro
  * @property {boolean} toggleOn
  * @property {boolean} hasUsableSnapshot
  * @property {boolean} updateCheckPending
+ * @property {boolean} [requestInFlight]
  */
 
 /** @param {unknown} value @returns {value is Record<string, any>} */
@@ -141,7 +142,15 @@ function deterministicJitter(text) {
  * @returns {{action:ExchangeAction, delayMs:number|null}}
  */
 export function nextExchangeAction(now, schedule) {
-  if (!schedule.toggleOn || !schedule.visible || !schedule.online) return { action: 'idle', delayMs: null };
+  const expiresAt = schedule.hasUsableSnapshot ? schedule.expiresAtMs : null;
+  if (expiresAt !== null && expiresAt <= now) return { action: 'expire', delayMs: 0 };
+  // Pausing requests must never pause expiration, including while a slow
+  // request is in flight or the browser is offline/backgrounded.
+  if (!schedule.toggleOn || !schedule.visible || !schedule.online || schedule.requestInFlight) {
+    return expiresAt === null
+      ? { action: 'idle', delayMs: null }
+      : { action: 'expire', delayMs: expiresAt - now };
+  }
 
   const retryIndex = Math.min(Math.max(schedule.retryLevel - 1, 0), EXCHANGE_RETRY_DELAYS_MS.length - 1);
   const retryDelay = schedule.retryLevel > 0 ? EXCHANGE_RETRY_DELAYS_MS[retryIndex] : EXCHANGE_POLL_MS;
@@ -150,8 +159,8 @@ export function nextExchangeAction(now, schedule) {
     fetchAt = Math.min(fetchAt, schedule.nextUpdateAtMs);
   }
 
-  if (schedule.hasUsableSnapshot && schedule.expiresAtMs !== null && schedule.expiresAtMs <= fetchAt) {
-    return { action: 'expire', delayMs: Math.max(0, schedule.expiresAtMs - now) };
+  if (expiresAt !== null && expiresAt <= fetchAt) {
+    return { action: 'expire', delayMs: expiresAt - now };
   }
   return { action: 'fetch', delayMs: Math.max(0, fetchAt - now) };
 }
@@ -187,6 +196,7 @@ function currentScheduleState() {
     toggleOn: state.exchangeLocationsOn,
     hasUsableSnapshot: state.exchangeHasUsableSnapshot,
     updateCheckPending: state.exchangeUpdateCheckPending,
+    requestInFlight: requestController !== null,
   };
 }
 
@@ -306,11 +316,11 @@ async function fetchExchangeRates() {
   const firstAttempt = state.exchangeLastAttemptAtMs === null;
   state.exchangeLastAttemptAtMs = requestStartedAtMs;
   state.exchangeRatesLoading = firstAttempt && state.exchangeRunId === null && state.exchangeRatesEnabled === null;
-  notify();
-
   const sequence = ++requestSequence;
   const controller = new AbortController();
   requestController = controller;
+  notify();
+  scheduleExchangeAction();
   const timeout = setTimeout(() => controller.abort(), EXCHANGE_API_TIMEOUT_MS);
   try {
     const response = await fetch(EXCHANGE_API, { cache: 'no-store', signal: controller.signal });
@@ -337,7 +347,13 @@ async function fetchExchangeRates() {
 
 export function scheduleExchangeAction() {
   cancelTimer();
-  const decision = nextExchangeAction(Date.now(), currentScheduleState());
+  let decision = nextExchangeAction(Date.now(), currentScheduleState());
+  // A suspended tab can resume after both deadlines. Remove old numbers
+  // synchronously before scheduling a request or allowing another repaint.
+  if (decision.action === 'expire' && decision.delayMs === 0) {
+    expireExchangeRates();
+    decision = nextExchangeAction(Date.now(), currentScheduleState());
+  }
   if (decision.action === 'idle' || decision.delayMs === null) return;
   timer = setTimeout(() => {
     const latest = nextExchangeAction(Date.now(), currentScheduleState());
@@ -355,6 +371,7 @@ export function scheduleExchangeAction() {
 }
 
 export function syncExchangeControls() {
+  if (!state.exchangeHasUsableSnapshot) state.exchangeSort = 'default';
   const toggle = /** @type {HTMLInputElement|null} */ (document.getElementById('exchange-toggle'));
   const sort = /** @type {HTMLSelectElement|null} */ (document.getElementById('exchange-sort'));
   if (toggle) toggle.checked = state.exchangeLocationsOn;
@@ -362,7 +379,7 @@ export function syncExchangeControls() {
   sort.hidden = !state.exchangeLocationsOn || state.exchangeRatesEnabled === false;
   sort.value = state.exchangeSort;
   for (const option of sort.options) {
-    if (option.value !== 'default') option.disabled = state.exchangeRatesEnabled !== true;
+    if (option.value !== 'default') option.disabled = state.exchangeRatesEnabled !== true || !state.exchangeHasUsableSnapshot;
   }
 }
 
@@ -375,6 +392,7 @@ export function setExchangeLocationsVisible(visible) {
     cancelRequest();
     state.exchangeSort = 'default';
     notify({ exchangeHidden: true, locationsChanged: true });
+    scheduleExchangeAction();
     return;
   }
   notify({ locationsChanged: true });

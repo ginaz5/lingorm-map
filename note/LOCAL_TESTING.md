@@ -216,6 +216,11 @@ npm run fx:control -- status
 支指令設計上只連正式或已 `netlify link` 的站台儲存；本機驗證的重點是
 `node --test` 全過與 mapping 腳本無誤。
 
+到期行為另以有有效報價的頁面驗證：切成離線、讓 API 請求跨過到期時間，
+以及切到背景後等到過期再切回。三種情況都應撤下數字與「最佳」標示、
+回一般排序；恢復連線且取得新快照後可以再次顯示報價。
+`tests/exchange-rates-ui.test.mjs` 以模擬時鐘涵蓋這些情境。
+
 ### 排程首次啟用（正式環境）
 
 Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；即使

@@ -86,13 +86,13 @@ export async function serveExchangeRates({
   return json(publicBody({ checkedAt, enabled: true, controlVersion: currentVersion, snapshot: usable ? snapshot : null }));
 }
 
-/** @param {Request} request */
-export default async function exchangeRates(request) {
+/** @param {Request} request @param {{deploy?:{context?:string}}} [context] */
+export default async function exchangeRates(request, context) {
   if (request.method !== 'GET') {
     const checkedAt = new Date().toISOString();
     return json(errorBody(checkedAt, 'method_not_allowed'), 405);
   }
-  return serveExchangeRates({ store: createRuntimeStore() });
+  return serveExchangeRates({ store: createRuntimeStore({ context: context?.deploy?.context }) });
 }
 
 export const config = {

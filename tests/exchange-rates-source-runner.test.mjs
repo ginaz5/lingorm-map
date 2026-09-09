@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { createBreaker, EXCHANGE_KEYS, isValidSnapshot } from '../netlify/functions/_shared/exchange-rates-contract.mjs';
 import { loadBranchMapping, runExchangeRateFetch } from '../netlify/functions/_shared/exchange-rates-runner.mjs';
+import { changeControl } from '../netlify/functions/_shared/exchange-rates-control.mjs';
 import { collectSourceQuotes, SOURCE_MIN_START_GAP_MS } from '../netlify/functions/_shared/exchange-rates-source.mjs';
 import {
   FakeBlobStore, enabledControl, jsonResponse, sourceOptions, sourceQuote,
@@ -331,3 +332,44 @@ test('an old blocked run cannot auto-disable a newer control version', async () 
   assert.equal(store.entries.get(EXCHANGE_KEYS.control).data.controlVersion, uuid(7));
   assert.equal(store.entries.get(EXCHANGE_KEYS.control).data.enabled, true);
 });
+
+for (const phase of ['after-disable', 'before-breaker-reset']) {
+  test(`manual enable survives auto-disable cleanup racing ${phase}`, async () => {
+    const clock = fakeClock();
+    const store = new FakeBlobStore();
+    store.seed(EXCHANGE_KEYS.control, enabledControl(uuid(1), clock.now()));
+    store.seed(EXCHANGE_KEYS.breaker, { ...createBreaker(uuid(1)), blockLevel: 2 });
+    let enabled = false;
+    const enable = async () => {
+      enabled = true;
+      await changeControl(store, { enabled: true, nowMs: clock.now(), randomUUIDImpl: () => uuid(7) });
+    };
+    const set = store.setJSON.bind(store);
+    store.setJSON = async (key, data, options) => {
+      if (phase === 'before-breaker-reset' && !enabled && key === EXCHANGE_KEYS.breaker && data.controlVersion === uuid(9)) {
+        await enable();
+      }
+      const result = await set(key, data, options);
+      if (phase === 'after-disable' && !enabled && key === EXCHANGE_KEYS.control && data.updatedBy === 'breaker' && result.modified) {
+        await enable();
+      }
+      return result;
+    };
+    const generated = [uuid(8), uuid(9)];
+    await runExchangeRateFetch({
+      store, mapping: twoBranchMapping(), fetchImpl: routeFetch({ 10: jsonResponse({}, 403) }),
+      nowImpl: clock.now, sleepImpl: clock.sleep, randomUUIDImpl: () => generated.shift(), enabledDefault: 'false',
+    });
+    assert.equal(enabled, true);
+    assert.equal(store.entries.get(EXCHANGE_KEYS.control).data.controlVersion, uuid(7));
+    assert.equal(store.entries.get(EXCHANGE_KEYS.control).data.enabled, true);
+    assert.equal(store.entries.get(EXCHANGE_KEYS.breaker).data.controlVersion, uuid(7));
+
+    const next = await runExchangeRateFetch({
+      store, mapping: twoBranchMapping(), fetchImpl: routeFetch(), nowImpl: clock.now,
+      sleepImpl: clock.sleep, randomUUIDImpl: () => uuid(10), enabledDefault: 'false',
+    });
+    assert.equal(next.status, 'published');
+    assert.equal(next.sourceOutcome, 'complete');
+  });
+}

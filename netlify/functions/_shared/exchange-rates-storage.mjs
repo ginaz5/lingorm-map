@@ -2,10 +2,10 @@ import { getDeployStore, getStore } from '@netlify/blobs';
 
 import { EXCHANGE_STORE_NAME } from './exchange-rates-contract.mjs';
 
-/** Open a site-wide store only for the published production context. */
+/** Open a site-wide store for the function's production deploy context. */
 /** @param {{context?:string, getStoreImpl?:typeof getStore, getDeployStoreImpl?:typeof getDeployStore}} [input] */
 export function createRuntimeStore({
-  context = process.env.CONTEXT,
+  context,
   getStoreImpl = getStore,
   getDeployStoreImpl = getDeployStore,
 } = {}) {

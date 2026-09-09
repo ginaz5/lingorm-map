@@ -309,6 +309,11 @@ API；由獨立的 Netlify 排程 Function（`exchange-rates-fetch.mjs`，每 30
   預設回退；改環境變數之後必須另外觸發一次部署才會被讀到新值。這層只
   用於「這個站台一開始要不要有這個功能」，日常開關一律用控制旗標。
 
+**儲存範圍由 Function 的 `context.deploy.context` 決定。** API 與排程
+都把執行期 context 傳入儲存工廠：`production` 使用與管理指令相同的
+site-wide store；Preview、branch deploy、本機及缺少 context 時使用
+deploy-specific store。不要依賴 `process.env.CONTEXT`，它是建置期變數。
+
 **Circuit breaker 不是「重新啟用就重抓」。** 403／429 會立即封鎖
 6h→24h→自動停用；`npm run fx:control -- enable` 只清除連續失敗計數，
 **保留尚未到期的 `blockedUntil`**——這樣管理者才不會在來源還在限流時，
@@ -320,3 +325,8 @@ null`，前端顯示「暫無報價」而不是隱藏整張卡片。
 片、綠色標記、Google Maps／導航連結、收藏都不受影響；只有三列報價本
 身在 `enabled:false` 或快照過期時顯示「暫無報價」並回到一般排序。沒有
 額外的錯誤畫面或彈窗。
+
+報價到期不受輪詢暫停影響：離線、背景頁面、關閉換匯開關，以及 API
+請求尚未完成時，仍保留到期計時；頁面恢復執行時先撤下過期數字，再
+安排查詢。自動停用後的 breaker 清理沿用該輪寫入的 ETag，遇到較新的
+手動控制變更就放棄清理，避免覆蓋重新啟用後的版本。

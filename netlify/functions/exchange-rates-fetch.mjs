@@ -1,11 +1,12 @@
 import { loadBranchMapping, runExchangeRateFetch } from './_shared/exchange-rates-runner.mjs';
 import { createRuntimeStore } from './_shared/exchange-rates-storage.mjs';
 
-export default async function exchangeRatesFetch() {
+/** @param {Request} request @param {{deploy?:{context?:string}}} [context] */
+export default async function exchangeRatesFetch(request, context) {
   const functionStartedAtMs = Date.now();
   try {
     const result = await runExchangeRateFetch({
-      store: createRuntimeStore(),
+      store: createRuntimeStore({ context: context?.deploy?.context }),
       mapping: await loadBranchMapping(),
       functionStartedAtMs,
     });

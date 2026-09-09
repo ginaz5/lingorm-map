@@ -57,8 +57,9 @@ async function autoDisable(store, controlEntry, control, breakerEntry, nowMs, ra
   const blockedUntil = breakerEntry?.data?.blockedUntil && Date.parse(breakerEntry.data.blockedUntil) > nowMs
     ? breakerEntry.data.blockedUntil
     : null;
-  const currentBreaker = await readEntry(store, EXCHANGE_KEYS.breaker);
-  await resetBreakerForControl(store, disabled.controlVersion, currentBreaker, blockedUntil);
+  // Keep the ETag of this run's breaker write. Re-reading here could adopt
+  // a newer manual enable's ETag and overwrite its breaker with our version.
+  await resetBreakerForControl(store, disabled.controlVersion, breakerEntry, blockedUntil);
   return true;
 }
 
