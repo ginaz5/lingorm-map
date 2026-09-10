@@ -1,26 +1,37 @@
 // ═══════════════════════════════════════════════════
-// SUPERRICH 1965 — PHASE A0 STEP 2 (Netlify Deploy Preview only)
+// SUPERRICH 1965 — PHASE A0 STEP 2 / DIAGNOSTIC (Netlify Deploy Preview only)
 // docs/superrich1965-exchange-map-plan.zh-TW.md §2.1, §6 A0.
 //
-// TEMPORARY — DELETE AFTER A0 IS RECORDED, together with
-// scripts/superrich1965-a0-probe.mjs. This is not production code: no
-// scheduling, no retry, no circuit breaker, no storage (those are Phase C).
+// TEMPORARY — DELETE once A0 is settled, together with
+// scripts/superrich1965-a0-probe.mjs. Not production code: no scheduling,
+// no retry, no circuit breaker, no storage. Do NOT merge to main.
 //
-// It exists because a successful POST from a home network does not predict a
-// successful POST from Netlify's datacenter IP range, and the scheduler will
-// run here. Deploy to a Deploy Preview branch and hit:
-//   <deploy-preview-url>/.netlify/functions/superrich1965-a0-probe
-// Do NOT merge this to main.
+//   /.netlify/functions/superrich1965-a0-probe            → 3-request diagnostic matrix
+//   /.netlify/functions/superrich1965-a0-probe?only=rate  → just the original POST
 // ═══════════════════════════════════════════════════
 
-import { probeExchangeRatePost } from '../../scripts/superrich1965-a0-probe.mjs';
+import { probeExchangeRatePost, runDiagnosticMatrix } from '../../scripts/superrich1965-a0-probe.mjs';
 
 export default async function superrich1965A0Probe(request) {
-  const branchNo = new URL(request.url).searchParams.get('branch') ?? undefined;
-  const result = await probeExchangeRatePost(branchNo ? { branchNo } : {});
-  console.log(JSON.stringify({ event: 'superrich1965_a0_probe', ...result }));
-  return new Response(JSON.stringify({ environment: 'netlify', ...result }, null, 2), {
-    status: result.ok ? 200 : 502,
+  const params = new URL(request.url).searchParams;
+
+  if (params.get('only') === 'rate') {
+    const result = await probeExchangeRatePost(
+      params.get('branch') ? { branchNo: params.get('branch') } : {}
+    );
+    console.log(JSON.stringify({ event: 'superrich1965_a0_probe', ...result }));
+    return json({ environment: 'netlify', mode: 'rate-only', ...result }, result.ok ? 200 : 502);
+  }
+
+  const matrix = await runDiagnosticMatrix();
+  console.log(JSON.stringify({ event: 'superrich1965_a0_matrix', verdict: matrix.verdict, summary: matrix.summary }));
+  return json({ environment: 'netlify', mode: 'diagnostic-matrix', ...matrix }, 200);
+}
+
+/** @param {unknown} payload @param {number} status */
+function json(payload, status) {
+  return new Response(JSON.stringify(payload, null, 2), {
+    status,
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
 }

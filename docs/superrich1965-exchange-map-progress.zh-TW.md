@@ -3,7 +3,7 @@
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-09-09
 > - 最後更新：2026-09-10
-> - 目前里程碑：M1 進行中——Phase A1 解析層完成，**卡在 Phase A0 的兩步 POST 驗證（需使用者執行）**
+> - 目前里程碑：**M1 停住——Phase A0 未通過**（Netlify 環境的 POST 被 Cloudflare Managed Challenge 擋下，403）。A1 解析層已完成但暫時無用武之地；後續方向待決定
 > - 規格依據：[SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫](superrich1965-exchange-map-plan.zh-TW.md)
 > - 審閱歷程：[審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)
 
@@ -35,9 +35,35 @@ M1–M3 對使用者零可見變更，可安全停在任一處。M4 中途停會
 
 **完成條件**（計畫 §2.1、§6 A0）：在 **Netlify Deploy Preview 的 Function 環境**對 `POST /spr/front/exchange-rate/get` 拿到真實 200／SUCCESS 回應、且能解析出可用的 USD／TWD 數字，並存下 request／response 紀錄。本機終端機成功只是前置檢查，不能取代這一步。
 
-**狀態：未執行——需使用者操作，Claude 執行不了（審閱意見 19）。**
+**狀態：❌ 未通過（2026-09-10，Step 2 於 Deploy Preview #7 實測）。**
 
-已實測確認 cloud container 與裝置端 sandboxed shell 對 `superrich1965.com` 的 GET／POST 都是 connection failure，且 `AGENTS.md` 規定不主動 deploy。
+Claude 執行不了這兩步（審閱意見 19）——cloud container 與裝置端 sandboxed shell 對 `superrich1965.com` 的 GET／POST 都是 connection failure，且 `AGENTS.md` 規定不主動 deploy——故由使用者執行、Claude 判讀。
+
+### Step 2 實測結果（`deploy-preview-7--lingorm-map.netlify.app`）
+
+```json
+{ "ok": false, "httpStatus": 403, "contentType": "text/html; charset=UTF-8",
+  "elapsedMs": 174, "looksLikeChallenge": true, "retryAfter": null,
+  "cfRay": "a38a2c0a0bc189da-CMH",
+  "bodySnippet": "<!DOCTYPE html>...<title>Just a moment...</title>..." }
+```
+
+**判讀：Cloudflare Managed Challenge，不是流量限制。**
+
+| 證據 | 意義 |
+| --- | --- |
+| `403` + `text/html` + `Just a moment...` | Cloudflare 互動式挑戰頁，需執行 JS 並回送 challenge token 才放行 |
+| `elapsedMs: 174` | 秒拒，不是排隊、不是逾時 |
+| `retryAfter: null` | 沒有「稍後再試」語意——退避、重試、circuit breaker 都救不了 |
+| `cfRay: ...-CMH` | 請求由美國資料中心出去（Netlify Functions 的執行環境），不是使用者所在地 |
+
+**這不是架構問題**：綠標的 `api.superrichthailand.com` 用同一套 Netlify Functions 排程在 production 跑得好好的。差別在 1965 這個端點前面有 Cloudflare bot management，綠標沒有。
+
+**probe 的判斷正確**：`looksLikeChallenge` 把驗證頁跟真實 API 回應分開了，沒有把 403 HTML 誤判成單純的 API 錯誤，也沒有把它當成可重試的暫時性失敗。
+
+**待補：Step 1（本機終端機）的結果尚未記錄**——這決定成因是「IP 信譽」還是「端點規則」，見未解問題 1。
+
+**依計畫 §6 A0 的規定停住**：沒過就要重新評估整個排程可行性，不進 A1 剩餘工作。
 
 **已交付的兩支 probe（暫時性，A0 記錄完即刪；Netlify 那支不可 merge 到 `main`）：**
 
@@ -48,7 +74,13 @@ M1–M3 對使用者零可見變更，可安全停在任一處。M4 中途停會
 
 probe 的 `ok` 判定不只看 HTTP 200：要 response 能被解析層解出可用的 USD／TWD 數字才算過，並會嗅出 Cloudflare interstitial（HTML content-type／`Just a moment`／`challenge-platform`），避免把驗證頁誤判成成功。已用 stub fetch 離線驗過 happy path 與 challenge path 兩條分支。
 
-**未解問題：** POST 在 Netlify 的資料中心 IP 段會不會被 Cloudflare 擋，仍是整個功能的最大單點風險。沒過就要重新評估排程可行性，不進 A1 剩餘工作。
+**未解問題：**
+
+1. **Step 1（本機、住宅 IP）到底過了沒？** 最關鍵的缺口。本機過而 Netlify 沒過 → 成因是資料中心 IP 信譽；兩邊都沒過 → 成因是端點規則或請求特徵，跟 IP 無關。兩者的後續完全不同。
+2. **同一支 Netlify function 打 GET `/spr/front/branches` 會不會過？** 先前從別的環境打 GET 是乾淨回 JSON 的。GET 在 Netlify 過、POST 不過 → 是這個端點的規則；GET 也 403 → 是整個網域對資料中心 IP 的政策。加十行 probe、重推一次 preview 就能分辨。
+3. probe 用的是可辨識的自訂 `User-Agent`（計畫 §2.1 的自我要求），這是我們自己引入的變數，可能被 bot management 扣分。
+
+**不採取的路線：** 繞過 Cloudflare 挑戰——偽裝瀏覽器 `User-Agent`、用 headless browser 解 challenge、走住宅代理。網站在這個端點掛上 Managed Challenge，是營運方對「不歡迎自動存取」的明確表態，比 robots.txt 更具體；繞過它等同規避存取控制，不在本專案的做法範圍內。這條界線也適用於未來任何「換個方式再試試看」的提案。
 
 ---
 
