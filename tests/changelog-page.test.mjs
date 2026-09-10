@@ -33,7 +33,7 @@ test('changelog data is newest-first and has bilingual copy', () => {
   );
 });
 
-test('changelog entries with the same GMT+8 date share one group', () => {
+test('changelog entries with the same UTC date share one group', () => {
   const groups = groupChangelogByDate(CHANGELOG);
 
   assert.equal(groups[0].dateKey, '2026-09-09');
@@ -45,8 +45,8 @@ test('changelog entries with the same GMT+8 date share one group', () => {
   assert.equal(groups.length < CHANGELOG.length, true);
 });
 
-test('changelog dates render in the selected language and GMT+8 calendar day', () => {
-  const publishTime = Date.parse('2026-07-21T00:00:00+08:00');
+test('changelog dates render in the selected language and UTC calendar day', () => {
+  const publishTime = Date.parse('2026-07-21T00:00:00Z');
   assert.equal(formatChangelogDate(publishTime, 'zh'), '2026年7月21日');
   assert.equal(formatChangelogDate(publishTime, 'en'), 'July 21, 2026');
 });

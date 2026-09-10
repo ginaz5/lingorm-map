@@ -121,7 +121,7 @@ test('currency exchange controls and required notices are bilingual', () => {
   }
 
   assert.equal(T.zh.fx_rate_value('USD', '32.83'), '1 USD = 32.83 THB');
-  assert.equal(T.en.fx_checked('09/09/2026 10:30 (UTC+7)'), 'Last checked: 09/09/2026 10:30 (UTC+7)');
+  assert.equal(T.en.fx_checked('09/09/2026 10:30 (UTC)'), 'Last checked: 09/09/2026 10:30 (UTC)');
 });
 
 test('unrestricted category and collection filters describe that all options are shown', () => {

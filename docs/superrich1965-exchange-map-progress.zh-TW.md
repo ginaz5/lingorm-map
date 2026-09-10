@@ -93,10 +93,27 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 - `parseRateText1965()` 是綠標 `parseRateText()` 的**刻意複製**（計畫 §1 的「平行複製一份」），不是 import。代價是 BigInt 進位邏輯有兩份、可能長歪，因此補了 cross-module 等價測試逐一比對兩個 parser 在同一組輸入向量下的輸出，發散就紅燈。
 - 兩個端點的 envelope 不一致（`exchange-rate/get` 回 `code:"SUCCESS"`、`branch-list` 回 `code:"200"`），寫成兩個獨立檢查，不共用「兩種都收」的 helper——共用會讓 `exchange-rate/get` 也放行 `"200"`。
 
+**分組核對工具已交付（2026-09-10），待使用者執行：**
+
+`scripts/superrich1965-branch-reconcile.mjs`——抓 `branch-groups` + `branches` + `exchange-rate/branch-list` 三個來源，用名稱交叉配對，輸出兩份**草稿**：
+
+| 產出 | 性質 |
+| --- | --- |
+| `docs/superrich1965-branch-verification.zh-TW.md` | 審查報告，含逐筆配對層級與勾選欄；對應綠標的同名查證文件 |
+| `data/superrich1965-branches.draft.json` | 草稿對照檔，**不是正式檔**；核對後刪掉 `_review`／`_draft` 才另存為 `superrich1965-branches.json` |
+
+這支工具目前是本機 CLI。A0 #3 只記錄了 Netlify GET 的失敗，本機 GET 是否成功仍待實測。工具內建 2s／5s 的挑戰重試屬目前實作，A0 未驗證其成效，不能直接當成 Phase C 的排程策略。
+
+配對分五級：`exact`（正規化後相同）、`contained`、`token-subset`、`fuzzy`、`ambiguous`／`none`。**只有 `exact` 可以略過細看**，其餘全部進「需人工確認」表——符合計畫 §2.3 要求的逐筆核對，工具只提候選、不做決定。
+
+**額外補上的防線：反向碰撞偵測。** 草稿對照檔以 `superrich1965-{officialId}` 為 key，若兩筆 `branch_no` 配到同一間分店會互相覆蓋，把某個 `branch_no` 掛到別間店名下——**而橘標的匯率回應不帶分店識別碼，事後完全查不出來**（計畫 §2 的 identity guard 缺口）。碰撞的項目會從草稿檔剔除、在報告最上方獨立列出、CLI 以 exit code 1 收場。
+
+驗證：`tests/superrich1965-branch-reconcile.test.mjs` 16 個測試，用的是計畫 §2.3 記錄的真實名稱差異（`Central World`↔`CentralWorld`、`Big C Ratchadapisek`↔`Big C Place Ratchadapisek`、兩間 Emsphere 不可互換、`Ratchadamri 1`／`2` 不可互換），加碰撞偵測的正反案例。
+
 **未解問題：**
 
-1. 39 筆要用 `/spr/front/branches` 的 `groups[]` 核對，才知道實際 Our Branch 收錄數（39 是上限，可能更少）。
-2. `code:"E52-01"`（Terminal 21 Pattaya，`company_code:"E52"`）算不算 Our Branch，隨 1 一起定案。
+1. 39 筆的實際 Our Branch 收錄數（39 是上限，可能更少）——執行上述工具後定案。
+2. `code:"E52-01"`（Terminal 21 Pattaya，`company_code:"E52"`）算不算 Our Branch，隨 1 一起定案。芭達雅不在曼谷都會區，另需確認目的地歸屬。
 3. **橘標補不上綠標那道 identity guard**：綠標每列都有 `branchCode` 可交叉核對，橘標的回應完全沒有分店識別碼，`branchNo` 只是從 caller 回填。唯一防線是 `data/superrich1965-branches.json` 正確——這放大了審閱意見 16，M2 的橘標 validator 不是可選項。
 4. `data.update_time` 語意未驗證，已解析進 `sourceUpdatedAtMs` 但標註 UI 不得當作「官網報價時間」顯示（低優先，不卡任何 Phase）。
 

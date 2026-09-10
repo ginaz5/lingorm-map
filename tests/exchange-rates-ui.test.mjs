@@ -175,7 +175,7 @@ test('exchange panel always contains three rows, disclaimer, source, and Maps li
   assert.match(html, /匯率僅供參考/);
   assert.match(html, /superrichthailand\.com\/exchange-rate/);
   assert.match(html, /https:\/\/maps\.google\.com\/example/);
-  assert.match(html, /UTC\+7/);
+  assert.match(html, /\(UTC\)/);
 
   state.exchangeHasUsableSnapshot = false;
   const unavailable = renderExchangeRates(row);
