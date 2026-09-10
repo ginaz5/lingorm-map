@@ -1,6 +1,6 @@
 # SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫
 
-建立日期：2026-09-09；更新日期：2026-09-09。狀態：**M1 進行中——Phase A1 解析層完成，卡在 Phase A0 的兩步 POST 驗證（需使用者執行）**。Notion 資料、Netlify 設定與前端程式碼皆未動。進度與驗證見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)。
+建立日期：2026-09-09；更新日期：2026-09-10。狀態：**A0 已通過最小 POST 可行性驗證並完成本機收尾；M1 尚待 A1 分店分組核對**。Phase A1 解析層已完成，正式分店資料、排程與前端功能仍待後續階段。進度與驗證見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)。
 
 已完成四輪審閱（共 19 點，全部採納）。本文只保留現行決定，完整審閱歷程見 [審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)——本文出現的「審閱意見 N」「意見 N」都是指該檔的編號。
 
@@ -77,31 +77,21 @@
   `company_code` 目前看到固定是 `"A04"`（推測是這套後台系統裡代表「SuperRich 1965」這家公司的代碼——`/spr/*` 這個後台架構本身可能是多租戶／被多家換匯業者共用的系統，`A04` 就是 1965 在裡面的租戶代碼，這只是觀察，不影響本功能）。`branch_no` 是字串數字（`"51"`、`"52"`），**跟 `/spr/front/branches` 回應裡的 `id`（56、57…）或 `sorting`（0、1…）都對不起來，是完全獨立的第三套編號**——已經直接查證過 `/spr/front/branches`（含逐店的完整 JSON）跟 `/spr/front/branches/56`（單店 detail）都**沒有**任何欄位叫 `branch_no`／`code`／`company_code`，這套編號在分店清單 API 裡完全找不到對照。
   - **`exchange-rate/get` 的回應本身不回傳分店識別碼**——`data.datas[]` 只有幣別／面額資料，沒有像綠色的 `branchCode` 那樣可以核對「這筆報價是不是真的屬於我要的那間分店」。這個風險由 §2.3 的對照表解決：抓取前用對照表查出 `branch_no`，抓取後沒有二次核對手段，所以對照表本身必須正確且穩定（不能每輪重新猜）。
 
-### 2.1 Cloudflare 可行性 spike（本次任務重點）——結論：低風險，但未 100% 排除
+### 2.1 A0：最小 POST 可行性驗證與收尾
 
-瀏覽器分頁載入官方頁面時，先看到一個 `POST /cdn-cgi/challenge-platform/h/g/jsd/oneshot/...` 請求，才接著看到 `/spr/front/*` 陸續回 200。這代表 Cloudflare 的 bot-management 腳本在跑，需要確認：一個**沒有瀏覽器、不執行 JS**的伺服端排程（未來的 Netlify Function）直接打這些端點，會不會被擋。
+A0 的驗收範圍是確認 `POST /spr/front/exchange-rate/get` 能在本機與 Netlify Deploy Preview 執行，回傳 `200 / SUCCESS`，且解析出可用的 USD／TWD。兩個環境都需有實測紀錄；排程長期穩定性另在 Phase C 驗證。
 
-驗證方式：用 `WebFetch`（純伺服端 HTTP GET，不執行 JS、不帶瀏覽器 cookie／fingerprint）直接呼叫：
+2026-09-10 使用者已提供兩步成功結果，符合此門檻。較早的 Netlify 單一 POST 曾收到 403 HTML；後來的 Netlify 診斷矩陣中，GET `/branches` 收到挑戰頁，兩個 POST 則成功。逐筆結果見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)，請求設定與使用者貼出的 probe JSON 保存於 [A0 實測紀錄](evidence/superrich1965-a0-2026-09-10.json)。紀錄中的 `bodySnippet` 是截斷內容，沒有完整上游 response body。
 
-| 端點 | 方法 | 結果 |
-| --- | --- | --- |
-| `/spr/front/branches?page=1&limit=5` | GET | 乾淨回傳 JSON 分店資料，無 Cloudflare 驗證頁 |
-| `/spr/front/system-setting` | GET | 乾淨回傳 JSON 公司資料，無 Cloudflare 驗證頁 |
-| `/spr/front/branch-groups?page=1&limit=100` | GET | 乾淨回傳 JSON，無 Cloudflare 驗證頁 |
-| `/spr/front/exchange-rate/get`（改用 GET，非其正式方法） | GET | 回一般 `404 client error`（JSON 層級的方法不符），**不是** Cloudflare 阻擋頁／驗證頁 |
+這些結果的判讀範圍如下：
 
-**結論：** 沒有證據顯示 Cloudflare 會擋 server-side（無瀏覽器）請求打這批 `/spr/front/*` API；瀏覽器上看到的 challenge-platform 請求較可能是標準的背景風險評分／打點，不是強制擋 API 呼叫的關卡。**殘留風險**：無法排除 `exchange-rate/get` 這個具體端點在真正的 POST 請求下有更嚴格規則（GET 打它只驗證到「方法不符」，沒有驗證到「POST 通不通過」）。
+- Netlify 已能取得真實匯率；同一匯率端點曾失敗也曾成功。具體攔截規則、出口 IP 與重現條件仍未確認。
+- 新舊 probe 的匯率 URL、method、body 與明訂 headers 相同，但新矩陣在匯率請求之前多了兩次請求與間隔。不能把成功歸因於改版，也不能據此認定請求順序是原因。
+- GET 與兩個 POST 使用不同路徑、不同 body，這次差異不能證明「GET 被禁、POST 一律放行」。本次使用者提供的本機紀錄只有匯率 POST，本機 GET 的可用性仍待 A1 查證。
+- `cf-mitigated: challenge` 可確認 Challenge Page；HTML 摘要本身不能確認挑戰類型。觸發來源可能包括 WAF、Bot Management 或限流，缺少 `Retry-After` 也不能排除限流。參考 [Cloudflare 挑戰辨識](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/challenge-pages/detect-response/) 與 [觸發來源](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/challenge-pages/)。
+- 兩次成功結果的 `update_time` 相同，仍可能是報價、快取或批次回應的時間，沿用 §2／§7.2 的未確認狀態。
 
-**這一點原計畫打算等 Phase C 部署 Netlify Function 後才驗證，審閱意見 4 指出這樣太晚**——如果建完 Notion、寫完排程邏輯後才發現 POST 被擋，等於整段 B、C 的工都可能要重做。**改為 Phase A0 一開始就做一次最小 POST 驗證**（見 §6 Phase A0 的完成條件），確認過再往下走：
-
-- 這個容器與 Claude 這邊能操作的裝置 shell（`device_bash`）對這個網域的 outbound 都被 proxy 擋掉（403），**不能**用來測；但這個限制只針對 Claude 工具走的那層 sandboxed VM，**使用者自己電腦上直接開的 Terminal（不透過 Claude 的裝置工具）沒有這層限制**，應該可以正常連到外網。
-- **審閱意見糾正了原計畫把「本機終端機」跟「Netlify 執行環境」當成等價、任選一種就算完成的做法**：這兩者驗證的是不同的殘留風險。本機終端機用的是使用者自己家用／辦公網路的 IP，Cloudflare bot management 對它的風險評分，跟對 **Netlify Functions 實際跑在的雲端/資料中心 IP range** 完全不是同一件事——本機成功只能證明「這個 API 本身接受這個 request body 格式的 POST」，**不能**證明「排程之後從 Netlify 的 serverless 環境送同一個 POST 也會成功」，而後者才是這個 spike 真正想排除的風險，因為正式排程就是跑在 Netlify Functions 上。
-- **正確驗證方式（兩步都要做，缺一不可）**：
-  1. **本機終端機**先跑一個最小 Node/curl script，對 `POST https://www.superrich1965.com/spr/front/exchange-rate/get` 送 §2.3 已確認的 request body（例如 `branch_no: "00"`），確認拿到 `status_code: 200`／`code: "SUCCESS"` 的真實回應——這一步只是「先確認 API 本身能力沒問題」的快速前置檢查，**單獨這一步不算 A0 完成**。
-  2. **在 Netlify 環境裡重跑同一個 POST**：建一個最小的 Netlify Function 丟上 Deploy Preview，用 `netlify functions:invoke` 或直接呼叫該 preview 的 function URL 觸發，確認同樣拿到 `status_code: 200`／`code: "SUCCESS"`。**這一步才是 A0 真正的完成條件**——Netlify 的執行環境本身有正常外網，但 IP 段跟一般使用者不同，是排程未來實際會用的環境，必須實際用它驗證過才算排除殘留風險，本機成功不能替代。
-- 這兩步各只需要做一次、確認「POST 打得通」即可，不用在這階段就把重試／逾時／breaker 那些正式邏輯寫出來——那些留給 Phase C。
-- **A0 兩步都必須由使用者執行，Claude 做不到（2026-09-09 實測確認）**：cloud container 與裝置端 sandboxed shell 對 `superrich1965.com` 的 GET 與 POST 都是 connection failure，且 `AGENTS.md` 也規定不主動 deploy。Claude 的交付是兩支 script（`scripts/superrich1965-a0-probe.mjs` 本機 CLI、`netlify/functions/superrich1965-a0-probe.mjs` Deploy Preview 用），使用者跑完把 JSON 結果貼回來判讀。**這兩支都是暫時性的，A0 記錄完就刪，且 Netlify 那支不可 merge 到 `main`。**
-- probe 的通過標準不只是 HTTP 200：必須連 response 都能被 §4.3 的解析層解出可用的 USD／TWD 數字才算 `ok`，同時會嗅出 Cloudflare interstitial（HTML content-type／`Just a moment`／`challenge-platform`），避免把驗證頁誤判成成功。
+A0 收尾時移除 `scripts/superrich1965-a0-probe.mjs` 與 `netlify/functions/superrich1965-a0-probe.mjs`。歷史實作可從 Git commit `f7239b6` 查閱，實測紀錄供離線分析使用。移除工作區檔案不會撤下已部署的 Preview；既有 Preview 的處理由後續明確授權的部署或清理處理。此收尾不新增部署。
 
 其他查證：
 
@@ -256,21 +246,28 @@
 - 同理，`syncExchangeControls()` 開頭的 `if (!state.exchangeHasUsableSnapshot) state.exchangeSort = 'default';` 也是綠標專屬條件，橘標排序選項會在綠標沒有快照時被強制重設，一併要改成品牌感知。
 - **驗收條件（新增進 §6 D1 與 §7 測試計畫）**：任一品牌的排程故障、管理者停用，或快照過期，**必須不影響另一品牌**——另一品牌的分店、報價、排序、marker 都必須維持正常顯示。這一條要能被自動測試覆蓋，不是只靠肉眼檢查。
 
-## 5. 抓取排程與失敗處理——沿用治理框架，細節數字待 Phase A 定案
+## 5. 抓取排程與失敗處理
 
-沿用綠色整體設計哲學：兩個獨立 Netlify Function（排程抓取 + 對外唯讀 API）、跨輪次 circuit breaker、執行期 control flag、強一致讀取、`Cache-Control: no-store`。**這節目前只能定調方向，不能像綠色文件一樣寫死頻率／併發／逾時數字**，理由：
+沿用綠標的排程抓取、對外唯讀 API、獨立快照、執行期 control flag、強一致讀取與 `Cache-Control: no-store`。A0 已確認 POST 可行；Phase C 仍需依實際分店數與實測耗時，定案 cron 頻率、併發、逾時、重試上限、快照期限與 breaker 門檻。
 
-1. `exchange-rate/get` 一次請求只回單一分店的全部幣別（§2 已確認回應結構），跟綠色一樣是「一間分店一個請求」。`exchange-rate/branch-list` 目前回傳 39 筆，但**審閱意見指出這 39 筆還不能當作「已排除 Partner Branch 後」的數字**——`branch_group_no` 全部是空字串（§2.3），這份清單本身沒有標示 Our Branch／Partner Branch，分組要等 A1 用 `/spr/front/branches` 的 `groups[]` 交叉核對後才能定案，結果可能等於 39、也可能比 39 少（如果這 39 筆裡混了 Partner Branch）。因此每輪來源請求數目前只能**以 39 當上限估算**，不是原先猜測的「規模不明」，但也還不是已確認排除 Partner Branch 後的定案數字；估算上仍比綠色的 27 間略多，頻率／併發預算需要重新算，不能直接套用綠色的數字，也不能在 A1 完成分組核對前把 39 當成定案。
-2. §2.1 前移的最小 POST 驗證（審閱意見 4）還沒做，在確認 POST 真的能穩定成功之前，重試／退避／breaker 的具體門檻數字寫了也可能是空想。
+`exchange-rate/get` 每次只回單一分店。39 筆是 `branch-list` 的清單筆數；A1 尚未用 `groups[]` 核對 Our Branch，排程請求預算應依核對後的收錄數計算。
 
-Phase A0 完成 POST 驗證、**Phase A1 用 `groups[]` 核對完實際 Our Branch 收錄分店數後**（39 只是上限估算，見上方第 1 點，實際數字可能比 39 少），再依那個確認後的分店數，比照綠色 §5 的框架（cron 頻率、單輪併發上限、逾時／重試預算、403/429 優先退避、control flag 讀取順序等）填入具體數字，不在本次文件先寫死、也不先用 39 這個估算值定案。
+A0 留下的限制與 Phase C 待辦：
+
+- 記錄上游 status、`cf-mitigated`、content-type、`Retry-After` 與 Ray ID，以便區分挑戰頁、逾時、HTTP 錯誤和契約不符。診斷分類如何映射到公開的 `unavailableReason`，留待 Phase C 定案。
+- 保留原有 403／429 優先退避方向。單次後續成功不足以支持「遇挑戰仍逐店繼續，等大量失敗才中止」；整輪停止條件、跨輪退避與重試上限需先定案並補測試。
+- 缺少 `Retry-After` 時也要有有界的退避策略。A0 沒有驗證重試頻率、失敗比例或正式排程的穩定性。
+- 驗收須涵蓋先成功後受挑戰、部分分店失敗、快照到期與管理者停用，並確保橘標故障不影響綠標。
+- 自動請求維持可辨識的 User-Agent；不增加挑戰解題、瀏覽器身分偽裝或代理切換機制。
+
+`GET /branches` 用於 A1／B 的分店建檔。正式匯率排程依已核對的固定對照檔抓取，不在每輪重新取得或猜測分店對照。
 
 ## 6. 分階段實作
 
 | 階段 | 工作 | 主要檔案／範圍 | 完成條件 |
 | --- | --- | --- | --- |
-| A0 | **最小 POST 可行性驗證（審閱意見 4，其他 Phase A 工作前的門檻）**：先在使用者自己終端機對 `exchange-rate/get` 送一次真實 POST（`branch_no: "00"`）做前置檢查，**再**於 Netlify Deploy Preview 的 Function 環境重跑同一個 POST。**兩步都必須由使用者執行（意見 19）**，Claude 交付 script 與判讀 | `scripts/superrich1965-a0-probe.mjs`（本機 CLI，已交付）＋`netlify/functions/superrich1965-a0-probe.mjs`（Deploy Preview 用，已交付；標記 TEMPORARY、不可 merge 到 `main`，A0 記錄完連同前者一併刪除） | **Netlify 環境**拿到真實 200／SUCCESS 回應、且能解析出可用的 USD／TWD 數字，並存下 request／response 紀錄（本機成功僅為前置檢查，不能取代這一步，見 §2.1）；沒過就要重新評估整個排程可行性，不進 A1 剩餘工作 |
-| A1 | 固定來源 contract、純資料解析與驗證；用 §2.3 的 39 筆對照表比對 `/spr/front/branches` 的 `groups[]`，定案 Our Branch 名單（含 `E52-01` 該不該收） | `src/data/exchange-rates-1965.js`、`tests/exchange-rates-1965-source.test.mjs`、`tests/fixtures/superrich1965/`、`jsconfig.json` 與 `tests/typecheck-config.test.mjs` 的 allowlist | **解析層已完成（2026-09-09）**：USD/TWD 分桶對應清楚、兩端點各自的 envelope 檢查、29 個測試通過。**剩餘**：用 `groups[]` 核對 39 筆的 Our Branch／排除名單定案（需 A0 通過後連線取得 `/spr/front/branches`） |
+| A0 | 本機與 Netlify 的最小 POST 可行性驗證；保存請求與回應紀錄，收尾時移除暫時 probe | [A0 實測紀錄](evidence/superrich1965-a0-2026-09-10.json)、進度紀錄；probe 歷史版本為 `f7239b6` | **已通過並完成本機收尾（2026-09-10）**：兩個環境取得 `200 / SUCCESS` 與可解析的 USD／TWD，probe 已自工作區移除。長期穩定性待 Phase C；既有 Preview 尚未撤下 |
+| A1 | 固定來源 contract、純資料解析與驗證；用 §2.3 的 39 筆對照表比對 `/spr/front/branches` 的 `groups[]`，定案 Our Branch 名單（含 `E52-01` 該不該收） | `src/data/exchange-rates-1965.js`、`tests/exchange-rates-1965-source.test.mjs`、`tests/fixtures/superrich1965/`、`jsconfig.json` 與 `tests/typecheck-config.test.mjs` 的 allowlist | **解析層已完成（2026-09-09）**：USD/TWD 分桶對應清楚、兩端點各自的 envelope 檢查、29 個測試通過。**剩餘**：用 `groups[]` 核對 39 筆的 Our Branch／排除名單定案（A0 已通過；仍需取得 `/spr/front/branches` 並逐筆核對） |
 | B | 整理 Our Branch 分店、去重、正式建入 Notion；**新增橘標專屬的對照驗證 script**（審閱意見 16） | Notion、既有 exporter、`data/locations.csv`、`data/superrich1965-branches.json`、新增 `scripts/validate-superrich1965-mapping.mjs` | 所有收錄分店有唯一對照、有效座標、來源連結；**橘標對照檔與 `data/locations.csv` 的收錄名單逐筆一致**，且該驗證納入 pre-push gate——`scripts/validate-superrich-mapping.mjs` 只認綠標，不涵蓋橘標 |
 | C | 建立定時抓取、breaker、control flag、獨立快照 | 新增 `netlify/functions/exchange-rates-1965-fetch.mjs`／`exchange-rates-1965.mjs`、獨立 Blobs key 命名空間 | 部署後**人工觸發第一輪**並核對成功；比照綠色的失敗降級與退避規則 |
 | D1 | 新增 `.is-exchange-orange` CSS；新增 `getExchangeBrand()`（支援 `string \| {id}` 兩種輸入，意見 18）並把 `isExchangeLocation()` 改成委派給它（`isExchangeLocation(row) = getExchangeBrand(row) !== null`——**對外回傳型別維持 boolean，呼叫方／排序邏輯不用改**，但函式內部實作要調整成同時認得兩品牌，見 §3.2）；**`renderExchangeRates()`／`bestVisibleRate()` 依品牌分派 denom 清單、rate lookup、時間戳與官網連結（意見 13）**；**cluster 三態著色，Google 與 HERE 同步（意見 15）**；**`EXCHANGE_SORT_VALUES` 納入橘標 key（意見 14）**；**`syncExchangeControls()` 的 `hidden` 與 sort 重設改成兩品牌聯集（意見 17）**；§4.4 的 `state.exchange1965` 狀態隔離；§3.3 的跨品牌排序範圍；卡片／popup 顯示公司全名與免責 | `src/core/state.js`、`src/features/`、`src/ui/render.js`、`src/map/map.js`、`src/core/i18n.js`、`styles.css` | 綠色既有行為（含排序、cluster 著色）不受影響；橘標卡片顯示自己的匯率、時間與**橘標官網連結**；marker 與 cluster 在 Google/HERE 一致；任一品牌故障不影響另一品牌（§4.4 驗收條件） |
@@ -293,19 +290,19 @@ Phase A0 完成 POST 驗證、**Phase A1 用 `groups[]` 核對完實際 Our Bran
 7. **跨品牌排序 key 拆開不合併**：新增 `USD_1965`／`TWD_1965`，不跟綠標的桶混在同一個排名裡（§3.3）。
 8. **state 欄位命名**：橘標用單一巢狀物件 `state.exchange1965.*`，綠標欄位一個都不動（§4.4）。
 
-### 7.2 剩下的兩件小事（均不卡動工）
+### 7.2 待確認事項
 
 9. `code: "E52-01"` 的 Terminal 21 Pattaya（`company_code: "E52"`，跟其他 38 筆的 `"A04"` 不同）算不算 Our Branch？需要對照 `/spr/front/branches` 的 `groups[]` 判斷，Phase A1 剩餘工作會一起定案，不需要現在決定。
 10.（次要，可以晚點）`data.update_time` 的語意還沒驗證，且原先「打兩次比較」的方法本身不成立（見 §2 修正說明）——優先度低，即使一直沒驗證，卡片預設行為（只顯示「本次查詢時間」）也不受影響，不會卡到任何 Phase。解析層已經把這個值解出來放在 `sourceUpdatedAtMs`，但明確標註語意未驗證、UI 不得當作「官網報價時間」顯示。
 
-**沒有卡著的開放問題——目前卡在 Phase A0 的兩步 POST 驗證，需要使用者執行（§2.1、§6 A0）。**
+A0 已收尾。下一步是 A1 的分店分組與識別碼核對；Phase C 的抓取預算及失敗處理依 §5 定案。
 
 ## 8. 本次交付界線
 
-§2、§2.1、§2.2 的查證结果來自 2026-09-09 透過瀏覽器分頁與 `WebFetch` 的唯讀存取，沒有使用帳號、Cookie 或第三方憑證；本節不構成法律意見（比照綠色文件 §2.1 的免責寫法）。
+§2 的來源格式查證包含 2026-09-09 的瀏覽器／唯讀存取紀錄與使用者提供的樣本；§2.1 的 A0 結果來自使用者於 2026-09-10 提供的本機及 Netlify probe 輸出。收尾時未重新請求來源，也未取得新的完整上游回應。
 
 本文件是規格，不記進度。已完成的工作、驗證結果、每個階段的未解問題，一律見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)；歷次審閱提出什麼、怎麼改的，見 [審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)。
 
-**目前的交付界線**：Phase A1 的純解析層與 Phase A0 的兩支 probe script 已完成；Notion 資料、Netlify 設定與任何前端／UI 程式碼都還沒動（D1 之後才碰）。
+**目前的交付界線**：A0 實測紀錄已保存、文件已同步，兩支暫時 probe 已自工作區移除；A1 純解析層與分組核對工具保留。正式分店建檔、排程後端與前端／UI 仍屬後續階段。
 
-**下一步**：使用者執行 §2.1／§6 A0 列的本機＋Netlify 兩步 POST 驗證（Claude 執行不了，見審閱意見 19），結果判讀後接 A1 剩餘的 `groups[]` 分組核對。
+**下一步**：取得 A1 所需分店資料，核對 `groups[]` 與正式分店對照。A0 最小驗收不再等待重跑；後續穩定性測試依 §5／Phase C 安排。

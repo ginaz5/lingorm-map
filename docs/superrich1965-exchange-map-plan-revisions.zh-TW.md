@@ -4,7 +4,7 @@
 
 計畫本文與進度紀錄裡出現的「審閱意見 N」「意見 N」都是指本檔的編號，編號一經指派不重用、不重排。
 
-進度與驗證結果見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)。
+進度與驗證結果見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)。下列第 1–19 點保留審閱當時的背景；意見 19 所述的執行限制不再是待辦，使用者已於 2026-09-10 提供本機與 Netlify 成功紀錄，A0 已完成本機收尾。
 
 ## 審閱一覽
 
@@ -47,3 +47,13 @@
 17. **[P2]** §4.4 只寫了「屬於停用品牌的選項要 disable」，但 `syncExchangeControls()`（exchange-rates.js:363）的 `sort.hidden = !state.exchangeLocationsOn || state.exchangeRatesEnabled === false` 是更前面的短路：綠標被停用就整個排序 select 消失，橘標選項一起陪葬（見 §4.4）。
 18. **[P3]** `isExchangeLocation(value)` 的簽名是 `string | {id?: string}`，讀的是 `.id` 不是 `.slug`，新增的 `getExchangeBrand()` 必須保持同樣的雙形狀支援（見 §3.2）。
 19. **[P2]** Phase A0 Claude 這邊做不到，已實測確認：cloud container 與使用者裝置的 sandboxed shell 對 `superrich1965.com` 的 GET／POST 都是 connection failure，兩步都必須由使用者自己執行（見 §2.1、§6 A0）。
+
+## A0 收尾校正（2026-09-10）
+
+依使用者提供的 [A0 實測紀錄](evidence/superrich1965-a0-2026-09-10.json) 同步計畫與進度；本節不更動原審閱編號。
+
+- 本機與 Netlify 的匯率 POST 均有 `200 / SUCCESS` 與可解析 USD／TWD，A0 最小可行性驗收通過。矩陣中的分店 GET 失敗另列為 A1 資料取得待辦。
+- 匯率請求先失敗、後成功，尚不足以判定具體 Cloudflare 規則、IP 條件、方法差異或重試成效；刪除將這些推論寫成定論的內容。Ray ID 後綴不作為住宅 IP 或來源主機位置的證據。
+- 兩次相同的 `update_time` 仍可能來自快取或批次回應，維持語意未確認與只顯示查詢時間的決定。
+- 撤回「單店受挑戰仍繼續抓其他分店，等大量失敗才跳 breaker」的未驗證策略；Phase C 依計畫 §5 定案停止條件與退避，不因 A0 成功而放寬既有 403／429 處理方向。
+- 兩支暫時 probe 已自工作區移除，歷史版本保留在 `f7239b6`。既有 Preview 尚未撤下；本次收尾未執行新的來源請求或部署。

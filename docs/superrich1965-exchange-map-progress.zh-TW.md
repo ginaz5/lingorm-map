@@ -3,7 +3,7 @@
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-09-09
 > - 最後更新：2026-09-10
-> - 目前里程碑：**M1 停住——Phase A0 未通過**（Netlify 環境的 POST 被 Cloudflare Managed Challenge 擋下，403）。A1 解析層已完成但暫時無用武之地；後續方向待決定
+> - 目前里程碑：**M1 進行中；A0 已通過最小 POST 可行性驗證並完成本機收尾**。A1 解析層完成，分組核對仍待執行；排程穩定性與失敗處理待 Phase C
 > - 規格依據：[SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫](superrich1965-exchange-map-plan.zh-TW.md)
 > - 審閱歷程：[審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)
 
@@ -21,7 +21,7 @@
 
 | 里程碑 | 內容 | 使用者可見 | 狀態 |
 | --- | --- | --- | --- |
-| M1 | Phase A0（POST 可行性）+ Phase A1（來源契約與純解析） | 無 | **進行中**——A1 解析層完成，A0 未執行 |
+| M1 | Phase A0（POST 可行性）+ Phase A1（來源契約與純解析） | 無 | **進行中**：A0 已收尾，A1 解析層完成，分組核對待執行 |
 | M2 | Phase B（Our Branch 建檔，`Paused`）+ 橘標對照 validator | 無 | 未開始 |
 | M3 | Phase C（排程、Blobs、breaker、控制旗標；預設停用） | 無 | 未開始 |
 | M4 | Phase D1（前端品牌分派、三色 marker／cluster）+ 分店轉 `Published` | **上線** | 未開始 |
@@ -33,54 +33,38 @@ M1–M3 對使用者零可見變更，可安全停在任一處。M4 中途停會
 
 ## M1 · Phase A0 — POST 可行性驗證
 
-**完成條件**（計畫 §2.1、§6 A0）：在 **Netlify Deploy Preview 的 Function 環境**對 `POST /spr/front/exchange-rate/get` 拿到真實 200／SUCCESS 回應、且能解析出可用的 USD／TWD 數字，並存下 request／response 紀錄。本機終端機成功只是前置檢查，不能取代這一步。
+**完成條件**（計畫 §2.1、§6 A0）：本機及 Netlify Deploy Preview 的 `POST /spr/front/exchange-rate/get` 回傳 `200 / SUCCESS`，解析出可用的 USD／TWD，並保存請求與回應紀錄。
 
-**狀態：❌ 未通過（2026-09-10，Step 2 於 Deploy Preview #7 實測）。**
+**狀態：已通過並完成本機收尾（2026-09-10）。** 本機與 Netlify 均有成功紀錄；M1 仍需完成 A1 分組核對。正式排程穩定性屬 Phase C 驗收範圍。
 
-Claude 執行不了這兩步（審閱意見 19）——cloud container 與裝置端 sandboxed shell 對 `superrich1965.com` 的 GET／POST 都是 connection failure，且 `AGENTS.md` 規定不主動 deploy——故由使用者執行、Claude 判讀。
+**驗證：** 以下為使用者貼出的輸出，時間取自終端機提示（台北），僅作近似時間。請求設定、Ray ID、狀態、解析結果與原樣 probe JSON 見 [A0 實測紀錄](evidence/superrich1965-a0-2026-09-10.json)；來源 body 只有 probe 截取的片段，沒有完整封包存檔。收尾時未重新請求來源。
 
-### Step 2 實測結果（`deploy-preview-7--lingorm-map.netlify.app`）
+| # | 時間 | 環境 | 請求 | 結果 |
+| --- | --- | --- | --- | --- |
+| 1 | 09-10 07:23 | Netlify Preview #7 | `POST exchange-rate/get` | 403 HTML，含 `Just a moment...`；舊版未記錄 `cf-mitigated` |
+| 2 | 09-10 08:03 | 使用者本機 | `POST exchange-rate/get` | 200、契約通過，USD 32.77／TWD 0.995 |
+| 3 | 09-10 08:14 | Netlify Preview #7 | `GET branches?page=1&limit=5` | 403，`cf-mitigated: challenge` |
+| 4 | 09-10 08:14 | Netlify Preview #7 | `POST exchange-rate/branch-list` | 200、契約通過，39 筆 |
+| 5 | 09-10 08:14 | Netlify Preview #7 | `POST exchange-rate/get` | 200、契約通過，USD 32.77／TWD 0.995 |
 
-```json
-{ "ok": false, "httpStatus": 403, "contentType": "text/html; charset=UTF-8",
-  "elapsedMs": 174, "looksLikeChallenge": true, "retryAfter": null,
-  "cfRay": "a38a2c0a0bc189da-CMH",
-  "bodySnippet": "<!DOCTYPE html>...<title>Just a moment...</title>..." }
-```
+第 3–5 筆是同一矩陣依序執行的請求。新舊 probe 的匯率 URL、method、body 與明訂 headers 相同；矩陣新增了前置請求與間隔。部署版本、實際出口 IP、連線與來源規則未獨立核實，因此這組結果只證明匯率 POST 在 Netlify 有成功案例。不能據此把先前 403 歸因於資料中心 IP、GET／POST 方法、某條端點規則或即時風險評分，也不能估計失敗頻率。
 
-**判讀：Cloudflare Managed Challenge，不是流量限制。**
+第 3 筆可由 `cf-mitigated: challenge` 確認為 Challenge Page；這個 header 不區分具體挑戰類型。缺少 `Retry-After` 也不能排除限流。參考 [Cloudflare 挑戰辨識](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/challenge-pages/detect-response/) 與 [觸發來源](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/challenge-pages/)。
 
-| 證據 | 意義 |
-| --- | --- |
-| `403` + `text/html` + `Just a moment...` | Cloudflare 互動式挑戰頁，需執行 JS 並回送 challenge token 才放行 |
-| `elapsedMs: 174` | 秒拒，不是排隊、不是逾時 |
-| `retryAfter: null` | 沒有「稍後再試」語意——退避、重試、circuit breaker 都救不了 |
-| `cfRay: ...-CMH` | 請求由美國資料中心出去（Netlify Functions 的執行環境），不是使用者所在地 |
+Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確認使用者位置、住宅網路或兩次請求使用相同出口 IP。參考 [Cloudflare Cf-Ray 說明](https://developers.cloudflare.com/fundamentals/reference/http-headers/#cf-ray)。
 
-**這不是架構問題**：綠標的 `api.superrichthailand.com` 用同一套 Netlify Functions 排程在 production 跑得好好的。差別在 1965 這個端點前面有 Cloudflare bot management，綠標沒有。
+第 2、5 筆的 `sourceUpdatedAtMs` 都是 `1788951064201`，報價也相同；報價時間、快取時間與批次回應時間仍無法區分。沿用計畫 §2／§7.2：卡片先顯示「本次查詢時間」。
 
-**probe 的判斷正確**：`looksLikeChallenge` 把驗證頁跟真實 API 回應分開了，沒有把 403 HTML 誤判成單純的 API 錯誤，也沒有把它當成可重試的暫時性失敗。
+**收尾：**
 
-**待補：Step 1（本機終端機）的結果尚未記錄**——這決定成因是「IP 信譽」還是「端點規則」，見未解問題 1。
+- 已保存三次執行、共五筆上游請求結果；歷史 probe 實作可從 Git commit `f7239b6` 查閱。
+- 已自工作區移除 `scripts/superrich1965-a0-probe.mjs` 與 `netlify/functions/superrich1965-a0-probe.mjs`，避免暫時診斷端點隨後續正式版本部署。
+- 既有 Preview 尚未撤下；移除本機檔案不會改變已部署版本，需另行部署或清理。
+- 已同步計畫狀態並修正缺乏證據的推論；原有 A1 工具與測試保留。
 
-**依計畫 §6 A0 的規定停住**：沒過就要重新評估整個排程可行性，不進 A1 剩餘工作。
+收尾驗證：`npm run typecheck` 通過；`npm test` 為 453 通過／0 失敗（含工作區原有的 16 項 A1 工具測試）；`npm run build` 通過。`git diff --check`、14 個文件相對連結、紀錄 JSON 與兩支 probe 的移除檢查通過；A1 工具與測試的檔案雜湊未變。正式地點快照未變，本次未執行 Notion 匯出或快照驗證。
 
-**已交付的兩支 probe（暫時性，A0 記錄完即刪；Netlify 那支不可 merge 到 `main`）：**
-
-| 檔案 | 用途 | 執行方式 |
-| --- | --- | --- |
-| `scripts/superrich1965-a0-probe.mjs` | Step 1 本機前置檢查；同時 export `probeExchangeRatePost()` 供 Step 2 重用 | `node scripts/superrich1965-a0-probe.mjs` |
-| `netlify/functions/superrich1965-a0-probe.mjs` | Step 2 Deploy Preview 驗證（**真正的完成條件**） | 推 branch 後打 `/.netlify/functions/superrich1965-a0-probe` |
-
-probe 的 `ok` 判定不只看 HTTP 200：要 response 能被解析層解出可用的 USD／TWD 數字才算過，並會嗅出 Cloudflare interstitial（HTML content-type／`Just a moment`／`challenge-platform`），避免把驗證頁誤判成成功。已用 stub fetch 離線驗過 happy path 與 challenge path 兩條分支。
-
-**未解問題：**
-
-1. **Step 1（本機、住宅 IP）到底過了沒？** 最關鍵的缺口。本機過而 Netlify 沒過 → 成因是資料中心 IP 信譽；兩邊都沒過 → 成因是端點規則或請求特徵，跟 IP 無關。兩者的後續完全不同。
-2. **同一支 Netlify function 打 GET `/spr/front/branches` 會不會過？** 先前從別的環境打 GET 是乾淨回 JSON 的。GET 在 Netlify 過、POST 不過 → 是這個端點的規則；GET 也 403 → 是整個網域對資料中心 IP 的政策。加十行 probe、重推一次 preview 就能分辨。
-3. probe 用的是可辨識的自訂 `User-Agent`（計畫 §2.1 的自我要求），這是我們自己引入的變數，可能被 bot management 扣分。
-
-**不採取的路線：** 繞過 Cloudflare 挑戰——偽裝瀏覽器 `User-Agent`、用 headless browser 解 challenge、走住宅代理。網站在這個端點掛上 Managed Challenge，是營運方對「不歡迎自動存取」的明確表態，比 robots.txt 更具體；繞過它等同規避存取控制，不在本專案的做法範圍內。這條界線也適用於未來任何「換個方式再試試看」的提案。
+**未解問題與交接：** A1 需取得 `/branches` 與分組資料；本次沒有使用者本機 GET 的成功紀錄。Phase C 依計畫 §5 定案挑戰辨識、403／429 退避、整輪停止條件與重試上限。A0 沒有驗證「某店受挑戰後繼續抓其他店」的策略，也未完成長期穩定性或全分店測試。
 
 ---
 
@@ -88,7 +72,7 @@ probe 的 `ok` 判定不只看 HTTP 200：要 response 能被解析層解出可�
 
 **完成條件**（計畫 §6 A1）：USD/TWD 分桶對應清楚；39 筆分店的 Our Branch／排除名單定案。
 
-**狀態：解析層完成（2026-09-09）；`groups[]` 分組核對未做（需 A0 通過後連線取得 `/spr/front/branches`）。**
+**狀態：解析層完成（2026-09-09）；A0 已收尾，`groups[]` 分組核對仍需取得 `/spr/front/branches` 後執行。**
 
 **已完成：**
 
@@ -96,7 +80,7 @@ probe 的 `ok` 判定不只看 HTTP 200：要 response 能被解析層解出可�
 - `tests/exchange-rates-1965-source.test.mjs`（29 測試）、`tests/fixtures/superrich1965/{exchange-rate-00,branch-list}.json`。
 - 新模組加進 `jsconfig.json` 的 typecheck allowlist，並同批更新 `tests/typecheck-config.test.mjs`（該測試逐字斷言 include 陣列，兩者必須一起改）。
 
-**驗證：**
+**解析層完成時的驗證紀錄**（A0 收尾的最新結果見上節）：
 
 | 項目 | 結果 |
 | --- | --- |
@@ -124,7 +108,10 @@ probe 的 `ok` 判定不只看 HTTP 200：要 response 能被解析層解出可�
 
 **狀態：未開始**（等 M1 的 Our Branch 名單定案）。
 
-**未解問題：** `scripts/validate-superrich-mapping.mjs` 只認綠標，橘標需要新增 `scripts/validate-superrich1965-mapping.mjs`（審閱意見 16）。
+**未解問題：**
+
+1. `scripts/validate-superrich-mapping.mjs` 只認綠標，橘標需要新增 `scripts/validate-superrich1965-mapping.mjs`（審閱意見 16）。
+2. 建檔要用的 `GET /spr/front/branches` 在 A0 #3 收到挑戰頁；可用的取得方式與本機 GET 結果仍待確認。正式匯率排程使用固定分店對照，不依賴每輪抓取這份 GET 清單。
 
 ---
 
@@ -134,7 +121,7 @@ probe 的 `ok` 判定不只看 HTTP 200：要 response 能被解析層解出可�
 
 **狀態：未開始。**
 
-**未解問題：** cron 頻率、單輪併發、逾時／重試預算要等 M1 的實際 Our Branch 數確定後才能填（計畫 §5，39 只是上限估算）。獨立 Blobs 命名空間 `exchange-rates-1965/*`，不與綠標共用。
+**未解問題：** cron 頻率、單輪併發、逾時／重試預算要等 M1 的實際 Our Branch 數確定後才能填（39 只是上限估算）。挑戰辨識、403／429 退避、整輪停止條件與快照到期驗收依計畫 §5 定案；A0 的後續成功不代表可以放寬既有停止條件。獨立 Blobs 命名空間 `exchange-rates-1965/*`，不與綠標共用。
 
 ---
 
