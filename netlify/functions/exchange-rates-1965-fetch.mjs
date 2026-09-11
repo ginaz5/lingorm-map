@@ -21,6 +21,5 @@ export default async function exchangeRatesFetch(request, context) {
 }
 
 export const config = {
-  region: 'sin',
   schedule: '0,30 * * * *',
 };
