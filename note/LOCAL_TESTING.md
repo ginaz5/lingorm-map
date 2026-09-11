@@ -209,6 +209,7 @@ git push -u origin <feature-branch>
 ```bash
 node --test tests/exchange-rates-*.test.mjs tests/i18n-ui.test.mjs tests/styles-extraction.test.mjs tests/view-first-ui.test.mjs
 node scripts/validate-superrich-mapping.mjs data/superrich-branches.json data/locations.csv
+node scripts/validate-superrich1965-mapping.mjs data/superrich1965-branches.json data/locations.csv
 npm run fx:control -- status
 ```
 
@@ -220,6 +221,20 @@ npm run fx:control -- status
 以及切到背景後等到過期再切回。三種情況都應撤下數字與「最佳」標示、
 回一般排序；恢復連線且取得新快照後可以再次顯示報價。
 `tests/exchange-rates-ui.test.mjs` 以模擬時鐘涵蓋這些情境。
+
+橘標後端在 Phase D1 前沒有前端畫面，先驗證獨立 API 與控制層：
+
+```bash
+node --test tests/exchange-rates-1965-source.test.mjs tests/exchange-rates-1965-backend.test.mjs tests/superrich1965-mapping.test.mjs
+npm run fx:1965:control -- status
+```
+
+Deploy Preview 上保持 `EXCHANGE_RATES_1965_ENABLED=false` 或未設定時，
+`/api/exchange-rates-1965` 應回 `enabled:false`、`snapshot:null`，且排程人工
+觸發不應呼叫上游。需要驗收第一輪時，使用 `npm run fx:1965:control --
+enable`，再執行 `netlify functions:invoke exchange-rates-1965-fetch`；核對
+38 店快照後可用 `npm run fx:1965:control -- disable --reason source_review`
+關閉。這組 control、snapshot、breaker 與綠標完全分開。
 
 ### 排程首次啟用（正式環境）
 

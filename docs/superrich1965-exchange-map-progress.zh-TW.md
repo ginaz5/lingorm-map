@@ -2,8 +2,8 @@
 
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-09-09
-> - 最後更新：2026-09-10
-> - 目前里程碑：**M1 進行中；A0 已通過最小 POST 可行性驗證並完成本機收尾**。A1 解析層完成，分組核對仍待執行；排程穩定性與失敗處理待 Phase C
+> - 最後更新：2026-09-11
+> - 目前里程碑：**M1、M2 建檔與 M3 本機實作已完成**。38 筆 Place ID 已核對；13 筆座標及 M3 部署驗收待辦，前端尚未實作
 > - 規格依據：[SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫](superrich1965-exchange-map-plan.zh-TW.md)
 > - 審閱歷程：[審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)
 
@@ -21,9 +21,9 @@
 
 | 里程碑 | 內容 | 使用者可見 | 狀態 |
 | --- | --- | --- | --- |
-| M1 | Phase A0（POST 可行性）+ Phase A1（來源契約與純解析） | 無 | **進行中**：A0 已收尾，A1 解析層完成，分組核對待執行 |
-| M2 | Phase B（Our Branch 建檔，`Paused`）+ 橘標對照 validator | 無 | 未開始 |
-| M3 | Phase C（排程、Blobs、breaker、控制旗標；預設停用） | 無 | 未開始 |
+| M1 | Phase A0（POST 可行性）+ Phase A1（來源契約與純解析） | 無 | **完成**：38 筆 Our Branch 收錄，E52-01 排除 |
+| M2 | Phase B（Our Branch 建檔，`Paused`）+ 橘標對照 validator | 無 | **建檔／Place ID／文字疑點完成**；13 筆座標待複核 |
+| M3 | Phase C（排程、Blobs、breaker、控制旗標；預設停用） | 無 | **本機實作完成**；Deploy Preview 人工首輪待驗收 |
 | M4 | Phase D1（前端品牌分派、三色 marker／cluster）+ 分店轉 `Published` | **上線** | 未開始 |
 | M5 | Phase E（測試補齊、README、ADR） | 無 | 未開始 |
 
@@ -35,7 +35,7 @@ M1–M3 對使用者零可見變更，可安全停在任一處。M4 中途停會
 
 **完成條件**（計畫 §2.1、§6 A0）：本機及 Netlify Deploy Preview 的 `POST /spr/front/exchange-rate/get` 回傳 `200 / SUCCESS`，解析出可用的 USD／TWD，並保存請求與回應紀錄。
 
-**狀態：已通過並完成本機收尾（2026-09-10）。** 本機與 Netlify 均有成功紀錄；M1 仍需完成 A1 分組核對。正式排程穩定性屬 Phase C 驗收範圍。
+**狀態：已通過並完成本機收尾（2026-09-10）。** 本機與 Netlify 均有成功紀錄；後續 A1 分組核對也已完成（見下節）。正式排程穩定性屬 Phase C 驗收範圍。
 
 **驗證：** 以下為使用者貼出的輸出，時間取自終端機提示（台北），僅作近似時間。請求設定、Ray ID、狀態、解析結果與原樣 probe JSON 見 [A0 實測紀錄](evidence/superrich1965-a0-2026-09-10.json)；來源 body 只有 probe 截取的片段，沒有完整封包存檔。收尾時未重新請求來源。
 
@@ -64,7 +64,7 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 
 收尾驗證：`npm run typecheck` 通過；`npm test` 為 453 通過／0 失敗（含工作區原有的 16 項 A1 工具測試）；`npm run build` 通過。`git diff --check`、14 個文件相對連結、紀錄 JSON 與兩支 probe 的移除檢查通過；A1 工具與測試的檔案雜湊未變。正式地點快照未變，本次未執行 Notion 匯出或快照驗證。
 
-**未解問題與交接：** A1 需取得 `/branches` 與分組資料；本次沒有使用者本機 GET 的成功紀錄。Phase C 依計畫 §5 定案挑戰辨識、403／429 退避、整輪停止條件與重試上限。A0 沒有驗證「某店受挑戰後繼續抓其他店」的策略，也未完成長期穩定性或全分店測試。
+**未解問題與交接：** A0 當時尚缺 GET 成功紀錄，A1 建檔已取得 `/branches` 與分組資料（見下節）。Phase C 依計畫 §5 定案挑戰辨識、403／429 退避、整輪停止條件與重試上限。A0 沒有驗證「某店受挑戰後繼續抓其他店」的策略，也未完成長期穩定性或全分店測試。
 
 ---
 
@@ -72,7 +72,7 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 
 **完成條件**（計畫 §6 A1）：USD/TWD 分桶對應清楚；39 筆分店的 Our Branch／排除名單定案。
 
-**狀態：解析層完成（2026-09-09）；A0 已收尾，`groups[]` 分組核對仍需取得 `/spr/front/branches` 後執行。**
+**狀態：完成（2026-09-10）。** 解析層與 39 筆分組／識別碼核對完成；實際收錄與排除清單見[逐店查證](superrich1965-branch-verification.zh-TW.md)。
 
 **已完成：**
 
@@ -93,7 +93,7 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 - `parseRateText1965()` 是綠標 `parseRateText()` 的**刻意複製**（計畫 §1 的「平行複製一份」），不是 import。代價是 BigInt 進位邏輯有兩份、可能長歪，因此補了 cross-module 等價測試逐一比對兩個 parser 在同一組輸入向量下的輸出，發散就紅燈。
 - 兩個端點的 envelope 不一致（`exchange-rate/get` 回 `code:"SUCCESS"`、`branch-list` 回 `code:"200"`），寫成兩個獨立檢查，不共用「兩種都收」的 helper——共用會讓 `exchange-rate/get` 也放行 `"200"`。
 
-**分組核對工具已交付（2026-09-10），待使用者執行：**
+**分組核對工具與實際核對（2026-09-10）：**
 
 `scripts/superrich1965-branch-reconcile.mjs`——抓 `branch-groups` + `branches` + `exchange-rate/branch-list` 三個來源，用名稱交叉配對，輸出兩份**草稿**：
 
@@ -102,7 +102,7 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 | `docs/superrich1965-branch-verification.zh-TW.md` | 審查報告，含逐筆配對層級與勾選欄；對應綠標的同名查證文件 |
 | `data/superrich1965-branches.draft.json` | 草稿對照檔，**不是正式檔**；核對後刪掉 `_review`／`_draft` 才另存為 `superrich1965-branches.json` |
 
-這支工具目前是本機 CLI。A0 #3 只記錄了 Netlify GET 的失敗，本機 GET 是否成功仍待實測。工具內建 2s／5s 的挑戰重試屬目前實作，A0 未驗證其成效，不能直接當成 Phase C 的排程策略。
+這支工具目前是本機 CLI。本次以可辨識 User-Agent 取得三個來源的成功回應，離線呼叫既有 reconcile 產生候選，逐筆核對後另建正式對照。工具原有重試策略未變，不視為 Phase C 排程策略的驗收。上表是 CLI 預設草稿產出；目前同名查證文件已改為正式建檔紀錄，重跑 CLI 會覆寫，執行前應另存或備份。
 
 配對分五級：`exact`（正規化後相同）、`contained`、`token-subset`、`fuzzy`、`ambiguous`／`none`。**只有 `exact` 可以略過細看**，其餘全部進「需人工確認」表——符合計畫 §2.3 要求的逐筆核對，工具只提候選、不做決定。
 
@@ -112,8 +112,8 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 
 **未解問題：**
 
-1. 39 筆的實際 Our Branch 收錄數（39 是上限，可能更少）——執行上述工具後定案。
-2. `code:"E52-01"`（Terminal 21 Pattaya，`company_code:"E52"`）算不算 Our Branch，隨 1 一起定案。芭達雅不在曼谷都會區，另需確認目的地歸屬。
+1. 分組已定案：官方目錄 41 Our／12 Partner；39 筆報價清單中收錄 38 Our（A04），Terminal 21 Pattaya（106／E52-01）為 Partner，排除。
+2. 87／94／95 三間 Our 未列於報價清單，無可用 branchNo，暫緩收錄；不影響目前 38 店的唯一對照。
 3. **橘標補不上綠標那道 identity guard**：綠標每列都有 `branchCode` 可交叉核對，橘標的回應完全沒有分店識別碼，`branchNo` 只是從 caller 回填。唯一防線是 `data/superrich1965-branches.json` 正確——這放大了審閱意見 16，M2 的橘標 validator 不是可選項。
 4. `data.update_time` 語意未驗證，已解析進 `sourceUpdatedAtMs` 但標註 UI 不得當作「官網報價時間」顯示（低優先，不卡任何 Phase）。
 
@@ -123,12 +123,23 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 
 **完成條件**（計畫 §6 B）：所有收錄分店有唯一對照、有效座標、來源連結；橘標對照檔與 `data/locations.csv` 收錄名單逐筆一致，且該驗證納入 pre-push gate。
 
-**狀態：未開始**（等 M1 的 Our Branch 名單定案）。
+**狀態：38 筆正式建檔、Place ID 與文字疑點核對完成（2026-09-11）；13 筆座標仍待公開前審核。** [逐店查證與 Notion 連結](superrich1965-branch-verification.zh-TW.md)保存完整收錄／排除理由。
+
+**驗證：**
+
+- 38 筆全部建立在正式 data source，維持 `Paused`、`Review Needed=true`、`Last Verified` 空白；Category 為 Currency Exchange，Type 與 Source Tags 依計畫留空，icon 為 💱。
+- 回讀 760 個屬性、38 個 icon、38 個 parent 全通過。唯一文字正規化為 Notion 移除 id 71 泰文名稱的零寬空白，已記入[欄位證據](evidence/superrich1965-notion-records-2026-09-10.json)。
+- 既有 exporter 匯出 219 筆；原有 181 筆逐欄不變。公開筆數維持 161，橘標公開數為 0。
+- `data/superrich1965-branches.json` 保存 38 組 Slug／officialId／branchNo／companyCode；修正 Baan Silom、Big C Ratchadapisek、MRT Rama 9 三組自動配對碰撞。證據保留原候選與正式結果。
+- 橘標 validator 檢查雙向名單、唯一識別、來源對照、座標數值、類別與目的地；納入 `npm test` 與 `build.sh`，並補入既有 snapshot 核准 Slug 清單。
+- `location:verify -- validate --all` 通過：schema 20/20、219/219 行一致、0 issues。64 個 Type 空白警告是計畫允許的 26 綠標＋38 橘標，未擅自歸入推薦主題。
+- `npm run typecheck`、`npm test`（**468 通過／0 失敗**，含新增 15 項橘標 mapping 測試）、`npm run build` 與載入本機環境的 `bash build.sh` 全通過。快照、橘標／綠標對照、收藏相容性、文件連結與 `git diff --check` 通過。橘標仍不公開，本次未新增前端功能，未做瀏覽器視覺驗收。
 
 **未解問題：**
 
-1. `scripts/validate-superrich-mapping.mjs` 只認綠標，橘標需要新增 `scripts/validate-superrich1965-mapping.mjs`（審閱意見 16）。
-2. 建檔要用的 `GET /spr/front/branches` 在 A0 #3 收到挑戰頁；可用的取得方式與本機 GET 結果仍待確認。正式匯率排程使用固定分店對照，不依賴每輪抓取這份 GET 清單。
+1. 38 筆 Google Place ID 已由 Places Details URL 的 CID 與官方 iframe CID 逐店完全比對；沒有把 CID 當 Place ID，也沒有保存 Google 回傳座標。完整修正與回讀結果見 [2026-09-11 複核證據](evidence/superrich1965-review-2026-09-11.json)。
+2. Central Ladprao 採官方三語 landmark 與 2026 官網公告一致的 1 樓；Baan Silom 依泰文 address 與三語 landmark 改為 1 樓 A25；Sanam Chai 依 BEM 官方資料改記 Phra Nakhon 區。The Old Siam Plaza 改採 OSM 明確標名為該分店、`bureau_de_change`、`brand=SuperRich` 的 node 11871723783 成對座標。
+3. 13 筆來源座標與官方 CID 對應點位仍有明顯落差：64、65、67、69、74、76、77、80、83、86、92、93、112。因尚無可保存的精確非 Google 分店座標，保留官方原值、`Paused`、`Review Needed=true`、`Last Verified` 空白。87／94／95 的 branchNo 也仍待官方提供。
 
 ---
 
@@ -136,9 +147,15 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 
 **完成條件**（計畫 §6 C）：部署後人工觸發第一輪並核對成功。
 
-**狀態：未開始。**
+**狀態：本機實作與單店連線驗證完成（2026-09-11）；尚未部署、啟用或產生正式快照。**
 
-**未解問題：** cron 頻率、單輪併發、逾時／重試預算要等 M1 的實際 Our Branch 數確定後才能填（39 只是上限估算）。挑戰辨識、403／429 退避、整輪停止條件與快照到期驗收依計畫 §5 定案；A0 的後續成功不代表可以放寬既有停止條件。獨立 Blobs 命名空間 `exchange-rates-1965/*`，不與綠標共用。
+**已完成：** 新增獨立排程 function、唯讀 API、runner、source transport、snapshot/control/breaker 契約、Blobs 儲存與管理 CLI。使用固定 38 店對照，完全不在每輪抓 inventory 或猜分店；POST body 僅含 `A04` 與逐店 `branch_no`。Blobs store 與 keys 都使用 `exchange-rates-1965` 命名空間，旗標為 `EXCHANGE_RATES_1965_ENABLED`，未設定時不寫 storage、也不發上游請求。
+
+定案：UTC `:00`／`:30`、併發 2、起始間隔 200ms、單次 5 秒、整輪 25 秒、全輪最多一筆 retry。403／429／Cloudflare challenge 立即停止，退避 6h→24h→第三次自動停用；一般失敗連三輪暫停 1h。`GET /api/exchange-rates-1965` 強制 `no-store`，只回傳當前 control version 且未過期的橘標快照。`sourceUpdatedAtMs` 僅保存，不供 UI 宣稱為官網報價時間。
+
+**本機驗證：** 單店 POST 回 HTTP 200，約 0.19 秒；後端測試涵蓋固定 38 店、POST 內容、節流、challenge／429 中止、第三次封鎖自動停用、預設停用零請求、獨立 snapshot 與 store。`npm run typecheck`、`npm test`（479 通過／0 失敗）、`npm run build` 與載入本機環境的 `bash build.sh` 皆通過；正式資料檢核為 schema 20/20、219/219 一致、0 issues（64 個空白 Type 為既定警告）。
+
+**未解問題：** 依完成條件，仍須部署至 Deploy Preview，先核對預設停用，再人工啟用及觸發第一輪，確認 38 店快照、執行時間與實際 Netlify 出口穩定性；這一步需要另行部署授權。
 
 ---
 

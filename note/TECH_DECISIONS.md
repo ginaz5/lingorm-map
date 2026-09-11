@@ -330,3 +330,13 @@ null`，前端顯示「暫無報價」而不是隱藏整張卡片。
 請求尚未完成時，仍保留到期計時；頁面恢復執行時先撤下過期數字，再
 安排查詢。自動停用後的 breaker 清理沿用該輪寫入的 ETag，遇到較新的
 手動控制變更就放棄清理，避免覆蓋重新啟用後的版本。
+
+SuperRich 1965（橘標）沿用同一種排程快照模式，但刻意使用平行模組、
+`exchange-rates-1965` store／key、`EXCHANGE_RATES_1965_ENABLED` 與
+`/api/exchange-rates-1965`，避免任一品牌的來源故障、breaker 或管理操作
+影響另一品牌。橘標來源每次只回單店且不帶可回查的分店識別碼，因此排程
+只讀已人工核對的 38 店 mapping，不在每輪抓 inventory 或自動配對；請求
+採併發 2、起始間隔 200ms、單次逾時 5 秒、整輪 25 秒與全輪最多一次
+retry。403、429 或 `cf-mitigated: challenge` 立即停止整輪，沿用
+6h→24h→自動停用的 breaker。完整規格見
+[橘標實作計畫](../docs/superrich1965-exchange-map-plan.zh-TW.md) §5。

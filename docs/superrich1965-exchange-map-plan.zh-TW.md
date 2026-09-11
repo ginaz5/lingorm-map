@@ -1,6 +1,6 @@
 # SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫
 
-建立日期：2026-09-09；更新日期：2026-09-10。狀態：**A0 已通過最小 POST 可行性驗證並完成本機收尾；M1 尚待 A1 分店分組核對**。Phase A1 解析層已完成，正式分店資料、排程與前端功能仍待後續階段。進度與驗證見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)。
+建立日期：2026-09-09；更新日期：2026-09-11。狀態：**M1、Phase B 與 Phase C 本機實作已完成**。38 筆分店仍為 Paused；13 筆座標待公開前複核，Phase C 尚待部署後人工觸發驗收，前端功能尚未實作。進度與驗證見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)。
 
 已完成四輪審閱（共 19 點，全部採納）。本文只保留現行決定，完整審閱歷程見 [審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)——本文出現的「審閱意見 N」「意見 N」都是指該檔的編號。
 
@@ -221,8 +221,16 @@ A0 收尾時移除 `scripts/superrich1965-a0-probe.mjs` 與 `netlify/functions/s
 
 - **分店基本資料**：Notion 建檔（已定案）。1965 官方 API 的欄位（地址／電話／營業時間／經緯度／相片）直接可以拿來輔助填 Notion，比綠色當初純靠人工上網逐店核對容易很多——但**營業時間欄位比照綠色規則，不建入 Notion、不維護**（§3.1），只是說「查證時比較快確認地址跟樓層資訊」。
 - **Slug 命名**：`superrich1965-{官方id}`（比照綠色 `superrich-thailand-{id}` 的命名慣例），例如 `superrich1965-56`。
-- **對照檔**：新建 `data/superrich1965-branches.json`，跟既有 `data/superrich-branches.json` 平行、**不合併**。理由：1965 目前看到的官方 ID 是純數字（`56`、`57`…），沒有看到綠色那種字母＋數字的 `branchCode`（`H01`／`M17` 等）概念；對照檔要存哪些欄位得等 Phase A 確認 `exchange-rate/get` 的實際回應格式後才能定案，現在先不假設格式跟綠色一致。
+- **對照檔**：新建 `data/superrich1965-branches.json`，跟既有 `data/superrich-branches.json` 平行、**不合併**。理由：1965 目前看到的官方 ID 是純數字（`56`、`57`…），沒有看到綠色那種字母＋數字的 `branchCode`（`H01`／`M17` 等）概念；對照欄位已定案為 `officialId`、保留前導零的字串 `branchNo`、`companyCode`；第一版全部為 `A04`。橘標 validator 同時核對 Slug／官方 ID／報價代碼與已審閱來源，並反向檢查 CSV 是否多出未對照的橘標分店。
 - **匯率快照儲存**：需要獨立的 Netlify Blobs key 命名空間（例如 `exchange-rates-1965/*`），不能跟綠色共用 key，避免兩邊的 `control`／`breaker`／快照版本互相干擾。
+
+### 4.1 Phase B 正式建檔範圍（2026-09-10）
+
+- 官方分店目錄 53 筆：41 Our Branch、12 Partner。報價清單 39 筆中有 38 筆 Our Branch（A04）及 1 筆 Partner（E52-01／Terminal 21 Pattaya）。第一版收錄 38 筆；完整配對與排除理由見[逐店查證](superrich1965-branch-verification.zh-TW.md)。
+- Our Branch 中的 Vibhavadi 22（id 87）、Airport Rail Link Suvarnabhumi（94）、Airport Rail Link Phaya Thai（95）沒有出現在當前報價清單，列待補清單；不猜測 `branchNo`。
+- 沿用綠標 §4.2／§9.2 的正式欄位範本：`Category=Currency Exchange`、`Type` 空白、`Icon=💱`、`Source Tags` 空白；初始 `Status=Paused`、`Review Needed=true`、`Last Verified` 空白。Google Maps 使用官方 iframe 的分店 CID 連結，Google Place ID 尚未獨立取得則留空，兩種識別碼不可混用。
+- Lat／Lng 保存官方分店 API 同一筆的成對原值並記來源；**Phase B 機器驗證只證明數值格式與欄位一致，不等於櫃位位置已核實**。座標、樓層或地址有疑點的店逐筆註記，公開前必須複核。不得以 Google 回傳座標、鄰店或道路中心補值。
+- 對照與已匯出 CSV 的雙向名單驗證納入 `npm test`（pre-push／CI gate）與 `build.sh`。38 筆初始皆不公開，後續 Phase D1 才處理發布。
 
 ### 4.4 前端狀態隔離與共用資源的責任歸屬（新增，審閱意見 2）
 
@@ -248,15 +256,15 @@ A0 收尾時移除 `scripts/superrich1965-a0-probe.mjs` 與 `netlify/functions/s
 
 ## 5. 抓取排程與失敗處理
 
-沿用綠標的排程抓取、對外唯讀 API、獨立快照、執行期 control flag、強一致讀取與 `Cache-Control: no-store`。A0 已確認 POST 可行；Phase C 仍需依實際分店數與實測耗時，定案 cron 頻率、併發、逾時、重試上限、快照期限與 breaker 門檻。
+沿用綠標的排程抓取、對外唯讀 API、獨立快照、執行期 control flag、強一致讀取與 `Cache-Control: no-store`。Phase C 依 38 店固定對照定案為每半小時（UTC `:00`／`:30`）一輪、最多 2 個同時請求、請求起始至少相隔 200ms、單請求 5 秒、整輪 25 秒；整輪只允許 1 次 5xx／網路／逾時重試。2026-09-11 單店本機 POST 實測為 HTTP 200、約 0.19 秒；這筆樣本只用於確認預算有餘裕，不代表長期穩定性。
 
-`exchange-rate/get` 每次只回單一分店。39 筆是 `branch-list` 的清單筆數；A1 尚未用 `groups[]` 核對 Our Branch，排程請求預算應依核對後的收錄數計算。
+`exchange-rate/get` 每次只回單一分店。39 筆是 `branch-list` 的清單筆數；A1 已核對其中 38 筆 Our Branch 納入第一版，排程請求預算以這 38 筆計算。
 
-A0 留下的限制與 Phase C 待辦：
+A0 留下的限制與 Phase C 處理結果：
 
-- 記錄上游 status、`cf-mitigated`、content-type、`Retry-After` 與 Ray ID，以便區分挑戰頁、逾時、HTTP 錯誤和契約不符。診斷分類如何映射到公開的 `unavailableReason`，留待 Phase C 定案。
-- 保留原有 403／429 優先退避方向。單次後續成功不足以支持「遇挑戰仍逐店繼續，等大量失敗才中止」；整輪停止條件、跨輪退避與重試上限需先定案並補測試。
-- 缺少 `Retry-After` 時也要有有界的退避策略。A0 沒有驗證重試頻率、失敗比例或正式排程的穩定性。
+- 每次請求只記錄有界的 status、`cf-mitigated`、content-type、`Retry-After` 與 Ray ID；不記錄完整來源 body。公開 `unavailableReason` 固定為 `timeout`、`invalid`、`missing`、`http_error`、`expired`，診斷 header 不進公開快照。
+- 403、429 或 `cf-mitigated: challenge` 立即中止整輪且不重試。跨輪依序退避 6 小時、24 小時，第三次自動停用；`Retry-After` 若更晚則尊重更晚時間。一般整輪失敗連續三次時暫停 1 小時。
+- 缺少 `Retry-After` 時仍套用上述 6／24 小時退避；5xx、網路與逾時只在整輪首輪全部完成後挑一筆重試，4xx 與契約不符不重試。
 - 驗收須涵蓋先成功後受挑戰、部分分店失敗、快照到期與管理者停用，並確保橘標故障不影響綠標。
 - 自動請求維持可辨識的 User-Agent；不增加挑戰解題、瀏覽器身分偽裝或代理切換機制。
 
@@ -267,7 +275,7 @@ A0 留下的限制與 Phase C 待辦：
 | 階段 | 工作 | 主要檔案／範圍 | 完成條件 |
 | --- | --- | --- | --- |
 | A0 | 本機與 Netlify 的最小 POST 可行性驗證；保存請求與回應紀錄，收尾時移除暫時 probe | [A0 實測紀錄](evidence/superrich1965-a0-2026-09-10.json)、進度紀錄；probe 歷史版本為 `f7239b6` | **已通過並完成本機收尾（2026-09-10）**：兩個環境取得 `200 / SUCCESS` 與可解析的 USD／TWD，probe 已自工作區移除。長期穩定性待 Phase C；既有 Preview 尚未撤下 |
-| A1 | 固定來源 contract、純資料解析與驗證；用 §2.3 的 39 筆對照表比對 `/spr/front/branches` 的 `groups[]`，定案 Our Branch 名單（含 `E52-01` 該不該收） | `src/data/exchange-rates-1965.js`、`tests/exchange-rates-1965-source.test.mjs`、`tests/fixtures/superrich1965/`、`jsconfig.json` 與 `tests/typecheck-config.test.mjs` 的 allowlist | **解析層已完成（2026-09-09）**：USD/TWD 分桶對應清楚、兩端點各自的 envelope 檢查、29 個測試通過。**剩餘**：用 `groups[]` 核對 39 筆的 Our Branch／排除名單定案（A0 已通過；仍需取得 `/spr/front/branches` 並逐筆核對） |
+| A1 | 固定來源 contract、純資料解析與驗證；用 §2.3 的 39 筆對照表比對 `/spr/front/branches` 的 `groups[]`，定案 Our Branch 名單（含 `E52-01` 該不該收） | `src/data/exchange-rates-1965.js`、`tests/exchange-rates-1965-source.test.mjs`、`tests/fixtures/superrich1965/`、`jsconfig.json` 與 `tests/typecheck-config.test.mjs` 的 allowlist | **解析層已完成（2026-09-09）**：USD/TWD 分桶對應清楚、兩端點各自的 envelope 檢查、29 個測試通過。**分組核對亦完成（2026-09-10）**：38 筆 Our Branch 收錄、E52-01 Partner 排除；3 間未列報價的 Our Branch 暫緩，見 §4.1 |
 | B | 整理 Our Branch 分店、去重、正式建入 Notion；**新增橘標專屬的對照驗證 script**（審閱意見 16） | Notion、既有 exporter、`data/locations.csv`、`data/superrich1965-branches.json`、新增 `scripts/validate-superrich1965-mapping.mjs` | 所有收錄分店有唯一對照、有效座標、來源連結；**橘標對照檔與 `data/locations.csv` 的收錄名單逐筆一致**，且該驗證納入 pre-push gate——`scripts/validate-superrich-mapping.mjs` 只認綠標，不涵蓋橘標 |
 | C | 建立定時抓取、breaker、control flag、獨立快照 | 新增 `netlify/functions/exchange-rates-1965-fetch.mjs`／`exchange-rates-1965.mjs`、獨立 Blobs key 命名空間 | 部署後**人工觸發第一輪**並核對成功；比照綠色的失敗降級與退避規則 |
 | D1 | 新增 `.is-exchange-orange` CSS；新增 `getExchangeBrand()`（支援 `string \| {id}` 兩種輸入，意見 18）並把 `isExchangeLocation()` 改成委派給它（`isExchangeLocation(row) = getExchangeBrand(row) !== null`——**對外回傳型別維持 boolean，呼叫方／排序邏輯不用改**，但函式內部實作要調整成同時認得兩品牌，見 §3.2）；**`renderExchangeRates()`／`bestVisibleRate()` 依品牌分派 denom 清單、rate lookup、時間戳與官網連結（意見 13）**；**cluster 三態著色，Google 與 HERE 同步（意見 15）**；**`EXCHANGE_SORT_VALUES` 納入橘標 key（意見 14）**；**`syncExchangeControls()` 的 `hidden` 與 sort 重設改成兩品牌聯集（意見 17）**；§4.4 的 `state.exchange1965` 狀態隔離；§3.3 的跨品牌排序範圍；卡片／popup 顯示公司全名與免責 | `src/core/state.js`、`src/features/`、`src/ui/render.js`、`src/map/map.js`、`src/core/i18n.js`、`styles.css` | 綠色既有行為（含排序、cluster 著色）不受影響；橘標卡片顯示自己的匯率、時間與**橘標官網連結**；marker 與 cluster 在 Google/HERE 一致；任一品牌故障不影響另一品牌（§4.4 驗收條件） |
@@ -292,10 +300,10 @@ A0 留下的限制與 Phase C 待辦：
 
 ### 7.2 待確認事項
 
-9. `code: "E52-01"` 的 Terminal 21 Pattaya（`company_code: "E52"`，跟其他 38 筆的 `"A04"` 不同）算不算 Our Branch？需要對照 `/spr/front/branches` 的 `groups[]` 判斷，Phase A1 剩餘工作會一起定案，不需要現在決定。
+9. **已解決（2026-09-10）**：Terminal 21 Pattaya 的 `groups[]` 為 `partner`（id 106），依第一版規則排除 `E52-01`。
 10.（次要，可以晚點）`data.update_time` 的語意還沒驗證，且原先「打兩次比較」的方法本身不成立（見 §2 修正說明）——優先度低，即使一直沒驗證，卡片預設行為（只顯示「本次查詢時間」）也不受影響，不會卡到任何 Phase。解析層已經把這個值解出來放在 `sourceUpdatedAtMs`，但明確標註語意未驗證、UI 不得當作「官網報價時間」顯示。
 
-A0 已收尾。下一步是 A1 的分店分組與識別碼核對；Phase C 的抓取預算及失敗處理依 §5 定案。
+A0／A1 已完成，38 筆正式草稿已建檔。後續先複核逐店位置疑點；Phase C 的抓取預算及失敗處理依 §5 定案。
 
 ## 8. 本次交付界線
 
@@ -303,6 +311,6 @@ A0 已收尾。下一步是 A1 的分店分組與識別碼核對；Phase C 的�
 
 本文件是規格，不記進度。已完成的工作、驗證結果、每個階段的未解問題，一律見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)；歷次審閱提出什麼、怎麼改的，見 [審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)。
 
-**目前的交付界線**：A0 實測紀錄已保存、文件已同步，兩支暫時 probe 已自工作區移除；A1 純解析層與分組核對工具保留。正式分店建檔、排程後端與前端／UI 仍屬後續階段。
+**目前的交付界線**：A0／A1、正式建檔及 Phase C 本機後端均已完成。38 筆 Place ID 已用官方 Maps CID 逐店交叉核對；Central Ladprao、Baan Silom、Sanam Chai 文字疑點已處理，The Old Siam Plaza 採明確命名的 OSM 分店點位。13 筆座標仍待修正，全部分店維持 Paused。Phase C 尚未部署、啟用或產生正式快照，前端／UI 尚未實作。
 
-**下一步**：取得 A1 所需分店資料，核對 `groups[]` 與正式分店對照。A0 最小驗收不再等待重跑；後續穩定性測試依 §5／Phase C 安排。
+**下一步**：在 Deploy Preview 保持 `EXCHANGE_RATES_1965_ENABLED` 未設定／false，先驗證停用回應，再由管理 CLI 人工啟用及觸發第一輪，核對 38 店快照後立即決定是否維持啟用。並行完成 13 筆座標審核；兩項都通過後才進 Phase D1。
