@@ -9,10 +9,18 @@ import {
   collectSourceQuotes, SOURCE_BASE_URL, SOURCE_MIN_START_GAP_MS,
 } from '../netlify/functions/_shared/exchange-rates-1965-source.mjs';
 import { createRuntimeStore } from '../netlify/functions/_shared/exchange-rates-1965-storage.mjs';
+import { config as fetchConfig } from '../netlify/functions/exchange-rates-1965-fetch.mjs';
 import { serveExchangeRates } from '../netlify/functions/exchange-rates-1965.mjs';
 import { FakeBlobStore, jsonResponse, uuid } from './helpers/exchange-rates-store.mjs';
 
 const START = Date.parse('2026-09-11T00:00:00Z');
+
+test('scheduled fetch runs in Singapore near the upstream service', () => {
+  assert.deepEqual(fetchConfig, {
+    region: 'sin',
+    schedule: '0,30 * * * *',
+  });
+});
 
 function mapping() {
   return {
