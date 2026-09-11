@@ -176,3 +176,25 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 **完成條件**（計畫 §6 E）：混合品牌排序回歸測試、任一品牌故障隔離測試、cluster 三態著色回歸測試、橘標卡片不得出現綠標官網連結的回歸測試；README 與 ADR 更新。
 
 **狀態：本機完成。** 新增橘標前端與混合品牌回歸測試，README、技術決策與本機驗收手冊已同步。`npm run typecheck`、`npm test`（485 通過／0 失敗）、`npm run build` 與 `git diff --check` 通過。
+
+---
+
+## M6 · 本機抓取與快照發布
+
+**完成條件**（[本機抓取計劃](superrich1965-local-fetch-plan.zh-TW.md) P0–P6）：本機 CLI、發布守門、雲端抓取開關、測試與維運文件齊備；本機可用性須實測，不得以 mock 成功代替。
+
+**狀態：程式、測試與文件完成（2026-09-11）；本機實測與正式切換未執行。**
+
+**已完成：** 新增 `scripts/exchange-rates-1965-fetch.mjs`（`probe` / `run --dry-run` / `run --publish`，fail closed、無 `--force`）、source 的 pacing profile 注入（netlify 維持併發 2／200ms／5 秒／25 秒；local 為併發 1／1,500ms／5 秒／180 秒，`canRetry()` 與 pacing 同讀一份 profile）、runner 的 `runLocalExchangeRateFetch()`、contract 的 `exchange-rates-1965/last-attempt` 有界摘要與 `EXCHANGE_RATES_1965_FETCH_MODE=netlify|local`。本機狀態（執行鎖 + 冷卻）放在 gitignored 的 `.local-state/`，鎖只由持有者刪除。
+
+定案：只有 `complete` 才以 ETag 條件寫入快照；partial／failed／blocked、控制版本變動、寫入衝突與「整輪成功但已過 `expiresAt`」都不覆寫舊報價、不延長壽命，失敗仍更新 breaker 與 `lastAttempt`。`FETCH_MODE=local` 時排程 function 在建立 store 前返回並記 INFO，公開 API 照常服務——它不能取代 `fx:1965:control -- disable`。本機 challenge 冷卻為 30 分鐘→6 小時→24 小時，刻意比遠端 breaker 溫和，因為它防的是人工反覆重跑。
+
+**本機驗證：** 新增 `tests/exchange-rates-1965-local-fetch.test.mjs`（23 項，全部使用 fake fetch／clock／store，不打真實來源、不寫正式 Blobs），涵蓋參數 fail closed、兩種 profile、單店 challenge 不 retry 且零遠端寫入、本機冷卻與執行鎖、遠端 breaker 冷卻、dry-run 不動遠端、發布成功、partial／challenge／ETag 衝突／已過期不覆寫、抓取中控制版本變動放棄發布、較舊摘要不覆蓋較新、`FETCH_MODE` 閘門。`npm run typecheck` 與 `npm test`（509 通過／0 失敗）皆過。
+
+**已修正的四個複審問題（2026-09-11）：** dry-run 整輪失敗曾回報 `collected`（現在只有 `complete` 才是成功，其餘為 `not_published`）；本機冷卻曾寫死 `retryAfterMs: null` 而忽略來源的 `Retry-After`（現已傳遞）；probe／dry-run 曾被 `control.enabled` 擋住（診斷不再受公開開關影響，但仍尊重遠端冷卻且零遠端寫入）；發布前的到期檢查曾使用抓取結束時間，未計入其後的 control 重讀往返（改在寫入當下讀時鐘）。四項各有對應回歸測試。
+
+**2026-09-12 複驗：** 已檢查上述四項修正及對應回歸測試；macOS 工作區的 `npm run typecheck`、`npm test`（509 通過／0 失敗）及 `npm run build` 均通過，先前 Linux 橋接環境的 build 驗證缺口已補齊。
+
+**範圍說明：** 保留成功快照與 `lastAttempt` 摘要由本機 runner 實作；既有 Netlify runner 的快照發布策略未在此版改動。採用本機模式前仍須完成 `FETCH_MODE=local` 的部署及略過驗收。
+
+**未解問題：** 新 CLI 尚未從本機對真實來源跑過 `probe` 或 `run --dry-run`，因此**本機可用性仍未驗證**。正式切換（設定 `FETCH_MODE=local` 並部署、啟動本機 collector）與可選的 launchd 排程都留待授權後執行。

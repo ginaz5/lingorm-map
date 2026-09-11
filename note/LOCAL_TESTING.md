@@ -241,6 +241,123 @@ enable`，再執行 `netlify functions:invoke exchange-rates-1965-fetch`；核�
 cluster 為橘色，全綠為綠色，混合 cluster 為中性。依序停用其中一個品牌，
 另一品牌的報價、排序選項與 marker 應維持可用。
 
+### 橘標本機抓取（collector）
+
+`www.superrich1965.com` 的匯率請求曾在 Netlify 收到 Cloudflare challenge
+（`403` + `cf-mitigated: challenge` + HTML）；這些欄位不能確認挑戰類型
+或觸發規則。本機與 Netlify 皆有成功的歷史紀錄，但本機持續可用性仍需實測。
+本機 collector 讓抓取從自己的機器出去，前台仍讀同一份 Blobs 快照。
+綠標抓取流程維持原樣。
+
+```bash
+npm run fx:1965:fetch -- probe              # 單店診斷（預設 officialId 56），不發布
+npm run fx:1965:fetch -- probe --branch 77  # 指定分店
+npm run fx:1965:fetch -- run --dry-run      # 38 店完整驗證，不發布
+npm run fx:1965:fetch -- run --publish      # 38 店完整成功才寫入正式快照
+```
+
+三種模式都是**真實的來源請求**。缺少命令、同時給 `--dry-run --publish`、
+未知參數都會直接失敗；沒有任何預設發布，也刻意沒有 `--force` 可以清掉
+封鎖。退出碼只有 `collected`／`published` 是 0，其餘皆為 1。
+
+輸出是一個 JSON 物件，`status` 的語意固定：
+
+| status | 意思 |
+| --- | --- |
+| `collected` | 來源整輪成功，dry-run 完成，遠端完全沒動 |
+| `published` | 整輪成功且快照已寫入 |
+| `not_published` | 這一輪不該發布：來源沒有整輪成功（`source_partial`／`source_failed`），或成功了但寫不得（`snapshot_conflict`／`snapshot_expired`）。dry-run 只要不是整輪成功也會是這個值——**`collected` 才代表成功** |
+| `blocked` | 被 challenge／403／429 擋下，整輪立即停止 |
+| `skipped` | 沒有發出任何來源請求（`lock_held`／`local_cooldown`／`remote_cooldown`／`missing_credentials`／`control_missing`／`stale_control` 或 control 的停用原因） |
+
+`--publish` 需要 `.env` 裡的 `NETLIFY_SITE_ID` 與 `NETLIFY_AUTH_TOKEN`，且
+**必須已經有一份 enabled 的 control**；這支指令不會替你 enable，也不會自動
+建立 control。沒有憑證時 probe／dry-run 仍可執行，但看不到遠端 breaker 冷
+卻，輸出會標記 `remoteCooldownKnown: false`——那不代表來源沒被擋。
+
+probe 與 dry-run **不受 control.enabled 影響**：前台關著也能診斷來源，這正是
+最需要診斷的時候。兩者仍然完全不寫遠端，也仍然尊重遠端 breaker 冷卻。被
+429 擋下時，來源自己的 `Retry-After` 若比本機階梯長，以 `Retry-After` 為準。
+
+本機狀態放在 gitignored 的 `.local-state/exchange-rates-1965/`：
+
+- `run.lock` — 執行鎖，避免同一台機器重疊執行。程式**不會**自己刪別人的
+  鎖；遇到 `lock_held` 時輸出會附 `lockHolder.pid` 與已持有時間，先用
+  `ps -p <pid>` 確認該程序真的不在了，再手動 `rm
+  .local-state/exchange-rates-1965/run.lock`。
+- `state.json` — 本機冷卻與最近一次執行摘要。被 challenge 後冷卻階梯是
+  30 分鐘 → 6 小時 → 24 小時（比遠端 breaker 的 6h→24h→自動停用溫和，因為
+  它防的是人工反覆重跑）。整輪成功會歸零。`local_cooldown` 期間不會發出
+  任何來源請求。
+
+遠端最近一次發布結果看 `npm run fx:1965:control -- status` 的 `lastAttempt`
+欄位（有界摘要，不含原始 response）。
+
+#### 切換到本機抓取
+
+1. 先確認本機真的抓得到：`npm run fx:1965:fetch -- probe`，通過後再
+   `npm run fx:1965:fetch -- run --dry-run`。第一店就被 challenge 就停手，
+   不要反覆換 header 或出口重試。
+2. 在 Netlify 設定 `EXCHANGE_RATES_1965_FETCH_MODE=local`，**並部署**。只改
+   `.env` 不算切換。
+3. 部署後確認排程 function 的 log 出現 `status:"skipped"`、
+   `reason:"external_fetcher"` 的 INFO，且該輪零來源請求、零 store 寫入。
+4. 這時才啟動本機 collector：`npm run fx:1965:fetch -- run --publish`，然後
+   驗證 `/api/exchange-rates-1965` 回得到新快照、前台查詢時間有更新。
+5. 同一時間只跑一台本機 collector。ETag 只能防止互相覆寫，防不了重複的來源
+   請求。
+
+#### 回復成雲端抓取
+
+先停掉本機排程並確認沒有執行中的 collector（`.local-state/.../run.lock` 不
+存在），再把 `EXCHANGE_RATES_1965_FETCH_MODE` 改回 `netlify` 並部署。維持既
+有 control 與冷卻：不要清 breaker，也不要試圖復活已過期的快照。
+
+#### 到期時間與可選排程
+
+快照有效期不是「成功後固定 30 分鐘」，而是
+`nextUpdateAt = attemptedAt 之後的下一個 UTC :00／:30`、
+`expiresAt = nextUpdateAt + 90 秒`。手動更新可以用，但不能描述成全天即時
+服務：電腦關機、休眠或漏跑，前台就會照既有規則顯示「暫無報價」，不會偽造
+更新時間。
+
+本機穩定後可自行掛 launchd（**不要**在實作過程自動安裝）。範本：
+
+```bash
+# ~/bin/fx1965-publish.sh
+#!/bin/bash
+set -euo pipefail
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"   # 讓 launchd 找得到 node
+cd "$HOME/Dev/lingorm_bangkok_map"
+exec npm run fx:1965:fetch -- run --publish
+```
+
+```xml
+<!-- ~/Library/LaunchAgents/com.lingorm.fx1965.plist -->
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.lingorm.fx1965</string>
+  <key>ProgramArguments</key><array><string>/Users/YOU/bin/fx1965-publish.sh</string></array>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Minute</key><integer>30</integer></dict>
+  </array>
+  <key>StandardOutPath</key><string>/Users/YOU/Library/Logs/fx1965.log</string>
+  <key>StandardErrorPath</key><string>/Users/YOU/Library/Logs/fx1965.err.log</string>
+</dict></plist>
+```
+
+安裝 `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.lingorm.fx1965.plist`、
+卸載 `launchctl bootout gui/$(id -u)/com.lingorm.fx1965`。log 要自行輪替
+（`newsyslog.conf` 或 `logrotate`），別讓它無限長大；執行鎖已經由 collector
+自己處理。
+
+1.5 秒起始間隔抓 38 店，光是起始就跨約 55.5 秒，加上來源延遲與上傳時間，
+**不保證**每輪都能在 90 秒寬限內完成。舊快照到期到新快照發布之間允許短暫
+「暫無報價」，不要把觸發時間改成 `:02`／`:32` 卻宣稱無縫更新。整輪 180 秒
+是執行上限，不是寬限時間。
+
 ### 排程首次啟用（正式環境）
 
 Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；即使

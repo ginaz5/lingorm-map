@@ -344,6 +344,33 @@ retry。403、429 或 `cf-mitigated: challenge` 立即停止整輪，沿用
 6h→24h→自動停用的 breaker。完整規格見
 [橘標實作計畫](../docs/superrich1965-exchange-map-plan.zh-TW.md) §5。
 
+橘標另外保留「本機 collector」作為抓取來源的第二條路徑，原因是
+`www.superrich1965.com` 的匯率請求曾在 Netlify 收到
+`cf-mitigated: challenge`。本機及 Netlify 都曾成功取得匯率，具體觸發規則、
+出口 IP 的影響與本機持續可用性尚未確認，不能單靠回應 headers 判定挑戰
+類型或根因。先以既有本機成功紀錄驗證另一個執行位置，維持可辨識的
+User-Agent、退避與遇阻即停；綠標流程不變。
+
+`EXCHANGE_RATES_1965_FETCH_MODE=netlify|local` 只決定「誰抓」，與
+`EXCHANGE_RATES_1965_ENABLED`／control.enabled（決定「前台看不看得到」）
+完全分離。`local` 時排程 function 在建立 store 前就返回，記一筆
+`status:"skipped"`、`reason:"external_fetcher"` 的 INFO；停用公開報價仍然
+只能用 `fx:1965:control -- disable`。
+
+抓取節奏改為 profile 注入：`netlify` profile 維持併發 2、起始間隔 200ms、
+單次 5 秒、整輪 25 秒；`local` profile 為併發 1、起始間隔 1,500ms、單次
+5 秒、整輪 180 秒。`canRetry()` 與 pacing 讀同一份已解析的 profile，避免
+只改請求端、判斷端仍用寫死常數而互相矛盾。
+
+本機發布沿用同一組 contract：只有 `complete` 才以 ETag 條件寫入 snapshot，
+partial／failed／blocked、控制版本變動、寫入衝突與「整輪成功但已過
+`expiresAt`」都不覆寫舊報價、也不延長舊報價壽命；失敗仍更新 breaker 與新
+增的 `exchange-rates-1965/last-attempt` 摘要（有界、不含原始 response，較舊
+執行不覆蓋較新摘要）。本機另有 gitignored 的 `.local-state/` 執行鎖與冷卻；
+冷卻階梯刻意比遠端 breaker 溫和（30 分鐘→6 小時→24 小時），因為它要防的是
+人工反覆重跑探測，而不是每 30 分鐘無人看管的排程。鎖只由持有者刪除，異常
+退出時回報 pid 與持續時間交人工判斷。
+
 前端同樣隔離：綠標沿用既有扁平 state，橘標集中在
 `state.exchange1965`；兩套 timer、request、expiry 與 retry 各自運作。
 兩品牌只共用顯示開關與排序 select。排序 key 依品牌分桶，另一品牌不參與

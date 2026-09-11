@@ -7,6 +7,7 @@ export const EXCHANGE_KEYS = Object.freeze({
   snapshot: 'exchange-rates-1965/snapshot',
   breaker: 'exchange-rates-1965/breaker',
   control: 'exchange-rates-1965/control',
+  lastAttempt: 'exchange-rates-1965/last-attempt',
 });
 export const SNAPSHOT_SCHEMA_VERSION = 1;
 export const PUBLIC_SCHEMA_VERSION = 1;
@@ -189,4 +190,118 @@ export function environmentEnabled(value) {
   if (value === 'true') return true;
   if (value === 'false') return false;
   throw new Error('EXCHANGE_RATES_1965_ENABLED must be true or false.');
+}
+
+/**
+ * Bounded run summary. Never carries a raw upstream response — only fixed
+ * counts, fixed reason codes and the same bounded header diagnostics the
+ * source module already collects.
+ */
+export const LAST_ATTEMPT_SCHEMA_VERSION = 1;
+export const MAX_ATTEMPT_DIAGNOSTICS = 8;
+
+const ATTEMPT_MODES = new Set(['probe', 'dry_run', 'publish', 'scheduled']);
+/**
+ * `published` must never stand in for a source failure: a run that collected
+ * rates but wrote nothing is `not_published`, and a challenged run is
+ * `blocked`, regardless of how the snapshot write went.
+ */
+const ATTEMPT_RESULTS = new Set(['collected', 'published', 'not_published', 'blocked', 'skipped', 'failed']);
+const ATTEMPT_OUTCOMES = new Set(['complete', 'partial', 'failed', 'blocked']);
+const DIAGNOSTIC_STRING_KEYS = ['cfMitigated', 'contentType', 'retryAfter', 'rayId', 'reason'];
+
+/** @typedef {'probe'|'dry_run'|'publish'|'scheduled'} AttemptMode */
+/** @typedef {'collected'|'published'|'not_published'|'blocked'|'skipped'|'failed'} AttemptResult */
+
+/** Keep only known keys, bounded lengths and a bounded entry count. */
+/** @param {unknown} value @returns {Array<Record<string, string|number|null>>} */
+export function sanitizeDiagnostics(value) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, MAX_ATTEMPT_DIAGNOSTICS).map(entry => {
+    /** @type {Record<string, string|number|null>} */
+    const clean = {};
+    if (!isObject(entry)) return clean;
+    if (Number.isSafeInteger(entry.officialId) && entry.officialId > 0) clean.officialId = entry.officialId;
+    clean.status = Number.isSafeInteger(entry.status) ? entry.status : null;
+    for (const key of DIAGNOSTIC_STRING_KEYS) {
+      const raw = entry[key];
+      clean[key] = typeof raw === 'string' ? raw.replace(/[^\x20-\x7e]/g, '').slice(0, 100) : null;
+    }
+    return clean;
+  });
+}
+
+/**
+ * @param {{mode:AttemptMode, result:AttemptResult, attemptedAtMs:number, completedAtMs:number, controlVersion?:string|null, runId?:string|null, sourceOutcome?:string|null, sourceRequestCount?:number, okBranchCount?:number, failedBranchCount?:number, reason?:string|null, diagnostics?:unknown}} input
+ */
+export function createLastAttempt({
+  mode,
+  result,
+  attemptedAtMs,
+  completedAtMs,
+  controlVersion = null,
+  runId = null,
+  sourceOutcome = null,
+  sourceRequestCount = 0,
+  okBranchCount = 0,
+  failedBranchCount = 0,
+  reason = null,
+  diagnostics = [],
+}) {
+  if (!ATTEMPT_MODES.has(mode) || !ATTEMPT_RESULTS.has(result)) throw new Error('Invalid attempt identity.');
+  if (!Number.isFinite(attemptedAtMs) || !Number.isFinite(completedAtMs) || completedAtMs < attemptedAtMs) {
+    throw new Error('Invalid attempt time.');
+  }
+  if (controlVersion !== null && !isUuid(controlVersion)) throw new Error('Invalid attempt control version.');
+  if (runId !== null && !isUuid(runId)) throw new Error('Invalid attempt run id.');
+  if (sourceOutcome !== null && !ATTEMPT_OUTCOMES.has(sourceOutcome)) throw new Error('Invalid attempt outcome.');
+  if (reason !== null && (typeof reason !== 'string' || !REASON_PATTERN.test(reason))) throw new Error('Invalid attempt reason.');
+  for (const count of [sourceRequestCount, okBranchCount, failedBranchCount]) {
+    if (!Number.isSafeInteger(count) || count < 0) throw new Error('Invalid attempt counts.');
+  }
+  return {
+    schemaVersion: LAST_ATTEMPT_SCHEMA_VERSION,
+    mode,
+    result,
+    controlVersion,
+    runId,
+    attemptedAt: new Date(attemptedAtMs).toISOString(),
+    completedAt: new Date(completedAtMs).toISOString(),
+    sourceOutcome,
+    sourceRequestCount,
+    okBranchCount,
+    failedBranchCount,
+    reason,
+    diagnostics: sanitizeDiagnostics(diagnostics),
+  };
+}
+
+/** @param {unknown} value @returns {value is Record<string, any>} */
+export function isValidLastAttempt(value) {
+  if (!isObject(value) || value.schemaVersion !== LAST_ATTEMPT_SCHEMA_VERSION) return false;
+  if (!ATTEMPT_MODES.has(value.mode) || !ATTEMPT_RESULTS.has(value.result)) return false;
+  if (!isIso(value.attemptedAt) || !isIso(value.completedAt)) return false;
+  if (Date.parse(value.completedAt) < Date.parse(value.attemptedAt)) return false;
+  if (value.controlVersion !== null && !isUuid(value.controlVersion)) return false;
+  if (value.runId !== null && !isUuid(value.runId)) return false;
+  if (value.sourceOutcome !== null && !ATTEMPT_OUTCOMES.has(value.sourceOutcome)) return false;
+  if (value.reason !== null && (typeof value.reason !== 'string' || !REASON_PATTERN.test(value.reason))) return false;
+  for (const key of ['sourceRequestCount', 'okBranchCount', 'failedBranchCount']) {
+    if (!Number.isSafeInteger(value[key]) || value[key] < 0) return false;
+  }
+  return Array.isArray(value.diagnostics) && value.diagnostics.length <= MAX_ATTEMPT_DIAGNOSTICS;
+}
+
+/**
+ * Which collector fetches the orange rates. This is NOT the public enable
+ * switch: `local` stops the Scheduled Function from calling the source while
+ * `/api/exchange-rates-1965` keeps serving a valid snapshot.
+ */
+export const FETCH_MODES = Object.freeze(['netlify', 'local']);
+
+/** @param {unknown} value @returns {'netlify'|'local'} */
+export function resolveFetchMode(value) {
+  if (value === undefined || value === null || value === '') return 'netlify';
+  if (value === 'netlify' || value === 'local') return value;
+  throw new Error('EXCHANGE_RATES_1965_FETCH_MODE must be netlify or local.');
 }

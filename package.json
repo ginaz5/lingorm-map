@@ -13,7 +13,8 @@
     "fx:control": "node --env-file-if-exists=.env scripts/exchange-rates-control.mjs",
     "test:location-verification": "node --test tests/formal-location-current-schema.test.mjs tests/location-verification-core.test.mjs tests/location-verification-runner.test.mjs tests/location-verification-ui-server.test.mjs tests/location-verification-ui-workflow.test.mjs tests/location-verification-validator.test.mjs",
     "typecheck": "tsc --noEmit -p jsconfig.json",
-    "fx:1965:control": "node --env-file-if-exists=.env scripts/exchange-rates-1965-control.mjs"
+    "fx:1965:control": "node --env-file-if-exists=.env scripts/exchange-rates-1965-control.mjs",
+    "fx:1965:fetch": "node --env-file-if-exists=.env scripts/exchange-rates-1965-fetch.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

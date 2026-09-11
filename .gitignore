@@ -35,3 +35,7 @@ data/locations.next.csv
 # Local-only demo/preview renders (map update walkthrough videos, etc.)
 demo-output/
 lingorm-map-update-demo-threads-9x16.mp4
+
+# Local orange-rate collector state (run lock + cooldown + last attempt),
+# written by `npm run fx:1965:fetch`. Machine-specific, never committed.
+.local-state/
