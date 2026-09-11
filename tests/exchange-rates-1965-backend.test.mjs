@@ -80,6 +80,8 @@ test('source fetches the fixed mapping with paced POST requests and safe headers
     assert.equal(call.url, `${SOURCE_BASE_URL}/get`);
     assert.equal(call.init.method, 'POST');
     assert.equal(call.init.redirect, 'error');
+    assert.equal(call.init.headers.Accept, 'application/json');
+    assert.equal(call.init.headers['Content-Type'], 'application/json');
     assert.match(call.init.headers['User-Agent'], /LingOrmBangkokMap.*https:\/\//);
     assert.equal(call.init.headers.Authorization, undefined);
     assert.equal(call.init.headers.Cookie, undefined);

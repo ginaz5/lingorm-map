@@ -60,7 +60,11 @@ function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAt
       const response = await fetchImpl(`${SOURCE_BASE_URL}/get`, {
         method: 'POST',
         redirect: 'error',
-        headers: { 'Content-Type': 'application/json', 'User-Agent': SOURCE_USER_AGENT },
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'User-Agent': SOURCE_USER_AGENT,
+        },
         body: JSON.stringify({ filters: [
           { field: 'company_code', value: branch.companyCode },
           { field: 'branch_no', value: branch.branchNo },
