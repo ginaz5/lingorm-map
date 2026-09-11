@@ -103,42 +103,48 @@ test('markers use one status-independent marker class', () => {
   }
 });
 
-test('exchange markers use the dedicated green marker variant', () => {
+test('exchange markers use dedicated green and orange variants', () => {
   const previousDocument = globalThis.document;
   globalThis.document = {
     createElement: () => ({ className: '', textContent: '' }),
   };
 
   try {
-    const marker = makeMarkerContent('💱', true);
-    assert.equal(marker.className, 'marker-dot is-exchange');
-    assert.equal(marker.textContent, '💱');
+    const green = makeMarkerContent('💱', 'green');
+    const orange = makeMarkerContent('💱', 'orange');
+    assert.equal(green.className, 'marker-dot is-exchange');
+    assert.equal(orange.className, 'marker-dot is-exchange-orange');
+    assert.equal(green.textContent, '💱');
   } finally {
     globalThis.document = previousDocument;
   }
 });
 
-function fakeClusteredMarker(isExchange) {
-  const classes = new Set(isExchange ? ['marker-dot', 'is-exchange'] : ['marker-dot']);
+function fakeClusteredMarker(brand) {
+  const classes = new Set(['marker-dot']);
+  if (brand === 'green') classes.add('is-exchange');
+  if (brand === 'orange') classes.add('is-exchange-orange');
   return { __markerContent: { classList: { contains: cls => classes.has(cls) } } };
 }
 
-test('Google cluster renderer colors a cluster green only when every marker is an exchange location', () => {
-  assert.equal(isExchangeOnlyCluster([fakeClusteredMarker(true), fakeClusteredMarker(true)]), true);
-  assert.equal(isExchangeOnlyCluster([fakeClusteredMarker(true), fakeClusteredMarker(false)]), false);
-  assert.equal(isExchangeOnlyCluster([fakeClusteredMarker(false)]), false);
-  assert.equal(isExchangeOnlyCluster([]), false);
+test('Google clusters use green, orange, or neutral brand states', () => {
+  assert.equal(isExchangeOnlyCluster([fakeClusteredMarker('green'), fakeClusteredMarker('green')]), 'green');
+  assert.equal(isExchangeOnlyCluster([fakeClusteredMarker('orange'), fakeClusteredMarker('orange')]), 'orange');
+  assert.equal(isExchangeOnlyCluster([fakeClusteredMarker('green'), fakeClusteredMarker('orange')]), null);
+  assert.equal(isExchangeOnlyCluster([fakeClusteredMarker('green'), fakeClusteredMarker(null)]), null);
+  assert.equal(isExchangeOnlyCluster([]), null);
 });
 
-function fakeDataPoint(isExchange) {
-  return { getData: () => ({ isExchange }) };
+function fakeDataPoint(exchangeBrand) {
+  return { getData: () => ({ exchangeBrand }) };
 }
 
-test('HERE cluster theme colors a cluster green only when every leaf data point is an exchange location', () => {
+test('HERE clusters use green, orange, or neutral brand states', () => {
   const forEachOf = points => callback => points.forEach(callback);
 
-  assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint(true), fakeDataPoint(true)])), true);
-  assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint(true), fakeDataPoint(false)])), false);
-  assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint(false)])), false);
-  assert.equal(isExchangeOnlyDataPoints(forEachOf([])), false);
+  assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint('green'), fakeDataPoint('green')])), 'green');
+  assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint('orange'), fakeDataPoint('orange')])), 'orange');
+  assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint('green'), fakeDataPoint('orange')])), null);
+  assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint(null)])), null);
+  assert.equal(isExchangeOnlyDataPoints(forEachOf([])), null);
 });

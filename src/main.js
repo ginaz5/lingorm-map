@@ -48,7 +48,9 @@ import {
   EXCHANGE_CATEGORY,
   initExchangeRates,
   isExchangeLocation,
+  syncExchangeControls,
 } from './features/exchange-rates.js';
+import { initExchangeRates1965 } from './features/exchange-rates-1965.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -217,7 +219,8 @@ initDestinationFilter(change => {
   );
 });
 initCollectionInfo();
-initExchangeRates(change => {
+/** @param {{exchangeHidden?:boolean,locationsChanged?:boolean}} change */
+const handleExchangeChange = change => {
   if (change.exchangeHidden) {
     const category = /** @type {HTMLSelectElement} */ (document.getElementById('cat-filter'));
     if (category.value === EXCHANGE_CATEGORY || category.value === t('category_currency_exchange')) {
@@ -233,7 +236,9 @@ initExchangeRates(change => {
     applyFiltersAndSyncMap();
   }
   refreshActivePopup();
-});
+};
+initExchangeRates(handleExchangeChange);
+initExchangeRates1965(handleExchangeChange, syncExchangeControls);
 
 // Static event listeners
 document.getElementById('fav-filter-btn').addEventListener('click', event => {

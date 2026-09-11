@@ -61,6 +61,12 @@ function resetExchangeState() {
     exchangeRetryLevel: 0, exchangeLastAttemptAtMs: null,
     exchangeUpdateCheckPending: false, exchangeRatesLoading: false,
     exchangeHasUsableSnapshot: false,
+    exchange1965: {
+      ratesBySlug: {}, runId: null, controlVersion: null, enabled: null,
+      completedAt: null, nextUpdateAtMs: null, expiresAtMs: null,
+      retryLevel: 0, lastAttemptAtMs: null, updateCheckPending: false,
+      ratesLoading: false, hasUsableSnapshot: false,
+    },
   });
 }
 

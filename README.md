@@ -18,7 +18,7 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 - Mobile-responsive with map / list tab switching and scroll
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
-- Optional SuperRich Thailand currency-exchange overlay: 26 branches with live USD 100 / USD 50 / TWD buying rates, best-rate sorting, and a persisted toggle (off by default; gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
+- Optional currency-exchange overlay with brand-isolated SuperRich Thailand and SuperRich 1965 rate services, brand-scoped best-rate sorting, and a persisted toggle (off by default; SuperRich 1965 records remain unpublished until their review gate passes — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
 
 ---
 
@@ -403,10 +403,10 @@ Markers are 28px brand-color emoji circles. Public status is intentionally not
 encoded in marker color. The emoji comes from `row.icon` and falls back to 📍
 if missing.
 
-Currency-exchange branches (`Category = Currency Exchange`) get a dedicated
-green `.is-exchange` variant on both the individual marker and, when a
-cluster is made up entirely of exchange branches, the cluster badge itself
-(a mixed cluster keeps the default color). See `makeMarkerContent`,
+Currency-exchange branches (`Category = Currency Exchange`) use green
+`.is-exchange` or orange `.is-exchange-orange` marker variants according to
+their company. A cluster made entirely of one brand uses that brand color;
+mixed-brand and mixed-category clusters keep the default color. See `makeMarkerContent`,
 `isExchangeOnlyCluster` (Google), and `isExchangeOnlyDataPoints` (HERE) in
 `src/map/map.js`.
 

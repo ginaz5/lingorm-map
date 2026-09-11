@@ -336,7 +336,10 @@ header {
   color: var(--primary);
 }
 .b-exchange{background:rgba(22,131,91,.1);color:#11724f;border-color:rgba(22,131,91,.28)}
+.b-exchange-orange{background:rgba(242,102,34,.1);color:#b94a13;border-color:rgba(242,102,34,.3)}
 .fx-panel{margin-top:10px;padding:10px;border:1px solid rgba(22,131,91,.22);border-radius:9px;background:rgba(22,131,91,.045);color:var(--primary);overflow-wrap:anywhere}
+.fx-panel.is-exchange-orange{border-color:rgba(242,102,34,.28);background:rgba(242,102,34,.055)}
+.fx-brand{margin-bottom:7px;font-size:10px;line-height:1.35;font-weight:700;color:var(--primary)}
 .fx-rates{display:flex;flex-direction:column;gap:6px}
 .fx-rates.is-loading{opacity:.48}
 .fx-rate-row{display:grid;grid-template-columns:minmax(96px,1fr) minmax(0,1.35fr);align-items:start;gap:8px;font-size:11px;line-height:1.35}
@@ -414,6 +417,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
   filter:drop-shadow(0 0 1px var(--marker-ring));transition:box-shadow .18s ease,transform .18s ease}
 .marker-dot.active{box-shadow:0 4px 12px rgba(0,0,0,.4),0 0 15px rgba(255,255,255,.6);transform:scale(1.08)}
 .marker-dot.is-exchange{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7}
+.marker-dot.is-exchange-orange{--marker-bg:#f26622;--marker-fg:#fff;--marker-ring:#ffd0b8}
 .marker-cluster{border-radius:50%;background:var(--marker-bg);color:var(--marker-fg);
   font-family:'Inter',sans-serif;font-weight:600;font-size:13px;
   display:flex;align-items:center;justify-content:center;
@@ -421,6 +425,7 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
   cursor:pointer;transition:transform .15s ease}
 .marker-cluster:hover{transform:scale(1.12)}
 .marker-cluster.is-exchange{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7}
+.marker-cluster.is-exchange-orange{--marker-bg:#f26622;--marker-fg:#fff;--marker-ring:#ffd0b8}
 
 /* HERE Maps InfoBubble overrides */
 .H_ib_body{background:var(--canvas)!important;border:1px solid var(--hairline)!important;

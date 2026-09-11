@@ -1,7 +1,10 @@
 import BRANCH_MAPPING from '../../data/superrich-branches.json' with { type: 'json' };
+import BRANCH_MAPPING_1965 from '../../data/superrich1965-branches.json' with { type: 'json' };
 
 import { state } from '../core/state.js';
 import { DENOMS } from '../data/exchange-rates.js';
+import { DENOMS_1965 } from '../data/exchange-rates-1965.js';
+import { setExchange1965LocationsVisible } from './exchange-rates-1965.js';
 
 export const EXCHANGE_CATEGORY = 'Currency Exchange';
 export const EXCHANGE_TOGGLE_STORAGE_KEY = 'showExchangeLocations';
@@ -9,13 +12,15 @@ export const EXCHANGE_API = '/api/exchange-rates';
 export const EXCHANGE_API_TIMEOUT_MS = 8_000;
 export const EXCHANGE_POLL_MS = 60_000;
 export const EXCHANGE_RETRY_DELAYS_MS = Object.freeze([10_000, 20_000, 40_000, 60_000]);
-export const EXCHANGE_SORT_VALUES = Object.freeze(['default', ...DENOMS]);
+export const EXCHANGE_SORT_VALUES = Object.freeze(['default', ...DENOMS, ...DENOMS_1965]);
 
 const BRANCHES = /** @type {Record<string, {officialId:number, branchCode:string}>} */ (BRANCH_MAPPING.branches);
 const BRANCH_SLUGS = new Set(Object.keys(BRANCHES));
+const BRANCH_SLUGS_1965 = new Set(Object.keys(BRANCH_MAPPING_1965.branches));
 const UNAVAILABLE_REASONS = new Set(['timeout', 'invalid', 'missing', 'http_error', 'expired']);
 
-/** @typedef {'default'|'USD_100'|'USD_50'|'TWD'} ExchangeSort */
+/** @typedef {'default'|'USD_100'|'USD_50'|'TWD'|'USD_1965'|'TWD_1965'} ExchangeSort */
+/** @typedef {'green'|'orange'} ExchangeBrand */
 /** @typedef {'fetch'|'expire'|'idle'} ExchangeAction */
 /**
  * @typedef {Object} ExchangeScheduleState
@@ -165,10 +170,18 @@ export function nextExchangeAction(now, schedule) {
   return { action: 'fetch', delayMs: Math.max(0, fetchAt - now) };
 }
 
+/** @param {string|{id?:string}} value @returns {ExchangeBrand|null} */
+export function getExchangeBrand(value) {
+  const slug = typeof value === 'string' ? value : value?.id;
+  if (typeof slug !== 'string') return null;
+  if (BRANCH_SLUGS.has(slug)) return /** @type {ExchangeBrand} */ ('green');
+  if (BRANCH_SLUGS_1965.has(slug)) return /** @type {ExchangeBrand} */ ('orange');
+  return null;
+}
+
 /** @param {string|{id?:string}} value */
 export function isExchangeLocation(value) {
-  const slug = typeof value === 'string' ? value : value?.id;
-  return typeof slug === 'string' && BRANCH_SLUGS.has(slug);
+  return getExchangeBrand(value) !== null;
 }
 
 /** @param {string} slug @param {'USD_100'|'USD_50'|'TWD'} denom */
@@ -249,7 +262,7 @@ export function applyExchangeRatesPayload(payload, timing) {
     state.exchangeUpdateCheckPending = false;
     state.exchangeRetryLevel = 0;
     state.exchangeLastAttemptAtMs = timing.requestStartedAtMs;
-    state.exchangeSort = 'default';
+    if (DENOMS.includes(/** @type {any} */ (state.exchangeSort))) state.exchangeSort = 'default';
     return;
   }
 
@@ -371,15 +384,26 @@ export function scheduleExchangeAction() {
 }
 
 export function syncExchangeControls() {
-  if (!state.exchangeHasUsableSnapshot) state.exchangeSort = 'default';
+  const selectedBrand = DENOMS.includes(/** @type {any} */ (state.exchangeSort))
+    ? 'green'
+    : DENOMS_1965.includes(/** @type {any} */ (state.exchangeSort)) ? 'orange' : null;
+  if ((selectedBrand === 'green' && !state.exchangeHasUsableSnapshot) ||
+      (selectedBrand === 'orange' && !state.exchange1965.hasUsableSnapshot)) {
+    state.exchangeSort = 'default';
+  }
   const toggle = /** @type {HTMLInputElement|null} */ (document.getElementById('exchange-toggle'));
   const sort = /** @type {HTMLSelectElement|null} */ (document.getElementById('exchange-sort'));
   if (toggle) toggle.checked = state.exchangeLocationsOn;
   if (!sort) return;
-  sort.hidden = !state.exchangeLocationsOn || state.exchangeRatesEnabled === false;
+  const hasAnyUsableSnapshot = state.exchangeHasUsableSnapshot || state.exchange1965.hasUsableSnapshot;
+  sort.hidden = !state.exchangeLocationsOn || !hasAnyUsableSnapshot;
   sort.value = state.exchangeSort;
   for (const option of sort.options) {
-    if (option.value !== 'default') option.disabled = state.exchangeRatesEnabled !== true || !state.exchangeHasUsableSnapshot;
+    if (DENOMS.includes(/** @type {any} */ (option.value))) {
+      option.disabled = state.exchangeRatesEnabled !== true || !state.exchangeHasUsableSnapshot;
+    } else if (DENOMS_1965.includes(/** @type {any} */ (option.value))) {
+      option.disabled = state.exchange1965.enabled !== true || !state.exchange1965.hasUsableSnapshot;
+    }
   }
 }
 
@@ -387,6 +411,7 @@ export function syncExchangeControls() {
 export function setExchangeLocationsVisible(visible) {
   state.exchangeLocationsOn = visible;
   localStorage.setItem(EXCHANGE_TOGGLE_STORAGE_KEY, String(visible));
+  setExchange1965LocationsVisible(visible);
   if (!visible) {
     cancelTimer();
     cancelRequest();

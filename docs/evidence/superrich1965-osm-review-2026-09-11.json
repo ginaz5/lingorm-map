@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "reviewedOn": "2026-09-11",
+  "purpose": "Focused OpenStreetMap review for the 13 SuperRich 1965 branches whose official API coordinates disagree with the independently identified branch location.",
+  "policy": "Accept only an OSM element whose name, address and branch context identify the exact branch. Never substitute a mall, station, road or nearby exchange counter.",
+  "sources": {
+    "nominatim": "https://nominatim.openstreetmap.org/search",
+    "osmMap": "https://api.openstreetmap.org/api/0.6/map.json",
+    "attribution": "© OpenStreetMap contributors",
+    "license": "https://opendatacommons.org/licenses/odbl/1-0/"
+  },
+  "results": [
+    { "officialId": 64, "venue": "Central Embassy", "venueOsm": "way/244115004", "exactBranchMatches": [] },
+    { "officialId": 65, "venue": "Central Bangna", "venueOsm": "way/25620935", "exactBranchMatches": [] },
+    { "officialId": 67, "venue": "Dusit Central Park", "venueOsm": "way/756634304", "exactBranchMatches": [] },
+    { "officialId": 69, "venue": "The Mall Lifestore Ngamwongwan", "venueOsm": null, "exactBranchMatches": [] },
+    {
+      "officialId": 74,
+      "venue": "MBK Center",
+      "venueOsm": "way/157487610",
+      "exactBranchMatches": [],
+      "rejectedCandidates": [
+        {
+          "osm": "node/12914122903",
+          "reason": "Generic Super Rich bureau_de_change node with no branch or level tag; MBK has two included SuperRich 1965 branches, so it cannot identify MBK Skywalk uniquely."
+        }
+      ]
+    },
+    { "officialId": 76, "venue": "ICS Lifestyle Complex", "venueOsm": null, "exactBranchMatches": [] },
+    { "officialId": 77, "venue": "ICONSIAM", "venueOsm": "way/680735864", "exactBranchMatches": [] },
+    {
+      "officialId": 80,
+      "venue": "Platinum POP",
+      "venueOsm": "way/539806478",
+      "exactBranchMatches": [],
+      "rejectedCandidates": [
+        {
+          "osm": "node/2367422924",
+          "reason": "Orange Super Rich node with the correct company website but no Platinum POP name, room or address; it is in the Ratchadamri exchange-counter cluster and cannot be assigned to this branch."
+        },
+        { "osm": "node/2593802203", "reason": "Grand Superrich, a different company." },
+        { "osm": "node/5243765521", "reason": "Superrich Thailand (green), a different company." }
+      ]
+    },
+    { "officialId": 83, "venue": "One Bangkok", "venueOsm": "way/608350816", "exactBranchMatches": [] },
+    { "officialId": 86, "venue": "PTT Station Phetchaburi 29", "venueOsm": null, "exactBranchMatches": [] },
+    { "officialId": 92, "venue": "MRT Kamphaeng Phet", "venueOsm": "node/2107224382", "exactBranchMatches": [] },
+    { "officialId": 93, "venue": "MRT Sanam Chai", "venueOsm": null, "exactBranchMatches": [] },
+    { "officialId": 112, "venue": "Emsphere", "venueOsm": "way/405853851", "exactBranchMatches": [] }
+  ],
+  "acceptedCoordinateUpdates": [],
+  "remainingReviewCount": 13
+}

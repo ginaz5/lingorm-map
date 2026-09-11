@@ -222,10 +222,10 @@ npm run fx:control -- status
 回一般排序；恢復連線且取得新快照後可以再次顯示報價。
 `tests/exchange-rates-ui.test.mjs` 以模擬時鐘涵蓋這些情境。
 
-橘標後端在 Phase D1 前沒有前端畫面，先驗證獨立 API 與控制層：
+橘標須同時驗證獨立 API、控制層與品牌分派前端：
 
 ```bash
-node --test tests/exchange-rates-1965-source.test.mjs tests/exchange-rates-1965-backend.test.mjs tests/superrich1965-mapping.test.mjs
+node --test tests/exchange-rates-1965-source.test.mjs tests/exchange-rates-1965-backend.test.mjs tests/exchange-rates-1965-ui.test.mjs tests/superrich1965-mapping.test.mjs tests/view-first-ui.test.mjs
 npm run fx:1965:control -- status
 ```
 
@@ -235,6 +235,11 @@ Deploy Preview 上保持 `EXCHANGE_RATES_1965_ENABLED=false` 或未設定時，
 enable`，再執行 `netlify functions:invoke exchange-rates-1965-fetch`；核對
 38 店快照後可用 `npm run fx:1965:control -- disable --reason source_review`
 關閉。這組 control、snapshot、breaker 與綠標完全分開。
+
+橘標分店發布後，前台人工驗收還要確認：卡片只有 `USD 100＋50` 與
+`TWD 1,000–100` 兩列、顯示公司全名並連到 `superrich1965.com`；全橘
+cluster 為橘色，全綠為綠色，混合 cluster 為中性。依序停用其中一個品牌，
+另一品牌的報價、排序選項與 marker 應維持可用。
 
 ### 排程首次啟用（正式環境）
 

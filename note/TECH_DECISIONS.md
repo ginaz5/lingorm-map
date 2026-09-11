@@ -62,9 +62,12 @@ HERE Maps 的 browser key 同樣會由 SDK request 暴露；應在 HERE project 
 `src/map/map.js` 的 `makeMarkerContent(icon, isExchange)` 產生：
 
 ```js
-export function makeMarkerContent(icon, isExchange = false) {
+export function makeMarkerContent(icon, exchangeBrand = null) {
   const el = document.createElement('div');
-  el.className = `marker-dot${isExchange ? ' is-exchange' : ''}`;
+  const brandClass = exchangeBrand === 'green'
+    ? ' is-exchange'
+    : exchangeBrand === 'orange' ? ' is-exchange-orange' : '';
+  el.className = `marker-dot${brandClass}`;
   el.textContent = icon || '📍';
   return el;
 }
@@ -72,13 +75,13 @@ export function makeMarkerContent(icon, isExchange = false) {
 
 - Emoji 取自 `row.icon`（由 `src/data/csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
 - 公開狀態刻意不編碼進顏色（`Published` 才會出現在地圖上，篩選已在更上游處理）。
-- 唯一的顏色變體是 `.is-exchange`（`--marker-bg:#16835b` 綠），套用在
-  `Category = Currency Exchange` 的分店（`isExchangeLocation(row)`）。
+- 換匯顏色由 `getExchangeBrand(row)` 決定：`.is-exchange` 為綠標，
+  `.is-exchange-orange` 為橘標；`isExchangeLocation(row)` 對外仍回 boolean。
 
-**群聚著色（Phase D2）：** 單店綠色標記之外，全部由換匯分店組成的群聚也會顯示同一組綠色，混合群聚維持原有樣式（可接受的降級，先於 Phase D1 就這樣約定）：
+**群聚著色：** 全綠群聚顯示綠色、全橘群聚顯示橘色；混合品牌或含一般地點的群聚維持中性色：
 
-- **Google：** `MarkerClusterer` 的 `renderer.render(cluster, stats, map)` 收到的 `cluster.markers` 就是建立單店 marker 時保留的同一批物件（`m.__markerContent = el`），因此 `isExchangeOnlyCluster(markers)` 只需檢查每個 marker 的 `__markerContent.classList.contains('is-exchange')`。
-- **HERE：** `H.clustering.ICluster` 沒有現成的「成分清單」，改用 `cluster.forEachDataPoint(cb)` 走訪葉節點，`isExchangeOnlyDataPoints(forEachDataPoint)` 依此判斷是否每個 `DataPoint` 的 `getData().isExchange` 都是 `true`。
+- **Google：** `isExchangeOnlyCluster(markers)` 讀取各 marker 的綠／橘 class，僅在所有 marker 品牌一致時回傳該品牌。
+- **HERE：** `isExchangeOnlyDataPoints(forEachDataPoint)` 走訪葉節點的 `exchangeBrand`，套用相同三態規則。
 - 兩個判斷函式都刻意設計成純函式（不依賴 Google／HERE 全域物件），方便在 Node 測試環境下單獨驗證，見 `tests/view-first-ui.test.mjs`。
 
 ---
@@ -340,3 +343,9 @@ SuperRich 1965（橘標）沿用同一種排程快照模式，但刻意使用平
 retry。403、429 或 `cf-mitigated: challenge` 立即停止整輪，沿用
 6h→24h→自動停用的 breaker。完整規格見
 [橘標實作計畫](../docs/superrich1965-exchange-map-plan.zh-TW.md) §5。
+
+前端同樣隔離：綠標沿用既有扁平 state，橘標集中在
+`state.exchange1965`；兩套 timer、request、expiry 與 retry 各自運作。
+兩品牌只共用顯示開關與排序 select。排序 key 依品牌分桶，另一品牌不參與
+比較；任一品牌停用或快照過期，只會停用自己的選項與報價。卡片依品牌選擇
+面額、查詢時間和官網連結，並顯示公司名稱；橘標不得連到綠標官網。

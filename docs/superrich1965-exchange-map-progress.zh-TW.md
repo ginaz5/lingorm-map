@@ -3,7 +3,7 @@
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-09-09
 > - 最後更新：2026-09-11
-> - 目前里程碑：**M1、M2 建檔與 M3 本機實作已完成**。38 筆 Place ID 已核對；13 筆座標及 M3 部署驗收待辦，前端尚未實作
+> - 目前里程碑：**M1、M2、M4 資料發布與 M3～M5 本機實作已完成**。38 筆 Place ID 與座標均完成審核；HERE 本機驗收通過，M3 部署首輪及 Google Maps 驗收待辦
 > - 規格依據：[SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫](superrich1965-exchange-map-plan.zh-TW.md)
 > - 審閱歷程：[審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)
 
@@ -22,12 +22,12 @@
 | 里程碑 | 內容 | 使用者可見 | 狀態 |
 | --- | --- | --- | --- |
 | M1 | Phase A0（POST 可行性）+ Phase A1（來源契約與純解析） | 無 | **完成**：38 筆 Our Branch 收錄，E52-01 排除 |
-| M2 | Phase B（Our Branch 建檔，`Paused`）+ 橘標對照 validator | 無 | **建檔／Place ID／文字疑點完成**；13 筆座標待複核 |
+| M2 | Phase B（Our Branch 建檔）+ 橘標對照 validator | 無 | **完成**：38 筆身份、文字與座標審核通過 |
 | M3 | Phase C（排程、Blobs、breaker、控制旗標；預設停用） | 無 | **本機實作完成**；Deploy Preview 人工首輪待驗收 |
-| M4 | Phase D1（前端品牌分派、三色 marker／cluster）+ 分店轉 `Published` | **上線** | 未開始 |
-| M5 | Phase E（測試補齊、README、ADR） | 無 | 未開始 |
+| M4 | Phase D1（前端品牌分派、三色 marker／cluster）+ 分店轉 `Published` | **本機可見** | **資料發布完成**；瀏覽器驗收待辦 |
+| M5 | Phase E（測試補齊、README、ADR） | 無 | **本機完成** |
 
-M1–M3 對使用者零可見變更，可安全停在任一處。M4 中途停會留下半成品 UI。
+38 筆橘標分店已全部轉為 `Published`。本機開啟「顯示換匯點」後會顯示橘色 marker 與卡片；匯率列在橘標 API 尚未啟用或沒有可用快照時顯示暫無資料。
 
 ---
 
@@ -123,23 +123,23 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 
 **完成條件**（計畫 §6 B）：所有收錄分店有唯一對照、有效座標、來源連結；橘標對照檔與 `data/locations.csv` 收錄名單逐筆一致，且該驗證納入 pre-push gate。
 
-**狀態：38 筆正式建檔、Place ID 與文字疑點核對完成（2026-09-11）；13 筆座標仍待公開前審核。** [逐店查證與 Notion 連結](superrich1965-branch-verification.zh-TW.md)保存完整收錄／排除理由。
+**狀態：完成（2026-09-11）。** 38 筆正式建檔、Place ID、文字與座標均完成審核；[逐店查證與 Notion 連結](superrich1965-branch-verification.zh-TW.md)保存完整收錄／排除理由。
 
 **驗證：**
 
-- 38 筆全部建立在正式 data source，維持 `Paused`、`Review Needed=true`、`Last Verified` 空白；Category 為 Currency Exchange，Type 與 Source Tags 依計畫留空，icon 為 💱。
+- 38 筆全部建立在正式 data source；完成審核後為 `Published`、`Review Needed=false`、`Last Verified=2026-09-11`。Category 為 Currency Exchange，Type 與 Source Tags 依計畫留空，icon 為 💱。
 - 回讀 760 個屬性、38 個 icon、38 個 parent 全通過。唯一文字正規化為 Notion 移除 id 71 泰文名稱的零寬空白，已記入[欄位證據](evidence/superrich1965-notion-records-2026-09-10.json)。
-- 既有 exporter 匯出 219 筆；原有 181 筆逐欄不變。公開筆數維持 161，橘標公開數為 0。
+- exporter 匯出 219 筆；公開筆數為 199，橘標公開數為 38。
 - `data/superrich1965-branches.json` 保存 38 組 Slug／officialId／branchNo／companyCode；修正 Baan Silom、Big C Ratchadapisek、MRT Rama 9 三組自動配對碰撞。證據保留原候選與正式結果。
 - 橘標 validator 檢查雙向名單、唯一識別、來源對照、座標數值、類別與目的地；納入 `npm test` 與 `build.sh`，並補入既有 snapshot 核准 Slug 清單。
 - `location:verify -- validate --all` 通過：schema 20/20、219/219 行一致、0 issues。64 個 Type 空白警告是計畫允許的 26 綠標＋38 橘標，未擅自歸入推薦主題。
-- `npm run typecheck`、`npm test`（**468 通過／0 失敗**，含新增 15 項橘標 mapping 測試）、`npm run build` 與載入本機環境的 `bash build.sh` 全通過。快照、橘標／綠標對照、收藏相容性、文件連結與 `git diff --check` 通過。橘標仍不公開，本次未新增前端功能，未做瀏覽器視覺驗收。
+- `location:verify -- validate --all`、快照、橘標／綠標對照與收藏相容性驗證通過。完整程式測試結果見 M5；瀏覽器視覺驗收仍待完成。
 
-**未解問題：**
+**審核結論：**
 
-1. 38 筆 Google Place ID 已由 Places Details URL 的 CID 與官方 iframe CID 逐店完全比對；沒有把 CID 當 Place ID，也沒有保存 Google 回傳座標。完整修正與回讀結果見 [2026-09-11 複核證據](evidence/superrich1965-review-2026-09-11.json)。
+1. 38 筆 Google Place ID 已由 Places Details URL 的 CID 與官方 iframe CID 逐店完全比對；沒有把 CID 當 Place ID。13 筆待修正座標依使用者決議採用相同 Place ID 的 Places Details 座標，見 [發布審核證據](evidence/superrich1965-publication-review-2026-09-11.json)。
 2. Central Ladprao 採官方三語 landmark 與 2026 官網公告一致的 1 樓；Baan Silom 依泰文 address 與三語 landmark 改為 1 樓 A25；Sanam Chai 依 BEM 官方資料改記 Phra Nakhon 區。The Old Siam Plaza 改採 OSM 明確標名為該分店、`bureau_de_change`、`brand=SuperRich` 的 node 11871723783 成對座標。
-3. 13 筆來源座標與官方 CID 對應點位仍有明顯落差：64、65、67、69、74、76、77、80、83、86、92、93、112。因尚無可保存的精確非 Google 分店座標，保留官方原值、`Paused`、`Review Needed=true`、`Last Verified` 空白。87／94／95 的 branchNo 也仍待官方提供。
+3. 64、65、67、69、74、76、77、80、83、86、92、93、112 已改採核對過的 Place ID 座標；38 筆正式頁面回讀皆為 `Published`、`Review Needed=false`、`Last Verified=2026-09-11`。87／94／95 不在當前報價清單，維持本期不收錄。
 
 ---
 
@@ -153,7 +153,7 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 
 定案：UTC `:00`／`:30`、併發 2、起始間隔 200ms、單次 5 秒、整輪 25 秒、全輪最多一筆 retry。403／429／Cloudflare challenge 立即停止，退避 6h→24h→第三次自動停用；一般失敗連三輪暫停 1h。`GET /api/exchange-rates-1965` 強制 `no-store`，只回傳當前 control version 且未過期的橘標快照。`sourceUpdatedAtMs` 僅保存，不供 UI 宣稱為官網報價時間。
 
-**本機驗證：** 單店 POST 回 HTTP 200，約 0.19 秒；後端測試涵蓋固定 38 店、POST 內容、節流、challenge／429 中止、第三次封鎖自動停用、預設停用零請求、獨立 snapshot 與 store。`npm run typecheck`、`npm test`（479 通過／0 失敗）、`npm run build` 與載入本機環境的 `bash build.sh` 皆通過；正式資料檢核為 schema 20/20、219/219 一致、0 issues（64 個空白 Type 為既定警告）。
+**本機驗證：** 單店 POST 回 HTTP 200，約 0.19 秒；後端測試涵蓋固定 38 店、POST 內容、節流、challenge／429 中止、第三次封鎖自動停用、預設停用零請求、獨立 snapshot 與 store。`npm run typecheck`、`npm test`（479 通過／0 失敗）、`npm run build`、載入本機環境的 `bash build.sh` 及 `netlify functions:build --src netlify/functions` 皆通過；正式資料檢核為 schema 20/20、219/219 一致、0 issues（64 個空白 Type 為既定警告）。
 
 **未解問題：** 依完成條件，仍須部署至 Deploy Preview，先核對預設停用，再人工啟用及觸發第一輪，確認 38 店快照、執行時間與實際 Netlify 出口穩定性；這一步需要另行部署授權。
 
@@ -163,9 +163,11 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 
 **完成條件**（計畫 §6 D1）：綠標既有行為（含排序、cluster 著色）不受影響；橘標卡片顯示自己的匯率、時間與橘標官網連結；marker 與 cluster 在 Google/HERE 一致；任一品牌故障不影響另一品牌。
 
-**狀態：未開始。所有設計決定已定案**（計畫 §7.1 第 5–8 點）：cluster 三態、單一 sort select 取兩品牌聯集、排序 key 拆開、`state.exchange1965.*` 單一巢狀物件。
+**狀態：本機程式與資料發布完成；HERE 瀏覽器驗收通過，Google Maps 驗收待辦。** 橘標使用 `state.exchange1965.*`、獨立 API／timer／expiry；單一換匯開關控制兩品牌，排序選項依品牌快照個別啟停。卡片依品牌分派面額、時間、公司名稱與官網連結；Google／HERE marker 與 cluster 均支援全綠、全橘、混合中性三態。
 
-**未解問題：** 無開放決定；動工前重讀計畫 §3.2／§3.3／§4.4 與審閱意見 13–18。
+**本機驗證：** 橘標 payload 必須完整涵蓋 38 店且 branch identity 完全一致；混合品牌排序不跨品牌比價；停用或讓其中一品牌過期不會清除另一品牌；橘標卡片只有兩列且不含綠標官網連結。38 店已為 `Published`。2026-09-11 使用 HERE fallback 實測：開關開啟後顯示 199/199 筆，搜尋 SuperRich 1965 顯示 38/199 筆；38 張橘標面板、橘標 marker 與 cluster 均出現，marker／cluster 色值為 `rgb(242, 102, 34)`，38 張卡片均連到橘標官網且 0 張誤連綠標官網。
+
+**未解問題：** 須完成 Google Maps 本機瀏覽器驗收；M3 Deploy Preview 仍需另行部署並人工觸發首輪匯率快照。
 
 ---
 
@@ -173,4 +175,4 @@ Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確�
 
 **完成條件**（計畫 §6 E）：混合品牌排序回歸測試、任一品牌故障隔離測試、cluster 三態著色回歸測試、橘標卡片不得出現綠標官網連結的回歸測試；README 與 ADR 更新。
 
-**狀態：未開始。**
+**狀態：本機完成。** 新增橘標前端與混合品牌回歸測試，README、技術決策與本機驗收手冊已同步。`npm run typecheck`、`npm test`（485 通過／0 失敗）、`npm run build` 與 `git diff --check` 通過。
