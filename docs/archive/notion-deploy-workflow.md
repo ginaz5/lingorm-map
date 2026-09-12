@@ -1,3 +1,7 @@
+> **已封存（2026-09-08）。** 此流程已放棄，改為直接更新 `data/locations.csv` 後部署。
+> 現行流程見 `CLAUDE.md` 的 Location data workflow 指令區塊與 `AGENTS.md` 的 Location Data 規則。
+> 本檔僅供歷史查考，不得視為現行需求。
+
 # Notion Data Source Deployment Workflow
 
 This is the canonical workflow for deploying Lingorm Map with:

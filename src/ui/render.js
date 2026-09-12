@@ -1,6 +1,15 @@
 import { lang, t } from '../core/i18n.js';
 import { state } from '../core/state.js';
 import {
+  EXCHANGE_CATEGORY,
+  getExchangeBrand,
+  getExchangeRateCell,
+  isExchangeLocation,
+} from '../features/exchange-rates.js';
+import { getExchangeRateCell1965 } from '../features/exchange-rates-1965.js';
+import { DENOMS } from '../data/exchange-rates.js';
+import { DENOMS_1965 } from '../data/exchange-rates-1965.js';
+import {
   LOCATION_TYPES,
   locationTypeLabel,
 } from '../data/location-types.js';
@@ -11,19 +20,19 @@ import { switchTab } from './ui.js';
 // Guarded so non-Vite contexts (Node tests) don't throw a ReferenceError.
 const DATA_UPDATED_ISO = typeof __DATA_UPDATED__ !== 'undefined' ? __DATA_UPDATED__ : '';
 
-// Render the data-updated date in GMT+8 (Asia/Taipei), e.g. "2026/07/22 (GMT+8)".
+// Render the data-updated date in UTC, e.g. "2026/07/22 (UTC)".
 /** @param {string} iso @returns {string} */
 export function formatUpdated(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   const ymd = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Taipei',
+    timeZone: 'UTC',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   }).format(d).replace(/-/g, '/');
-  return `${ymd} (GMT+8)`;
+  return `${ymd} (UTC)`;
 }
 
 /** @typedef {import('../data/csv-parser.js').LocationRow} LocationRow */
@@ -74,6 +83,7 @@ export function isApproximateCoords(row) {
 // ═══════════════════════════════════════════════════
 /** @param {LocationRow} row @returns {string} */
 export function renderSources(row) {
+  if (isExchangeLocation(row)) return '';
   const src = row.src || '';
   const srcUrl = row.sourceUrl || '';
   if (!src) return '';
@@ -107,6 +117,130 @@ export function renderSources(row) {
     return `<span class="src-tag src-tag-plain">${token}</span>`;
   });
   return `<div class="src-tags">${tags.join('')}</div>`;
+}
+
+const OFFICIAL_EXCHANGE_URLS = Object.freeze({
+  green: 'https://www.superrichthailand.com/exchange-rate',
+  orange: 'https://www.superrich1965.com/en/exchange-rate',
+});
+
+/** @param {string} value */
+function escapeAttribute(value) {
+  return String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+/** @param {string|null} iso */
+export function formatExchangeCheckedAt(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${new Intl.DateTimeFormat(lang === 'zh' ? 'zh-TW' : 'en-GB', {
+    timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(date)} (UTC)`;
+}
+
+/** @param {string} sort @returns {'green'|'orange'|null} */
+function brandForSort(sort) {
+  if (DENOMS.includes(/** @type {any} */ (sort))) return 'green';
+  if (DENOMS_1965.includes(/** @type {any} */ (sort))) return 'orange';
+  return null;
+}
+
+/** @param {string} slug @param {string} denom @param {'green'|'orange'} brand */
+function exchangeRateCell(slug, denom, brand) {
+  return brand === 'green'
+    ? getExchangeRateCell(slug, /** @type {'USD_100'|'USD_50'|'TWD'} */ (denom))
+    : getExchangeRateCell1965(slug, /** @type {'USD_1965'|'TWD_1965'} */ (denom));
+}
+
+/** @param {string} denom @param {'green'|'orange'} brand */
+function bestVisibleRate(denom, brand) {
+  let best = null;
+  for (const index of state.visIdx) {
+    const row = state.data[index];
+    if (getExchangeBrand(row) !== brand) continue;
+    const value = exchangeRateCell(row.id, denom, brand)?.rateScaledE6;
+    if (Number.isSafeInteger(value) && (best === null || value > best)) best = value;
+  }
+  return best;
+}
+
+/** @param {LocationRow} row */
+export function renderExchangeRates(row) {
+  const brand = getExchangeBrand(row);
+  if (!brand) return '';
+  const orange = brand === 'orange';
+  const brandState = orange ? state.exchange1965 : {
+    enabled: state.exchangeRatesEnabled,
+    completedAt: state.exchangeCompletedAt,
+    ratesLoading: state.exchangeRatesLoading,
+    hasUsableSnapshot: state.exchangeHasUsableSnapshot,
+  };
+  const denoms = orange ? DENOMS_1965 : DENOMS;
+  const checked = formatExchangeCheckedAt(brandState.completedAt);
+  const activeSort = brandState.enabled === true && brandForSort(state.exchangeSort) === brand
+    ? state.exchangeSort : null;
+  const best = activeSort ? bestVisibleRate(activeSort, brand) : null;
+  const rows = denoms.map(denom => {
+    const cell = brandState.hasUsableSnapshot ? exchangeRateCell(row.id, denom, brand) : null;
+    const valid = Number.isSafeInteger(cell?.rateScaledE6) && Number.isInteger(cell?.displayDecimals);
+    const value = valid
+      ? (cell.rateScaledE6 / 1_000_000).toFixed(cell.displayDecimals)
+      : t('fx_unavailable');
+    const currency = denom === 'TWD' ? 'TWD' : 'USD';
+    const isBest = activeSort === denom && valid && best !== null && cell.rateScaledE6 === best;
+    return `<div class="fx-rate-row">
+      <span class="fx-denom">${t(`fx_denom_${denom.toLowerCase()}`)}</span>
+      <span class="fx-value${valid ? '' : ' is-unavailable'}">${valid ? t('fx_rate_value', currency, value) : value}${isBest ? ` <span class="fx-best">${t('fx_best')}</span>` : ''}</span>
+    </div>`;
+  }).join('');
+  const loading = brandState.ratesLoading && !brandState.hasUsableSnapshot
+    ? `<div class="fx-loading">${t('fx_loading')}</div>` : '';
+  const mapsUrl = escapeAttribute(row.maps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${row.nameEn} ${row.notesEn}`)}`);
+  return `<section class="fx-panel${orange ? ' is-exchange-orange' : ''}" aria-label="${t('fx_panel_label')}">
+    <div class="fx-brand">${t(orange ? 'fx_brand_orange' : 'fx_brand_green')}</div>
+    ${loading}
+    <div class="fx-rates${loading ? ' is-loading' : ''}">${rows}</div>
+    ${checked && brandState.hasUsableSnapshot ? `<div class="fx-checked">${t('fx_checked', checked)}</div>` : ''}
+    <p class="fx-disclaimer">${t(orange ? 'fx_disclaimer_1965' : 'fx_disclaimer')}</p>
+    <div class="fx-links">
+      <a href="${OFFICIAL_EXCHANGE_URLS[brand]}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${t(orange ? 'fx_source_note_1965' : 'fx_source_note')}</a>
+      <a href="${mapsUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${t('fx_hours_note')}</a>
+    </div>
+    <div class="fx-branch-hint">${t('fx_branch_hint', row.nameEn)}</div>
+  </section>`;
+}
+
+/**
+ * @param {number[]} indexes
+ * @param {'default'|'USD_100'|'USD_50'|'TWD'|'USD_1965'|'TWD_1965'} sort
+ */
+export function sortVisibleIndexes(indexes, sort) {
+  if (sort === 'default') return [...indexes];
+  const targetBrand = brandForSort(sort);
+  if (!targetBrand) return [...indexes];
+  return [...indexes].sort((leftIndex, rightIndex) => {
+    const left = state.data[leftIndex];
+    const right = state.data[rightIndex];
+    const leftBrand = getExchangeBrand(left);
+    const rightBrand = getExchangeBrand(right);
+    const leftTarget = leftBrand === targetBrand;
+    const rightTarget = rightBrand === targetBrand;
+    if (leftTarget !== rightTarget) return leftTarget ? -1 : 1;
+    if (!leftTarget) {
+      if ((leftBrand !== null) !== (rightBrand !== null)) return leftBrand !== null ? -1 : 1;
+      if (leftBrand !== null && rightBrand !== null) return left.id.localeCompare(right.id);
+      return leftIndex - rightIndex;
+    }
+    const leftRate = exchangeRateCell(left.id, sort, targetBrand)?.rateScaledE6;
+    const rightRate = exchangeRateCell(right.id, sort, targetBrand)?.rateScaledE6;
+    const leftValid = Number.isSafeInteger(leftRate);
+    const rightValid = Number.isSafeInteger(rightRate);
+    if (leftValid !== rightValid) return leftValid ? -1 : 1;
+    if (leftValid && rightValid && leftRate !== rightRate) return rightRate - leftRate;
+    return left.id.localeCompare(right.id);
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -150,10 +284,11 @@ export function buildPopupContent(i) {
     <div class="popup-name">${row.icon} ${name}</div>
     ${row.alt ? `<div class="popup-alt">${row.alt}</div>` : ''}
     <div class="badges popup-badges">
-      <span class="badge b-cat">${cat}</span>
+      <span class="badge ${getExchangeBrand(row) === 'orange' ? 'b-exchange-orange' : isExchangeLocation(row) ? 'b-exchange' : 'b-cat'}">${cat}</span>
       ${type ? `<span class="badge b-type">${type}</span>` : ''}
     </div>
     <div class="popup-notes">${notes}</div>
+    ${renderExchangeRates(row)}
     ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
     <div class="popup-footer">
       ${renderSources(row)}
@@ -191,10 +326,11 @@ export function renderList() {
         </div>
       </div>
       <div class="badges">
-        <span class="badge b-cat">${cat}</span>
+        <span class="badge ${getExchangeBrand(row) === 'orange' ? 'b-exchange-orange' : isExchangeLocation(row) ? 'b-exchange' : 'b-cat'}">${cat}</span>
         ${type ? `<span class="badge b-type">${type}</span>` : ''}
       </div>
       <div class="card-notes">${notes}</div>
+      ${renderExchangeRates(row)}
       ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
       ${renderSources(row)}
       <div class="card-footer">
@@ -280,6 +416,11 @@ export function matchesLocationFilters(row, query, category, type) {
     state.selectedDestinations.size === 0 ||
     state.selectedDestinations.has(row.destinationKey);
 
+  const exchangeCategorySelected = category === EXCHANGE_CATEGORY || category === t('category_currency_exchange');
+  if (isExchangeLocation(row)) {
+    return state.exchangeLocationsOn && queryHit && destinationHit;
+  }
+  if (exchangeCategorySelected) return false;
   return queryHit && categoryHit && typeHit && destinationHit;
 }
 
@@ -291,8 +432,19 @@ export function applyFilters() {
   state.data.forEach((row, i) => {
     if (matchesLocationFilters(row, query, category, type)) state.visIdx.push(i);
   });
+  const sortBrand = brandForSort(state.exchangeSort);
+  const sortUsable = sortBrand === 'green'
+    ? state.exchangeRatesEnabled === true && state.exchangeHasUsableSnapshot
+    : sortBrand === 'orange'
+      ? state.exchange1965.enabled === true && state.exchange1965.hasUsableSnapshot
+      : false;
+  if (sortUsable && state.exchangeSort !== 'default') {
+    state.visIdx = sortVisibleIndexes(state.visIdx, state.exchangeSort);
+  }
   renderList();
-  const publicTotal = state.data.filter(isPublicLocation).length;
+  const publicTotal = state.data.filter(row =>
+    isPublicLocation(row) && (state.exchangeLocationsOn || !isExchangeLocation(row))
+  ).length;
   requiredElement('result-info').textContent = state.isLoading ? '' : t('count', state.visIdx.length, publicTotal);
   const updatedEl = document.getElementById('last-updated');
   if (updatedEl) {
@@ -328,7 +480,7 @@ export function buildCatFilter() {
   /** @type {Map<string, number>} */
   const categoryCounts = new Map();
   state.data
-    .filter(isPublicLocation)
+    .filter(row => isPublicLocation(row) && (state.exchangeLocationsOn || !isExchangeLocation(row)))
     .forEach(row => {
       const category = lang === 'zh' ? row.catZh : row.catEn;
       categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);

@@ -97,11 +97,10 @@ test('checkWhatsNew reports all new releases but previews only the latest three'
     );
     assert.equal(
       env.dom.elements['wn-list'].innerHTML.match(/class="wn-feat"/g)?.length,
-      3,
+      1,
     );
-    assert.match(env.dom.elements['wn-list'].innerHTML, /手機版篩選與卡片定位更順手/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /主題分類更清楚/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /地圖收錄更多踩點/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /新增 SuperRich 換匯地圖/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /手機版篩選與卡片定位更順手/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /更注重隱私的互動分析/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /篩選新增「主題」與「目的地」/);
     assert.equal(env.dom.elements['wn-changelog-link'].textContent, '查看完整更新紀錄');

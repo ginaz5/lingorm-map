@@ -55,26 +55,34 @@ HERE Maps 的 browser key 同樣會由 SDK request 暴露；應在 HERE project 
 
 ## 地圖 Marker：Emoji 圓形 badge
 
-**架構：** `AdvancedMarkerElement` + 自訂 HTML content（28px 圓形 div）
+> 本節先前記錄的「依 Verification Status 上色」模型已隨換匯功能改版；
+> 目前程式**不再**依審核狀態決定 marker 顏色，一律以下列現行行為為準。
+
+**架構：** `AdvancedMarkerElement` + 自訂 HTML content（28px 圓形 div），由
+`src/map/map.js` 的 `makeMarkerContent(icon, isExchange)` 產生：
 
 ```js
-export function makeMarkerContent(status, icon) {
+export function makeMarkerContent(icon, exchangeBrand = null) {
   const el = document.createElement('div');
-  el.className = `marker-dot ${getBadgeClass(status).replace('b-', 'marker-')}`;
+  const brandClass = exchangeBrand === 'green'
+    ? ' is-exchange'
+    : exchangeBrand === 'orange' ? ' is-exchange-orange' : '';
+  el.className = `marker-dot${brandClass}`;
   el.textContent = icon || '📍';
   return el;
 }
 ```
 
-**顏色對應 status：**
+- Emoji 取自 `row.icon`（由 `src/data/csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
+- 公開狀態刻意不編碼進顏色（`Published` 才會出現在地圖上，篩選已在更上游處理）。
+- 換匯顏色由 `getExchangeBrand(row)` 決定：`.is-exchange` 為綠標，
+  `.is-exchange-orange` 為橘標；`isExchangeLocation(row)` 對外仍回 boolean。
 
-| Status | CSS class | 顏色 |
-|--------|-----------|------|
-| Verified | `.marker-verified` | `#2f7d4f` 綠 |
-| Needs Review | `.marker-review` | `#c2772a` 橘 |
-| Could Not Find | `.marker-notfound` | `#b1452f` 紅（不顯示於公開清單） |
+**群聚著色：** 全綠群聚顯示綠色、全橘群聚顯示橘色；混合品牌或含一般地點的群聚維持中性色：
 
-Emoji 取自 `row.icon`（由 `src/data/csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
+- **Google：** `isExchangeOnlyCluster(markers)` 讀取各 marker 的綠／橘 class，僅在所有 marker 品牌一致時回傳該品牌。
+- **HERE：** `isExchangeOnlyDataPoints(forEachDataPoint)` 走訪葉節點的 `exchangeBrand`，套用相同三態規則。
+- 兩個判斷函式都刻意設計成純函式（不依賴 Google／HERE 全域物件），方便在 Node 測試環境下單獨驗證，見 `tests/view-first-ui.test.mjs`。
 
 ---
 
@@ -119,7 +127,7 @@ data/locations.csv（隨版本提交）
 
 **選用理由：**
 - Notion 作為可協作的主要資料來源，但 production request 不直接依賴 Notion API
-- 已驗證的 CSV 快照會隨程式版本保存，部署與回滾都可重現（回滾＝ git revert `data/locations.csv`，見 `docs/notion-deploy-workflow.md`）
+- 已驗證的 CSV 快照會隨程式版本保存，部署與回滾都可重現（回滾＝ git revert `data/locations.csv`）
 - 前端不會暴露 Notion 憑證
 
 **限制：**
@@ -273,3 +281,98 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 | `JKR Picks` | JKR 推薦 |
 | `JKR Fan Projects` | JKR 應援 |
 | `Admin Picks` | 留友看 |
+
+---
+
+## 換匯匯率：排程快照 + 執行期控制旗標（而非即時代理）
+
+**決策：** 前端**不會**在使用者每次開啟換匯開關時直接打 SuperRich 官方
+API；由獨立的 Netlify 排程 Function（`exchange-rates-fetch.mjs`，每 30
+分鐘）向來源抓一次、正規化後寫入 `@netlify/blobs` 快照，前端只打站內
+`/api/exchange-rates`（`exchange-rates.mjs`）讀最新快照。完整規格見
+[SuperRich 換匯地圖實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md)
+§4－§5；本節只記錄「為什麼這樣選」與上線／維運要點，執行細節與驗證見
+[換匯功能進度紀錄](../docs/superrich-exchange-map-progress.zh-TW.md)。
+
+**為什麼不做即時代理：**
+
+| 考量 | 排程快照（現行） | 每次請求即時代理 |
+| --- | --- | --- |
+| 對來源的負載 | 固定、可預期（≤ 每 30 分鐘 1 次） | 隨訪客流量線性成長，容易被來源限流或封鎖 |
+| 來源故障時的使用者體驗 | 只影響「下一次更新」，舊快照或「暫無報價」照常顯示 | 來源逾時／出錯會直接拖慢或打斷使用者的請求 |
+| Netlify Function 執行時間 | 抓取與前端讀取互不影響（各自的 function） | 前端請求必須等來源回應，容易撞到 10 秒執行上限 |
+
+**執行期停用 vs. 環境變數：兩者不是同一層開關。** 這是刻意的分工，
+避免「改完環境變數卻沒生效」或「想暫停卻要重新部署」：
+
+- **執行期控制旗標**（`scripts/exchange-rates-control.mjs` → `npm run
+  fx:control -- status|enable|disable`）寫入 Blobs 裡的控制物件，**立即生
+  效、不需重新部署**。用於日常開關、來源出問題時先緊急停用。
+- **`EXCHANGE_RATES_ENABLED` 環境變數**只在控制旗標**尚未存在**時作為
+  預設回退；改環境變數之後必須另外觸發一次部署才會被讀到新值。這層只
+  用於「這個站台一開始要不要有這個功能」，日常開關一律用控制旗標。
+
+**儲存範圍由 Function 的 `context.deploy.context` 決定。** API 與排程
+都把執行期 context 傳入儲存工廠：`production` 使用與管理指令相同的
+site-wide store；Preview、branch deploy、本機及缺少 context 時使用
+deploy-specific store。不要依賴 `process.env.CONTEXT`，它是建置期變數。
+
+**Circuit breaker 不是「重新啟用就重抓」。** 403／429 會立即封鎖
+6h→24h→自動停用；`npm run fx:control -- enable` 只清除連續失敗計數，
+**保留尚未到期的 `blockedUntil`**——這樣管理者才不會在來源還在限流時，
+因為手動重新啟用而立刻又觸發一次封鎖。封鎖期滿後，下一輪排程（或人工
+觸發一次）就會自動恢復抓取；等待期間 API 回 `enabled: true, snapshot:
+null`，前端顯示「暫無報價」而不是隱藏整張卡片。
+
+**來源故障時的降級路徑，全部發生在既有 UI 骨架內：** 換匯開關、分店卡
+片、綠色標記、Google Maps／導航連結、收藏都不受影響；只有三列報價本
+身在 `enabled:false` 或快照過期時顯示「暫無報價」並回到一般排序。沒有
+額外的錯誤畫面或彈窗。
+
+報價到期不受輪詢暫停影響：離線、背景頁面、關閉換匯開關，以及 API
+請求尚未完成時，仍保留到期計時；頁面恢復執行時先撤下過期數字，再
+安排查詢。自動停用後的 breaker 清理沿用該輪寫入的 ETag，遇到較新的
+手動控制變更就放棄清理，避免覆蓋重新啟用後的版本。
+
+SuperRich 1965（橘標）沿用同一種排程快照模式，但刻意使用平行模組、
+`exchange-rates-1965` store／key、`EXCHANGE_RATES_1965_ENABLED` 與
+`/api/exchange-rates-1965`，避免任一品牌的來源故障、breaker 或管理操作
+影響另一品牌。橘標來源每次只回單店且不帶可回查的分店識別碼，因此排程
+只讀已人工核對的 38 店 mapping，不在每輪抓 inventory 或自動配對；請求
+採併發 2、起始間隔 200ms、單次逾時 5 秒、整輪 25 秒與全輪最多一次
+retry。403、429 或 `cf-mitigated: challenge` 立即停止整輪，沿用
+6h→24h→自動停用的 breaker。完整規格見
+[橘標實作計畫](../docs/superrich1965-exchange-map-plan.zh-TW.md) §5。
+
+橘標另外保留「本機 collector」作為抓取來源的第二條路徑，原因是
+`www.superrich1965.com` 的匯率請求曾在 Netlify 收到
+`cf-mitigated: challenge`。本機及 Netlify 都曾成功取得匯率，具體觸發規則、
+出口 IP 的影響與本機持續可用性尚未確認，不能單靠回應 headers 判定挑戰
+類型或根因。先以既有本機成功紀錄驗證另一個執行位置，維持可辨識的
+User-Agent、退避與遇阻即停；綠標流程不變。
+
+`EXCHANGE_RATES_1965_FETCH_MODE=netlify|local` 只決定「誰抓」，與
+`EXCHANGE_RATES_1965_ENABLED`／control.enabled（決定「前台看不看得到」）
+完全分離。`local` 時排程 function 在建立 store 前就返回，記一筆
+`status:"skipped"`、`reason:"external_fetcher"` 的 INFO；停用公開報價仍然
+只能用 `fx:1965:control -- disable`。
+
+抓取節奏改為 profile 注入：`netlify` profile 維持併發 2、起始間隔 200ms、
+單次 5 秒、整輪 25 秒；`local` profile 為併發 1、起始間隔 1,500ms、單次
+5 秒、整輪 180 秒。`canRetry()` 與 pacing 讀同一份已解析的 profile，避免
+只改請求端、判斷端仍用寫死常數而互相矛盾。
+
+本機發布沿用同一組 contract：只有 `complete` 才以 ETag 條件寫入 snapshot，
+partial／failed／blocked、控制版本變動、寫入衝突與「整輪成功但已過
+`expiresAt`」都不覆寫舊報價、也不延長舊報價壽命；失敗仍更新 breaker 與新
+增的 `exchange-rates-1965/last-attempt` 摘要（有界、不含原始 response，較舊
+執行不覆蓋較新摘要）。本機另有 gitignored 的 `.local-state/` 執行鎖與冷卻；
+冷卻階梯刻意比遠端 breaker 溫和（30 分鐘→6 小時→24 小時），因為它要防的是
+人工反覆重跑探測，而不是每 30 分鐘無人看管的排程。鎖只由持有者刪除，異常
+退出時回報 pid 與持續時間交人工判斷。
+
+前端同樣隔離：綠標沿用既有扁平 state，橘標集中在
+`state.exchange1965`；兩套 timer、request、expiry 與 retry 各自運作。
+兩品牌只共用顯示開關與排序 select。排序 key 依品牌分桶，另一品牌不參與
+比較；任一品牌停用或快照過期，只會停用自己的選項與報價。卡片依品牌選擇
+面額、查詢時間和官網連結，並顯示公司名稱；橘標不得連到綠標官網。

@@ -20,6 +20,7 @@ async function loadUiHelpers(deps) {
     'state',
     'lang',
     'isPublicLocation',
+    'isExchangeLocation',
     `${code}; return { rebuildSelect, updateLangUI, buildCatFilter };`,
   )(
     deps.document,
@@ -27,6 +28,7 @@ async function loadUiHelpers(deps) {
     deps.state,
     deps.lang,
     deps.isPublicLocation ?? ((row) => row.status === 'Published'),
+    deps.isExchangeLocation ?? (() => false),
   );
 }
 
@@ -89,6 +91,47 @@ test('search placeholders explain that names and notes are searchable', () => {
 test('collection filter label is available in both supported languages', () => {
   assert.equal(T.zh.theme_filter, '主題');
   assert.equal(T.en.theme_filter, 'Collection');
+});
+
+test('currency exchange category has bilingual labels', () => {
+  assert.equal(T.zh.category_currency_exchange, '換匯');
+  assert.equal(T.en.category_currency_exchange, 'Currency Exchange');
+});
+
+test('currency exchange controls and required notices are bilingual', () => {
+  const keys = [
+    'fx_toggle', 'fx_filter_note', 'fx_loading', 'fx_unavailable',
+    'fx_sort_default', 'fx_sort_usd_100', 'fx_sort_usd_50', 'fx_sort_twd',
+    'fx_sort_usd_1965', 'fx_sort_twd_1965',
+    'fx_brand_green', 'fx_disclaimer', 'fx_disclaimer_1965',
+    'fx_source_note', 'fx_source_note_1965', 'fx_hours_note',
+  ];
+  for (const key of keys) {
+    assert.equal(typeof T.zh[key], 'string', `missing zh ${key}`);
+    assert.equal(typeof T.en[key], 'string', `missing en ${key}`);
+    assert.notEqual(T.zh[key], T.en[key], `${key} should be translated`);
+  }
+
+  // Denomination labels are plain currency/amount strings (no "banknote"
+  // wording in either language), so zh and en are identical by design.
+  const denomKeys = ['fx_denom_usd_100', 'fx_denom_usd_50', 'fx_denom_twd'];
+  for (const key of denomKeys) {
+    assert.equal(typeof T.zh[key], 'string', `missing zh ${key}`);
+    assert.equal(typeof T.en[key], 'string', `missing en ${key}`);
+    assert.equal(T.zh[key], T.en[key], `${key} should match across languages`);
+    assert.doesNotMatch(T.zh[key], /banknote|美元鈔|鈔票/);
+  }
+
+  for (const key of ['fx_denom_usd_1965', 'fx_denom_twd_1965']) {
+    assert.match(T.zh[key], /SuperRich 1965/);
+    assert.match(T.en[key], /SuperRich 1965/);
+    assert.doesNotMatch(T.zh[key], /banknote|美元鈔|鈔票/);
+  }
+  assert.equal(T.zh.fx_brand_orange, 'SuperRich Currency Exchange (1965) Company Limited.');
+  assert.equal(T.en.fx_brand_orange, 'SuperRich Currency Exchange (1965) Company Limited.');
+
+  assert.equal(T.zh.fx_rate_value('USD', '32.83'), '1 USD = 32.83 THB');
+  assert.equal(T.en.fx_checked('09/09/2026 10:30 (UTC)'), 'Last checked: 09/09/2026 10:30 (UTC)');
 });
 
 test('unrestricted category and collection filters describe that all options are shown', () => {

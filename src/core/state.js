@@ -28,6 +28,21 @@
  * @property {boolean} favFilterOn
  * @property {Set<string>} selectedDestinations
  * @property {boolean} pendingDestinationFit
+ * @property {boolean} exchangeLocationsOn
+ * @property {'default'|'USD_100'|'USD_50'|'TWD'|'USD_1965'|'TWD_1965'} exchangeSort
+ * @property {boolean|null} exchangeRatesEnabled
+ * @property {string|null} exchangeControlVersion
+ * @property {string|null} exchangeRunId
+ * @property {Record<string, any>} exchangeRatesBySlug
+ * @property {string|null} exchangeCompletedAt
+ * @property {number|null} exchangeNextUpdateAtMs
+ * @property {number|null} exchangeExpiresAtMs
+ * @property {number} exchangeRetryLevel
+ * @property {number|null} exchangeLastAttemptAtMs
+ * @property {boolean} exchangeUpdateCheckPending
+ * @property {boolean} exchangeRatesLoading
+ * @property {boolean} exchangeHasUsableSnapshot
+ * @property {{ratesBySlug:Record<string, any>,runId:string|null,controlVersion:string|null,enabled:boolean|null,completedAt:string|null,nextUpdateAtMs:number|null,expiresAtMs:number|null,retryLevel:number,lastAttemptAtMs:number|null,updateCheckPending:boolean,ratesLoading:boolean,hasUsableSnapshot:boolean}} exchange1965
  */
 
 /** @type {AppState} */
@@ -78,4 +93,36 @@ export const state = {
   selectedDestinations: new Set(),
   // Fit the map after it becomes available (used when restoring a saved filter).
   pendingDestinationFit: false,
+
+  // Currency exchange locations are opt-in and persist per browser.
+  exchangeLocationsOn: false,
+  exchangeSort: 'default',
+  // null means the public API has not confirmed the service state yet.
+  exchangeRatesEnabled: null,
+  exchangeControlVersion: null,
+  exchangeRunId: null,
+  exchangeRatesBySlug: {},
+  exchangeCompletedAt: null,
+  // Local monotonic-ish deadlines derived from server checkedAt deltas.
+  exchangeNextUpdateAtMs: null,
+  exchangeExpiresAtMs: null,
+  exchangeRetryLevel: 0,
+  exchangeLastAttemptAtMs: null,
+  exchangeUpdateCheckPending: false,
+  exchangeRatesLoading: false,
+  exchangeHasUsableSnapshot: false,
+  exchange1965: {
+    ratesBySlug: {},
+    runId: null,
+    controlVersion: null,
+    enabled: null,
+    completedAt: null,
+    nextUpdateAtMs: null,
+    expiresAtMs: null,
+    retryLevel: 0,
+    lastAttemptAtMs: null,
+    updateCheckPending: false,
+    ratesLoading: false,
+    hasUsableSnapshot: false,
+  },
 };

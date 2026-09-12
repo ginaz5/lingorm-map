@@ -1,6 +1,8 @@
 // ═══════════════════════════════════════════════════
 // DATA — SLUG / ID HELPER
 // ═══════════════════════════════════════════════════
+import { T } from '../core/i18n.js';
+
 /** @typedef {'Published'|'Paused'|'Inactive'} LocationStatus */
 /** @typedef {'LingOrm'|'JKR Picks'|'JKR Fan Projects'|'Admin Picks'|''} LocationType */
 /**
@@ -114,6 +116,7 @@ export function tokenizeCSV(text) {
 // Lookup tables used when parsing the published/legacy sheet format
 /** @type {Record<string, string>} */
 export const ICON_BY_CAT = {
+  "Currency Exchange":"💱",
   "Restaurant":"🍽","Cafe":"☕","Cafe / Beverage":"🧋","Cafe / Juice Bar":"🥤",
   "Hotel":"🏨","Bar":"🍸","Bar / Club":"🍸","Bar / Rooftop Club":"🏖️","Spa":"♨️",
   "Shopping":"🛍","Activity":"🎯","Filming Location":"🎬",
@@ -122,6 +125,7 @@ export const ICON_BY_CAT = {
 
 /** @type {Record<string, string>} */
 export const ZH_BY_CAT = {
+  "Currency Exchange": T.zh.category_currency_exchange,
   "Restaurant":"餐廳","Cafe":"咖啡廳","Cafe / Beverage":"飲料","Cafe / Juice Bar":"飲料","Beverages":"飲料",
   "Hotel":"飯店","Bar":"酒吧/天台俱樂部","Bar / Club":"酒吧/天台俱樂部","Bar / Rooftop Club":"酒吧/天台俱樂部","Spa":"Spa",
   "Shopping":"購物","Activity":"活動","Filming Location":"拍攝場地",

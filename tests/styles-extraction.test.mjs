@@ -58,16 +58,20 @@ test('result metadata uses the same inline spacing at every viewport', async () 
   assert.doesNotMatch(css, /@media\(min-width:1100px\)[\s\S]*?\.result-meta/);
 });
 
-test('location card actions are visible only at the mobile breakpoint', async () => {
+test('location card favorite heart is visible at every viewport; nav/maps buttons stay mobile-only', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(
     css,
-    /\.card-footer\{display:none;align-items:center;justify-content:flex-end;margin-top:8px\}/,
+    /\.card-footer\{display:flex;align-items:center;justify-content:flex-end;margin-top:8px\}/,
   );
   assert.match(
     css,
-    /@media\(max-width:700px\)\{\s*\.card-footer\{display:flex\}/,
+    /\.card-footer \.popup-nav-btn,\.card-footer \.popup-maps-btn\{display:none\}/,
+  );
+  assert.match(
+    css,
+    /@media\(max-width:700px\)\{\s*\.card-footer \.popup-nav-btn,\.card-footer \.popup-maps-btn\{display:inline-flex\}/,
   );
   assert.doesNotMatch(css, /\.popup-footer\{[^}]*display:none/);
 });
@@ -90,6 +94,27 @@ test('map markers keep their light style and use coral with contrast in dark mod
   assert.match(css, /\.marker-cluster\{[^}]*border:2px solid var\(--marker-ring\);box-shadow:0 4px 12px rgba\(0,0,0,\.4\)/);
   assert.match(css, /\.marker-dot\.active\{[^}]*0 0 15px rgba\(255,255,255,\.6\)/);
   assert.doesNotMatch(css, /\.marker-cluster\{[^}]*background:var\(--primary\)/);
+});
+
+test('single-brand exchange clusters reuse their green or orange marker variant', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(
+    css,
+    /\.marker-cluster\.is-exchange\{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7\}/,
+  );
+  assert.match(
+    css,
+    /\.marker-dot\.is-exchange\{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7\}/,
+  );
+  assert.match(
+    css,
+    /\.marker-cluster\.is-exchange-orange\{--marker-bg:#f26622;--marker-fg:#fff;--marker-ring:#ffd0b8\}/,
+  );
+  assert.match(
+    css,
+    /\.marker-dot\.is-exchange-orange\{--marker-bg:#f26622;--marker-fg:#fff;--marker-ring:#ffd0b8\}/,
+  );
 });
 
 test('light mode cards have scoped accessible contrast styles', async () => {

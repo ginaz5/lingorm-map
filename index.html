@@ -171,6 +171,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
       </div>
+      <div class="exchange-toolbar">
+        <label class="exchange-toggle">
+          <input id="exchange-toggle" type="checkbox" role="switch">
+          <span class="exchange-switch" aria-hidden="true"></span>
+          <span class="exchange-copy">
+            <strong data-i18n="fx_toggle"></strong>
+            <small data-i18n="fx_filter_note"></small>
+          </span>
+        </label>
+        <select class="filter-sel exchange-sort" id="exchange-sort" data-i18n-aria="fx_sort_label" hidden>
+          <option value="default" data-i18n="fx_sort_default"></option>
+          <option value="USD_100" data-i18n="fx_sort_usd_100"></option>
+          <option value="USD_50" data-i18n="fx_sort_usd_50"></option>
+          <option value="TWD" data-i18n="fx_sort_twd"></option>
+          <option value="USD_1965" data-i18n="fx_sort_usd_1965"></option>
+          <option value="TWD_1965" data-i18n="fx_sort_twd_1965"></option>
+        </select>
+      </div>
       <div class="result-meta">
         <span class="result-info" id="result-info"></span>
         <span class="last-updated" id="last-updated"></span>

@@ -2,8 +2,9 @@
 
 本專案使用 Netlify 免費方案時，建議先在本機完整測試，確認沒問題後才 push 到 GitHub 觸發 Netlify deploy，以節省 deploy credits。
 
-Notion snapshot 的完整 export → preview → production → rollback 流程請參考
-[`docs/notion-deploy-workflow.md`](../docs/notion-deploy-workflow.md)。
+Location 資料以已驗證的 CSV 快照隨程式版本部署：由 Notion 匯出 → 驗證 → 更新
+`data/locations.csv` → 提交部署；回滾即 `git revert` 該筆 `data/locations.csv` 變更。
+指令見 `CLAUDE.md` 的 Location data workflow。
 
 ## 目標
 
@@ -193,6 +194,268 @@ git push -u origin <feature-branch>
 - 不要直接 push 到 `main`；使用 feature branch + PR Deploy Preview。
 - 等本機確認後再 push feature branch。
 - PR preview 驗證完成後才 merge；production branch 的更新會觸發 production deploy。
+
+## 換匯功能上線與維運手冊
+
+換匯（SuperRich）功能的資料模型與階段設計以
+[實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md) 為準、進度與已
+完成的驗證見 [進度紀錄](../docs/superrich-exchange-map-progress.zh-TW.md)；
+本節只記錄「正式環境要怎麼操作」，避免每次上線或排查問題都要重讀整份計畫。
+
+### 上線前的驗證清單
+
+除了本文件前面「每次修改後的本機測試流程」之外，換匯功能多這幾項：
+
+```bash
+node --test tests/exchange-rates-*.test.mjs tests/i18n-ui.test.mjs tests/styles-extraction.test.mjs tests/view-first-ui.test.mjs
+node scripts/validate-superrich-mapping.mjs data/superrich-branches.json data/locations.csv
+node scripts/validate-superrich1965-mapping.mjs data/superrich1965-branches.json data/locations.csv
+npm run fx:control -- status
+```
+
+`fx:control -- status` 在本機／未設定 Netlify 憑證時會失敗是正常的——這
+支指令設計上只連正式或已 `netlify link` 的站台儲存；本機驗證的重點是
+`node --test` 全過與 mapping 腳本無誤。
+
+到期行為另以有有效報價的頁面驗證：切成離線、讓 API 請求跨過到期時間，
+以及切到背景後等到過期再切回。三種情況都應撤下數字與「最佳」標示、
+回一般排序；恢復連線且取得新快照後可以再次顯示報價。
+`tests/exchange-rates-ui.test.mjs` 以模擬時鐘涵蓋這些情境。
+
+橘標須同時驗證獨立 API、控制層與品牌分派前端：
+
+```bash
+node --test tests/exchange-rates-1965-source.test.mjs tests/exchange-rates-1965-backend.test.mjs tests/exchange-rates-1965-ui.test.mjs tests/superrich1965-mapping.test.mjs tests/view-first-ui.test.mjs
+npm run fx:1965:control -- status
+```
+
+Deploy Preview 上保持 `EXCHANGE_RATES_1965_ENABLED=false` 或未設定時，
+`/api/exchange-rates-1965` 應回 `enabled:false`、`snapshot:null`，且排程人工
+觸發不應呼叫上游。需要驗收第一輪時，使用 `npm run fx:1965:control --
+enable`，再執行 `netlify functions:invoke exchange-rates-1965-fetch`；核對
+38 店快照後可用 `npm run fx:1965:control -- disable --reason source_review`
+關閉。這組 control、snapshot、breaker 與綠標完全分開。
+
+橘標分店發布後，前台人工驗收還要確認：卡片只有 `USD 100＋50` 與
+`TWD 1,000–100` 兩列、顯示公司全名並連到 `superrich1965.com`；全橘
+cluster 為橘色，全綠為綠色，混合 cluster 為中性。依序停用其中一個品牌，
+另一品牌的報價、排序選項與 marker 應維持可用。
+
+### 橘標本機抓取（collector）
+
+`www.superrich1965.com` 的匯率請求曾在 Netlify 收到 Cloudflare challenge
+（`403` + `cf-mitigated: challenge` + HTML）；這些欄位不能確認挑戰類型
+或觸發規則。本機與 Netlify 皆有成功的歷史紀錄，但本機持續可用性仍需實測。
+本機 collector 讓抓取從自己的機器出去，前台仍讀同一份 Blobs 快照。
+綠標抓取流程維持原樣。
+
+```bash
+npm run fx:1965:fetch -- probe              # 單店診斷（預設 officialId 56），不發布
+npm run fx:1965:fetch -- probe --branch 77  # 指定分店
+npm run fx:1965:fetch -- run --dry-run      # 38 店完整驗證，不發布
+npm run fx:1965:fetch -- run --publish      # 38 店完整成功才寫入正式快照
+```
+
+三種模式都是**真實的來源請求**。缺少命令、同時給 `--dry-run --publish`、
+未知參數都會直接失敗；沒有任何預設發布，也刻意沒有 `--force` 可以清掉
+封鎖。退出碼只有 `collected`／`published` 是 0，其餘皆為 1。
+
+輸出是一個 JSON 物件，`status` 的語意固定：
+
+| status | 意思 |
+| --- | --- |
+| `collected` | 來源整輪成功，dry-run 完成，遠端完全沒動 |
+| `published` | 整輪成功且快照已寫入 |
+| `not_published` | 這一輪不該發布：來源沒有整輪成功（`source_partial`／`source_failed`），或成功了但寫不得（`snapshot_conflict`／`snapshot_expired`）。dry-run 只要不是整輪成功也會是這個值——**`collected` 才代表成功** |
+| `blocked` | 被 challenge／403／429 擋下，整輪立即停止 |
+| `skipped` | 沒有發出任何來源請求（`lock_held`／`local_cooldown`／`remote_cooldown`／`missing_credentials`／`control_missing`／`stale_control` 或 control 的停用原因） |
+
+`--publish` 需要 `.env` 裡的 `NETLIFY_SITE_ID` 與 `NETLIFY_AUTH_TOKEN`，且
+**必須已經有一份 enabled 的 control**；這支指令不會替你 enable，也不會自動
+建立 control。沒有憑證時 probe／dry-run 仍可執行，但看不到遠端 breaker 冷
+卻，輸出會標記 `remoteCooldownKnown: false`——那不代表來源沒被擋。
+
+probe 與 dry-run **不受 control.enabled 影響**：前台關著也能診斷來源，這正是
+最需要診斷的時候。兩者仍然完全不寫遠端，也仍然尊重遠端 breaker 冷卻。被
+429 擋下時，來源自己的 `Retry-After` 若比本機階梯長，以 `Retry-After` 為準。
+
+本機狀態放在 gitignored 的 `.local-state/exchange-rates-1965/`：
+
+- `run.lock` — 執行鎖，避免同一台機器重疊執行。程式**不會**自己刪別人的
+  鎖；遇到 `lock_held` 時輸出會附 `lockHolder.pid` 與已持有時間，先用
+  `ps -p <pid>` 確認該程序真的不在了，再手動 `rm
+  .local-state/exchange-rates-1965/run.lock`。
+- `state.json` — 本機冷卻與最近一次執行摘要。被 challenge 後冷卻階梯是
+  30 分鐘 → 6 小時 → 24 小時（比遠端 breaker 的 6h→24h→自動停用溫和，因為
+  它防的是人工反覆重跑）。整輪成功會歸零。`local_cooldown` 期間不會發出
+  任何來源請求。
+
+遠端最近一次發布結果看 `npm run fx:1965:control -- status` 的 `lastAttempt`
+欄位（有界摘要，不含原始 response）。
+
+#### 切換到本機抓取
+
+1. 先確認本機真的抓得到：`npm run fx:1965:fetch -- probe`，通過後再
+   `npm run fx:1965:fetch -- run --dry-run`。第一店就被 challenge 就停手，
+   不要反覆換 header 或出口重試。
+2. 在 Netlify 設定 `EXCHANGE_RATES_1965_FETCH_MODE=local`，**並部署**。只改
+   `.env` 不算切換。
+3. 部署後確認排程 function 的 log 出現 `status:"skipped"`、
+   `reason:"external_fetcher"` 的 INFO，且該輪零來源請求、零 store 寫入。
+4. 這時才啟動本機 collector：`npm run fx:1965:fetch -- run --publish`，然後
+   驗證 `/api/exchange-rates-1965` 回得到新快照、前台查詢時間有更新。
+5. 同一時間只跑一台本機 collector。ETag 只能防止互相覆寫，防不了重複的來源
+   請求。
+
+#### 回復成雲端抓取
+
+先停掉本機排程並確認沒有執行中的 collector（`.local-state/.../run.lock` 不
+存在），再把 `EXCHANGE_RATES_1965_FETCH_MODE` 改回 `netlify` 並部署。維持既
+有 control 與冷卻：不要清 breaker，也不要試圖復活已過期的快照。
+
+#### 到期時間與可選排程
+
+快照有效期不是「成功後固定 30 分鐘」，而是
+`nextUpdateAt = attemptedAt 之後的下一個 UTC :00／:30`、
+`expiresAt = nextUpdateAt + 90 秒`。手動更新可以用，但不能描述成全天即時
+服務：電腦關機、休眠或漏跑，前台就會照既有規則顯示「暫無報價」，不會偽造
+更新時間。
+
+本機穩定後可自行掛 launchd（**不要**在實作過程自動安裝）。範本：
+
+```bash
+# ~/bin/fx1965-publish.sh
+#!/bin/bash
+set -euo pipefail
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"   # 讓 launchd 找得到 node
+cd "$HOME/Dev/lingorm_bangkok_map"
+exec npm run fx:1965:fetch -- run --publish
+```
+
+```xml
+<!-- ~/Library/LaunchAgents/com.lingorm.fx1965.plist -->
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.lingorm.fx1965</string>
+  <key>ProgramArguments</key><array><string>/Users/YOU/bin/fx1965-publish.sh</string></array>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Minute</key><integer>30</integer></dict>
+  </array>
+  <key>StandardOutPath</key><string>/Users/YOU/Library/Logs/fx1965.log</string>
+  <key>StandardErrorPath</key><string>/Users/YOU/Library/Logs/fx1965.err.log</string>
+</dict></plist>
+```
+
+安裝 `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.lingorm.fx1965.plist`、
+卸載 `launchctl bootout gui/$(id -u)/com.lingorm.fx1965`。log 要自行輪替
+（`newsyslog.conf` 或 `logrotate`），別讓它無限長大；執行鎖已經由 collector
+自己處理。
+
+1.5 秒起始間隔抓 38 店，光是起始就跨約 55.5 秒，加上來源延遲與上傳時間，
+**不保證**每輪都能在 90 秒寬限內完成。舊快照到期到新快照發布之間允許短暫
+「暫無報價」，不要把觸發時間改成 `:02`／`:32` 卻宣稱無縫更新。整輪 180 秒
+是執行上限，不是寬限時間。
+
+### 排程首次啟用（正式環境）
+
+Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；即使
+`main` 已 merge，正式環境的 Netlify Scheduled Function 要等下一個排定
+時間才會第一次自動執行。因此第一次上線要依序做：
+
+1. 確認正式環境目前是 **disabled**：
+
+   ```bash
+   npm run fx:control -- status
+   ```
+
+   `control.enabled` 應為 `false` 或整個 `control` 為 `null`（代表尚未建立過控制物件，會回退到 `EXCHANGE_RATES_ENABLED`，預設也是 `false`）。
+
+2. 建立／更新正式的控制旗標：
+
+   ```bash
+   npm run fx:control -- enable
+   ```
+
+3. **人工觸發第一輪抓取**（不要空等排程），用 Netlify UI 的「Run now」或：
+
+   ```bash
+   netlify functions:invoke exchange-rates-fetch
+   ```
+
+4. 確認 API 與前台數字：
+
+   ```text
+   https://lingorm-map.netlify.app/api/exchange-rates
+   ```
+
+   預期 `enabled: true`、`snapshot` 非 `null`；前台開啟換匯開關後 26 個
+   分店都能看到三列報價（或明確的「暫無報價」，不是空白或錯誤畫面）。
+
+5. **再驗證接下來兩個排定批次**（每 30 分鐘一次；即等 30～60 分鐘後重
+   查一次 API 的 `checkedAt`／`snapshot.completedAt` 有沒有前進），確認
+   排程本身、不只是手動觸發那一次，是正常運作的。
+
+只改 `EXCHANGE_RATES_ENABLED` 這個環境變數**不會**讓上面任何一步提前生
+效——見下一節。
+
+### 執行期停用 vs. 環境變數：差異與怎麼操作
+
+這是兩層不同的開關，日常操作幾乎都只會用到第一種：
+
+| | 執行期控制旗標 | `EXCHANGE_RATES_ENABLED` 環境變數 |
+| --- | --- | --- |
+| 怎麼改 | `npm run fx:control -- enable` / `disable --reason <code>` | Netlify 網站設定裡改環境變數 |
+| 何時生效 | **立即**（下一次 API 讀取／排程檢查就看到） | **只在下一次部署之後**才生效 |
+| 用途 | 日常開關、來源出事故時緊急停用 | 這個站台從一開始要不要有這個功能（沒有控制旗標時的預設回退值） |
+| 停用後前台行為 | `enabled:false`；卡片、綠色標記、開關本身都還在，只是三列報價變成「暫無報價」，篩選與收藏不受影響 | 同左 |
+
+**常見誤區：** 改了 Netlify 環境變數的 `EXCHANGE_RATES_ENABLED` 之後，
+以為存檔就生效——實際上要另外觸發一次部署（哪怕程式碼沒改）才會被讀
+到新值。日常「先關掉」請一律用 `npm run fx:control -- disable --reason
+<code>`，不要改環境變數。
+
+### Circuit breaker 復原
+
+來源回應 403／429 會被視為「來源在限流／封鎖」，立即封鎖並依
+6h → 24h → 自動停用逐步升級；連續 3 輪全失敗（非 403／429）則退避 1
+小時。**`npm run fx:control -- enable` 只會清除連續失敗計數，不會清除
+尚未到期的封鎖期限**（含 `Retry-After`）——這是刻意的：如果來源還在限
+流，手動重新啟用又立刻重抓只會再觸發一次封鎖。
+
+排查步驟：
+
+1. `npm run fx:control -- status`，看 `breaker.blockedUntil` 是否還沒
+   到。
+2. 沒過期：等到期，或找到來源限流的根本原因後再等；不要反覆
+   enable/disable 試探。
+3. 已過期：下一輪排程（每 30 分鐘）會自動恢復抓取，也可以用
+   `netlify functions:invoke exchange-rates-fetch` 人工觸發一次確認。
+4. 恢復後應該看到 `breaker` 的失敗計數歸零、`snapshot` 更新到最新
+   `completedAt`。
+
+### 資料來源故障時，預期會發生什麼（降級檢查清單）
+
+來源故障（逾時、格式錯誤、HTTP 錯誤、封鎖中）時，前台**不應該**看到
+任何額外的錯誤畫面、彈窗或空白區塊；逐項確認：
+
+- 換匯開關、26 個分店卡片、地圖上的綠色標記／綠色群聚：都還在。
+- 三列報價：顯示「暫無報價」（`fx_unavailable`），不是 0、空白或
+  crash。
+- 免責文字、官網連結、Google Maps 營業時間連結：正常顯示，不受影響。
+- 篩選（換匯點略過類別／主題）、搜尋、目的地、收藏：正常運作。
+- 最佳匯率排序：三個排序選項變成 disabled，並自動退回一般排序（不是
+  停在故障前選的排序基準上）。
+- 訪客端每 60 秒仍會照常向 `/api/exchange-rates` 確認一次；沒有因為故
+  障就停止確認或需要重新整理頁面才能恢復。
+
+若上面任何一項不成立，先查 `npm run fx:control -- status` 的
+`control`／`breaker`／`snapshot` 三個物件，再對照
+[實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md) §4－§5 的契約
+定義；這是故障排查的第一步，不是重新部署。
+
+---
 
 ## 常見問題
 

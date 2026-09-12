@@ -11,7 +11,6 @@ Other required reading, by task:
 - `README.md` — full architecture diagrams, data schema, deploy config
 - `note/TECH_DECISIONS.md` — ADRs
 - `note/LOCAL_TESTING.md` — local verification procedure
-- `docs/notion-deploy-workflow.md` — Notion snapshot → production workflow
 
 `docs/archive/` is historical only — do not treat it as current requirements.
 
