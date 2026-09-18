@@ -14,8 +14,10 @@ import {
 import {
   matchesLocationFilters,
   renderExchangeRates,
+  renderTopExchangeRates,
   sortVisibleIndexes,
 } from '../src/ui/render.js';
+import { applyFiltersAndSyncMap } from '../src/app/app-coordinator.js';
 import { lang, setLang } from '../src/core/i18n.js';
 
 const slugs = Object.keys(BRANCH_MAPPING.branches);
@@ -52,7 +54,7 @@ function apiPayload({ runId = 'run-1', controlVersion = 'control-1' } = {}) {
 
 function resetExchangeState() {
   Object.assign(state, {
-    data: [], visIdx: [], favorites: new Set(), favFilterOn: false,
+    data: [], visIdx: [], favorites: new Set(), favFilterOn: false, isLoading: false,
     selectedDestinations: new Set(), exchangeLocationsOn: false,
     exchangeSort: 'default', exchangeRatesEnabled: null,
     exchangeControlVersion: null, exchangeRunId: null,
@@ -160,6 +162,148 @@ test('best-rate sort keeps valid exchange rates first and regular locations last
   assert.deepEqual(sortVisibleIndexes([0, 1, 2, 3], 'USD_100'), [2, 1, 3, 0]);
 });
 
+function topRateFixture() {
+  state.exchangeLocationsOn = true;
+  state.exchangeRatesEnabled = true;
+  state.exchangeHasUsableSnapshot = true;
+  state.exchangeSort = 'USD_100';
+  state.data = slugs.slice(0, 5).map((id, index) => ({
+    id, nameEn: `Branch ${index}`, nameZh: `分店 ${index}`, status: 'Published',
+    catEn: 'Currency Exchange', catZh: '換匯', type: '', destinationKey: 'bangkok',
+    alt: '', notesEn: '', notesZh: '', lat: '', lng: '', icon: '💱', maps: '',
+  }));
+  state.data.push({ ...state.data[0], id: 'superrich1965-56', nameEn: 'Orange branch' });
+  state.visIdx = [5, 4, 3, 2, 1, 0];
+  state.exchange1965.ratesBySlug = { 'superrich1965-56': { rates: { USD_1965: { rateScaledE6: 99_000_000 } } } };
+  state.data.slice(0, 5).forEach((row, index) => {
+    state.exchangeRatesBySlug[row.id] = { rates: {
+      USD_100: { rateScaledE6: [32_000_000, 34_000_000, null, 33_000_000, 31_000_000][index], displayDecimals: 2 },
+      USD_50: { rateScaledE6: [34_000_000, 31_000_000, 33_000_000, 32_000_000, null][index], displayDecimals: 2 },
+      TWD: { rateScaledE6: [995_000, 990_000, 985_000, null, 999_000][index], displayDecimals: 5 },
+    } };
+  });
+}
+
+function summaryIndexes(html) {
+  return [...html.matchAll(/onclick="activateCard\((\d+)\)"/g)].map(match => Number(match[1]));
+}
+
+test('top three summary follows each green denomination and excludes unavailable or orange rates', () => {
+  topRateFixture();
+  const originalIndexes = [...state.visIdx];
+  for (const [sort, expected, value] of [
+    ['USD_100', [1, 3, 0], '1 USD = 34.00 THB'],
+    ['USD_50', [0, 2, 3], '1 USD = 34.00 THB'],
+    ['TWD', [4, 0, 1], '1 TWD = 0.99900 THB'],
+  ]) {
+    state.exchangeSort = sort;
+    const html = renderTopExchangeRates();
+    assert.deepEqual(summaryIndexes(html), expected);
+    assert.ok(html.includes(value));
+    assert.match(html, /綠標匯率前 3 名/);
+    assert.match(html, /目前篩選結果/);
+    assert.match(html, /匯率僅供參考/);
+    assert.equal((html.match(/<button type="button"/g) || []).length, 3);
+  }
+  assert.deepEqual(state.visIdx, originalIndexes, 'summary must not truncate map or list results');
+});
+
+test('summary respects filtered results, includes ties consistently, and handles fewer than three quotes', () => {
+  topRateFixture();
+  state.exchangeRatesBySlug[slugs[0]].rates.USD_100.rateScaledE6 = 34_000_000;
+  assert.deepEqual(summaryIndexes(renderTopExchangeRates()), [0, 1, 3]);
+  state.visIdx = [2, 3, 4];
+  assert.deepEqual(summaryIndexes(renderTopExchangeRates()), [3, 4]);
+  assert.match(renderTopExchangeRates(), /綠標匯率前 2 名/);
+  state.visIdx = [2];
+  assert.equal(renderTopExchangeRates(), '');
+});
+
+test('summary disappears when green rates are unavailable, hidden, or another sort is selected', () => {
+  for (const override of [
+    { exchangeRatesEnabled: false }, { exchangeHasUsableSnapshot: false },
+    { exchangeLocationsOn: false }, { exchangeSort: 'default' }, { exchangeSort: 'USD_1965' },
+  ]) {
+    topRateFixture();
+    Object.assign(state, override);
+    assert.equal(renderTopExchangeRates(), '');
+  }
+});
+
+test('summary translates branch names and escapes their text', () => {
+  topRateFixture();
+  const previousLocalStorage = globalThis.localStorage;
+  globalThis.localStorage = { setItem() {} };
+  const previousLang = lang;
+  try {
+    setLang('en');
+    state.data[1].nameEn = 'Branch <One> & Two';
+    const html = renderTopExchangeRates();
+    assert.match(html, /Top 3 green exchange branches/);
+    assert.match(html, /Best rates in your filtered results/);
+    assert.match(html, /Branch &lt;One&gt; &amp; Two/);
+    assert.doesNotMatch(html, /分店/);
+  } finally {
+    setLang(previousLang);
+    if (previousLocalStorage === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = previousLocalStorage;
+  }
+});
+
+test('selecting a green rate refreshes the list at the top while background updates retain scroll', t => {
+  topRateFixture();
+  const listeners = {};
+  const makePanel = () => ({ setAttribute(name, value) { this[name] = value; }, classList: { toggle() {} } });
+  const elements = {
+    search: { value: '' }, 'cat-filter': { value: '' }, 'type-filter': { value: '' },
+    'loc-list': { innerHTML: '', scrollTop: 900 }, 'result-info': {},
+    panel: makePanel(), 'map-wrap': makePanel(), 'tab-map': makePanel(), 'tab-list': makePanel(),
+    'exchange-sort': { value: 'default', options: [], addEventListener(name, fn) { listeners[name] = fn; } },
+  };
+  const globals = {
+    document: { visibilityState: 'hidden', getElementById: id => elements[id] ?? null, addEventListener() {} },
+    window: { addEventListener() {} },
+    localStorage: { getItem: () => 'true', setItem() {} },
+  };
+  const descriptors = Object.fromEntries(Object.keys(globals).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  for (const [key, value] of Object.entries(globals)) {
+    Object.defineProperty(globalThis, key, { value, writable: true, configurable: true });
+  }
+  t.after(() => {
+    setExchangeLocationsVisible(false);
+    for (const [key, descriptor] of Object.entries(descriptors)) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+  });
+  initExchangeRates(change => applyFiltersAndSyncMap({ exchangeSortChanged: change.sortChanged }));
+
+  elements['exchange-sort'].value = 'USD_100';
+  listeners.change();
+  assert.equal(elements['loc-list'].scrollTop, 0);
+  assert.equal(elements.panel['data-mobile-tab'], 'list');
+  assert.equal(elements['map-wrap']['data-mobile-tab'], 'list');
+  assert.match(elements['loc-list'].innerHTML.trimStart(), /^<section class="fx-top"/);
+  assert.deepEqual(state.visIdx.slice(0, 3), [1, 3, 0]);
+  assert.equal((elements['loc-list'].innerHTML.match(/class="loc-card/g) || []).length, 6);
+
+  elements['loc-list'].scrollTop = 400;
+  applyFiltersAndSyncMap();
+  assert.equal(elements['loc-list'].scrollTop, 400);
+  elements['exchange-sort'].value = 'TWD';
+  listeners.change();
+  assert.equal(elements['loc-list'].scrollTop, 0);
+  assert.deepEqual(state.visIdx.slice(0, 3), [4, 0, 1]);
+
+  elements.search.value = '分店 4';
+  applyFiltersAndSyncMap();
+  assert.deepEqual(state.visIdx, [4]);
+  assert.match(elements['loc-list'].innerHTML, /綠標匯率前 1 名/);
+  elements['exchange-sort'].value = 'default';
+  listeners.change();
+  assert.doesNotMatch(elements['loc-list'].innerHTML, /class="fx-top"/);
+});
+
 test('exchange panel always contains three rows, disclaimer, source, and Maps link', () => {
   const row = {
     id: slugs[0], nameEn: 'Ratchadamri 1', notesEn: 'G floor',
@@ -247,9 +391,14 @@ function browserHarness(t, onChange = () => {}) {
 test('going offline expires rendered rates and best badges without another API request', t => {
   const fetchMock = t.mock.method(globalThis, 'fetch', async () => { throw new Error('unexpected fetch'); });
   let rendered = '';
-  const { listeners, browserNavigator, row } = browserHarness(t, () => { rendered = renderExchangeRates(state.data[0]); });
+  let summary = '';
+  const { listeners, browserNavigator, row } = browserHarness(t, () => {
+    rendered = renderExchangeRates(state.data[0]);
+    summary = renderTopExchangeRates();
+  });
   assert.match(renderExchangeRates(row), /32\.83 THB/);
   assert.match(renderExchangeRates(row), /fx-best/);
+  assert.match(renderTopExchangeRates(), /fx-top/);
   browserNavigator.onLine = false;
   listeners.offline();
   t.mock.timers.tick(5_000);
@@ -257,6 +406,7 @@ test('going offline expires rendered rates and best badges without another API r
   assert.equal(state.exchangeSort, 'default');
   assert.equal((rendered.match(/暫無報價/g) || []).length, 3);
   assert.doesNotMatch(rendered, /32\.83 THB|fx-best/);
+  assert.equal(summary, '');
   assert.equal(fetchMock.mock.callCount(), 0);
 });
 

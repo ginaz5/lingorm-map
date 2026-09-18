@@ -300,6 +300,44 @@ export function buildPopupContent(i) {
 // ═══════════════════════════════════════════════════
 // CARD LIST
 // ═══════════════════════════════════════════════════
+export function renderTopExchangeRates() {
+  const sort = state.exchangeSort;
+  if (!state.exchangeLocationsOn || !state.exchangeRatesEnabled ||
+      !state.exchangeHasUsableSnapshot || brandForSort(sort) !== 'green') return '';
+
+  const indexes = sortVisibleIndexes(state.visIdx, sort).filter(i => {
+    const row = state.data[i];
+    if (getExchangeBrand(row) !== 'green') return false;
+    const cell = exchangeRateCell(row.id, sort, 'green');
+    return Number.isSafeInteger(cell?.rateScaledE6) && Number.isInteger(cell?.displayDecimals);
+  }).slice(0, 3);
+  if (!indexes.length) return '';
+
+  const currency = sort === 'TWD' ? 'TWD' : 'USD';
+  const checked = formatExchangeCheckedAt(state.exchangeCompletedAt);
+  return `<section class="fx-top" aria-labelledby="fx-top-title">
+    <h2 id="fx-top-title" class="fx-top-title">${t('fx_top_title', indexes.length)}</h2>
+    <p class="fx-top-scope">${t('fx_top_scope', t(`fx_denom_${sort.toLowerCase()}`))}</p>
+    <ol class="fx-top-list">
+      ${indexes.map((i, position) => {
+        const row = state.data[i];
+        const cell = exchangeRateCell(row.id, sort, 'green');
+        const rate = (cell.rateScaledE6 / 1_000_000).toFixed(cell.displayDecimals);
+        const name = lang === 'zh' ? row.nameZh : row.nameEn;
+        return `<li><button type="button" class="fx-top-branch" onclick="activateCard(${i})">
+          <span class="fx-top-rank" aria-hidden="true">${position + 1}</span>
+          <span class="fx-top-details">
+            <span class="fx-top-name">${escapeAttribute(name)}</span>
+            <span class="fx-top-rate">${t('fx_rate_value', currency, rate)}</span>
+          </span>
+        </button></li>`;
+      }).join('')}
+    </ol>
+    ${checked ? `<div class="fx-checked">${t('fx_checked', checked)}</div>` : ''}
+    <p class="fx-disclaimer">${t('fx_disclaimer')}</p>
+  </section>`;
+}
+
 export function renderList() {
   const list = requiredElement('loc-list');
   if (state.isLoading) {
@@ -310,7 +348,7 @@ export function renderList() {
     list.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div>${t('empty')}</div>`;
     return;
   }
-  list.innerHTML = state.visIdx.map(i => {
+  list.innerHTML = renderTopExchangeRates() + state.visIdx.map(i => {
     const row = state.data[i];
     const name = lang === 'zh' ? row.nameZh : row.nameEn;
     const notes = lang === 'zh' ? row.notesZh : row.notesEn;

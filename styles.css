@@ -353,6 +353,17 @@ header {
 .fx-links{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:7px}
 .fx-links a{font-size:10px;line-height:1.4;color:var(--brand-accent);text-decoration:none}
 .fx-links a:hover{text-decoration:underline}
+.fx-top{flex-shrink:0;padding:12px;border:1px solid rgba(22,131,91,.3);border-radius:12px;background:var(--canvas)}
+.fx-top-title{font-size:14px;font-weight:700;line-height:1.4;color:var(--primary)}
+.fx-top-scope{margin-top:3px;font-size:11px;line-height:1.4;color:var(--text-muted)}
+.fx-top-list{list-style:none;margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.fx-top-branch{display:flex;align-items:center;gap:9px;width:100%;min-height:48px;padding:7px 8px;border:0;border-radius:7px;background:rgba(22,131,91,.07);color:var(--primary);text-align:left;font:inherit;cursor:pointer}
+.fx-top-branch:hover{background:rgba(22,131,91,.14)}
+.fx-top-branch:focus-visible{outline:2px solid var(--brand-accent);outline-offset:2px}
+.fx-top-rank{display:grid;place-items:center;flex:0 0 22px;height:22px;border-radius:50%;background:#16835b;color:#fff;font-size:12px;font-weight:700}
+.fx-top-details{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fx-top-name{font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+.fx-top-rate{font-size:13px;line-height:1.35;font-weight:700;font-variant-numeric:tabular-nums}
 .card-notes{font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card-footer{display:flex;align-items:center;justify-content:flex-end;margin-top:8px}

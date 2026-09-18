@@ -219,7 +219,7 @@ initDestinationFilter(change => {
   );
 });
 initCollectionInfo();
-/** @param {{exchangeHidden?:boolean,locationsChanged?:boolean}} change */
+/** @param {{exchangeHidden?:boolean,locationsChanged?:boolean,sortChanged?:boolean}} change */
 const handleExchangeChange = change => {
   if (change.exchangeHidden) {
     const category = /** @type {HTMLSelectElement} */ (document.getElementById('cat-filter'));
@@ -233,7 +233,7 @@ const handleExchangeChange = change => {
     applyFilters();
     void buildMarkers();
   } else {
-    applyFiltersAndSyncMap();
+    applyFiltersAndSyncMap({ exchangeSortChanged: change.sortChanged });
   }
   refreshActivePopup();
 };

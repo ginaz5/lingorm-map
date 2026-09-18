@@ -131,6 +131,10 @@ test('currency exchange controls and required notices are bilingual', () => {
   assert.equal(T.en.fx_brand_orange, 'SuperRich Currency Exchange (1965) Company Limited.');
 
   assert.equal(T.zh.fx_rate_value('USD', '32.83'), '1 USD = 32.83 THB');
+  assert.equal(T.zh.fx_top_title(3), '綠標匯率前 3 名');
+  assert.equal(T.en.fx_top_title(2), 'Top 2 green exchange branches');
+  assert.equal(T.zh.fx_top_scope('USD 100'), 'USD 100 · 目前篩選結果中的最佳分店');
+  assert.equal(T.en.fx_top_scope('TWD'), 'TWD · Best rates in your filtered results');
   assert.equal(T.en.fx_checked('09/09/2026 10:30 (UTC)'), 'Last checked: 09/09/2026 10:30 (UTC)');
 });
 

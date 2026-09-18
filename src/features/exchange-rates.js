@@ -218,7 +218,7 @@ let timer = null;
 /** @type {AbortController|null} */
 let requestController = null;
 let requestSequence = 0;
-/** @type {((change:{exchangeHidden?:boolean,locationsChanged?:boolean})=>void)|null} */
+/** @type {((change:{exchangeHidden?:boolean,locationsChanged?:boolean,sortChanged?:boolean})=>void)|null} */
 let changeListener = null;
 
 function notify(change = {}) {
@@ -424,7 +424,7 @@ export function setExchangeLocationsVisible(visible) {
   scheduleExchangeAction();
 }
 
-/** @param {(change:{exchangeHidden?:boolean,locationsChanged?:boolean})=>void} onChange */
+/** @param {(change:{exchangeHidden?:boolean,locationsChanged?:boolean,sortChanged?:boolean})=>void} onChange */
 export function initExchangeRates(onChange) {
   changeListener = onChange;
   state.exchangeLocationsOn = localStorage.getItem(EXCHANGE_TOGGLE_STORAGE_KEY) === 'true';
@@ -433,7 +433,7 @@ export function initExchangeRates(onChange) {
   toggle?.addEventListener('change', () => setExchangeLocationsVisible(toggle.checked));
   sort?.addEventListener('change', () => {
     state.exchangeSort = isExchangeSort(sort.value) ? sort.value : 'default';
-    notify();
+    notify({ sortChanged: true });
   });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') cancelRequest();
