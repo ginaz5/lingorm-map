@@ -14,7 +14,6 @@ import {
 import {
   matchesLocationFilters,
   renderExchangeRates,
-  renderTopExchangeRates,
   sortVisibleIndexes,
 } from '../src/ui/render.js';
 import { applyFiltersAndSyncMap } from '../src/app/app-coordinator.js';
@@ -184,70 +183,26 @@ function topRateFixture() {
   });
 }
 
-function summaryIndexes(html) {
-  return [...html.matchAll(/onclick="activateCard\((\d+)\)"/g)].map(match => Number(match[1]));
-}
-
-test('top three summary follows each green denomination and excludes unavailable or orange rates', () => {
+test('green denomination sorting keeps the best three branches first', () => {
   topRateFixture();
   const originalIndexes = [...state.visIdx];
-  for (const [sort, expected, value] of [
-    ['USD_100', [1, 3, 0], '1 USD = 34.00 THB'],
-    ['USD_50', [0, 2, 3], '1 USD = 34.00 THB'],
-    ['TWD', [4, 0, 1], '1 TWD = 0.99900 THB'],
+  for (const [sort, expected] of [
+    ['USD_100', [1, 3, 0]],
+    ['USD_50', [0, 2, 3]],
+    ['TWD', [4, 0, 1]],
   ]) {
-    state.exchangeSort = sort;
-    const html = renderTopExchangeRates();
-    assert.deepEqual(summaryIndexes(html), expected);
-    assert.ok(html.includes(value));
-    assert.match(html, /綠標匯率前 3 名/);
-    assert.match(html, /目前篩選結果/);
-    assert.match(html, /匯率僅供參考/);
-    assert.equal((html.match(/<button type="button"/g) || []).length, 3);
+    const sorted = sortVisibleIndexes(state.visIdx, sort);
+    assert.deepEqual(sorted.slice(0, 3), expected);
+    assert.equal(sorted.length, originalIndexes.length);
   }
-  assert.deepEqual(state.visIdx, originalIndexes, 'summary must not truncate map or list results');
+  assert.deepEqual(state.visIdx, originalIndexes);
 });
 
-test('summary respects filtered results, includes ties consistently, and handles fewer than three quotes', () => {
+test('green rate sorting keeps ties consistent and respects filtered results', () => {
   topRateFixture();
   state.exchangeRatesBySlug[slugs[0]].rates.USD_100.rateScaledE6 = 34_000_000;
-  assert.deepEqual(summaryIndexes(renderTopExchangeRates()), [0, 1, 3]);
-  state.visIdx = [2, 3, 4];
-  assert.deepEqual(summaryIndexes(renderTopExchangeRates()), [3, 4]);
-  assert.match(renderTopExchangeRates(), /綠標匯率前 2 名/);
-  state.visIdx = [2];
-  assert.equal(renderTopExchangeRates(), '');
-});
-
-test('summary disappears when green rates are unavailable, hidden, or another sort is selected', () => {
-  for (const override of [
-    { exchangeRatesEnabled: false }, { exchangeHasUsableSnapshot: false },
-    { exchangeLocationsOn: false }, { exchangeSort: 'default' }, { exchangeSort: 'USD_1965' },
-  ]) {
-    topRateFixture();
-    Object.assign(state, override);
-    assert.equal(renderTopExchangeRates(), '');
-  }
-});
-
-test('summary translates branch names and escapes their text', () => {
-  topRateFixture();
-  const previousLocalStorage = globalThis.localStorage;
-  globalThis.localStorage = { setItem() {} };
-  const previousLang = lang;
-  try {
-    setLang('en');
-    state.data[1].nameEn = 'Branch <One> & Two';
-    const html = renderTopExchangeRates();
-    assert.match(html, /Top 3 green exchange branches/);
-    assert.match(html, /Best rates in your filtered results/);
-    assert.match(html, /Branch &lt;One&gt; &amp; Two/);
-    assert.doesNotMatch(html, /分店/);
-  } finally {
-    setLang(previousLang);
-    if (previousLocalStorage === undefined) delete globalThis.localStorage;
-    else globalThis.localStorage = previousLocalStorage;
-  }
+  assert.deepEqual(sortVisibleIndexes(state.visIdx, 'USD_100').slice(0, 3), [0, 1, 3]);
+  assert.deepEqual(sortVisibleIndexes([2, 3, 4], 'USD_100'), [3, 4, 2]);
 });
 
 test('selecting a green rate refreshes the list at the top while background updates retain scroll', t => {
@@ -283,7 +238,12 @@ test('selecting a green rate refreshes the list at the top while background upda
   assert.equal(elements['loc-list'].scrollTop, 0);
   assert.equal(elements.panel['data-mobile-tab'], 'list');
   assert.equal(elements['map-wrap']['data-mobile-tab'], 'list');
-  assert.match(elements['loc-list'].innerHTML.trimStart(), /^<section class="fx-top"/);
+  assert.match(elements['loc-list'].innerHTML.trimStart(), /^<div class="loc-card/);
+  assert.doesNotMatch(elements['loc-list'].innerHTML, /class="fx-top"/);
+  assert.deepEqual(
+    [...elements['loc-list'].innerHTML.matchAll(/id="card-(\d+)"/g)].slice(0, 3).map(match => Number(match[1])),
+    [1, 3, 0],
+  );
   assert.deepEqual(state.visIdx.slice(0, 3), [1, 3, 0]);
   assert.equal((elements['loc-list'].innerHTML.match(/class="loc-card/g) || []).length, 6);
 
@@ -298,13 +258,14 @@ test('selecting a green rate refreshes the list at the top while background upda
   elements.search.value = '分店 4';
   applyFiltersAndSyncMap();
   assert.deepEqual(state.visIdx, [4]);
-  assert.match(elements['loc-list'].innerHTML, /綠標匯率前 1 名/);
+  assert.match(elements['loc-list'].innerHTML, /id="card-4"/);
+  assert.equal((elements['loc-list'].innerHTML.match(/class="loc-card/g) || []).length, 1);
   elements['exchange-sort'].value = 'default';
   listeners.change();
   assert.doesNotMatch(elements['loc-list'].innerHTML, /class="fx-top"/);
 });
 
-test('exchange panel always contains three rows, disclaimer, source, and Maps link', () => {
+test('exchange panel contains three rows and compact metadata without a duplicate Maps link', () => {
   const row = {
     id: slugs[0], nameEn: 'Ratchadamri 1', notesEn: 'G floor',
     maps: 'https://maps.google.com/example',
@@ -322,10 +283,16 @@ test('exchange panel always contains three rows, disclaimer, source, and Maps li
   assert.match(html, /TWD 100–2,000/);
   assert.doesNotMatch(html, /美元鈔/);
   assert.doesNotMatch(html, /鈔票/);
-  assert.match(html, /匯率僅供參考/);
+  assert.match(html, /<div class="fx-meta">/);
+  assert.match(html, /<span class="fx-disclaimer">匯率僅供參考<\/span>/);
   assert.match(html, /superrichthailand\.com\/exchange-rate/);
-  assert.match(html, /https:\/\/maps\.google\.com\/example/);
-  assert.match(html, /\(UTC\)/);
+  assert.doesNotMatch(html, /https:\/\/maps\.google\.com\/example|Google Maps/);
+  assert.doesNotMatch(html, /\(UTC\)/);
+  assert.match(html, /官網分店 · Ratchadamri 1/);
+
+  state.exchangeSort = 'USD_100';
+  const sortedHtml = renderExchangeRates(row);
+  assert.match(sortedHtml, /<span class="fx-value"><span class="fx-best">最佳<\/span> 1 USD = 32\.83 THB<\/span>/);
 
   state.exchangeHasUsableSnapshot = false;
   const unavailable = renderExchangeRates(row);
@@ -391,14 +358,11 @@ function browserHarness(t, onChange = () => {}) {
 test('going offline expires rendered rates and best badges without another API request', t => {
   const fetchMock = t.mock.method(globalThis, 'fetch', async () => { throw new Error('unexpected fetch'); });
   let rendered = '';
-  let summary = '';
   const { listeners, browserNavigator, row } = browserHarness(t, () => {
     rendered = renderExchangeRates(state.data[0]);
-    summary = renderTopExchangeRates();
   });
   assert.match(renderExchangeRates(row), /32\.83 THB/);
   assert.match(renderExchangeRates(row), /fx-best/);
-  assert.match(renderTopExchangeRates(), /fx-top/);
   browserNavigator.onLine = false;
   listeners.offline();
   t.mock.timers.tick(5_000);
@@ -406,7 +370,6 @@ test('going offline expires rendered rates and best badges without another API r
   assert.equal(state.exchangeSort, 'default');
   assert.equal((rendered.match(/暫無報價/g) || []).length, 3);
   assert.doesNotMatch(rendered, /32\.83 THB|fx-best/);
-  assert.equal(summary, '');
   assert.equal(fetchMock.mock.callCount(), 0);
 });
 

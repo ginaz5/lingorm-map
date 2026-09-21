@@ -134,10 +134,11 @@ export function formatExchangeCheckedAt(iso) {
   if (!iso) return '';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
-  return `${new Intl.DateTimeFormat(lang === 'zh' ? 'zh-TW' : 'en-GB', {
-    timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hour12: false,
-  }).format(date)} (UTC)`;
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+    month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(date).map(part => [part.type, part.value]));
+  const datePart = lang === 'zh' ? `${parts.month}/${parts.day}` : `${parts.day}/${parts.month}`;
+  return `${datePart} ${parts.hour}:${parts.minute}`;
 }
 
 /** @param {string} sort @returns {'green'|'orange'|null} */
@@ -192,23 +193,21 @@ export function renderExchangeRates(row) {
     const isBest = activeSort === denom && valid && best !== null && cell.rateScaledE6 === best;
     return `<div class="fx-rate-row">
       <span class="fx-denom">${t(`fx_denom_${denom.toLowerCase()}`)}</span>
-      <span class="fx-value${valid ? '' : ' is-unavailable'}">${valid ? t('fx_rate_value', currency, value) : value}${isBest ? ` <span class="fx-best">${t('fx_best')}</span>` : ''}</span>
+      <span class="fx-value${valid ? '' : ' is-unavailable'}">${isBest ? `<span class="fx-best">${t('fx_best')}</span> ` : ''}${valid ? t('fx_rate_value', currency, value) : value}</span>
     </div>`;
   }).join('');
   const loading = brandState.ratesLoading && !brandState.hasUsableSnapshot
     ? `<div class="fx-loading">${t('fx_loading')}</div>` : '';
-  const mapsUrl = escapeAttribute(row.maps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${row.nameEn} ${row.notesEn}`)}`);
   return `<section class="fx-panel${orange ? ' is-exchange-orange' : ''}" aria-label="${t('fx_panel_label')}">
     <div class="fx-brand">${t(orange ? 'fx_brand_orange' : 'fx_brand_green')}</div>
     ${loading}
     <div class="fx-rates${loading ? ' is-loading' : ''}">${rows}</div>
-    ${checked && brandState.hasUsableSnapshot ? `<div class="fx-checked">${t('fx_checked', checked)}</div>` : ''}
-    <p class="fx-disclaimer">${t(orange ? 'fx_disclaimer_1965' : 'fx_disclaimer')}</p>
-    <div class="fx-links">
-      <a href="${OFFICIAL_EXCHANGE_URLS[brand]}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${t(orange ? 'fx_source_note_1965' : 'fx_source_note')}</a>
-      <a href="${mapsUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${t('fx_hours_note')}</a>
+    <div class="fx-meta">
+      ${checked && brandState.hasUsableSnapshot ? `<time class="fx-checked" datetime="${escapeAttribute(brandState.completedAt || '')}">${t('fx_checked', checked)}</time>` : ''}
+      <span class="fx-disclaimer">${t(orange ? 'fx_disclaimer_1965' : 'fx_disclaimer')}</span>
+      <a href="${OFFICIAL_EXCHANGE_URLS[brand]}" target="_blank" rel="noopener" aria-label="${t(orange ? 'fx_source_note_1965' : 'fx_source_note')}" onclick="event.stopPropagation()">${t(orange ? 'fx_source_note_1965' : 'fx_source_note')}</a>
     </div>
-    <div class="fx-branch-hint">${t('fx_branch_hint', row.nameEn)}</div>
+    <div class="fx-branch-hint">${t('fx_branch_hint', escapeAttribute(row.nameEn))}</div>
   </section>`;
 }
 
@@ -300,44 +299,6 @@ export function buildPopupContent(i) {
 // ═══════════════════════════════════════════════════
 // CARD LIST
 // ═══════════════════════════════════════════════════
-export function renderTopExchangeRates() {
-  const sort = state.exchangeSort;
-  if (!state.exchangeLocationsOn || !state.exchangeRatesEnabled ||
-      !state.exchangeHasUsableSnapshot || brandForSort(sort) !== 'green') return '';
-
-  const indexes = sortVisibleIndexes(state.visIdx, sort).filter(i => {
-    const row = state.data[i];
-    if (getExchangeBrand(row) !== 'green') return false;
-    const cell = exchangeRateCell(row.id, sort, 'green');
-    return Number.isSafeInteger(cell?.rateScaledE6) && Number.isInteger(cell?.displayDecimals);
-  }).slice(0, 3);
-  if (!indexes.length) return '';
-
-  const currency = sort === 'TWD' ? 'TWD' : 'USD';
-  const checked = formatExchangeCheckedAt(state.exchangeCompletedAt);
-  return `<section class="fx-top" aria-labelledby="fx-top-title">
-    <h2 id="fx-top-title" class="fx-top-title">${t('fx_top_title', indexes.length)}</h2>
-    <p class="fx-top-scope">${t('fx_top_scope', t(`fx_denom_${sort.toLowerCase()}`))}</p>
-    <ol class="fx-top-list">
-      ${indexes.map((i, position) => {
-        const row = state.data[i];
-        const cell = exchangeRateCell(row.id, sort, 'green');
-        const rate = (cell.rateScaledE6 / 1_000_000).toFixed(cell.displayDecimals);
-        const name = lang === 'zh' ? row.nameZh : row.nameEn;
-        return `<li><button type="button" class="fx-top-branch" onclick="activateCard(${i})">
-          <span class="fx-top-rank" aria-hidden="true">${position + 1}</span>
-          <span class="fx-top-details">
-            <span class="fx-top-name">${escapeAttribute(name)}</span>
-            <span class="fx-top-rate">${t('fx_rate_value', currency, rate)}</span>
-          </span>
-        </button></li>`;
-      }).join('')}
-    </ol>
-    ${checked ? `<div class="fx-checked">${t('fx_checked', checked)}</div>` : ''}
-    <p class="fx-disclaimer">${t('fx_disclaimer')}</p>
-  </section>`;
-}
-
 export function renderList() {
   const list = requiredElement('loc-list');
   if (state.isLoading) {
@@ -348,7 +309,7 @@ export function renderList() {
     list.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div>${t('empty')}</div>`;
     return;
   }
-  list.innerHTML = renderTopExchangeRates() + state.visIdx.map(i => {
+  list.innerHTML = state.visIdx.map(i => {
     const row = state.data[i];
     const name = lang === 'zh' ? row.nameZh : row.nameEn;
     const notes = lang === 'zh' ? row.notesZh : row.notesEn;

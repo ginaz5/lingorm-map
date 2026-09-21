@@ -104,7 +104,7 @@ test('currency exchange controls and required notices are bilingual', () => {
     'fx_sort_default', 'fx_sort_usd_100', 'fx_sort_usd_50', 'fx_sort_twd',
     'fx_sort_usd_1965', 'fx_sort_twd_1965',
     'fx_brand_green', 'fx_disclaimer', 'fx_disclaimer_1965',
-    'fx_source_note', 'fx_source_note_1965', 'fx_hours_note',
+    'fx_source_note', 'fx_source_note_1965',
   ];
   for (const key of keys) {
     assert.equal(typeof T.zh[key], 'string', `missing zh ${key}`);
@@ -131,11 +131,11 @@ test('currency exchange controls and required notices are bilingual', () => {
   assert.equal(T.en.fx_brand_orange, 'SuperRich Currency Exchange (1965) Company Limited.');
 
   assert.equal(T.zh.fx_rate_value('USD', '32.83'), '1 USD = 32.83 THB');
-  assert.equal(T.zh.fx_top_title(3), '綠標匯率前 3 名');
-  assert.equal(T.en.fx_top_title(2), 'Top 2 green exchange branches');
-  assert.equal(T.zh.fx_top_scope('USD 100'), 'USD 100 · 目前篩選結果中的最佳分店');
-  assert.equal(T.en.fx_top_scope('TWD'), 'TWD · Best rates in your filtered results');
-  assert.equal(T.en.fx_checked('09/09/2026 10:30 (UTC)'), 'Last checked: 09/09/2026 10:30 (UTC)');
+  assert.equal(T.zh.fx_disclaimer, '匯率僅供參考');
+  assert.equal(T.zh.fx_checked('9/9 18:30'), '更新 9/9 18:30');
+  assert.equal(T.en.fx_checked('09/09 10:30'), 'Updated 09/09 10:30');
+  assert.equal(T.zh.fx_branch_hint('Airport'), '官網分店 · Airport');
+  assert.equal(T.en.fx_branch_hint('Airport'), 'Official branch · Airport');
 });
 
 test('unrestricted category and collection filters describe that all options are shown', () => {
