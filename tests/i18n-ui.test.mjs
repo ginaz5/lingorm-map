@@ -102,7 +102,6 @@ test('currency exchange controls and required notices are bilingual', () => {
   const keys = [
     'fx_toggle', 'fx_filter_note', 'fx_loading', 'fx_unavailable',
     'fx_sort_default', 'fx_sort_usd_100', 'fx_sort_usd_50', 'fx_sort_twd',
-    'fx_sort_usd_1965', 'fx_sort_twd_1965',
     'fx_brand_green', 'fx_disclaimer', 'fx_disclaimer_1965',
     'fx_source_note', 'fx_source_note_1965',
   ];
@@ -136,6 +135,18 @@ test('currency exchange controls and required notices are bilingual', () => {
   assert.equal(T.en.fx_checked('09/09 10:30'), 'Updated 09/09 10:30');
   assert.equal(T.zh.fx_branch_hint('Airport'), '官網分店 · Airport');
   assert.equal(T.en.fx_branch_hint('Airport'), 'Official branch · Airport');
+});
+
+test('exchange-rate sort menu exposes only green-brand choices', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const select = html.match(/<select class="filter-sel exchange-sort"[\s\S]*?<\/select>/)?.[0];
+
+  assert.ok(select, 'exchange-rate sort select should exist');
+  assert.deepEqual(
+    [...select.matchAll(/<option value="([^"]+)"/g)].map(match => match[1]),
+    ['default', 'USD_100', 'USD_50', 'TWD'],
+  );
+  assert.doesNotMatch(select, /1965|fx_sort_usd_1965|fx_sort_twd_1965/);
 });
 
 test('unrestricted category and collection filters describe that all options are shown', () => {
