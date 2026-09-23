@@ -284,7 +284,7 @@ test('exchange panel contains three rows and compact metadata without a duplicat
   assert.doesNotMatch(html, /美元鈔/);
   assert.doesNotMatch(html, /鈔票/);
   assert.match(html, /<div class="fx-meta">/);
-  assert.match(html, /<span class="fx-disclaimer">匯率僅供參考<\/span>/);
+  assert.match(html, /<span class="fx-disclaimer">非即時匯率，以櫃檯為準<\/span>/);
   assert.match(html, /superrichthailand\.com\/exchange-rate/);
   assert.doesNotMatch(html, /https:\/\/maps\.google\.com\/example|Google Maps/);
   assert.doesNotMatch(html, /\(UTC\)/);
@@ -297,7 +297,7 @@ test('exchange panel contains three rows and compact metadata without a duplicat
   state.exchangeHasUsableSnapshot = false;
   const unavailable = renderExchangeRates(row);
   assert.equal((unavailable.match(/暫無報價/g) || []).length, 3);
-  assert.match(unavailable, /匯率僅供參考/);
+  assert.match(unavailable, /非即時匯率，以櫃檯為準/);
 
   const previousLang = lang;
   const previousLocalStorage = globalThis.localStorage;

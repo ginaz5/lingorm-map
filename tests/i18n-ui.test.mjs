@@ -130,7 +130,8 @@ test('currency exchange controls and required notices are bilingual', () => {
   assert.equal(T.en.fx_brand_orange, 'SuperRich Currency Exchange (1965) Company Limited.');
 
   assert.equal(T.zh.fx_rate_value('USD', '32.83'), '1 USD = 32.83 THB');
-  assert.equal(T.zh.fx_disclaimer, '匯率僅供參考');
+  assert.equal(T.zh.fx_disclaimer, '非即時匯率，以櫃檯為準');
+  assert.equal(T.en.fx_disclaimer, 'Not real-time. Counter rates apply.');
   assert.equal(T.zh.fx_checked('9/9 18:30'), '更新 9/9 18:30');
   assert.equal(T.en.fx_checked('09/09 10:30'), 'Updated 09/09 10:30');
   assert.equal(T.zh.fx_branch_hint('Airport'), '官網分店 · Airport');

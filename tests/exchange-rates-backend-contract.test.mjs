@@ -92,6 +92,30 @@ test('storage selects production/site and nonproduction/deploy stores with stron
   assert.deepEqual(calls.at(-1).at(-1), { onlyIfMatch: 'old' });
 });
 
+test('storage overwrites an existing entry without an ETag only in Netlify Dev', async t => {
+  const previousNetlifyDev = process.env.NETLIFY_DEV;
+  t.after(() => {
+    if (previousNetlifyDev === undefined) delete process.env.NETLIFY_DEV;
+    else process.env.NETLIFY_DEV = previousNetlifyDev;
+  });
+  const calls = [];
+  const store = {
+    setJSON: async (...args) => {
+      calls.push(args);
+      return { modified: true, etag: 'next' };
+    },
+  };
+  const entryWithoutEtag = { data: {}, metadata: {} };
+
+  delete process.env.NETLIFY_DEV;
+  await conditionalSetJSON(store, EXCHANGE_KEYS.snapshot, {}, entryWithoutEtag);
+  process.env.NETLIFY_DEV = 'true';
+  await conditionalSetJSON(store, EXCHANGE_KEYS.snapshot, {}, entryWithoutEtag);
+
+  assert.deepEqual(calls[0], [EXCHANGE_KEYS.snapshot, {}, { onlyIfNew: true }]);
+  assert.deepEqual(calls[1], [EXCHANGE_KEYS.snapshot, {}]);
+});
+
 test('admin storage requires explicit local credentials and opens the production site store', () => {
   assert.throws(() => createAdminStore({ siteID: '', token: '' }), /required/);
   let received;

@@ -32,6 +32,14 @@ export async function readEntry(store, key) {
 
 /** @param {any} store @param {string} key @param {unknown} value @param {any|null} previousEntry */
 export async function conditionalSetJSON(store, key, value, previousEntry) {
-  const options = previousEntry?.etag ? { onlyIfMatch: previousEntry.etag } : { onlyIfNew: true };
-  return store.setJSON(key, value, options);
+  if (previousEntry?.etag) {
+    return store.setJSON(key, value, { onlyIfMatch: previousEntry.etag });
+  }
+  // Netlify Dev's local Blobs sandbox may return an existing entry without an
+  // ETag. Allow only that local environment to overwrite it; production keeps
+  // failing closed instead of dropping compare-and-swap protection.
+  if (previousEntry && process.env.NETLIFY_DEV === 'true') {
+    return store.setJSON(key, value);
+  }
+  return store.setJSON(key, value, { onlyIfNew: true });
 }
