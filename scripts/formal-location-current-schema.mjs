@@ -91,6 +91,8 @@ const DESTINATION_OPTION_COLORS = Object.freeze({
   'khao-yai': 'brown',
   'koh-samui': 'blue',
   pattaya: 'purple',
+  chonburi: 'orange',
+  'si-racha': 'green',
   'ubon-ratchathani': 'pink',
   'ho-chi-minh-city': 'red',
   taipei: 'pink',

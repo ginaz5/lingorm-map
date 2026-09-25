@@ -15,7 +15,6 @@ Read relevant documentation before editing:
 - `README.md`: architecture, development, and deployment
 - `note/TECH_DECISIONS.md`: technical decisions
 - `note/LOCAL_TESTING.md`: local verification
-- `docs/notion-deploy-workflow.md`: Notion snapshot and deployment workflow
 
 `docs/archive/` contains historical context only. Do not read it by default or
 treat it as current requirements; consult it only when explicitly requested or

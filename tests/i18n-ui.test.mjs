@@ -20,6 +20,7 @@ async function loadUiHelpers(deps) {
     'state',
     'lang',
     'isPublicLocation',
+    'isExchangeLocation',
     `${code}; return { rebuildSelect, updateLangUI, buildCatFilter };`,
   )(
     deps.document,
@@ -27,6 +28,7 @@ async function loadUiHelpers(deps) {
     deps.state,
     deps.lang,
     deps.isPublicLocation ?? ((row) => row.status === 'Published'),
+    deps.isExchangeLocation ?? (() => false),
   );
 }
 
@@ -86,26 +88,89 @@ test('search placeholders explain that names and notes are searchable', () => {
   assert.equal(T.en.search_ph, 'Search names or notes…');
 });
 
-test('collection filter label is available in both supported languages', () => {
-  assert.equal(T.zh.theme_filter, '主題');
-  assert.equal(T.en.theme_filter, 'Collection');
+test('type filter label is available in both supported languages', () => {
+  assert.equal(T.zh.theme_filter, '標籤');
+  assert.equal(T.en.theme_filter, 'label');
 });
 
-test('unrestricted category and collection filters describe that all options are shown', () => {
+test('currency exchange category has bilingual labels', () => {
+  assert.equal(T.zh.category_currency_exchange, '換匯');
+  assert.equal(T.en.category_currency_exchange, 'Currency Exchange');
+});
+
+test('currency exchange controls and required notices are bilingual', () => {
+  assert.equal(T.zh.fx_filter_note, '換匯點不受類別與標籤篩選影響。');
+  assert.equal(T.en.fx_filter_note, 'Exchange locations are not filtered by category or label.');
+  const keys = [
+    'fx_toggle', 'fx_filter_note', 'fx_loading', 'fx_unavailable',
+    'fx_sort_default', 'fx_sort_usd_100', 'fx_sort_usd_50', 'fx_sort_twd',
+    'fx_brand_green', 'fx_disclaimer', 'fx_disclaimer_1965',
+    'fx_source_note', 'fx_source_note_1965',
+  ];
+  for (const key of keys) {
+    assert.equal(typeof T.zh[key], 'string', `missing zh ${key}`);
+    assert.equal(typeof T.en[key], 'string', `missing en ${key}`);
+    assert.notEqual(T.zh[key], T.en[key], `${key} should be translated`);
+  }
+
+  // Denomination labels are plain currency/amount strings (no "banknote"
+  // wording in either language), so zh and en are identical by design.
+  const denomKeys = ['fx_denom_usd_100', 'fx_denom_usd_50', 'fx_denom_twd'];
+  for (const key of denomKeys) {
+    assert.equal(typeof T.zh[key], 'string', `missing zh ${key}`);
+    assert.equal(typeof T.en[key], 'string', `missing en ${key}`);
+    assert.equal(T.zh[key], T.en[key], `${key} should match across languages`);
+    assert.doesNotMatch(T.zh[key], /banknote|美元鈔|鈔票/);
+  }
+
+  for (const key of ['fx_denom_usd_1965', 'fx_denom_twd_1965']) {
+    assert.match(T.zh[key], /SuperRich 1965/);
+    assert.match(T.en[key], /SuperRich 1965/);
+    assert.doesNotMatch(T.zh[key], /banknote|美元鈔|鈔票/);
+  }
+  assert.equal(T.zh.fx_brand_orange, 'SuperRich Currency Exchange (1965) Company Limited.');
+  assert.equal(T.en.fx_brand_orange, 'SuperRich Currency Exchange (1965) Company Limited.');
+
+  assert.equal(T.zh.fx_rate_value('USD', '32.83'), '1 USD = 32.83 THB');
+  assert.equal(T.zh.fx_disclaimer, '非即時匯率，以櫃檯為準');
+  assert.equal(T.en.fx_disclaimer, 'Not real-time. Counter rates apply.');
+  assert.equal(T.zh.fx_checked('9/9 18:30'), '更新 9/9 18:30');
+  assert.equal(T.en.fx_checked('09/09 10:30'), 'Updated 09/09 10:30');
+  assert.equal(T.zh.fx_branch_hint('Airport'), '官網分店 · Airport');
+  assert.equal(T.en.fx_branch_hint('Airport'), 'Official branch · Airport');
+});
+
+test('exchange-rate sort menu exposes only green-brand choices', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const select = html.match(/<select class="filter-sel exchange-sort"[\s\S]*?<\/select>/)?.[0];
+
+  assert.ok(select, 'exchange-rate sort select should exist');
+  assert.deepEqual(
+    [...select.matchAll(/<option value="([^"]+)"/g)].map(match => match[1]),
+    ['default', 'USD_100', 'USD_50', 'TWD'],
+  );
+  assert.doesNotMatch(select, /1965|fx_sort_usd_1965|fx_sort_twd_1965/);
+});
+
+test('unrestricted filters show their category and label prompts', () => {
   assert.equal(T.zh.all_cat, '所有類別');
   assert.equal(T.en.all_cat, 'All categories');
-  assert.equal(T.zh.all_themes, '所有主題');
-  assert.equal(T.en.all_themes, 'All collections');
+  assert.equal(T.zh.all_themes, '所有標籤');
+  assert.equal(T.en.all_themes, 'All label');
 });
 
-test('collection guide explains every collection in both supported languages', () => {
-  assert.equal(T.zh.collection_info_title, '主題怎麼分類？');
+test('label guide explains every label in both supported languages', () => {
+  assert.equal(T.zh.collection_info_btn, '了解標籤分類');
+  assert.equal(T.zh.collection_info_close, '關閉標籤說明');
+  assert.equal(T.zh.collection_info_title, '標籤怎麼分類？');
   assert.match(T.zh.collection_info_lingorm, /劇集、綜藝節目取景地/);
   assert.equal(T.zh.collection_info_jkr_picks, '同擔分享的地點，必須得存個！');
   assert.match(T.zh.collection_info_jkr_projects, /曾經或正在進行應援活動/);
   assert.match(T.zh.collection_info_admin, /特別留給她看的哈哈/);
 
-  assert.equal(T.en.collection_info_title, 'What are collections?');
+  assert.equal(T.en.collection_info_btn, 'About labels');
+  assert.equal(T.en.collection_info_close, 'Close label guide');
+  assert.equal(T.en.collection_info_title, 'What are labels?');
   assert.match(T.en.collection_info_lingorm, /filming locations/);
   assert.match(T.en.collection_info_jkr_picks, /fellow fans/);
   assert.match(T.en.collection_info_jkr_projects, /fan support projects/);
@@ -129,10 +194,55 @@ test('favorite storage notice is available in both supported languages', () => {
 });
 
 test('changelog navigation and page copy are available in both supported languages', () => {
+  assert.equal(T.zh.whats_new_title, '✨ 最近更新');
+  assert.equal(T.en.whats_new_title, '✨ Latest updates');
+  assert.equal(T.zh.whats_new_desc, '來看看上次造訪後的更新。');
+  assert.equal(T.en.whats_new_desc, "See what's changed since your last visit.");
   assert.equal(T.zh.whats_new_view_all, '查看完整更新紀錄');
   assert.equal(T.en.whats_new_view_all, 'View full changelog');
   assert.equal(T.zh.changelog_back, '返回地圖');
   assert.equal(T.en.changelog_back, 'Back to map');
+});
+
+test('every resources label and accessible link name is translated by updateLangUI', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const bindings = [...html.matchAll(/data-i18n(-aria)?="(fan_resources_[^"]+)"/g)];
+  const keys = bindings.map(match => match[2]);
+  assert.ok(keys.includes('fan_resources_fanpage_desc'));
+  assert.ok(keys.includes('fan_resources_schedule_aria'));
+  assert.ok(keys.includes('fan_resources_news_desc'));
+  assert.ok(keys.includes('fan_resources_news_aria'));
+  assert.ok(keys.includes('fan_resources_pics_desc'));
+  assert.ok(keys.includes('fan_resources_pics_aria'));
+  for (const language of ['zh', 'en']) {
+    const elements = bindings.map(([, aria, key]) => ({
+      dataset: aria ? { i18nAria: key } : { i18n: key },
+      textContent: '',
+      ariaLabel: '',
+      setAttribute(name, value) { assert.equal(name, 'aria-label'); this.ariaLabel = value; },
+    }));
+    const { updateLangUI } = await loadUiHelpers({
+      document: { querySelectorAll: () => elements, getElementById: () => ({ textContent: '' }) },
+      t: key => T[language][key], state: { data: [] }, lang: language,
+    });
+    updateLangUI();
+    for (const element of elements) {
+      const key = element.dataset.i18n || element.dataset.i18nAria;
+      const value = element.dataset.i18nAria ? element.ariaLabel : element.textContent;
+      assert.equal(typeof value, 'string', key);
+      assert.ok(value.length > 0, key);
+      assert.notEqual(value, key);
+    }
+  }
+});
+
+test('Chinese fan resources intro displays the requested line break', async () => {
+  assert.equal(
+    T.zh.fan_resources_intro,
+    '剛認識 LingOrm，或想重溫喜歡的片段？\n這裡有粉絲用心整理的網站，陪你慢慢看、慢慢認識她們。',
+  );
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+  assert.match(css, /\.fan-resources-intro\{[^}]*white-space:pre-line/);
 });
 
 test('buildCatFilter preserves the selected category while rebuilding options', async () => {

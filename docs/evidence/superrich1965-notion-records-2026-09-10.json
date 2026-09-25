@@ -1,0 +1,1162 @@
+{
+  "schemaVersion": 1,
+  "createdOn": "2026-09-10",
+  "dataSourceId": "e55c2315-8ea2-837d-9637-07c1118486c8",
+  "records": [
+    {
+      "notionPageId": "3d7c2315-8ea2-8197-8384-cf4504796bcc",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281978384cf4504796bcc?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Silom Plaza)",
+        "Name ZH": "SuperRich 1965（橘標）是隆 Silom Plaza分店",
+        "Thai / Alt Name": "สีลม",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=15775963621935397154",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7259677,
+        "Lng": 100.52739608,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Silom Plaza Building, 1st Floor, near Krungthai Bank (Silom Branch).",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Silom Plaza 1 樓，鄰近 Krungthai Bank 是隆分行。",
+        "Review Needed": true,
+        "Slug": "superrich1965-56",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=56、slug=silom、group=main-branch；報價 company_code=A04、branch_no=00（Silom Plaza (สีลมพลาซ่า)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=15775963621935397154（SuperRich Exchange Silom）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8117-bac5-d2043484f8ec",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28117bac5d2043484f8ec?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Ratchadamri Soi 2)",
+        "Name ZH": "SuperRich 1965（橘標）Ratchadamri Soi 2分店",
+        "Thai / Alt Name": "ราชดำริห์ ซอย 2",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=12643537585874962060",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7481743,
+        "Lng": 100.5413347,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 1st Floor, opposite CentralWorld.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Ratchadamri Soi 2 的 1 樓，CentralWorld 對面。",
+        "Review Needed": true,
+        "Slug": "superrich1965-57",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=57、slug=ratchadamri-soi-2、group=main-branch；報價 company_code=A04、branch_no=35（Ratchadamri 2 (ราชดำริห์ 2)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=12643537585874962060（SuperRich Exchange Ratchadamri）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81ee-800d-f00c3bfc55c2",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281ee800df00c3bfc55c2?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Ratchadamri Soi 1)",
+        "Name ZH": "SuperRich 1965（橘標）Ratchadamri Soi 1分店",
+        "Thai / Alt Name": "ราชดำริห์ ซอย 1",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=8335198795530635667",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.74839715,
+        "Lng": 100.5415544,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 1st Floor, inside Absolute Keto.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Ratchadamri Soi 1，Absolute Keto 內的 1 樓。",
+        "Review Needed": true,
+        "Slug": "superrich1965-58",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=58、slug=ratchamri-soi-1、group=main-branch；報價 company_code=A04、branch_no=36（Ratchadamri 1 (ราชดำริห์ 1)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8335198795530635667（SuperRich ราชดำริ ซอย1）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8195-a59a-f740af4fc3fe",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28195a59af740af4fc3fe?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Big C Ratchadamri)",
+        "Name ZH": "SuperRich 1965（橘標）Big C Ratchadamri分店",
+        "Thai / Alt Name": "บิ๊กซี ราชดำริ",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=10640620214672543437",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7478896,
+        "Lng": 100.5408364,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 2nd floor, near the skywalk.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Big C Ratchadamri 2 樓，鄰近空橋。",
+        "Review Needed": true,
+        "Slug": "superrich1965-59",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=59、slug=big-c-ratchadamri、group=main-branch；報價 company_code=A04、branch_no=40（Big C Ratchadamri (ศูนย์การค้าบิ๊กซี ราชดำริห์)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=10640620214672543437（SuperRich Exchange @Big C Ratchadamri）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8154-a564-d0f8e1a72406",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28154a564d0f8e1a72406?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Big C Place Ratchadapisek)",
+        "Name ZH": "SuperRich 1965（橘標）Big C Place Ratchadapisek分店",
+        "Thai / Alt Name": "บิ๊กซี เพลส รัชดาภิเษก",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=15788413709990784438",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7690041,
+        "Lng": 100.5719551,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 2nd Floor, next to Yaowarat Gold Shop.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Big C Place Ratchadapisek 2 樓，Yaowarat 金店旁。",
+        "Review Needed": true,
+        "Slug": "superrich1965-60",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=60、slug=big-c-place-ratchadapisek、group=main-branch；報價 company_code=A04、branch_no=50（Big C Ratchadapisek (ศูนย์การค้าบิ๊กซี รัชดาภิเษก)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=15788413709990784438（SuperRich บิ๊กซี เพลส รัชดาภิเษก）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8132-abca-f4e5c2922818",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28132abcaf4e5c2922818?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (CentralWorld)",
+        "Name ZH": "SuperRich 1965（橘標）CentralWorld分店",
+        "Thai / Alt Name": "เซ็นทรัลเวิลด์",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=17641291034871758820",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7467959,
+        "Lng": 100.5398741,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 3rd Floor, Beacon Zone, next to the escalator, opposite Fahprathan Restaurant, near the Japanese Zone (former Isetan side).",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 CentralWorld 3 樓 Beacon 區，鄰近日本區（原伊勢丹側）及手扶梯。",
+        "Review Needed": true,
+        "Slug": "superrich1965-61",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=61、slug=centralworld、group=main-branch；報價 company_code=A04、branch_no=34（Central World (เซ็นทรัลเวิลด์)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=17641291034871758820（SuperRich Exchange @CentralWorld）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-815f-a0a7-e9ac47890330",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2815fa0a7e9ac47890330?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Central Eastville)",
+        "Name ZH": "SuperRich 1965（橘標）Central Eastville分店",
+        "Thai / Alt Name": "เซ็นทรัล อีสต์วิลล์",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=13227693680754996999",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.8037762,
+        "Lng": 100.6146195,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 3rd Floor, Banking Zone, opposite Government Savings Bank and next to Krungsri First Choice.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Central Eastville 3 樓銀行區，Government Savings Bank 對面。",
+        "Review Needed": true,
+        "Slug": "superrich1965-62",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=62、slug=central-eastville、group=main-branch；報價 company_code=A04、branch_no=23（Central Eastville(เซ็นทรัล อีสต์วิลล์)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=13227693680754996999（SuperRich เซ็นทรัลอีสต์วิลล์）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8100-838a-d8e924b05165",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28100838ad8e924b05165?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Central Ladprao)",
+        "Name ZH": "SuperRich 1965（橘標）Central Ladprao分店",
+        "Thai / Alt Name": "เซ็นทรัล ลาดพร้าว",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=9790860745869596558",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.81747588,
+        "Lng": 100.56141011,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Central Ladprao, near L’Occitane and the 1A parking exit; floor labels require review.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Central Ladprao，鄰近 L’Occitane 專櫃及 1A 停車場出口；樓層標示待複核。",
+        "Review Needed": true,
+        "Slug": "superrich1965-63",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=63、slug=central-ladprao、group=main-branch；報價 company_code=A04、branch_no=03（Central Ladprao(เซ็นทรัล ลาดพร้าว)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=9790860745869596558（SuperRich เซ็นทรัลลาดพร้าว）；尚未取得 Google Place ID，不將 CID 填入該欄。官方 address 標 OG Floor，landmark 標 1st floor；公開前複核樓層。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8170-b0d1-f222dc34b5bf",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28170b0d1f222dc34b5bf?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Central Embassy)",
+        "Name ZH": "SuperRich 1965（橘標）Central Embassy分店",
+        "Thai / Alt Name": "เซ็นทรัล เอ็มบาสซี",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=11354210779480537482",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7442403,
+        "Lng": 100.5458836,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 2nd floor, near ZARA.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Central Embassy 2 樓，鄰近 ZARA。",
+        "Review Needed": true,
+        "Slug": "superrich1965-64",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=64、slug=central-embassy、group=main-branch；報價 company_code=A04、branch_no=19（Central Embassy(เซ็นทรัล แอมบาสซี)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=11354210779480537482（SuperRich เซ็นทรัลเอ็มบาสซี）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-813e-a8a2-cacc2a336572",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2813ea8a2cacc2a336572?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Central Bangna)",
+        "Name ZH": "SuperRich 1965（橘標）Central Bangna分店",
+        "Thai / Alt Name": "เซ็นทรัล บางนา",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=9236261590056237412",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.6691492,
+        "Lng": 100.6349238,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. The Central Service Center, 4th Floor, Department Store Zone.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Central Bangna 百貨區 4 樓服務中心。",
+        "Review Needed": true,
+        "Slug": "superrich1965-65",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=65、slug=central-bangna、group=main-branch；報價 company_code=A04、branch_no=05（Central Bangna(เซ็นทรัล บางนา)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=9236261590056237412（SuperRich เซ็นทรัลบางนา）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8186-ab35-c185ca7752d7",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28186ab35c185ca7752d7?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Central Pinklao)",
+        "Name ZH": "SuperRich 1965（橘標）Central Pinklao分店",
+        "Thai / Alt Name": "เซ็นทรัล ปิ่นเกล้า",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=18431963231161380620",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7779136,
+        "Lng": 100.4761395,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 4th floor, Bank zone, opposite Tipco Bank.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Central Pinklao 4 樓銀行區。",
+        "Review Needed": true,
+        "Slug": "superrich1965-66",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=66、slug=central-pinklao、group=main-branch；報價 company_code=A04、branch_no=45（Central Pinklao(เซ็นทรัล ปิ่นเกล้า)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=18431963231161380620（SuperRich เซ็นทรัลปิ่นเกล้า）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81a0-9db7-fd566e465064",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281a09db7fd566e465064?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Dusit Central Park)",
+        "Name ZH": "SuperRich 1965（橘標）Dusit Central Park分店",
+        "Thai / Alt Name": "ดุสิต เซ็นทรัล พาร์ค",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=10802328743530097709",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7281735,
+        "Lng": 100.5346918,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. LG Floor, opposite CHAGEE.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Dusit Central Park LG 樓，CHAGEE 對面。",
+        "Review Needed": true,
+        "Slug": "superrich1965-67",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=67、slug=dusit-central-park、group=main-branch；報價 company_code=A04、branch_no=62（Dusit Central Park (ดุสิตเซ็นทรัล พาร์ค)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=10802328743530097709（SuperRich Exchange @Dusit Central Park）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-819d-91ed-d28378156fa5",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2819d91edd28378156fa5?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (The Mall Lifestore Bangkapi)",
+        "Name ZH": "SuperRich 1965（橘標）The Mall Lifestore Bangkapi分店",
+        "Thai / Alt Name": "เดอะมอลล์ไลฟ์สโตร์ บางกะปิ",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=4792365811619136602",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7650323,
+        "Lng": 100.6424786,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 2nd floor, opposite the AIS SHOP.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 The Mall Lifestore Bangkapi 2 樓，AIS SHOP 對面。",
+        "Review Needed": true,
+        "Slug": "superrich1965-68",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=68、slug=the-mall-lifestore-bangkapi、group=main-branch；報價 company_code=A04、branch_no=11（The Mall Bangkapi(เดอะมอลล์ บางกะปิ)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=4792365811619136602（SuperRich เดอะมอลล์บางกะปิ）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-815d-9618-e0dc8acde2fd",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2815d9618e0dc8acde2fd?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (The Mall Lifestore Ngamwongwan)",
+        "Name ZH": "SuperRich 1965（橘標）The Mall Lifestore Ngamwongwan分店",
+        "Thai / Alt Name": "เดอะมอลล์ไลฟ์สโตร์ งามวงศ์วาน",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=15518294520322797509",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.8558247,
+        "Lng": 100.5419609,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 5th floor, in front of the elevator, Zone A, between Ngern Tid Lor and Umay+.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 The Mall Lifestore Ngamwongwan 5 樓 A 區電梯前，Ngern Tid Lor 與 Umay+ 之間。",
+        "Review Needed": true,
+        "Slug": "superrich1965-69",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=69、slug=the-mall-lifestore-ngamwongwan、group=main-branch；報價 company_code=A04、branch_no=44（The Mall Ngamwongwan (เดอะมอลล์ งามวงศ์วาน)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=15518294520322797509（Superrich）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81cd-83f3-f55c55c47a86",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281cd83f3f55c55c47a86?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (The Mall Lifestore Bangkae)",
+        "Name ZH": "SuperRich 1965（橘標）The Mall Lifestore Bangkae分店",
+        "Thai / Alt Name": "เดอะมอลล์ไลฟ์สโตร์ บางแค",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=4089825850985452372",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7126688,
+        "Lng": 100.4080061,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 2nd Floor, diagonally across from CIMB Bank, opposite Umay+.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 The Mall Lifestore Bangkae 2 樓，CIMB Bank 斜對面、Umay+ 對面。",
+        "Review Needed": true,
+        "Slug": "superrich1965-70",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=70、slug=the-mall-lifestore-bangkae、group=main-branch；報價 company_code=A04、branch_no=26（The Mall Bangkae (เดอะมอลล์ บางแค)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=4089825850985452372（SuperRich The Mall Bangkae）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81d5-a7e1-d458cbcd8a61",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281d5a7e1d458cbcd8a61?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Seacon Square Srinakarin)",
+        "Name ZH": "SuperRich 1965（橘標）Seacon Square Srinakarin分店",
+        "Thai / Alt Name": "ซีคอนสแควร์ ศรีนครินทร์",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=13829695911430800631",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.693006,
+        "Lng": 100.64785,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. G Floor, between Bangkok Bank and IT BaNANA store.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Seacon Square Srinakarin G 樓，Bangkok Bank 與 IT BaNANA 之間。",
+        "Review Needed": true,
+        "Slug": "superrich1965-71",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=71、slug=seacon-square-srinakarin、group=main-branch；報價 company_code=A04、branch_no=20（Seacon Square Srinakarin(ซีคอนสแควร์ ศรีนครินทร์)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=13829695911430800631（SuperRich）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8190-b1a0-f2c540faebd1",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28190b1a0f2c540faebd1?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Seacon Bangkae)",
+        "Name ZH": "SuperRich 1965（橘標）Seacon Bangkae分店",
+        "Thai / Alt Name": "ซีคอน บางแค",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=8412309548577448649",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7126134,
+        "Lng": 100.4342343,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 3rd floor, near the escalator, opposite Thai Credit Bank.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Seacon Bangkae 3 樓，鄰近手扶梯、Thai Credit Bank 對面。",
+        "Review Needed": true,
+        "Slug": "superrich1965-72",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=72、slug=seacon-bangkae、group=main-branch；報價 company_code=A04、branch_no=46（Seacon Bangkae (ซีคอน บางแค)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8412309548577448649（SuperRich ซีคอนบางแค）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8121-96ff-e0bc37d7095f",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2812196ffe0bc37d7095f?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (MBK Center)",
+        "Name ZH": "SuperRich 1965（橘標）MBK Center 2 樓分店",
+        "Thai / Alt Name": "เอ็ม บี เค เซ็นเตอร์",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=13143101977433073461",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7443914,
+        "Lng": 100.5301254,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 2nd Floor, at the junction. On the left are Tee Noi Suki, Watsons, and on the right are Pepper Lunch and Papaya, located before the elevator entrance.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 MBK Center 2 樓 C 區，鄰近 Pathumwan Princess Hotel 入口及電梯。",
+        "Review Needed": true,
+        "Slug": "superrich1965-73",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=73、slug=mbk-center、group=main-branch；報價 company_code=A04、branch_no=21（MBK(เอ็ม บี เค)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=13143101977433073461（SuperRich MBK）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-813a-8b28-f9dbc2d703f4",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2813a8b28f9dbc2d703f4?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (MBK Skywalk)",
+        "Name ZH": "SuperRich 1965（橘標）MBK Skywalk分店",
+        "Thai / Alt Name": "เอ็มบีเค สกายวอล์ค",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=8784033568452572932",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.74541,
+        "Lng": 100.5257773,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Skywalk, 2nd Floor.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 MBK Center 2 樓空橋，與商場內的 MBK Center 分店分開建檔。",
+        "Review Needed": true,
+        "Slug": "superrich1965-74",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=74、slug=mbk-skywalk、group=main-branch；報價 company_code=A04、branch_no=63（MBK Skywalk (เอ็ม บี เค สกายวอล์ก)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8784033568452572932（SuperRich Exchange @ MBK Skywalk (Branch 2)）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標位置與 MBK Skywalk 的地址範圍疑似不符；此為來源原值，公開前必須獨立複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81de-901e-cfd2478788ae",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281de901ecfd2478788ae?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (ICS Lifestyle Complex)",
+        "Name ZH": "SuperRich 1965（橘標）ICS Lifestyle Complex分店",
+        "Thai / Alt Name": "ไอซีเอส ไลฟ์สไตล์ คอมเพล็กซ์",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=9121040231589198816",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7212507,
+        "Lng": 100.5156707,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Opposite ICONSIAM, 2nd floor, near the escalator.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 ICONSIAM 對面的 ICS Lifestyle Complex 2 樓，鄰近手扶梯。",
+        "Review Needed": true,
+        "Slug": "superrich1965-76",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=76、slug=ics-lifestyle-complex、group=main-branch；報價 company_code=A04、branch_no=47（ICS(ไอซีเอส)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=9121040231589198816（SuperRich Exchange ICS）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與「ICONSIAM 對面」位置描述疑似不符；此為來源原值，公開前必須獨立複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-817f-97d7-df85c31f6f3b",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2817f97d7df85c31f6f3b?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (ICONSIAM)",
+        "Name ZH": "SuperRich 1965（橘標）ICONSIAM分店",
+        "Thai / Alt Name": "ไอคอนสยาม",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=1849985724577714029",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.727876,
+        "Lng": 100.511274,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 5th Floor, ICON Education Zone, Opposite Asia Books, near Café Amazon.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 ICONSIAM 5 樓 ICON Education 區，Asia Books 對面、鄰近 Café Amazon。",
+        "Review Needed": true,
+        "Slug": "superrich1965-77",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=77、slug=iconsiam、group=main-branch；報價 company_code=A04、branch_no=48（ICONSIAM(ไอคอนสยาม)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=1849985724577714029（SuperRich Exchange @ICONSIAM）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標是否落在 ICONSIAM 分店範圍尚待複核；未以商場或鄰店座標替換。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81f5-8ce1-f0189ae3983c",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281f58ce1f0189ae3983c?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Bangkok Hospital)",
+        "Name ZH": "SuperRich 1965（橘標）Bangkok Hospital分店",
+        "Thai / Alt Name": "โรงพยาบาลกรุงเทพ",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=8539769213875250240",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7484646,
+        "Lng": 100.5825484,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 1st Floor, Wattanosoth Building, behind the escalator.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Bangkok Hospital 的 Wattanosoth 大樓 1 樓，手扶梯後方。",
+        "Review Needed": true,
+        "Slug": "superrich1965-78",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=78、slug=bangkok-hospital、group=main-branch；報價 company_code=A04、branch_no=27（Bangkok Hospital(โรงพยาบาลกรุงเทพ(ตึกวัฒโนสถ ))）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8539769213875250240（SuperRich โรงพยาบาลกรุงเทพ）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81f1-a6d2-d1af48d58972",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281f1a6d2d1af48d58972?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Samitivej Sukhumvit Hospital)",
+        "Name ZH": "SuperRich 1965（橘標）Samitivej Sukhumvit Hospital分店",
+        "Thai / Alt Name": "โรงพยาบาลสมิติเวช สุขุมวิท",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=7254985248330491106",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7343855,
+        "Lng": 100.5766619,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Building 1, Royal Wing, G Floor, beneath the escalator.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Samitivej Sukhumvit Hospital 1 號大樓 Royal Wing 的 G 樓，手扶梯下方。",
+        "Review Needed": true,
+        "Slug": "superrich1965-79",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=79、slug=samitivej-sukhumvit-hospital、group=main-branch；報價 company_code=A04、branch_no=52（Samitivej Sukhumvit Hospital (โรงพยาบาลสมิติเวช สุขุมวิท)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=7254985248330491106（SuperRich โรงพยาบาลสมิติเวช สุขุมวิท）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8106-8f65-dc845848eee4",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281068f65dc845848eee4?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Platinum POP)",
+        "Name ZH": "SuperRich 1965（橘標）Platinum POP分店",
+        "Thai / Alt Name": "แพลทินั่ม ป๊อป",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=3389145693496596136",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7394144,
+        "Lng": 100.5344928,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. G Floor, near the escalator, opposite After You.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。官方現名為 Platinum POP，地址仍列 The Market Bangkok；位於 G 樓，鄰近手扶梯、After You 對面。",
+        "Review Needed": true,
+        "Slug": "superrich1965-80",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=80、slug=the-market-bangkok、group=main-branch；報價 company_code=A04、branch_no=04（Platinum Pop (แพลทินัม ป๊อป )）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=3389145693496596136（SuperRich Exchange The Market Bangkok）；尚未取得 Google Place ID，不將 CID 填入該欄。Platinum POP 現名與 The Market Bangkok 舊地址並存；官方座標與 Ratchadamri 地址疑似不符，公開前必須複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-819c-b5f3-ebe72890ca6b",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2819cb5f3ebe72890ca6b?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (The Old Siam Plaza)",
+        "Name ZH": "SuperRich 1965（橘標）The Old Siam Plaza分店",
+        "Thai / Alt Name": "ดิโอลด์ สยาม พลาซ่า",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=1461159666499170416",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7466729,
+        "Lng": 100.5001371,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 1st Floor, at the Fuang Nakhon Courtyard, next to Gateaux House bakery.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 The Old Siam Plaza 1 樓 Fuang Nakhon 廣場，Gateaux House 麵包店旁。",
+        "Review Needed": true,
+        "Slug": "superrich1965-81",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=81、slug=the-old-siam-plaza、group=main-branch；報價 company_code=A04、branch_no=53（The Old Siam Plaza (ดิโอลด์ สยาม พลาซ่า)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=1461159666499170416（SuperRich ดิโอลด์สยาม）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8115-bfae-f599f42e518a",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28115bfaef599f42e518a?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Station One Yaowarat)",
+        "Name ZH": "SuperRich 1965（橘標）Station One Yaowarat分店",
+        "Thai / Alt Name": "สเตชั่น วัน เยาวราช",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=17574828652567266885",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7435131,
+        "Lng": 100.5090594,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 1st Floor, Charoen Krung Road, next to Wat Mangkon.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於耀華力 Station One 1 樓，Charoen Krung 路旁、鄰近龍蓮寺。",
+        "Review Needed": true,
+        "Slug": "superrich1965-82",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=82、slug=station-one-yaowarat、group=main-branch；報價 company_code=A04、branch_no=09（Station One China Town (สเตชั่นวัน เยาวราช)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=17574828652567266885（SuperRich Exchange Station One Yaowarat）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-817b-ad65-d198d55a15b2",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2817bad65d198d55a15b2?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (One Bangkok)",
+        "Name ZH": "SuperRich 1965（橘標）One Bangkok分店",
+        "Thai / Alt Name": "วัน แบงคอก",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=11374048944423394364",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7232373,
+        "Lng": 100.5088169,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 4th Floor, Parade Building, Bank Zone, Beauty Services and IT Equipment.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 One Bangkok 的 Parade 大樓 4 樓銀行區。",
+        "Review Needed": true,
+        "Slug": "superrich1965-83",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=83、slug=one-bangkok、group=main-branch；報價 company_code=A04、branch_no=57（One Bangkok (วัน แบงค็อก)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=11374048944423394364（SuperRich Exchange @One bangkok）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與 One Bangkok／Rama IV Road 地址疑似不符；此為來源原值，公開前必須獨立複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81bc-a1a0-f313560145e5",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281bca1a0f313560145e5?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Baan Silom Lifestyle Arcade (Soi Silom 19))",
+        "Name ZH": "SuperRich 1965（橘標）Baan Silom分店",
+        "Thai / Alt Name": "บ้านสีลม ไลฟ์สไตล์ อาเขต (ซอยสีลม 19)",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=6646615212025593604",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.723175,
+        "Lng": 100.5206648,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Baan Silom Lifestyle Arcade, Soi Silom 19, next to Subway; floor labels require review.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Silom Soi 19 的 Baan Silom Lifestyle Arcade，Subway 旁；樓層標示待複核。",
+        "Review Needed": true,
+        "Slug": "superrich1965-84",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=84、slug=baan-silom-lifestyle-arcade-soi-silom-19、group=main-branch；報價 company_code=A04、branch_no=55（Baan Silom (โครงการบ้านสีลม)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=6646615212025593604（SuperRich Exchange @Baan Silom）；尚未取得 Google Place ID，不將 CID 填入該欄。官方 address 英文寫 4th Floor，但 landmark 寫 1st Floor；Notes 不選邊，公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81ae-bcdf-c726c6ac3fc9",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281aebcdfc726c6ac3fc9?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Riverside Plaza)",
+        "Name ZH": "SuperRich 1965（橘標）Riverside Plaza分店",
+        "Thai / Alt Name": "ริเวอร์ไซด์ พลาซ่า",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=8260329021590249248",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7051951,
+        "Lng": 100.4911603,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 2nd Floor, connecting walkway to Anantara Hotel, next to Chokdee Optical.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Riverside Plaza 2 樓，通往 Anantara Hotel 的連通道旁，Chokdee Optical 隔壁。",
+        "Review Needed": true,
+        "Slug": "superrich1965-85",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=85、slug=riverside-plaza、group=main-branch；報價 company_code=A04、branch_no=49（Riverside Plaza(ริเวอร์ไซด์ พลาซ่า)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8260329021590249248（SuperRich ริเวอร์ไซด์ พลาซ่า）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81aa-9f51-f9f26f313d4a",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281aa9f51f9f26f313d4a?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (ArounD Lifestyle Station (PTT Station, Soi Phetchaburi 29))",
+        "Name ZH": "SuperRich 1965（橘標）ArounD Lifestyle Station分店",
+        "Thai / Alt Name": "อะราวด์ ไลฟ์สไตล์ สเตชั่น (ปั๊ม ปตท. ซอยเพชรบุรี 29)",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=4718677697836239868",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7232384,
+        "Lng": 100.5191168,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. PTT Station, Phetchaburi Soi 29 near EVEANDBOY.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Phetchaburi Soi 29 的 PTT 加油站內，ArounD Lifestyle Station 1 樓，鄰近 EVEANDBOY。",
+        "Review Needed": true,
+        "Slug": "superrich1965-86",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=86、slug=around-lifestyle-station-ptt-station-soi-phetchaburi-29、group=main-branch；報價 company_code=A04、branch_no=56（Around Lifestyle Station (อะราวด์ ไลฟ์สไตล์สเตชั่น (ปตท.ประตูน้ำ))）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=4718677697836239868（SuperRich Exchange @Around Lifestyle Station (ปั๊มปตท.ถนนเพชรบุรี)）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與 Phetchaburi Soi 29 地址疑似不符；此為來源原值，公開前必須獨立複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81e1-8ae4-fbabb8fad6ab",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281e18ae4fbabb8fad6ab?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Imperial World Samrong)",
+        "Name ZH": "SuperRich 1965（橘標）Imperial World Samrong分店",
+        "Thai / Alt Name": "อิมพีเรียล เวิลด์ สำโรง",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=15754269650531579008",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.6511347,
+        "Lng": 100.5947851,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 1st Floor, Bank Zone, opposite Bangkok Bank and Government Savings Bank.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Imperial World Samrong 1 樓銀行區，Bangkok Bank 與 Government Savings Bank 對面。",
+        "Review Needed": true,
+        "Slug": "superrich1965-88",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=88、slug=imperial-world-samrong、group=main-branch；報價 company_code=A04、branch_no=58（Imperial World Samrong (อิมพีเรียลเวิลด์ สำโรง)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=15754269650531579008（SuperRich Exchange @Imperial world samrong）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81c7-8a4b-f33d3f7ca492",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281c78a4bf33d3f7ca492?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (MRT Sukhumvit)",
+        "Name ZH": "SuperRich 1965（橘標）MRT Sukhumvit分店",
+        "Thai / Alt Name": "MRT สุขุมวิท",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=8116079645074407185",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7374442,
+        "Lng": 100.5612744,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Metro Mall, next to Nail it nail, opposite Easy Cut hair salon.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 MRT Sukhumvit 的 Metro Mall，Nail it 美甲店旁、Easy Cut 髮廊對面。",
+        "Review Needed": true,
+        "Slug": "superrich1965-89",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=89、slug=mrt-sukhumvit、group=main-branch；報價 company_code=A04、branch_no=16（MRT Sukhumvit(MRT สุขุมวิท)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8116079645074407185（SuperRich MRT Sukhumvit）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8160-a1f0-ca7c7ca6a265",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28160a1f0ca7c7ca6a265?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (MRT Rama 9)",
+        "Name ZH": "SuperRich 1965（橘標）MRT Rama 9分店",
+        "Thai / Alt Name": "MRT พระราม 9",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=14339393731360932280",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7566348,
+        "Lng": 100.5653757,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Metro Mall, next to People eyewear Store.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 MRT Rama 9 的 Metro Mall，People 眼鏡店旁。",
+        "Review Needed": true,
+        "Slug": "superrich1965-90",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=90、slug=mrt-rama-9、group=main-branch；報價 company_code=A04、branch_no=17（MRT Phra Ram 9(MRT พระรามเก้า)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=14339393731360932280（SuperRich MRT พระราม9）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-816a-96c2-ea5df868b276",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2816a96c2ea5df868b276?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (MRT Chatuchak)",
+        "Name ZH": "SuperRich 1965（橘標）MRT Chatuchak分店",
+        "Thai / Alt Name": "MRT จตุจักร",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=14772327350171681829",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.8026319,
+        "Lng": 100.5532855,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Metro Mall, next to 12Go store.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 MRT Chatuchak 的 Metro Mall，12Go 店旁。",
+        "Review Needed": true,
+        "Slug": "superrich1965-91",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=91、slug=mrt-chatuchak、group=main-branch；報價 company_code=A04、branch_no=41（MRT Chatuchak Park (MRT จตุจักร)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=14772327350171681829（SuperRich Currency Exchange）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-819b-b127-c16e1fbb0555",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2819bb127c16e1fbb0555?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (MRT Kamphaeng Phet)",
+        "Name ZH": "SuperRich 1965（橘標）MRT Kamphaeng Phet分店",
+        "Thai / Alt Name": "MRT กำแพงเพชร",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=4210302377356866184",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7980726,
+        "Lng": 100.546291,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Exit 2.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 MRT Kamphaeng Phet，靠近 2 號出口。",
+        "Review Needed": true,
+        "Slug": "superrich1965-92",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=92、slug=mrt-kamphaeng-phet、group=main-branch；報價 company_code=A04、branch_no=60（MRT Kamphaeng Phet (MRT กำแพงเพชร)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=4210302377356866184（SuperRich Exchange @MRT Kamphaeng Phet）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81fc-b29d-fb5651050b0b",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281fcb29dfb5651050b0b?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (MRT Sanam Chai)",
+        "Name ZH": "SuperRich 1965（橘標）MRT Sanam Chai分店",
+        "Thai / Alt Name": "MRT สนามไชย",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=15187430913671619864",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7445235,
+        "Lng": 100.4918577,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Exit 1 is near Museum Siam, the Grand Palace, Wat Phra Si Rattana Satsadaram (Wat Phra Kaew), and Wat Pho.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 MRT Sanam Chai，1 號出口附近。",
+        "Review Needed": true,
+        "Slug": "superrich1965-93",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=93、slug=mrt-sanam-chai、group=main-branch；報價 company_code=A04、branch_no=59（MRT Sanam Chai (MRT สนามไชย)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=15187430913671619864（SuperRich Exchange @MRT Sanam Chai）；尚未取得 Google Place ID，不將 CID 填入該欄。官方 address 的分區／郵遞區號與 Sanam Chai 站描述疑似不符；Notes 僅保留站名與出口，公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81c8-9444-fb0973bf5269",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281c89444fb0973bf5269?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Emsphere G Floor)",
+        "Name ZH": "SuperRich 1965（橘標）Emsphere G 樓分店",
+        "Thai / Alt Name": "Emsphere ชั้น G",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=3233164840185572030",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.73247233,
+        "Lng": 100.56591219,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. In front of the elevator, Red Zone, Ground Floor (G).",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Emsphere G 樓紅區電梯前，櫃位 GV 18；與 2 樓分店分開建檔。",
+        "Review Needed": true,
+        "Slug": "superrich1965-110",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=110、slug=emsphere-g-floor、group=main-branch；報價 company_code=A04、branch_no=64（THE EMSPHERE G FLOOR (ศูนย์การค้า ดิ เอ็มสเฟียร์ ชั้น G)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=3233164840185572030（SuperRich Exchange @Emsphere G Floor）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-811b-9748-e6f775531bf6",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2811b9748e6f775531bf6?pvs=204",
+      "record": {
+        "Name": "SuperRich 1965 (Emsphere 2 FL.)",
+        "Name ZH": "SuperRich 1965（橘標）Emsphere 2 樓分店",
+        "Thai / Alt Name": "Emsphere ชั้น 2",
+        "Type": "",
+        "Category": "Currency Exchange",
+        "Country Code": "TH",
+        "Destination Key": "bangkok",
+        "Google Maps URL": "https://www.google.com/maps?cid=7901134588435402760",
+        "Google Place ID": "",
+        "Last Verified": "",
+        "Lat": 13.7338681,
+        "Lng": 100.56675262,
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. Emsphere, 2nd Floor, Bank Zone, next to the connecting walkway on the EM Tower side.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Emsphere 2 樓銀行區、櫃位 2V 07，鄰近 EM Tower 側的連通道。",
+        "Review Needed": true,
+        "Slug": "superrich1965-112",
+        "Source Tags": [],
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1"
+        ],
+        "Status": "Paused",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=112、slug=emsphere-2nd-floor、group=main-branch；報價 company_code=A04、branch_no=51（The Emsphere 2nd Floor (ศูนย์การค้า ดิ เอ็มสเฟียร์ ชั้น 2)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=7901134588435402760（SuperRich Exchange @Emsphere 2 FL.）；尚未取得 Google Place ID，不將 CID 填入該欄。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。",
+        "Icon": "💱"
+      }
+    }
+  ],
+  "verification": {
+    "verifiedOn": "2026-09-10",
+    "pageCount": 38,
+    "propertyChecks": 760,
+    "iconChecks": 38,
+    "parentChecks": 38,
+    "failures": [],
+    "normalizations": [
+      {
+        "slug": "superrich1965-71",
+        "field": "Thai / Alt Name",
+        "detail": "Notion removed one U+200B zero-width space; visible Thai name is unchanged."
+      }
+    ]
+  }
+}

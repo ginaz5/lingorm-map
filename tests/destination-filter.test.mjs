@@ -28,6 +28,8 @@ test('destination taxonomy exposes stable countries and valid pairs', () => {
     'khao-yai',
     'koh-samui',
     'pattaya',
+    'chonburi',
+    'si-racha',
     'ubon-ratchathani',
     'ho-chi-minh-city',
     'taipei',
@@ -39,6 +41,9 @@ test('destination taxonomy exposes stable countries and valid pairs', () => {
     'macau',
   ]);
   assert.equal(isValidDestinationPair('TH', 'bangkok'), true);
+  assert.equal(isValidDestinationPair('TH', 'chonburi'), true);
+  assert.equal(isValidDestinationPair('TH', 'si-racha'), true);
+  assert.equal(isValidDestinationPair('VN', 'si-racha'), false);
   assert.equal(isValidDestinationPair('VN', 'bangkok'), false);
   assert.equal(isValidDestinationPair('TW', 'kaohsiung'), true);
   assert.equal(isValidDestinationPair('HK', 'hong-kong'), true);

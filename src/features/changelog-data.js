@@ -12,15 +12,57 @@
  */
 /** @typedef {{ dateKey: string, publishTime: number, items: ChangelogItem[] }} ChangelogDateGroup */
 
-export const CURRENT_CHANGELOG_RELEASE_ID = '2026-08-09-analytics-collections';
+export const CURRENT_CHANGELOG_RELEASE_ID = '2026-09-25-exchange-and-resources';
 
 /**
  * Shared release history for the What's New preview and the full changelog.
  * Add new entries at the top, assign them to the current release, and use an
- * explicit GMT+8 date for changelog display and ordering.
+ * explicit UTC date for changelog display and ordering.
  * @type {ChangelogItem[]}
  */
 export const CHANGELOG = [
+  {
+    id: 'feat-014',
+    title: {
+      zh: '新增 SuperRich Thailand 換匯地圖',
+      en: 'SuperRich Thailand exchange locations are now on the map',
+    },
+    description: {
+      zh: '開啟「顯示換匯點」可查看 26 間 SuperRich Thailand 分店；有報價時，還能比較 USD 100／USD 50／TWD 買入匯率並依最佳匯率排序。',
+      en: 'Turn on Show currency exchange to browse 26 SuperRich Thailand branches. When quotes are available, compare USD 100, USD 50, and TWD buying rates and sort by the best rate.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-09-25T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-015',
+    title: {
+      zh: '新增粉絲資源入口',
+      en: 'Explore LingOrm fan resources',
+    },
+    description: {
+      zh: '從頁首或手機版「更多」開啟粉絲資源，查看 LingOrm Fanpage、行程捷徑、LOism、LingOrmNews 與 LingOrm Pics。',
+      en: 'Open Fan Resources from the header or mobile More menu to visit LingOrm Fanpage, its schedule, LOism, LingOrmNews, and LingOrm Pics.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-09-25T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'fix-005',
+    title: {
+      zh: '標籤名稱與手機選單更好用',
+      en: 'Clearer labels and mobile actions',
+    },
+    description: {
+      zh: '篩選與說明統一使用「標籤」名稱，手機版「更多」選單也調整寬度，避免選項被截斷。',
+      en: 'Filters and their guide now use “label” consistently. The mobile More menu also fits its actions without clipping.',
+    },
+    badge: { zh: '修復', en: 'Fix' },
+    publishTime: Date.parse('2026-09-25T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
   {
     id: 'fix-004',
     title: {
@@ -32,22 +74,22 @@ export const CHANGELOG = [
       en: 'The destination menu now stays above the mobile tab bar so every option remains accessible. Selected location cards also scroll smoothly into the center of the screen.',
     },
     badge: { zh: '修復', en: 'Fix' },
-    publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    publishTime: Date.parse('2026-08-09T00:00:00Z'),
+    releaseId: '2026-08-09-analytics-collections',
   },
   {
     id: 'feat-013',
     title: {
-      zh: '主題分類更清楚',
-      en: 'Collections are easier to understand',
+      zh: '標籤分類更清楚',
+      en: 'Labels are easier to understand',
     },
     description: {
-      zh: '類別與主題選項現在會顯示地點數量，搜尋與篩選也有一致的 hover 回饋。主題分類說明在桌機移開游標後會自動收合，手機版則會保持開啟，直到使用者自行關閉。',
-      en: 'Category and collection options now show location counts with consistent hover feedback across search and filters. The collection guide closes when the pointer leaves on desktop, while staying open on touch devices until you dismiss it.',
+      zh: '類別與標籤選項現在會顯示地點數量，搜尋與篩選也有一致的 hover 回饋。標籤分類說明在桌機移開游標後會自動收合，手機版則會保持開啟，直到使用者自行關閉。',
+      en: 'Category and label options now show location counts with consistent hover feedback across search and filters. The label guide closes when the pointer leaves on desktop, while staying open on touch devices until you dismiss it.',
     },
     badge: { zh: '功能', en: 'Feature' },
-    publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    publishTime: Date.parse('2026-08-09T00:00:00Z'),
+    releaseId: '2026-08-09-analytics-collections',
   },
   {
     id: 'feat-012',
@@ -57,24 +99,24 @@ export const CHANGELOG = [
     },
     description: {
       zh: '新增一批 LingOrm 相關地點與粉絲分享的收藏，並補充既有地點的資訊、座標與分類。',
-      en: 'A new batch of LingOrm locations and fan-shared picks has arrived, along with refreshed details, coordinates, and collections.',
+      en: 'A new batch of LingOrm locations and fan-shared picks has arrived, along with refreshed details, coordinates, and labels.',
     },
     badge: { zh: '內容', en: 'Content' },
-    publishTime: Date.parse('2026-08-09T00:00:00+08:00'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    publishTime: Date.parse('2026-08-09T00:00:00Z'),
+    releaseId: '2026-08-09-analytics-collections',
   },
   {
     id: 'feat-010',
     title: {
-      zh: '篩選新增「主題」與「目的地」',
-      en: 'Filter by theme and destination',
+      zh: '篩選新增「標籤」與「目的地」',
+      en: 'Filter by label and destination',
     },
     description: {
-      zh: '除了類別，現在也能依主題或目的地縮小範圍。地圖標記與清單會一起更新，選過的目的地也會保留。',
-      en: 'Narrow the map by category, theme, or destination. Markers and the location list stay in sync, and destination choices are remembered.',
+      zh: '除了類別，現在也能依標籤或目的地縮小範圍。地圖標記與清單會一起更新，選過的目的地也會保留。',
+      en: 'Narrow the map by category, label, or destination. Markers and the location list stay in sync, and destination choices are remembered.',
     },
     badge: { zh: '功能', en: 'Feature' },
-    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    publishTime: Date.parse('2026-07-30T00:00:00Z'),
     releaseId: '2026-07-30-pr-2',
   },
   {
@@ -88,7 +130,7 @@ export const CHANGELOG = [
       en: 'Mobile location cards now offer favorite, directions, and Google Maps shortcuts. Locate Me also stays within reach in the header.',
     },
     badge: { zh: '功能', en: 'Feature' },
-    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    publishTime: Date.parse('2026-07-30T00:00:00Z'),
     releaseId: '2026-07-30-pr-2',
   },
   {
@@ -102,7 +144,7 @@ export const CHANGELOG = [
       en: 'Fixed popups shifting off-screen after opening a place from the list. Location counts and update dates now share one line as well.',
     },
     badge: { zh: '修復', en: 'Fix' },
-    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    publishTime: Date.parse('2026-07-30T00:00:00Z'),
     releaseId: '2026-07-30-pr-2',
   },
   {
@@ -116,7 +158,7 @@ export const CHANGELOG = [
       en: 'The new changelog page keeps every release in one place, with links from the header and What’s New.',
     },
     badge: { zh: '功能', en: 'Feature' },
-    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    publishTime: Date.parse('2026-07-30T00:00:00Z'),
     releaseId: '2026-07-30-pr-2',
   },
   {
@@ -130,7 +172,7 @@ export const CHANGELOG = [
       en: 'Search by keywords in Chinese or English location notes, not just place names. Lists, markers, and clusters all show the same results.',
     },
     badge: { zh: '功能', en: 'Feature' },
-    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    publishTime: Date.parse('2026-07-30T00:00:00Z'),
     releaseId: '2026-07-30-pr-2',
   },
   {
@@ -144,7 +186,7 @@ export const CHANGELOG = [
       en: 'Google Maps and HERE Maps now use labels that match your browser language, with a safe fallback when a locale is unavailable.',
     },
     badge: { zh: '修復', en: 'Fix' },
-    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    publishTime: Date.parse('2026-07-30T00:00:00Z'),
     releaseId: '2026-07-30-pr-2',
   },
   {
@@ -158,7 +200,7 @@ export const CHANGELOG = [
       en: 'The location count now shows when the map data was last updated, so you can quickly check how current it is.',
     },
     badge: { zh: '功能', en: 'Feature' },
-    publishTime: Date.parse('2026-07-30T00:00:00+08:00'),
+    publishTime: Date.parse('2026-07-30T00:00:00Z'),
     releaseId: '2026-07-30-pr-2',
   },
   {
@@ -172,7 +214,7 @@ export const CHANGELOG = [
       en: 'Nearby markers now combine into numbered clusters when the map is crowded. Zoom in to reveal individual locations.',
     },
     badge: { zh: '功能', en: 'Feature' },
-    publishTime: Date.parse('2026-07-21T00:00:00+08:00'),
+    publishTime: Date.parse('2026-07-21T00:00:00Z'),
   },
   {
     id: 'feat-004',
@@ -185,7 +227,7 @@ export const CHANGELOG = [
       en: 'The map interface is now simpler and easier to browse, with refreshed popups and favorite icons.',
     },
     badge: { zh: '設計', en: 'Design' },
-    publishTime: Date.parse('2026-07-20T00:00:00+08:00'),
+    publishTime: Date.parse('2026-07-20T00:00:00Z'),
   },
   {
     id: 'fix-001',
@@ -198,7 +240,7 @@ export const CHANGELOG = [
       en: 'Opening a map marker now keeps your current zoom level instead of resetting the map.',
     },
     badge: { zh: '修復', en: 'Fix' },
-    publishTime: Date.parse('2026-07-20T00:00:00+08:00'),
+    publishTime: Date.parse('2026-07-20T00:00:00Z'),
   },
   {
     id: 'feat-002',
@@ -211,7 +253,7 @@ export const CHANGELOG = [
       en: 'Tap the heart to save a location on your device, then share your favorites with a link.',
     },
     badge: { zh: '功能', en: 'Feature' },
-    publishTime: Date.parse('2026-06-21T00:00:00+08:00'),
+    publishTime: Date.parse('2026-06-21T00:00:00Z'),
   },
   {
     id: 'feat-001',
@@ -224,7 +266,7 @@ export const CHANGELOG = [
       en: 'Location popups now include a button that opens the place directly in Google Maps.',
     },
     badge: { zh: '功能', en: 'Feature' },
-    publishTime: Date.parse('2026-06-19T00:00:00+08:00'),
+    publishTime: Date.parse('2026-06-19T00:00:00Z'),
   },
 ];
 
@@ -247,14 +289,14 @@ function changelogDateKey(publishTime) {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-    timeZone: 'Asia/Taipei',
+    timeZone: 'UTC',
   }).formatToParts(new Date(publishTime));
   const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
 }
 
 /**
- * Group newest-first changelog items by their GMT+8 calendar date.
+ * Group newest-first changelog items by their UTC calendar date.
  * @param {ChangelogItem[]} items
  * @returns {ChangelogDateGroup[]}
  */
@@ -284,6 +326,6 @@ export function formatChangelogDate(publishTime, language) {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-    timeZone: 'Asia/Taipei',
+    timeZone: 'UTC',
   }).format(new Date(publishTime));
 }

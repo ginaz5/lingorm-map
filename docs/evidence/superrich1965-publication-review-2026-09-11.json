@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "reviewedOn": "2026-09-11",
+  "formalDataSourceId": "e55c2315-8ea2-837d-9637-07c1118486c8",
+  "decision": "Google Place ID coordinates are sufficient for the 13 remaining coordinate reviews.",
+  "identityEvidence": "Each coordinate Place ID exactly matches the Place ID previously verified against the official branch iframe CID.",
+  "notionWrite": {
+    "attempted": 38,
+    "succeeded": 38,
+    "failed": 0,
+    "published": 38,
+    "reviewNeededFalse": 38,
+    "lastVerified": "2026-09-11",
+    "coordinateUpdates": 13
+  },
+  "coordinateResults": [
+    {
+      "officialId": 64,
+      "slug": "superrich1965-64",
+      "notionPageId": "3d7c2315-8ea2-8170-b0d1-f222dc34b5bf",
+      "placeId": "ChIJMV4rSDid4jARijnZ94tCkp0",
+      "previous": {
+        "latitude": 13.7442403,
+        "longitude": 100.5458836
+      },
+      "place": {
+        "latitude": 13.744003,
+        "longitude": 100.547132
+      },
+      "distanceMeters": 137.4
+    },
+    {
+      "officialId": 65,
+      "slug": "superrich1965-65",
+      "notionPageId": "3d7c2315-8ea2-813e-a8a2-cacc2a336572",
+      "placeId": "ChIJzdimpsNfHTERZPni9_rKLYA",
+      "previous": {
+        "latitude": 13.6691492,
+        "longitude": 100.6349238
+      },
+      "place": {
+        "latitude": 13.6701233,
+        "longitude": 100.6346317
+      },
+      "distanceMeters": 112.8
+    },
+    {
+      "officialId": 67,
+      "slug": "superrich1965-67",
+      "notionPageId": "3d7c2315-8ea2-81a0-9db7-fd566e465064",
+      "placeId": "ChIJ0f2DB2Wf4jARLWwaUcKU6ZU",
+      "previous": {
+        "latitude": 13.7281735,
+        "longitude": 100.5346918
+      },
+      "place": {
+        "latitude": 13.7281735,
+        "longitude": 100.5372667
+      },
+      "distanceMeters": 278.1
+    },
+    {
+      "officialId": 69,
+      "slug": "superrich1965-69",
+      "notionPageId": "3d7c2315-8ea2-815d-9618-e0dc8acde2fd",
+      "placeId": "ChIJB5YEPHKd4jARxS-7k6UOXNc",
+      "previous": {
+        "latitude": 13.8558247,
+        "longitude": 100.5419609
+      },
+      "place": {
+        "latitude": 13.8547505,
+        "longitude": 100.5421855
+      },
+      "distanceMeters": 121.9
+    },
+    {
+      "officialId": 74,
+      "slug": "superrich1965-74",
+      "notionPageId": "3d7c2315-8ea2-813a-8b28-f9dbc2d703f4",
+      "placeId": "ChIJy4Qz-LSf4jARBPe4nv0n53k",
+      "previous": {
+        "latitude": 13.74541,
+        "longitude": 100.5257773
+      },
+      "place": {
+        "latitude": 13.7461494,
+        "longitude": 100.5301482
+      },
+      "distanceMeters": 479.2
+    },
+    {
+      "officialId": 76,
+      "slug": "superrich1965-76",
+      "notionPageId": "3d7c2315-8ea2-81de-901e-cfd2478788ae",
+      "placeId": "ChIJncssV2CZ4jAR4Lvr6cNxlH4",
+      "previous": {
+        "latitude": 13.7212507,
+        "longitude": 100.5156707
+      },
+      "place": {
+        "latitude": 13.7263048,
+        "longitude": 100.5083867
+      },
+      "distanceMeters": 966.9
+    },
+    {
+      "officialId": 77,
+      "slug": "superrich1965-77",
+      "notionPageId": "3d7c2315-8ea2-817f-97d7-df85c31f6f3b",
+      "placeId": "ChIJx1uxrtmZ4jARbY__ADd4rBk",
+      "previous": {
+        "latitude": 13.727876,
+        "longitude": 100.511274
+      },
+      "place": {
+        "latitude": 13.7264814,
+        "longitude": 100.509947
+      },
+      "distanceMeters": 211.2
+    },
+    {
+      "officialId": 80,
+      "slug": "superrich1965-80",
+      "notionPageId": "3d7c2315-8ea2-8106-8f65-dc845848eee4",
+      "placeId": "ChIJiSYgci-f4jARqNboQA2qCC8",
+      "previous": {
+        "latitude": 13.7394144,
+        "longitude": 100.5344928
+      },
+      "place": {
+        "latitude": 13.7478084,
+        "longitude": 100.5409441
+      },
+      "distanceMeters": 1164.8
+    },
+    {
+      "officialId": 83,
+      "slug": "superrich1965-83",
+      "notionPageId": "3d7c2315-8ea2-817b-ad65-d198d55a15b2",
+      "placeId": "ChIJ1zx6PVuf4jARPFxDrkC92J0",
+      "previous": {
+        "latitude": 13.7232373,
+        "longitude": 100.5088169
+      },
+      "place": {
+        "latitude": 13.7260237,
+        "longitude": 100.5467619
+      },
+      "distanceMeters": 4110.5
+    },
+    {
+      "officialId": 86,
+      "slug": "superrich1965-86",
+      "notionPageId": "3d7c2315-8ea2-81aa-9f51-f9f26f313d4a",
+      "placeId": "ChIJi5dCrDWD4jAR_EsWlV0cfEE",
+      "previous": {
+        "latitude": 13.7232384,
+        "longitude": 100.5191168
+      },
+      "place": {
+        "latitude": 13.7498744,
+        "longitude": 100.5448297
+      },
+      "distanceMeters": 4060.3
+    },
+    {
+      "officialId": 92,
+      "slug": "superrich1965-92",
+      "notionPageId": "3d7c2315-8ea2-819b-b127-c16e1fbb0555",
+      "placeId": "ChIJ1yJPaQCd4jARiLJWf7T_bTo",
+      "previous": {
+        "latitude": 13.7980726,
+        "longitude": 100.546291
+      },
+      "place": {
+        "latitude": 13.7980674,
+        "longitude": 100.5488659
+      },
+      "distanceMeters": 278.1
+    },
+    {
+      "officialId": 93,
+      "slug": "superrich1965-93",
+      "notionPageId": "3d7c2315-8ea2-81fc-b29d-fb5651050b0b",
+      "placeId": "ChIJjXqwQc6Z4jARGOUuFPOXxNI",
+      "previous": {
+        "latitude": 13.7445235,
+        "longitude": 100.4918577
+      },
+      "place": {
+        "latitude": 13.7444866,
+        "longitude": 100.4944475
+      },
+      "distanceMeters": 279.8
+    },
+    {
+      "officialId": 112,
+      "slug": "superrich1965-112",
+      "notionPageId": "3d7c2315-8ea2-811b-9748-e6f775531bf6",
+      "placeId": "ChIJhx8TBwSf4jARCJA-0gt4pm0",
+      "previous": {
+        "latitude": 13.7338681,
+        "longitude": 100.5667526
+      },
+      "place": {
+        "latitude": 13.7318831,
+        "longitude": 100.566557
+      },
+      "distanceMeters": 221.7
+    }
+  ],
+  "pageIds": [
+    "3d7c2315-8ea2-8197-8384-cf4504796bcc",
+    "3d7c2315-8ea2-8117-bac5-d2043484f8ec",
+    "3d7c2315-8ea2-81ee-800d-f00c3bfc55c2",
+    "3d7c2315-8ea2-8195-a59a-f740af4fc3fe",
+    "3d7c2315-8ea2-8154-a564-d0f8e1a72406",
+    "3d7c2315-8ea2-8132-abca-f4e5c2922818",
+    "3d7c2315-8ea2-815f-a0a7-e9ac47890330",
+    "3d7c2315-8ea2-8100-838a-d8e924b05165",
+    "3d7c2315-8ea2-8170-b0d1-f222dc34b5bf",
+    "3d7c2315-8ea2-813e-a8a2-cacc2a336572",
+    "3d7c2315-8ea2-8186-ab35-c185ca7752d7",
+    "3d7c2315-8ea2-81a0-9db7-fd566e465064",
+    "3d7c2315-8ea2-819d-91ed-d28378156fa5",
+    "3d7c2315-8ea2-815d-9618-e0dc8acde2fd",
+    "3d7c2315-8ea2-81cd-83f3-f55c55c47a86",
+    "3d7c2315-8ea2-81d5-a7e1-d458cbcd8a61",
+    "3d7c2315-8ea2-8190-b1a0-f2c540faebd1",
+    "3d7c2315-8ea2-8121-96ff-e0bc37d7095f",
+    "3d7c2315-8ea2-813a-8b28-f9dbc2d703f4",
+    "3d7c2315-8ea2-81de-901e-cfd2478788ae",
+    "3d7c2315-8ea2-817f-97d7-df85c31f6f3b",
+    "3d7c2315-8ea2-81f5-8ce1-f0189ae3983c",
+    "3d7c2315-8ea2-81f1-a6d2-d1af48d58972",
+    "3d7c2315-8ea2-8106-8f65-dc845848eee4",
+    "3d7c2315-8ea2-819c-b5f3-ebe72890ca6b",
+    "3d7c2315-8ea2-8115-bfae-f599f42e518a",
+    "3d7c2315-8ea2-817b-ad65-d198d55a15b2",
+    "3d7c2315-8ea2-81bc-a1a0-f313560145e5",
+    "3d7c2315-8ea2-81ae-bcdf-c726c6ac3fc9",
+    "3d7c2315-8ea2-81aa-9f51-f9f26f313d4a",
+    "3d7c2315-8ea2-81e1-8ae4-fbabb8fad6ab",
+    "3d7c2315-8ea2-81c7-8a4b-f33d3f7ca492",
+    "3d7c2315-8ea2-8160-a1f0-ca7c7ca6a265",
+    "3d7c2315-8ea2-816a-96c2-ea5df868b276",
+    "3d7c2315-8ea2-819b-b127-c16e1fbb0555",
+    "3d7c2315-8ea2-81fc-b29d-fb5651050b0b",
+    "3d7c2315-8ea2-81c8-9444-fb0973bf5269",
+    "3d7c2315-8ea2-811b-9748-e6f775531bf6"
+  ],
+  "snapshot": {
+    "rows": 219,
+    "eligibleForUi": 199,
+    "orangeRows": 38,
+    "orangePublished": 38
+  },
+  "validation": {
+    "schema": "20/20",
+    "snapshot": "219/219",
+    "issues": 0,
+    "result": "PASS"
+  }
+}

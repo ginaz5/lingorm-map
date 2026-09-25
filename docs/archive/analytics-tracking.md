@@ -4,7 +4,7 @@
 
 ## 目的與目前進度
 
-網站已透過 `index.html` 載入 Google Tag Manager（`GTM-NVNXGP44`），由 GTM
+網站已透過 `../../index.html` 載入 Google Tag Manager（`GTM-NVNXGP44`），由 GTM
 連接 GA4（`G-31MF79LHFM`）。前兩批應用程式事件已完成：使用者探索、打開地點、
 啟動地圖操作或變更偏好時，前端會將結構化事件推入 `window.dataLayer`。
 

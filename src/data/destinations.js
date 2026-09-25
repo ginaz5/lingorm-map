@@ -25,6 +25,8 @@ export const DESTINATIONS = Object.freeze([
   { key: 'khao-yai', countryCode: 'TH', en: 'Khao Yai', zh: '考艾' },
   { key: 'koh-samui', countryCode: 'TH', en: 'Koh Samui', zh: '蘇梅島' },
   { key: 'pattaya', countryCode: 'TH', en: 'Pattaya', zh: '芭達雅' },
+  { key: 'chonburi', countryCode: 'TH', en: 'Chonburi', zh: '春武里' },
+  { key: 'si-racha', countryCode: 'TH', en: 'Si Racha', zh: '是拉差' },
   { key: 'ubon-ratchathani', countryCode: 'TH', en: 'Ubon Ratchathani', zh: '烏汶' },
   { key: 'ho-chi-minh-city', countryCode: 'VN', en: 'Ho Chi Minh City', zh: '胡志明市' },
   { key: 'taipei', countryCode: 'TW', en: 'Taipei', zh: '台北' },

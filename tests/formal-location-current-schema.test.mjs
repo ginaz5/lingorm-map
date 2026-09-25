@@ -57,6 +57,8 @@ test('current formal schema matches the 20-property Notion contract', () => {
     { name: 'khao-yai', color: 'brown' },
     { name: 'koh-samui', color: 'blue' },
     { name: 'pattaya', color: 'purple' },
+    { name: 'chonburi', color: 'orange' },
+    { name: 'si-racha', color: 'green' },
     { name: 'ubon-ratchathani', color: 'pink' },
     { name: 'ho-chi-minh-city', color: 'red' },
     { name: 'taipei', color: 'pink' },
@@ -290,4 +292,18 @@ test('current formal schema inspection enforces geography taxonomy options', () 
     currentFormalSchemaIssueMessages(schema).join('; '),
     /Destination Key options missing macau; wrong colors hong-kong:yellow->purple/
   );
+});
+
+test('exchange destinations require matching source options and colors before export', () => {
+  const inspect = options => inspectCurrentFormalDestinationOptions({
+    'Destination Key': { type: 'select', select: { options } },
+  });
+  const correct = CURRENT_FORMAL_DESTINATION_OPTIONS.map(option => ({ ...option }));
+  assert.equal(inspect(correct).ok, true);
+  assert.deepEqual(inspect(correct.filter(option => !['chonburi', 'si-racha'].includes(option.name))).missing, ['chonburi', 'si-racha']);
+  assert.deepEqual(inspect([...correct, { name: 'unconfigured-destination', color: 'blue' }]).unexpected, ['unconfigured-destination']);
+  for (const color of ['red', undefined]) {
+    const mismatched = correct.map(option => option.name === 'si-racha' ? { name: option.name, color } : option);
+    assert.deepEqual(inspect(mismatched).wrongColors, [{ name: 'si-racha', expected: 'green', actual: color }]);
+  }
 });

@@ -1,0 +1,14 @@
+{
+  "status_code": 200,
+  "code": "200",
+  "message": "filter branch success",
+  "data": {
+    "datas": [
+      { "code": "00", "name": "Silom Plaza (สีลมพลาซ่า)", "branch_group_no": "", "company_code": "A04", "is_default": true },
+      { "code": "34", "name": "Central World", "branch_group_no": "", "company_code": "A04", "is_default": false },
+      { "code": "51", "name": "The Emsphere 2nd Floor (ดิ เอ็มสเฟียร์ ชั้น 2)", "branch_group_no": "", "company_code": "A04", "is_default": false },
+      { "code": "E52-01", "name": "Terminal 21 Pattaya", "branch_group_no": "", "company_code": "E52", "is_default": false }
+    ],
+    "total": 4
+  }
+}

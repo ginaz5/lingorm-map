@@ -1,0 +1,918 @@
+{
+  "schemaVersion": 1,
+  "retrievedOn": "2026-09-10",
+  "sourceEndpoints": [
+    {
+      "method": "GET",
+      "url": "https://www.superrich1965.com/spr/front/branches?page=1&limit=1000",
+      "total": 53
+    },
+    {
+      "method": "GET",
+      "url": "https://www.superrich1965.com/spr/front/branch-groups?page=1&limit=100",
+      "total": 2
+    },
+    {
+      "method": "POST",
+      "url": "https://www.superrich1965.com/spr/front/exchange-rate/branch-list",
+      "body": {
+        "filters": [
+          {
+            "field": "company_code",
+            "value": "A04"
+          }
+        ]
+      },
+      "total": 39
+    }
+  ],
+  "sourceSha256": {
+    "branches": "7725870c8f99d47780e0033d947e0ec8e48731ecf498fe52fa8093cc64fda34d",
+    "groups": "38893b6a499ea7ff0b7c16f2ee802ed79c30c6282fffe7a575ad96b0c5ee7c48",
+    "list": "2b83ee0e65a12b42a3efecf98236b896b16a1645ac5a3e1b0b8091b17a488c27"
+  },
+  "counts": {
+    "officialBranches": 53,
+    "ourBranches": 41,
+    "partnerBranches": 12,
+    "rateBranches": 39,
+    "included": 38
+  },
+  "includedBranches": [
+    {
+      "officialId": 56,
+      "branchNo": "00",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "silom",
+      "officialName": "Silom",
+      "officialThaiName": "สีลม",
+      "rateName": "Silom Plaza (สีลมพลาซ่า)",
+      "officialAddress": "491/5-491/7, Silom Road, Silom Subdistrict, Bang Rak District, Bangkok 10500",
+      "officialLandmark": "Silom Plaza Building, 1st Floor, near Krungthai Bank (Silom Branch)",
+      "officialLat": "13.72596770",
+      "officialLng": "100.52739608",
+      "googleMapsCid": "15775963621935397154",
+      "googleMapsLabel": "SuperRich Exchange Silom",
+      "automaticProposal": {
+        "officialId": 56,
+        "tier": "contained"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281978384cf4504796bcc?pvs=204"
+    },
+    {
+      "officialId": 57,
+      "branchNo": "35",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "ratchadamri-soi-2",
+      "officialName": "Ratchadamri Soi 2",
+      "officialThaiName": "ราชดำริห์ ซอย 2",
+      "rateName": "Ratchadamri 2 (ราชดำริห์ 2)",
+      "officialAddress": "67, 69 Ratchadamri Road (Soi 2) Lumphini Pathumwan Bangkok 10330",
+      "officialLandmark": "1st Floor, opposite CentralWorld",
+      "officialLat": "13.74817430",
+      "officialLng": "100.54133470",
+      "googleMapsCid": "12643537585874962060",
+      "googleMapsLabel": "SuperRich Exchange Ratchadamri",
+      "automaticProposal": {
+        "officialId": 57,
+        "tier": "contained"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28117bac5d2043484f8ec?pvs=204"
+    },
+    {
+      "officialId": 58,
+      "branchNo": "36",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "ratchamri-soi-1",
+      "officialName": "Ratchadamri Soi 1",
+      "officialThaiName": "ราชดำริห์ ซอย 1",
+      "rateName": "Ratchadamri 1 (ราชดำริห์ 1)",
+      "officialAddress": "47/10-13 Ratchadamri Road, Lumpini Sub-district, Pathumwan District, Bangkok 10330",
+      "officialLandmark": "1st Floor, inside Absolute Keto",
+      "officialLat": "13.74839715",
+      "officialLng": "100.54155440",
+      "googleMapsCid": "8335198795530635667",
+      "googleMapsLabel": "SuperRich ราชดำริ ซอย1",
+      "automaticProposal": {
+        "officialId": 58,
+        "tier": "contained"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281ee800df00c3bfc55c2?pvs=204"
+    },
+    {
+      "officialId": 59,
+      "branchNo": "40",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "big-c-ratchadamri",
+      "officialName": "Big C Ratchadamri",
+      "officialThaiName": "บิ๊กซี ราชดำริ",
+      "rateName": "Big C Ratchadamri (ศูนย์การค้าบิ๊กซี ราชดำริห์)",
+      "officialAddress": "97/11, Room 2CR216, 2nd Floor, Big C Supercenter, Ratchadamri Road, Lumpini Subdistrict, Pathum Wan District, Bangkok 10330",
+      "officialLandmark": "2nd floor, near the skywalk",
+      "officialLat": "13.74788960",
+      "officialLng": "100.54083640",
+      "googleMapsCid": "10640620214672543437",
+      "googleMapsLabel": "SuperRich Exchange @Big C Ratchadamri",
+      "automaticProposal": {
+        "officialId": 59,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28195a59af740af4fc3fe?pvs=204"
+    },
+    {
+      "officialId": 60,
+      "branchNo": "50",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "big-c-place-ratchadapisek",
+      "officialName": "Big C Place Ratchadapisek",
+      "officialThaiName": "บิ๊กซี เพลส รัชดาภิเษก",
+      "rateName": "Big C Ratchadapisek (ศูนย์การค้าบิ๊กซี รัชดาภิเษก)",
+      "officialAddress": "125 Room 2CR2209, 2nd Floor, Big C Supercenter Shopping Mall, Big C Ratchadaphisek Branch, Ratchadapisek Road, Din Daeng Subdistrict, Din Daeng District, Bangkok 10400",
+      "officialLandmark": "2nd Floor, next to Yaowarat Gold Shop",
+      "officialLat": "13.76900410",
+      "officialLng": "100.57195510",
+      "googleMapsCid": "15788413709990784438",
+      "googleMapsLabel": "SuperRich บิ๊กซี เพลส รัชดาภิเษก",
+      "automaticProposal": {
+        "officialId": 59,
+        "tier": "ambiguous"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28154a564d0f8e1a72406?pvs=204"
+    },
+    {
+      "officialId": 61,
+      "branchNo": "34",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "centralworld",
+      "officialName": "CentralWorld",
+      "officialThaiName": "เซ็นทรัลเวิลด์",
+      "rateName": "Central World (เซ็นทรัลเวิลด์)",
+      "officialAddress": "No. 4, 4/1-4/2, 4/4, Room No. K328, 3rd Floor, CentralWorld Shopping Center, Ratchadamri Road, Pathumwan Subdistrict, Pathumwan District, Bangkok 10330",
+      "officialLandmark": "3rd Floor, Beacon Zone, next to the escalator, opposite Fahprathan Restaurant, near the Japanese Zone (former Isetan side)",
+      "officialLat": "13.74679590",
+      "officialLng": "100.53987410",
+      "googleMapsCid": "17641291034871758820",
+      "googleMapsLabel": "SuperRich Exchange @CentralWorld",
+      "automaticProposal": {
+        "officialId": 61,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28132abcaf4e5c2922818?pvs=204"
+    },
+    {
+      "officialId": 62,
+      "branchNo": "23",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "central-eastville",
+      "officialName": "Central Eastville",
+      "officialThaiName": "เซ็นทรัล อีสต์วิลล์",
+      "rateName": "Central Eastville(เซ็นทรัล อีสต์วิลล์)",
+      "officialAddress": "69, 69/1, 69/2, 3rd Floor, Room 330, Pradit Manutham Road, Lat Phrao, Bangkok 10230",
+      "officialLandmark": "3rd Floor, Banking Zone, opposite Government Savings Bank and next to Krungsri First Choice",
+      "officialLat": "13.80377620",
+      "officialLng": "100.61461950",
+      "googleMapsCid": "13227693680754996999",
+      "googleMapsLabel": "SuperRich เซ็นทรัลอีสต์วิลล์",
+      "automaticProposal": {
+        "officialId": 62,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2815fa0a7e9ac47890330?pvs=204"
+    },
+    {
+      "officialId": 63,
+      "branchNo": "03",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "central-ladprao",
+      "officialName": "Central Ladprao",
+      "officialThaiName": "เซ็นทรัล ลาดพร้าว",
+      "rateName": "Central Ladprao(เซ็นทรัล ลาดพร้าว)",
+      "officialAddress": "1691 OG Floor, Central Ladprao Shopping Center, Room 702, Phaholyothin Road, Chatuchak, Bangkok 10900",
+      "officialLandmark": "1st floor (Central zone, near the L'Occitane cosmetics counter, exit to parking lot 1A)",
+      "officialLat": "13.81747588",
+      "officialLng": "100.56141011",
+      "googleMapsCid": "9790860745869596558",
+      "googleMapsLabel": "SuperRich เซ็นทรัลลาดพร้าว",
+      "automaticProposal": {
+        "officialId": 63,
+        "tier": "exact"
+      },
+      "reviewNote": "官方 address 標 OG Floor，landmark 標 1st floor；公開前複核樓層。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28100838ad8e924b05165?pvs=204"
+    },
+    {
+      "officialId": 64,
+      "branchNo": "19",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "central-embassy",
+      "officialName": "Central Embassy",
+      "officialThaiName": "เซ็นทรัล เอ็มบาสซี",
+      "rateName": "Central Embassy(เซ็นทรัล แอมบาสซี)",
+      "officialAddress": "1031, L2 Floor, Room L2-11/2, Central Embassy, Ploenchit Road, Lumpini, Pathumwan, Bangkok 10330",
+      "officialLandmark": "2nd floor, near ZARA",
+      "officialLat": "13.74424030",
+      "officialLng": "100.54588360",
+      "googleMapsCid": "11354210779480537482",
+      "googleMapsLabel": "SuperRich เซ็นทรัลเอ็มบาสซี",
+      "automaticProposal": {
+        "officialId": 64,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28170b0d1f222dc34b5bf?pvs=204"
+    },
+    {
+      "officialId": 65,
+      "branchNo": "05",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "central-bangna",
+      "officialName": "Central Bangna",
+      "officialThaiName": "เซ็นทรัล บางนา",
+      "rateName": "Central Bangna(เซ็นทรัล บางนา)",
+      "officialAddress": "585 CentralBangna Shopping Center, 4th Floor, Bangna-Trad Road, Bangna Subdistrict, Bangna District, Bangkok 10260",
+      "officialLandmark": "The Central Service Center, 4th Floor, Department Store Zone",
+      "officialLat": "13.66914920",
+      "officialLng": "100.63492380",
+      "googleMapsCid": "9236261590056237412",
+      "googleMapsLabel": "SuperRich เซ็นทรัลบางนา",
+      "automaticProposal": {
+        "officialId": 65,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2813ea8a2cacc2a336572?pvs=204"
+    },
+    {
+      "officialId": 66,
+      "branchNo": "45",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "central-pinklao",
+      "officialName": "Central Pinklao",
+      "officialThaiName": "เซ็นทรัล ปิ่นเกล้า",
+      "rateName": "Central Pinklao(เซ็นทรัล ปิ่นเกล้า)",
+      "officialAddress": "7/222 Central Pinklao Shopping Center, Room K415, 4th Floor, Borommaratchachonnani Road, Arun Ammarin Sub-district, Bangkok Noi District, Bangkok 10700",
+      "officialLandmark": "4th floor, Bank zone, opposite Tipco Bank",
+      "officialLat": "13.77791360",
+      "officialLng": "100.47613950",
+      "googleMapsCid": "18431963231161380620",
+      "googleMapsLabel": "SuperRich เซ็นทรัลปิ่นเกล้า",
+      "automaticProposal": {
+        "officialId": 66,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28186ab35c185ca7752d7?pvs=204"
+    },
+    {
+      "officialId": 67,
+      "branchNo": "62",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "dusit-central-park",
+      "officialName": "Dusit Central Park",
+      "officialThaiName": "ดุสิต เซ็นทรัล พาร์ค",
+      "rateName": "Dusit Central Park (ดุสิตเซ็นทรัล พาร์ค)",
+      "officialAddress": "No. 86, Dusit Central Park Shopping Center, Rama IV Road, Silom Subdistrict, Bang Rak District, Bangkok 10500, Thailand",
+      "officialLandmark": "LG Floor, opposite CHAGEE.",
+      "officialLat": "13.72817350",
+      "officialLng": "100.53469180",
+      "googleMapsCid": "10802328743530097709",
+      "googleMapsLabel": "SuperRich Exchange @Dusit Central Park",
+      "automaticProposal": {
+        "officialId": 67,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281a09db7fd566e465064?pvs=204"
+    },
+    {
+      "officialId": 68,
+      "branchNo": "11",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "the-mall-lifestore-bangkapi",
+      "officialName": "The Mall Lifestore Bangkapi",
+      "officialThaiName": "เดอะมอลล์ไลฟ์สโตร์ บางกะปิ",
+      "rateName": "The Mall Bangkapi(เดอะมอลล์ บางกะปิ)",
+      "officialAddress": "The Mall Bangkapi, 3522 The Mall Bangkapi Shopping Center, Room C2-229, 2nd Floor, Ladprao Road, Klongjan, Bangkapi, Bangkok 10240",
+      "officialLandmark": "2nd floor, opposite the AIS SHOP",
+      "officialLat": "13.76503230",
+      "officialLng": "100.64247860",
+      "googleMapsCid": "4792365811619136602",
+      "googleMapsLabel": "SuperRich เดอะมอลล์บางกะปิ",
+      "automaticProposal": {
+        "officialId": 68,
+        "tier": "token-subset"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2819d91edd28378156fa5?pvs=204"
+    },
+    {
+      "officialId": 69,
+      "branchNo": "44",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "the-mall-lifestore-ngamwongwan",
+      "officialName": "The Mall Lifestore Ngamwongwan",
+      "officialThaiName": "เดอะมอลล์ไลฟ์สโตร์ งามวงศ์วาน",
+      "rateName": "The Mall Ngamwongwan (เดอะมอลล์ งามวงศ์วาน)",
+      "officialAddress": "408, 410, 412, 414, 416, 418, 420, 422, 424, 426, 428, 430, 430/1\r\nThe Mall Lifestore Ngamwongwan Shopping Center 5th Floor Room No. OP-529 Ngamwongwan Road, Bang Khen Subdistrict, Mueang Nonthaburi District, Nonthaburi 11000",
+      "officialLandmark": "5th floor, in front of the elevator, Zone A, between Ngern Tid Lor and Umay+",
+      "officialLat": "13.85582470",
+      "officialLng": "100.54196090",
+      "googleMapsCid": "15518294520322797509",
+      "googleMapsLabel": "Superrich",
+      "automaticProposal": {
+        "officialId": 69,
+        "tier": "token-subset"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2815d9618e0dc8acde2fd?pvs=204"
+    },
+    {
+      "officialId": 70,
+      "branchNo": "26",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "the-mall-lifestore-bangkae",
+      "officialName": "The Mall Lifestore Bangkae",
+      "officialThaiName": "เดอะมอลล์ไลฟ์สโตร์ บางแค",
+      "rateName": "The Mall Bangkae (เดอะมอลล์ บางแค)",
+      "officialAddress": "The Mall Bangkae, 518, 2nd Floor, Shopping Center Building, Phetkasem Road, Bangkae Nuea, Bangkae, Bangkok 10160",
+      "officialLandmark": "2nd Floor, diagonally across from CIMB Bank, opposite Umay+",
+      "officialLat": "13.71266880",
+      "officialLng": "100.40800610",
+      "googleMapsCid": "4089825850985452372",
+      "googleMapsLabel": "SuperRich The Mall Bangkae",
+      "automaticProposal": {
+        "officialId": 70,
+        "tier": "token-subset"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281cd83f3f55c55c47a86?pvs=204"
+    },
+    {
+      "officialId": 71,
+      "branchNo": "20",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "seacon-square-srinakarin",
+      "officialName": "Seacon Square Srinakarin",
+      "officialThaiName": "ซีคอนสแควร์​ ศรีนครินทร์",
+      "rateName": "Seacon Square Srinakarin(ซีคอนสแควร์ ศรีนครินทร์)",
+      "officialAddress": "55, Seacon Square Shopping Center, Room 1067A, G Floor, Srinakarin Road, Nong Bon Subdistrict, Prawet District, Bangkok",
+      "officialLandmark": "G Floor, between Bangkok Bank and IT BaNANA  store",
+      "officialLat": "13.69300600",
+      "officialLng": "100.64785000",
+      "googleMapsCid": "13829695911430800631",
+      "googleMapsLabel": "SuperRich",
+      "automaticProposal": {
+        "officialId": 71,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281d5a7e1d458cbcd8a61?pvs=204"
+    },
+    {
+      "officialId": 72,
+      "branchNo": "46",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "seacon-bangkae",
+      "officialName": "Seacon Bangkae",
+      "officialThaiName": "ซีคอน บางแค",
+      "rateName": "Seacon Bangkae (ซีคอน บางแค)",
+      "officialAddress": "607, Seacon Bangkae Shopping Center, Room No. MK3/06, 3rd Floor, Petchkasem Road, Bangwa Subdistrict, Phasi Charoen District, Bangkok 10160",
+      "officialLandmark": "3rd floor, near the escalator, opposite Thai Credit Bank",
+      "officialLat": "13.71261340",
+      "officialLng": "100.43423430",
+      "googleMapsCid": "8412309548577448649",
+      "googleMapsLabel": "SuperRich ซีคอนบางแค",
+      "automaticProposal": {
+        "officialId": 72,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28190b1a0f2c540faebd1?pvs=204"
+    },
+    {
+      "officialId": 73,
+      "branchNo": "21",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "mbk-center",
+      "officialName": "MBK Center",
+      "officialThaiName": "เอ็ม บี เค เซ็นเตอร์",
+      "rateName": "MBK(เอ็ม บี เค)",
+      "officialAddress": "Princess 444, Room PLA.F02.C031F02, 2nd Floor, Zone C, MBK Center, near the entrance of Pathumwan Palace Hotel, Phaya Thai Road, Wang Mai Subdistrict, Pathum Wan District, Bangkok",
+      "officialLandmark": "2nd Floor, at the junction. On the left are Tee Noi Suki, Watsons, and on the right are Pepper Lunch and Papaya, located before the elevator entrance",
+      "officialLat": "13.74439140",
+      "officialLng": "100.53012540",
+      "googleMapsCid": "13143101977433073461",
+      "googleMapsLabel": "SuperRich MBK",
+      "automaticProposal": {
+        "officialId": 73,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2812196ffe0bc37d7095f?pvs=204"
+    },
+    {
+      "officialId": 74,
+      "branchNo": "63",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "mbk-skywalk",
+      "officialName": "MBK Skywalk",
+      "officialThaiName": "เอ็มบีเค สกายวอล์ค",
+      "rateName": "MBK Skywalk (เอ็ม บี เค สกายวอล์ก)",
+      "officialAddress": "No. 444, MBK Center, Room No. PLA.F02.A001001, 2nd Floor, Phaya Thai Road, Wang Mai Subdistrict, Pathum Wan District, Bangkok 10330, Thailand",
+      "officialLandmark": "Skywalk, 2nd Floor",
+      "officialLat": "13.74541000",
+      "officialLng": "100.52577730",
+      "googleMapsCid": "8784033568452572932",
+      "googleMapsLabel": "SuperRich Exchange @ MBK Skywalk (Branch 2)",
+      "automaticProposal": {
+        "officialId": 74,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標位置與 MBK Skywalk 的地址範圍疑似不符；此為來源原值，公開前必須獨立複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2813a8b28f9dbc2d703f4?pvs=204"
+    },
+    {
+      "officialId": 76,
+      "branchNo": "47",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "ics-lifestyle-complex",
+      "officialName": "ICS Lifestyle Complex",
+      "officialThaiName": "ไอซีเอส ไลฟ์สไตล์ คอมเพล็กซ์",
+      "rateName": "ICS(ไอซีเอส)",
+      "officialAddress": "168, ICS Shopping Center, Room No. K201/2, 2nd Floor, Charoen Nakhon Road, Khlong Ton Sai Subdistrict, Khlong San District, Bangkok 10600",
+      "officialLandmark": "Opposite ICONSIAM, 2nd floor, near the escalator",
+      "officialLat": "13.72125070",
+      "officialLng": "100.51567070",
+      "googleMapsCid": "9121040231589198816",
+      "googleMapsLabel": "SuperRich Exchange ICS",
+      "automaticProposal": {
+        "officialId": 76,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與「ICONSIAM 對面」位置描述疑似不符；此為來源原值，公開前必須獨立複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281de901ecfd2478788ae?pvs=204"
+    },
+    {
+      "officialId": 77,
+      "branchNo": "48",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "iconsiam",
+      "officialName": "ICONSIAM",
+      "officialThaiName": "ไอคอนสยาม",
+      "rateName": "ICONSIAM(ไอคอนสยาม)",
+      "officialAddress": "299 ICONSIAM Shopping Center, Room No. K516, 5th Floor, Charoen Nakhon Road, Khlong Ton Sai Subdistrict, Khlong San District, Bangkok 10600",
+      "officialLandmark": "5th Floor, ICON Education Zone, Opposite Asia Books, near Café Amazon",
+      "officialLat": "13.72787600",
+      "officialLng": "100.51127400",
+      "googleMapsCid": "1849985724577714029",
+      "googleMapsLabel": "SuperRich Exchange @ICONSIAM",
+      "automaticProposal": {
+        "officialId": 77,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標是否落在 ICONSIAM 分店範圍尚待複核；未以商場或鄰店座標替換。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2817f97d7df85c31f6f3b?pvs=204"
+    },
+    {
+      "officialId": 78,
+      "branchNo": "27",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "bangkok-hospital",
+      "officialName": "Bangkok Hospital",
+      "officialThaiName": "โรงพยาบาลกรุงเทพ",
+      "rateName": "Bangkok Hospital(โรงพยาบาลกรุงเทพ(ตึกวัฒโนสถ ))",
+      "officialAddress": "85, 1st Floor, Room F01-03, Watthanothai Hospital Building, Soi Research 7, Bangkapi Subdistrict, Huai Khwang District, Bangkok 10310",
+      "officialLandmark": "1st Floor, Wattanosoth Building, behind the escalator",
+      "officialLat": "13.74846460",
+      "officialLng": "100.58254840",
+      "googleMapsCid": "8539769213875250240",
+      "googleMapsLabel": "SuperRich โรงพยาบาลกรุงเทพ",
+      "automaticProposal": {
+        "officialId": 78,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281f58ce1f0189ae3983c?pvs=204"
+    },
+    {
+      "officialId": 79,
+      "branchNo": "52",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "samitivej-sukhumvit-hospital",
+      "officialName": "Samitivej Sukhumvit Hospital",
+      "officialThaiName": "โรงพยาบาลสมิติเวช สุขุมวิท",
+      "rateName": "Samitivej Sukhumvit Hospital (โรงพยาบาลสมิติเวช สุขุมวิท)",
+      "officialAddress": "135 Samitivej Hospital, Sukhumvit 49 (Central), G Floor, Khlong Tan Nuea Subdistrict, Watthana District, Bangkok 10110",
+      "officialLandmark": "Building 1, Royal Wing, G Floor, beneath the escalator",
+      "officialLat": "13.73438550",
+      "officialLng": "100.57666190",
+      "googleMapsCid": "7254985248330491106",
+      "googleMapsLabel": "SuperRich โรงพยาบาลสมิติเวช สุขุมวิท",
+      "automaticProposal": {
+        "officialId": 79,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281f1a6d2d1af48d58972?pvs=204"
+    },
+    {
+      "officialId": 80,
+      "branchNo": "04",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "the-market-bangkok",
+      "officialName": "Platinum POP",
+      "officialThaiName": "แพลทินั่ม ป๊อป",
+      "rateName": "Platinum Pop (แพลทินัม ป๊อป )",
+      "officialAddress": "111 The Market Bangkok Building, G Floor, Ratchadamri Road, Lumpini Subdistrict, Pathum Wan District, Bangkok 10330",
+      "officialLandmark": "G Floor, near the escalator, opposite After You",
+      "officialLat": "13.73941440",
+      "officialLng": "100.53449280",
+      "googleMapsCid": "3389145693496596136",
+      "googleMapsLabel": "SuperRich Exchange The Market Bangkok",
+      "automaticProposal": {
+        "officialId": 80,
+        "tier": "exact"
+      },
+      "reviewNote": "Platinum POP 現名與 The Market Bangkok 舊地址並存；官方座標與 Ratchadamri 地址疑似不符，公開前必須複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281068f65dc845848eee4?pvs=204"
+    },
+    {
+      "officialId": 81,
+      "branchNo": "53",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "the-old-siam-plaza",
+      "officialName": "The Old Siam Plaza",
+      "officialThaiName": "ดิโอลด์ สยาม พลาซ่า",
+      "rateName": "The Old Siam Plaza (ดิโอลด์ สยาม พลาซ่า)",
+      "officialAddress": "12 The Old Siam Plaza Shopping Center, Burapha Road, Area BT-01, BT-02, 1st Floor, Wang Burapha Phirom Subdistrict, Phra Nakhon District, Bangkok 10200",
+      "officialLandmark": "1st Floor, at the Fuang Nakhon Courtyard, next to Gateaux House bakery",
+      "officialLat": "13.74667290",
+      "officialLng": "100.50013710",
+      "googleMapsCid": "1461159666499170416",
+      "googleMapsLabel": "SuperRich ดิโอลด์สยาม",
+      "automaticProposal": {
+        "officialId": 81,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2819cb5f3ebe72890ca6b?pvs=204"
+    },
+    {
+      "officialId": 82,
+      "branchNo": "09",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "station-one-yaowarat",
+      "officialName": "Station One Yaowarat",
+      "officialThaiName": "สเตชั่น วัน เยาวราช",
+      "rateName": "Station One China Town (สเตชั่นวัน เยาวราช)",
+      "officialAddress": "Station One Yaowarat Project, Room 112, 1st Floor, Charoen Krung Road, Pom Prap Subdistrict, Pom Prap Sattru Phai District, Bangkok 10100",
+      "officialLandmark": "1st Floor, Charoen Krung Road, next to Wat Mangkon",
+      "officialLat": "13.74351310",
+      "officialLng": "100.50905940",
+      "googleMapsCid": "17574828652567266885",
+      "googleMapsLabel": "SuperRich Exchange Station One Yaowarat",
+      "automaticProposal": {
+        "officialId": 82,
+        "tier": "fuzzy"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28115bfaef599f42e518a?pvs=204"
+    },
+    {
+      "officialId": 83,
+      "branchNo": "57",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "one-bangkok",
+      "officialName": "One Bangkok",
+      "officialThaiName": "วัน แบงคอก",
+      "rateName": "One Bangkok (วัน แบงค็อก)",
+      "officialAddress": "1877 Parade Building, Room OP1401, 4th Floor, Rama IV Road, Lumphini Subdistrict, Pathum Wan District, Bangkok 10330.",
+      "officialLandmark": "4th Floor, Parade Building, Bank Zone, Beauty Services and IT Equipment",
+      "officialLat": "13.72323730",
+      "officialLng": "100.50881690",
+      "googleMapsCid": "11374048944423394364",
+      "googleMapsLabel": "SuperRich Exchange @One bangkok",
+      "automaticProposal": {
+        "officialId": 83,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與 One Bangkok／Rama IV Road 地址疑似不符；此為來源原值，公開前必須獨立複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2817bad65d198d55a15b2?pvs=204"
+    },
+    {
+      "officialId": 84,
+      "branchNo": "55",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "baan-silom-lifestyle-arcade-soi-silom-19",
+      "officialName": "Baan Silom Lifestyle Arcade (Soi Silom 19)",
+      "officialThaiName": "บ้านสีลม ไลฟ์สไตล์ อาเขต (ซอยสีลม 19)",
+      "rateName": "Baan Silom (โครงการบ้านสีลม)",
+      "officialAddress": "659 Silom House Project Building, 4th Floor, Room A25, Silom Road, Silom Subdistrict, Bang Rak District, Bangkok 10500",
+      "officialLandmark": "1st Floor, next to Subway",
+      "officialLat": "13.72317500",
+      "officialLng": "100.52066480",
+      "googleMapsCid": "6646615212025593604",
+      "googleMapsLabel": "SuperRich Exchange @Baan Silom",
+      "automaticProposal": {
+        "officialId": 56,
+        "tier": "contained"
+      },
+      "reviewNote": "官方 address 英文寫 4th Floor，但 landmark 寫 1st Floor；Notes 不選邊，公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281bca1a0f313560145e5?pvs=204"
+    },
+    {
+      "officialId": 85,
+      "branchNo": "49",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "riverside-plaza",
+      "officialName": "Riverside Plaza",
+      "officialThaiName": "ริเวอร์ไซด์ พลาซ่า",
+      "rateName": "Riverside Plaza(ริเวอร์ไซด์ พลาซ่า)",
+      "officialAddress": "257/6, Riverside Plaza Shopping Center, Room No. OP225/6, 2nd Floor, Charoen Nakhon Road, Samre Subdistrict, Thonburi District, Bangkok 10600",
+      "officialLandmark": "2nd Floor, connecting walkway to Anantara Hotel, next to Chokdee Optical",
+      "officialLat": "13.70519510",
+      "officialLng": "100.49116030",
+      "googleMapsCid": "8260329021590249248",
+      "googleMapsLabel": "SuperRich ริเวอร์ไซด์ พลาซ่า",
+      "automaticProposal": {
+        "officialId": 85,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281aebcdfc726c6ac3fc9?pvs=204"
+    },
+    {
+      "officialId": 86,
+      "branchNo": "56",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "around-lifestyle-station-ptt-station-soi-phetchaburi-29",
+      "officialName": "ArounD Lifestyle Station (PTT Station, Soi Phetchaburi 29)",
+      "officialThaiName": "อะราวด์ ไลฟ์สไตล์ สเตชั่น (ปั๊ม ปตท. ซอยเพชรบุรี 29)",
+      "rateName": "Around Lifestyle Station (อะราวด์ ไลฟ์สไตล์สเตชั่น (ปตท.ประตูน้ำ))",
+      "officialAddress": "Exchange-01, 1st Floor Around Lifestyle Station Project 1199 New Phetchaburi Road Makkasan, Ratchathewi Bangkok 10400 Thailand",
+      "officialLandmark": "PTT Station, Phetchaburi Soi 29 near EVEANDBOY",
+      "officialLat": "13.72323840",
+      "officialLng": "100.51911680",
+      "googleMapsCid": "4718677697836239868",
+      "googleMapsLabel": "SuperRich Exchange @Around Lifestyle Station (ปั๊มปตท.ถนนเพชรบุรี)",
+      "automaticProposal": {
+        "officialId": 86,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與 Phetchaburi Soi 29 地址疑似不符；此為來源原值，公開前必須獨立複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281aa9f51f9f26f313d4a?pvs=204"
+    },
+    {
+      "officialId": 88,
+      "branchNo": "58",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "imperial-world-samrong",
+      "officialName": "Imperial World Samrong",
+      "officialThaiName": "อิมพีเรียล เวิลด์ สำโรง",
+      "rateName": "Imperial World Samrong (อิมพีเรียลเวิลด์ สำโรง)",
+      "officialAddress": "999 Imperial World Samrong Department Store, 1st Floor (1F), Area Code CM-I-1-089, Moo 1, Sukhumvit Road, Samrong Nuea Subdistrict, Mueang Samut Prakan District, Samut Prakan 10270",
+      "officialLandmark": "1st Floor, Bank Zone, opposite Bangkok Bank and Government Savings Bank",
+      "officialLat": "13.65113470",
+      "officialLng": "100.59478510",
+      "googleMapsCid": "15754269650531579008",
+      "googleMapsLabel": "SuperRich Exchange @Imperial world samrong",
+      "automaticProposal": {
+        "officialId": 88,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281e18ae4fbabb8fad6ab?pvs=204"
+    },
+    {
+      "officialId": 89,
+      "branchNo": "16",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "mrt-sukhumvit",
+      "officialName": "MRT Sukhumvit",
+      "officialThaiName": "MRT สุขุมวิท",
+      "rateName": "MRT Sukhumvit(MRT สุขุมวิท)",
+      "officialAddress": "Unit No. 17, MRT Sukhumvit Station, Khlong Toei, Khlong Toei District, Bangkok 10110",
+      "officialLandmark": "Metro Mall, next to Nail it nail, opposite Easy Cut hair salon",
+      "officialLat": "13.73744420",
+      "officialLng": "100.56127440",
+      "googleMapsCid": "8116079645074407185",
+      "googleMapsLabel": "SuperRich MRT Sukhumvit",
+      "automaticProposal": {
+        "officialId": 89,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281c78a4bf33d3f7ca492?pvs=204"
+    },
+    {
+      "officialId": 90,
+      "branchNo": "17",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "mrt-rama-9",
+      "officialName": "MRT Rama 9",
+      "officialThaiName": "MRT พระราม 9",
+      "rateName": "MRT Phra Ram 9(MRT พระรามเก้า)",
+      "officialAddress": "Unit 20, MRT Rama 9 Station, Din Daeng District, Bangkok 10400",
+      "officialLandmark": "Metro Mall, next to People eyewear Store",
+      "officialLat": "13.75663480",
+      "officialLng": "100.56537570",
+      "googleMapsCid": "14339393731360932280",
+      "googleMapsLabel": "SuperRich MRT พระราม9",
+      "automaticProposal": {
+        "officialId": 89,
+        "tier": "ambiguous"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea28160a1f0ca7c7ca6a265?pvs=204"
+    },
+    {
+      "officialId": 91,
+      "branchNo": "41",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "mrt-chatuchak",
+      "officialName": "MRT Chatuchak",
+      "officialThaiName": "MRT จตุจักร",
+      "rateName": "MRT Chatuchak Park (MRT จตุจักร)",
+      "officialAddress": "Unit 43, MRT Chatuchak Station, Chatuchak Park, Phahonyothin Road, Chatuchak District, Bangkok 10900",
+      "officialLandmark": "Metro Mall, next to 12Go store",
+      "officialLat": "13.80263190",
+      "officialLng": "100.55328550",
+      "googleMapsCid": "14772327350171681829",
+      "googleMapsLabel": "SuperRich Currency Exchange",
+      "automaticProposal": {
+        "officialId": 91,
+        "tier": "contained"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2816a96c2ea5df868b276?pvs=204"
+    },
+    {
+      "officialId": 92,
+      "branchNo": "60",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "mrt-kamphaeng-phet",
+      "officialName": "MRT Kamphaeng Phet",
+      "officialThaiName": "MRT กำแพงเพชร",
+      "rateName": "MRT Kamphaeng Phet (MRT กำแพงเพชร)",
+      "officialAddress": "No. 515, Unit KAM/UNIT01, Kamphaeng Phet 2 Road, Chatuchak Subdistrict, Chatuchak District, Bangkok 10900",
+      "officialLandmark": "Exit 2",
+      "officialLat": "13.79807260",
+      "officialLng": "100.54629100",
+      "googleMapsCid": "4210302377356866184",
+      "googleMapsLabel": "SuperRich Exchange @MRT Kamphaeng Phet",
+      "automaticProposal": {
+        "officialId": 92,
+        "tier": "exact"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2819bb127c16e1fbb0555?pvs=204"
+    },
+    {
+      "officialId": 93,
+      "branchNo": "59",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "mrt-sanam-chai",
+      "officialName": "MRT Sanam Chai",
+      "officialThaiName": "MRT สนามไชย",
+      "rateName": "MRT Sanam Chai (MRT สนามไชย)",
+      "officialAddress": "Sanam Chai MRT Station, Sanam Chai Road, Somdet Chao Phraya Subdistrict, Khlong San District, Bangkok 10600, Thailand",
+      "officialLandmark": "Exit 1 is near Museum Siam, the Grand Palace, Wat Phra Si Rattana Satsadaram (Wat Phra Kaew), and Wat Pho.",
+      "officialLat": "13.74452350",
+      "officialLng": "100.49185770",
+      "googleMapsCid": "15187430913671619864",
+      "googleMapsLabel": "SuperRich Exchange @MRT Sanam Chai",
+      "automaticProposal": {
+        "officialId": 93,
+        "tier": "exact"
+      },
+      "reviewNote": "官方 address 的分區／郵遞區號與 Sanam Chai 站描述疑似不符；Notes 僅保留站名與出口，公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281fcb29dfb5651050b0b?pvs=204"
+    },
+    {
+      "officialId": 110,
+      "branchNo": "64",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "emsphere-g-floor",
+      "officialName": "Emsphere G Floor",
+      "officialThaiName": "Emsphere ชั้น G",
+      "rateName": "THE EMSPHERE G FLOOR (ศูนย์การค้า ดิ เอ็มสเฟียร์ ชั้น G)",
+      "officialAddress": "No. 628, 630, The EmSphere Shopping Center, Room No. GV 18, Ground Floor (G) Area, Sukhumvit Road, Bangkok 10110",
+      "officialLandmark": "In front of the elevator, Red Zone, Ground Floor (G)",
+      "officialLat": "13.73247233",
+      "officialLng": "100.56591219",
+      "googleMapsCid": "3233164840185572030",
+      "googleMapsLabel": "SuperRich Exchange @Emsphere G Floor",
+      "automaticProposal": {
+        "officialId": 110,
+        "tier": "contained"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea281c89444fb0973bf5269?pvs=204"
+    },
+    {
+      "officialId": 112,
+      "branchNo": "51",
+      "companyCode": "A04",
+      "group": "main-branch",
+      "sourceSlug": "emsphere-2nd-floor",
+      "officialName": "Emsphere 2 FL.",
+      "officialThaiName": "Emsphere ชั้น 2",
+      "rateName": "The Emsphere 2nd Floor (ศูนย์การค้า ดิ เอ็มสเฟียร์ ชั้น 2)",
+      "officialAddress": "No. 628, 630, The EmSphere Shopping Center, Room No. 2V 07, 2nd Floor, Sukhumvit Road, Khlong Tan Subdistrict, Khlong Toei District, Bangkok 10110",
+      "officialLandmark": "Emsphere, 2nd Floor, Bank Zone, next to the connecting walkway on the EM Tower side.",
+      "officialLat": "13.73386810",
+      "officialLng": "100.56675262",
+      "googleMapsCid": "7901134588435402760",
+      "googleMapsLabel": "SuperRich Exchange @Emsphere 2 FL.",
+      "automaticProposal": {
+        "officialId": 112,
+        "tier": "contained"
+      },
+      "reviewNote": "官方座標與櫃位位置仍需公開前複核。",
+      "notionUrl": "https://app.notion.com/p/3d7c23158ea2811b9748e6f775531bf6?pvs=204"
+    }
+  ],
+  "excludedRateBranches": [
+    {
+      "officialId": 106,
+      "branchNo": "E52-01",
+      "companyCode": "E52",
+      "group": "partner",
+      "name": "Terminal 21 Pattaya",
+      "reason": "First release excludes Partner Branch."
+    }
+  ],
+  "unmappedOurBranches": [
+    {
+      "officialId": 87,
+      "name": "Vibhavadi 22",
+      "sourceSlug": "vibhavadi-22",
+      "reason": "Absent from the current exchange-rate/branch-list; branchNo must not be guessed."
+    },
+    {
+      "officialId": 94,
+      "name": "Airport Rail Link Suvarnabhumi",
+      "sourceSlug": "airport-rail-link-suvarnabhumi",
+      "reason": "Absent from the current exchange-rate/branch-list; branchNo must not be guessed."
+    },
+    {
+      "officialId": 95,
+      "name": "Airport Rail Link Phaya Thai",
+      "sourceSlug": "airport-rail-link-phaya-thai",
+      "reason": "Absent from the current exchange-rate/branch-list; branchNo must not be guessed."
+    }
+  ],
+  "coordinatePolicy": "Phase B uses the official latitude/longitude pair exactly as permitted by the plan. These are source values, not an independent geographic verification; all records remain Paused with Review Needed=true. Identified source inconsistencies are recorded per branch.",
+  "duplicateCheck": {
+    "formalPagesRead": 181,
+    "includesInactive": true,
+    "matchingOrangeSource": 0,
+    "matchingSlugs": 0,
+    "matchingMapUrls": 0
+  },
+  "normalizer": "Temporary copy of lingorm-add-location/scripts/prepare-location.mjs with live Currency Exchange category and plan-mandated empty Type; Notion empty select serialized as null."
+}

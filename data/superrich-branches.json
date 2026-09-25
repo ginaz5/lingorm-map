@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "branches": {
+    "superrich-thailand-10": {
+      "officialId": 10,
+      "branchCode": "H01"
+    },
+    "superrich-thailand-11": {
+      "officialId": 11,
+      "branchCode": "B01"
+    },
+    "superrich-thailand-12": {
+      "officialId": 12,
+      "branchCode": "M01"
+    },
+    "superrich-thailand-13": {
+      "officialId": 13,
+      "branchCode": "M02"
+    },
+    "superrich-thailand-14": {
+      "officialId": 14,
+      "branchCode": "M03"
+    },
+    "superrich-thailand-15": {
+      "officialId": 15,
+      "branchCode": "M04"
+    },
+    "superrich-thailand-16": {
+      "officialId": 16,
+      "branchCode": "M05"
+    },
+    "superrich-thailand-17": {
+      "officialId": 17,
+      "branchCode": "M06"
+    },
+    "superrich-thailand-18": {
+      "officialId": 18,
+      "branchCode": "M07"
+    },
+    "superrich-thailand-19": {
+      "officialId": 19,
+      "branchCode": "M08"
+    },
+    "superrich-thailand-20": {
+      "officialId": 20,
+      "branchCode": "M09"
+    },
+    "superrich-thailand-21": {
+      "officialId": 21,
+      "branchCode": "M10"
+    },
+    "superrich-thailand-22": {
+      "officialId": 22,
+      "branchCode": "M11"
+    },
+    "superrich-thailand-23": {
+      "officialId": 23,
+      "branchCode": "M12"
+    },
+    "superrich-thailand-24": {
+      "officialId": 24,
+      "branchCode": "M13"
+    },
+    "superrich-thailand-25": {
+      "officialId": 25,
+      "branchCode": "M14"
+    },
+    "superrich-thailand-26": {
+      "officialId": 26,
+      "branchCode": "M15"
+    },
+    "superrich-thailand-27": {
+      "officialId": 27,
+      "branchCode": "M16"
+    },
+    "superrich-thailand-28": {
+      "officialId": 28,
+      "branchCode": "M17"
+    },
+    "superrich-thailand-29": {
+      "officialId": 29,
+      "branchCode": "M18"
+    },
+    "superrich-thailand-30": {
+      "officialId": 30,
+      "branchCode": "M19"
+    },
+    "superrich-thailand-31": {
+      "officialId": 31,
+      "branchCode": "M20"
+    },
+    "superrich-thailand-32": {
+      "officialId": 32,
+      "branchCode": "M21"
+    },
+    "superrich-thailand-33": {
+      "officialId": 33,
+      "branchCode": "M22"
+    },
+    "superrich-thailand-34": {
+      "officialId": 34,
+      "branchCode": "M23"
+    },
+    "superrich-thailand-35": {
+      "officialId": 35,
+      "branchCode": "M24"
+    }
+  }
+}

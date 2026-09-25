@@ -6,7 +6,7 @@
 
 ## 現況
 
-- `src/ui/render.js` 的 `applyFilters()` 已比對：
+- `../../src/ui/render.js` 的 `applyFilters()` 已比對：
   - 英文名稱 `nameEn`
   - 中文名稱 `nameZh`
   - 別名 `alt`
@@ -118,7 +118,7 @@ Notes 比對已經存在。本次應優先補測試與修正呈現一致性，�
 
 | 階段 | 狀態 | 完成內容 |
 | --- | --- | --- |
-| 1. Notes 搜尋回歸測試 | ✅ 完成 | 新增 `tests/search-filter.test.mjs`，覆蓋英文名稱、中文名稱、別名、雙語 Notes、跨介面語言搜尋、無結果、分類、收藏與非公開狀態。 |
+| 1. Notes 搜尋回歸測試 | ✅ 完成 | 新增 `../../tests/search-filter.test.mjs`，覆蓋英文名稱、中文名稱、別名、雙語 Notes、跨介面語言搜尋、無結果、分類、收藏與非公開狀態。 |
 | 2. 共用篩選判斷 | ✅ 完成 | 新增 `matchesLocationFilters()`，集中處理公開狀態、收藏、名稱／別名／雙語 Notes、分類及搜尋文字正規化。 |
 | 3. Google Maps markers | ✅ 完成 | MarkerClusterer 的 add/remove 與無 clustering fallback 都改以 `state.visIdx` 決定可見標記。 |
 | 4. HERE Maps markers | ✅ 完成 | HERE clustering 僅以 `state.visIdx` 中的公開地點建立 DataPoint。 |
@@ -138,7 +138,7 @@ Notes 比對已經存在。本次應優先補測試與修正呈現一致性，�
 
 #### 2026-07-23：階段 2 完成
 
-- 在 `src/ui/render.js` 新增共用的 `matchesLocationFilters()`。
+- 在 `../../src/ui/render.js` 新增共用的 `matchesLocationFilters()`。
 - 搜尋欄位統一涵蓋英文名稱、中文名稱、別名、英文 Notes 與中文 Notes。
 - 搜尋文字使用 NFKC Unicode 正規化、大小寫正規化及前後空白移除。
 - 公開狀態、收藏與分類條件集中在同一個判斷函式。
@@ -176,7 +176,7 @@ Notes 比對已經存在。本次應優先補測試與修正呈現一致性，�
 - `npm test`：232 項測試全部通過。
 - `npm run typecheck`：通過。
 - `npm run build`：production build 成功。
-- 正式 `data/locations.csv` 搜尋「香蕉味」：命中 `32Bar X`。
+- 正式 `../../data/locations.csv` 搜尋「香蕉味」：命中 `32Bar X`。
 - 本機瀏覽器中文介面搜尋「香蕉味」：
   - 結果顯示 `1 / 103`。
   - 清單僅顯示 `32Bar X`。

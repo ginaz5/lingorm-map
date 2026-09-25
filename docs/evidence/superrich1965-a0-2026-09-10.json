@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "recordedOn": "2026-09-10",
+  "provenance": {
+    "source": "User-pasted terminal probe outputs in this task; no new source requests were made during closeout.",
+    "timeBasis": "Times below are copied from the supplied shell prompts and interpreted in Asia/Taipei; they are not measured request-start timestamps.",
+    "responseScope": "response preserves each supplied probe JSON object. bodySnippet is the probe's truncated source body, not the complete upstream response.",
+    "requestScope": "configuredRequests are reconstructed from the inspected probe code; automatic runtime headers and egress IPs were not captured.",
+    "inspectedProbeCommit": "f7239b6",
+    "inspectedEarlierProbeCommit": "fb49164",
+    "deployedCommitIndependentlyVerified": false,
+    "upstreamBodyArchivedInFull": false
+  },
+  "sourceOrigin": "https://www.superrich1965.com",
+  "configuredRequests": {
+    "rate-get": {
+      "method": "POST",
+      "path": "/spr/front/exchange-rate/get",
+      "headers": {
+        "content-type": "application/json",
+        "accept": "application/json",
+        "user-agent": "LingOrmBangkokMap/1.0 (+https://lingorm-map.netlify.app; contact: site issue form)"
+      },
+      "body": {
+        "filters": [
+          {
+            "field": "company_code",
+            "value": "A04"
+          },
+          {
+            "field": "branch_no",
+            "value": "00"
+          }
+        ]
+      }
+    },
+    "branches-get": {
+      "method": "GET",
+      "path": "/spr/front/branches?page=1&limit=5",
+      "headers": {
+        "accept": "application/json",
+        "user-agent": "LingOrmBangkokMap/1.0 (+https://lingorm-map.netlify.app; contact: site issue form)"
+      }
+    },
+    "branch-list-post": {
+      "method": "POST",
+      "path": "/spr/front/exchange-rate/branch-list",
+      "headers": {
+        "accept": "application/json",
+        "user-agent": "LingOrmBangkokMap/1.0 (+https://lingorm-map.netlify.app; contact: site issue form)",
+        "content-type": "application/json"
+      },
+      "body": {
+        "filters": [
+          {
+            "field": "company_code",
+            "value": "A04"
+          }
+        ]
+      }
+    }
+  },
+  "runs": [
+    {
+      "id": "netlify-rate-initial",
+      "shellPromptTime": "2026-09-10 07:23:15",
+      "environment": "netlify-deploy-preview-7",
+      "command": "curl -s \"https://deploy-preview-7--lingorm-map.netlify.app/.netlify/functions/superrich1965-a0-probe\" | jq",
+      "configuredRequestIds": [
+        "rate-get"
+      ],
+      "response": {
+        "environment": "netlify",
+        "ok": false,
+        "httpStatus": 403,
+        "contentType": "text/html; charset=UTF-8",
+        "elapsedMs": 174,
+        "looksLikeChallenge": true,
+        "retryAfter": null,
+        "cfRay": "a38a2c0a0bc189da-CMH",
+        "parseError": "Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON",
+        "quoteStatus": null,
+        "usdRateScaledE6": null,
+        "twdRateScaledE6": null,
+        "sourceUpdatedAtMs": null,
+        "bodySnippet": "<!DOCTYPE html><html lang=\"en-US\"><head><title>Just a moment...</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><meta name=\"robots\" content=\"noindex,nofollow\"><meta name=\"viewport\" content=\"width=device-width,initial-scal"
+      }
+    },
+    {
+      "id": "local-rate",
+      "shellPromptTime": "2026-09-10 08:03:52",
+      "environment": "user-local-terminal",
+      "command": "node scripts/superrich1965-a0-probe.mjs",
+      "configuredRequestIds": [
+        "rate-get"
+      ],
+      "response": {
+        "label": "rate-get",
+        "method": "POST",
+        "path": "/spr/front/exchange-rate/get",
+        "ok": true,
+        "httpStatus": 200,
+        "contentType": "application/json; charset=utf-8",
+        "elapsedMs": 1911,
+        "looksLikeChallenge": false,
+        "retryAfter": null,
+        "cfRay": "a38a3ba7899acda3-BOS",
+        "cfMitigated": null,
+        "parseError": null,
+        "contractOk": true,
+        "quoteStatus": "ok",
+        "usdRateScaledE6": 32770000,
+        "twdRateScaledE6": 995000,
+        "sourceUpdatedAtMs": 1788951064201,
+        "bodySnippet": "{\"request_id\":\"3J755wPoqMI2DyxyWx6xXVu2Gj8\",\"status_code\":200,\"code\":\"SUCCESS\",\"message\":\"get external application exchange rate success\",\"data\":{\"datas\":[{\"currency_code\":\"USD\",\"currency_name\":\"USD\","
+      }
+    },
+    {
+      "id": "netlify-matrix",
+      "shellPromptTime": "2026-09-10 08:14:32",
+      "environment": "netlify-deploy-preview-7",
+      "command": "curl -s \"https://deploy-preview-7--lingorm-map.netlify.app/.netlify/functions/superrich1965-a0-probe\" | jq",
+      "configuredRequestIds": [
+        "branches-get",
+        "branch-list-post",
+        "rate-get"
+      ],
+      "configuredGapMs": 500,
+      "response": {
+        "environment": "netlify",
+        "mode": "diagnostic-matrix",
+        "verdict": "mixed__see_individual_results",
+        "summary": [
+          "branches-get GET → 403 CHALLENGE",
+          "branch-list-post POST → OK",
+          "rate-get POST → OK"
+        ],
+        "results": [
+          {
+            "label": "branches-get",
+            "method": "GET",
+            "path": "/spr/front/branches?page=1&limit=5",
+            "ok": false,
+            "httpStatus": 403,
+            "contentType": "text/html; charset=UTF-8",
+            "elapsedMs": 149,
+            "looksLikeChallenge": true,
+            "retryAfter": null,
+            "cfRay": "a38a40001d02fa14-CMH",
+            "cfMitigated": "challenge",
+            "parseError": "Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON",
+            "bodySnippet": "<!DOCTYPE html><html lang=\"en-US\"><head><title>Just a moment...</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><meta name=\"robots\" content=\"noindex,nofollow\"><meta nam"
+          },
+          {
+            "label": "branch-list-post",
+            "method": "POST",
+            "path": "/spr/front/exchange-rate/branch-list",
+            "ok": true,
+            "httpStatus": 200,
+            "contentType": "application/json; charset=utf-8",
+            "elapsedMs": 960,
+            "looksLikeChallenge": false,
+            "retryAfter": null,
+            "cfRay": "a38a4003bd18b1a9-CMH",
+            "cfMitigated": null,
+            "parseError": null,
+            "contractOk": true,
+            "branchCount": 39,
+            "bodySnippet": "{\"request_id\":\"3J753S8tFuyMhJaPZhv4gJG3miZ\",\"status_code\":200,\"code\":\"200\",\"message\":\"filter branch success\",\"data\":{\"datas\":[{\"code\":\"56\",\"name\":\"Around Lifestyle Station (อะราวด์ ไลฟ์สไตล์สเตชั่น (ป"
+          },
+          {
+            "label": "rate-get",
+            "method": "POST",
+            "path": "/spr/front/exchange-rate/get",
+            "ok": true,
+            "httpStatus": 200,
+            "contentType": "application/json; charset=utf-8",
+            "elapsedMs": 248,
+            "looksLikeChallenge": false,
+            "retryAfter": null,
+            "cfRay": "a38a400ccfb0b1a9-CMH",
+            "cfMitigated": null,
+            "parseError": null,
+            "contractOk": true,
+            "quoteStatus": "ok",
+            "usdRateScaledE6": 32770000,
+            "twdRateScaledE6": 995000,
+            "sourceUpdatedAtMs": 1788951064201,
+            "bodySnippet": "{\"request_id\":\"3J75kuwSdMFTBAgKCzPXFtN0dhC\",\"status_code\":200,\"code\":\"SUCCESS\",\"message\":\"get external application exchange rate success\",\"data\":{\"datas\":[{\"currency_code\":\"USD\",\"currency_name\":\"USD\","
+          }
+        ]
+      }
+    }
+  ]
+}

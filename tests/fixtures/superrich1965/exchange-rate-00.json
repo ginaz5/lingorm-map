@@ -1,0 +1,54 @@
+{
+  "request_id": "5f1c9a52-0a2e-4d7f-9a1b-3c2d4e5f6a7b",
+  "status_code": 200,
+  "code": "SUCCESS",
+  "message": "get external application exchange rate success",
+  "data": {
+    "datas": [
+      {
+        "currency_code": "PHP",
+        "currency_name": "PHP",
+        "currency_image_url": "https://cdn.example/php.png",
+        "country_name": "ฟิลิปปินส์",
+        "denom_list": [
+          { "show_denom": "1000-100", "buy_rate_amount": "0.5410", "sell_rate_amount": "0.6210", "is_default": true }
+        ],
+        "currency_description": "Philippines"
+      },
+      {
+        "currency_code": "TWD",
+        "currency_name": "TWD",
+        "currency_image_url": "https://cdn.example/twd.png",
+        "country_name": "ไต้หวัน",
+        "denom_list": [
+          { "show_denom": "1000-100", "buy_rate_amount": "0.99500", "sell_rate_amount": "1.0620", "is_default": true }
+        ],
+        "currency_description": "Taiwan"
+      },
+      {
+        "currency_code": "USD",
+        "currency_name": "USD",
+        "currency_image_url": "https://cdn.example/usd.png",
+        "country_name": "สหรัฐอเมริกา",
+        "denom_list": [
+          { "show_denom": "20-10", "buy_rate_amount": "32.64", "sell_rate_amount": "32.84", "is_default": false },
+          { "show_denom": "100-50", "buy_rate_amount": "32.77", "sell_rate_amount": "32.89", "is_default": true },
+          { "show_denom": "5", "buy_rate_amount": "32.10", "sell_rate_amount": "33.10", "is_default": false },
+          { "show_denom": "1", "buy_rate_amount": "31.90", "sell_rate_amount": "33.30", "is_default": false }
+        ],
+        "currency_description": "United States"
+      },
+      {
+        "currency_code": "KRW",
+        "currency_name": "KRW",
+        "currency_image_url": "https://cdn.example/krw.png",
+        "country_name": "เกาหลีใต้",
+        "denom_list": [
+          { "show_denom": "50000-1000", "buy_rate_amount": "0.0231", "sell_rate_amount": "0.0261", "is_default": true }
+        ],
+        "currency_description": "South Korea"
+      }
+    ],
+    "update_time": 1788949918238
+  }
+}

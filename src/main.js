@@ -17,7 +17,9 @@ import {
   loadMapScript,
   updateMapTheme,
   buildMarkers,
+  clearActiveLocation,
   fitMapToVisibleLocations,
+  refreshActivePopup,
 } from './map/map.js';
 import {
   applyFiltersAndSyncMap,
@@ -42,6 +44,14 @@ import {
   renderDestinationFilter,
 } from './features/destination-filter.js';
 import { initCollectionInfo } from './features/collection-info.js';
+import { initFanResources } from './features/fan-resources.js';
+import {
+  EXCHANGE_CATEGORY,
+  initExchangeRates,
+  isExchangeLocation,
+  syncExchangeControls,
+} from './features/exchange-rates.js';
+import { initExchangeRates1965 } from './features/exchange-rates-1965.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -123,6 +133,7 @@ function runMobileAction(event) {
   const action = event.currentTarget.dataset.mobileAction;
   closeMobileActions();
   if (action === 'issue') openIssueModal();
+  if (action === 'fan-resources') fanResources?.open(document.getElementById('mobile-actions-btn'));
 }
 
 /**
@@ -210,6 +221,27 @@ initDestinationFilter(change => {
   );
 });
 initCollectionInfo();
+const fanResources = initFanResources();
+/** @param {{exchangeHidden?:boolean,locationsChanged?:boolean,sortChanged?:boolean}} change */
+const handleExchangeChange = change => {
+  if (change.exchangeHidden) {
+    const category = /** @type {HTMLSelectElement} */ (document.getElementById('cat-filter'));
+    if (category.value === EXCHANGE_CATEGORY || category.value === t('category_currency_exchange')) {
+      category.value = '';
+    }
+    if (isExchangeLocation(state.data[state.activeIdx])) clearActiveLocation();
+  }
+  buildCatFilter();
+  if (change.locationsChanged && state.map) {
+    applyFilters();
+    void buildMarkers();
+  } else {
+    applyFiltersAndSyncMap({ exchangeSortChanged: change.sortChanged });
+  }
+  refreshActivePopup();
+};
+initExchangeRates(handleExchangeChange);
+initExchangeRates1965(handleExchangeChange, syncExchangeControls);
 
 // Static event listeners
 document.getElementById('fav-filter-btn').addEventListener('click', event => {
