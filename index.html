@@ -60,6 +60,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </svg>
     <span data-i18n="locate_btn_label"></span>
   </button>
+  <button class="btn-ghost" id="fan-resources-btn" type="button"
+    aria-haspopup="dialog" aria-controls="fan-resources-modal" aria-expanded="false">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+    <span data-i18n="fan_resources_title"></span>
+  </button>
   <a class="btn-ghost header-link" id="changelog-btn" href="./changelog.html">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
     <span data-i18n="changelog_title"></span>
@@ -82,6 +87,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
     </button>
     <div class="mobile-actions-menu" id="mobile-actions-menu" role="menu" hidden>
+      <button type="button" class="mobile-action-item" data-mobile-action="fan-resources" role="menuitem"
+        aria-haspopup="dialog" aria-controls="fan-resources-modal" aria-expanded="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+        <span data-i18n="fan_resources_title"></span>
+      </button>
       <a class="mobile-action-item" href="./changelog.html" role="menuitem">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
         <span data-i18n="changelog_title"></span>
@@ -222,6 +232,56 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <span data-i18n="tab_list"></span>
   </button>
 </div>
+
+<!-- DIALOG: FAN RESOURCES -->
+<dialog class="fan-resources-dialog" id="fan-resources-modal"
+  aria-labelledby="fan-resources-title" aria-describedby="fan-resources-intro">
+  <div class="fan-resources-content">
+    <div class="fan-resources-handle" aria-hidden="true"></div>
+    <div class="fan-resources-heading">
+      <div>
+        <div class="fan-resources-kicker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+          <span data-i18n="fan_resources_kicker"></span>
+        </div>
+        <h2 id="fan-resources-title" data-i18n="fan_resources_title"></h2>
+      </div>
+      <button class="fan-resources-close" id="fan-resources-close" type="button" data-i18n-aria="fan_resources_close" autofocus>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg>
+      </button>
+    </div>
+    <p class="fan-resources-intro" id="fan-resources-intro" data-i18n="fan_resources_intro"></p>
+    <div class="fan-resources-grid">
+      <article class="fan-resource">
+        <h3>LingOrm Fanpage</h3>
+        <p class="fan-resource-subtitle" data-i18n="fan_resources_fanpage_subtitle"></p>
+        <p class="fan-resource-description" data-i18n="fan_resources_fanpage_desc"></p>
+        <a class="fan-resource-shortcut" href="https://www.lingorm.site/upcoming-schedule" target="_blank" rel="noopener noreferrer" data-i18n-aria="fan_resources_schedule_aria">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h2M14 15h2M8 18h2"/></svg>
+          <span data-i18n="fan_resources_schedule"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </a>
+        <a class="fan-resource-visit" href="https://www.lingorm.site/" target="_blank" rel="noopener noreferrer" data-i18n-aria="fan_resources_fanpage_aria">
+          <span data-i18n="fan_resources_visit"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </a>
+      </article>
+      <article class="fan-resource">
+        <h3>LOism</h3>
+        <p class="fan-resource-subtitle" data-i18n="fan_resources_loism_subtitle"></p>
+        <p class="fan-resource-description" data-i18n="fan_resources_loism_desc"></p>
+        <a class="fan-resource-visit" href="https://loism1127.com/" target="_blank" rel="noopener noreferrer" data-i18n-aria="fan_resources_loism_aria">
+          <span data-i18n="fan_resources_visit"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </a>
+      </article>
+    </div>
+    <p class="fan-resources-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/></svg>
+      <span data-i18n="fan_resources_note"></span>
+    </p>
+  </div>
+</dialog>
 
 <!-- MODAL: ISSUE REPORT -->
 <div class="modal-overlay" id="issue-modal">

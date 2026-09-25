@@ -194,6 +194,34 @@ test('changelog navigation and page copy are available in both supported languag
   assert.equal(T.en.changelog_back, 'Back to map');
 });
 
+test('every resources label and accessible link name is translated by updateLangUI', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const bindings = [...html.matchAll(/data-i18n(-aria)?="(fan_resources_[^"]+)"/g)];
+  const keys = bindings.map(match => match[2]);
+  assert.ok(keys.includes('fan_resources_fanpage_desc'));
+  assert.ok(keys.includes('fan_resources_schedule_aria'));
+  for (const language of ['zh', 'en']) {
+    const elements = bindings.map(([, aria, key]) => ({
+      dataset: aria ? { i18nAria: key } : { i18n: key },
+      textContent: '',
+      ariaLabel: '',
+      setAttribute(name, value) { assert.equal(name, 'aria-label'); this.ariaLabel = value; },
+    }));
+    const { updateLangUI } = await loadUiHelpers({
+      document: { querySelectorAll: () => elements, getElementById: () => ({ textContent: '' }) },
+      t: key => T[language][key], state: { data: [] }, lang: language,
+    });
+    updateLangUI();
+    for (const element of elements) {
+      const key = element.dataset.i18n || element.dataset.i18nAria;
+      const value = element.dataset.i18nAria ? element.ariaLabel : element.textContent;
+      assert.equal(typeof value, 'string', key);
+      assert.ok(value.length > 0, key);
+      assert.notEqual(value, key);
+    }
+  }
+});
+
 test('buildCatFilter preserves the selected category while rebuilding options', async () => {
   const catFilter = makeSelect('Cafe');
   const { buildCatFilter } = await loadUiHelpers({

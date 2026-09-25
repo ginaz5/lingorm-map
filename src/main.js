@@ -44,6 +44,7 @@ import {
   renderDestinationFilter,
 } from './features/destination-filter.js';
 import { initCollectionInfo } from './features/collection-info.js';
+import { initFanResources } from './features/fan-resources.js';
 import {
   EXCHANGE_CATEGORY,
   initExchangeRates,
@@ -132,6 +133,7 @@ function runMobileAction(event) {
   const action = event.currentTarget.dataset.mobileAction;
   closeMobileActions();
   if (action === 'issue') openIssueModal();
+  if (action === 'fan-resources') fanResources?.open(document.getElementById('mobile-actions-btn'));
 }
 
 /**
@@ -219,6 +221,7 @@ initDestinationFilter(change => {
   );
 });
 initCollectionInfo();
+const fanResources = initFanResources();
 /** @param {{exchangeHidden?:boolean,locationsChanged?:boolean,sortChanged?:boolean}} change */
 const handleExchangeChange = change => {
   if (change.exchangeHidden) {

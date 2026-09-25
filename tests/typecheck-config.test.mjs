@@ -32,6 +32,7 @@ test('configures strict JavaScript type checking', async () => {
     'scripts/exchange-rates-1965-fetch.mjs',
     'src/features/changelog-data.js',
     'src/features/collection-info.js',
+    'src/features/fan-resources.js',
     'src/map/map.js',
     'src/features/forms.js',
     'src/map/map-globals.d.ts',
