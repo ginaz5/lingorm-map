@@ -9,11 +9,33 @@ import {
   collectSourceQuotes, SOURCE_BASE_URL, SOURCE_MIN_START_GAP_MS,
 } from '../netlify/functions/_shared/exchange-rates-1965-source.mjs';
 import { createRuntimeStore } from '../netlify/functions/_shared/exchange-rates-1965-storage.mjs';
+import { changeControl } from '../netlify/functions/_shared/exchange-rates-1965-control.mjs';
 import { logExchangeRateFetchResult } from '../netlify/functions/exchange-rates-1965-fetch.mjs';
 import { serveExchangeRates } from '../netlify/functions/exchange-rates-1965.mjs';
 import { FakeBlobStore, jsonResponse, uuid } from './helpers/exchange-rates-store.mjs';
 
 const START = Date.parse('2026-09-11T00:00:00Z');
+
+test('orange control retry preserves a cooldown recorded during the breaker write', async () => {
+  const store = new FakeBlobStore();
+  store.seed(EXCHANGE_KEYS.control, createControl({ enabled: true, nowMs: START, controlVersion: uuid(1), updatedBy: 'manual' }));
+  store.seed(EXCHANGE_KEYS.breaker, createBreaker(uuid(1)));
+  const latestBlockedUntil = new Date(START + 120_000).toISOString();
+  let raced = false;
+  store.beforeSet = ({ key }) => {
+    if (key === EXCHANGE_KEYS.breaker && !raced) {
+      raced = true;
+      store.seed(key, createBreaker(uuid(2), latestBlockedUntil));
+    }
+  };
+
+  await changeControl(store, {
+    enabled: false, nowMs: START + 1_000, randomUUIDImpl: () => uuid(2),
+  });
+
+  assert.equal(raced, true);
+  assert.deepEqual(store.entries.get(EXCHANGE_KEYS.breaker).data, createBreaker(uuid(2), latestBlockedUntil));
+});
 
 test('fetch logging reports unavailable-rate outcomes as errors', () => {
   const info = [];

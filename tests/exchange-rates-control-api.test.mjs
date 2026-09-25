@@ -58,6 +58,28 @@ test('manual control changes version and preserves a future block while resettin
   assert.deepEqual(breaker, createBreaker(uuid(2), blockedUntil));
 });
 
+test('control retry preserves a cooldown recorded during the breaker write', async () => {
+  const store = new FakeBlobStore();
+  store.seed(EXCHANGE_KEYS.control, enabledControl(uuid(1), START));
+  store.seed(EXCHANGE_KEYS.breaker, createBreaker(uuid(1)));
+  const latestBlockedUntil = new Date(START + 120_000).toISOString();
+  let raced = false;
+  store.beforeSet = ({ key }) => {
+    if (key === EXCHANGE_KEYS.breaker && !raced) {
+      raced = true;
+      store.seed(key, createBreaker(uuid(2), latestBlockedUntil));
+    }
+  };
+
+  await changeControl(store, {
+    enabled: false, nowMs: START + 1_000, randomUUIDImpl: () => uuid(2),
+  });
+
+  assert.equal(raced, true);
+  assert.deepEqual(store.entries.get(EXCHANGE_KEYS.breaker).data, createBreaker(uuid(2), latestBlockedUntil));
+  assert.equal(store.calls.filter(call => call.operation === 'set' && call.key === EXCHANGE_KEYS.breaker).length, 2);
+});
+
 test('manual control validates breaker state before changing the control', async () => {
   const store = new FakeBlobStore();
   store.seed(EXCHANGE_KEYS.control, enabledControl(uuid(1), START));

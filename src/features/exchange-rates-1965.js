@@ -266,6 +266,7 @@ export function applyExchangeRates1965Payload(payload, timing) {
       updateCheckPending: false, hasUsableSnapshot: false,
     };
     recordExchangeFailure1965(timing.responseReceivedAtMs);
+    if (DENOMS_1965.includes(/** @type {any} */ (state.exchangeSort))) state.exchangeSort = 'default';
     return;
   }
 
@@ -290,6 +291,11 @@ export function applyExchangeRates1965Payload(payload, timing) {
         ...state.exchange1965,
         ratesBySlug: {}, completedAt: null, expiresAtMs: null,
       };
+    }
+    if (DENOMS_1965.includes(/** @type {any} */ (state.exchangeSort)) &&
+        !Object.values(state.exchange1965.ratesBySlug).some(branch =>
+          Number.isSafeInteger(branch.rates?.[state.exchangeSort]?.rateScaledE6))) {
+      state.exchangeSort = 'default';
     }
     return;
   }

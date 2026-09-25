@@ -4,6 +4,7 @@ import {
   EXCHANGE_CATEGORY,
   getExchangeBrand,
   getExchangeRateCell,
+  isExchangeSortAvailable,
   isExchangeLocation,
 } from '../features/exchange-rates.js';
 import { getExchangeRateCell1965 } from '../features/exchange-rates-1965.js';
@@ -189,7 +190,7 @@ export function renderExchangeRates(row) {
     const value = valid
       ? (cell.rateScaledE6 / 1_000_000).toFixed(cell.displayDecimals)
       : t('fx_unavailable');
-    const currency = denom === 'TWD' ? 'TWD' : 'USD';
+    const currency = denom === 'TWD' || denom === 'TWD_1965' ? 'TWD' : 'USD';
     const isBest = activeSort === denom && valid && best !== null && cell.rateScaledE6 === best;
     return `<div class="fx-rate-row">
       <span class="fx-denom">${t(`fx_denom_${denom.toLowerCase()}`)}</span>
@@ -431,13 +432,7 @@ export function applyFilters() {
   state.data.forEach((row, i) => {
     if (matchesLocationFilters(row, query, category, type)) state.visIdx.push(i);
   });
-  const sortBrand = brandForSort(state.exchangeSort);
-  const sortUsable = sortBrand === 'green'
-    ? state.exchangeRatesEnabled === true && state.exchangeHasUsableSnapshot
-    : sortBrand === 'orange'
-      ? state.exchange1965.enabled === true && state.exchange1965.hasUsableSnapshot
-      : false;
-  if (sortUsable && state.exchangeSort !== 'default') {
+  if (isExchangeSortAvailable(state.exchangeSort)) {
     state.visIdx = sortVisibleIndexes(state.visIdx, state.exchangeSort);
   }
   renderList();

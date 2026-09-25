@@ -51,6 +51,15 @@ export async function resetBreakerForControl(store, controlVersion, previousBrea
   return { breaker, modified: result.modified, etag: result.etag };
 }
 
+/** Preserve the latest future cooldown across a conflicting breaker write.
+ * @param {any|null} entry @param {number} nowMs @param {string|null} [previous]
+ */
+function laterBlockedUntil(entry, nowMs, previous = null) {
+  const candidate = entry?.data?.blockedUntil;
+  return typeof candidate === 'string' && Date.parse(candidate) > nowMs &&
+    (!previous || Date.parse(candidate) > Date.parse(previous)) ? candidate : previous;
+}
+
 /**
  * @param {any} store
  * @param {{enabled:boolean, reason?:string, updatedBy?:'manual'|'breaker', nowMs?:number, randomUUIDImpl?:()=>string}} input
@@ -66,9 +75,7 @@ export async function changeControl(store, {
   const previous = current.control;
   const breakerEntry = await readEntry(store, EXCHANGE_KEYS.breaker);
   if (breakerEntry !== null && !isValidBreaker(breakerEntry.data)) throw new Error('invalid_breaker');
-  const blockedUntil = breakerEntry?.data?.blockedUntil && Date.parse(breakerEntry.data.blockedUntil) > nowMs
-    ? breakerEntry.data.blockedUntil
-    : null;
+  const blockedUntil = laterBlockedUntil(breakerEntry, nowMs);
   const control = createControl({
     enabled,
     nowMs,
@@ -86,7 +93,8 @@ export async function changeControl(store, {
     if (latest.control?.controlVersion !== control.controlVersion) throw new Error('breaker_write_conflict');
     const retryEntry = await readEntry(store, EXCHANGE_KEYS.breaker);
     if (retryEntry !== null && !isValidBreaker(retryEntry.data)) throw new Error('invalid_breaker');
-    const retry = await resetBreakerForControl(store, control.controlVersion, retryEntry, blockedUntil);
+    const retry = await resetBreakerForControl(store, control.controlVersion, retryEntry,
+      laterBlockedUntil(retryEntry, nowMs, blockedUntil));
     if (!retry.modified) throw new Error('breaker_write_conflict');
   }
   return control;

@@ -194,6 +194,19 @@ export function isExchangeSort(value) {
   return EXCHANGE_SORT_VALUES.includes(/** @type {ExchangeSort} */ (value));
 }
 
+/** @param {string} sort */
+export function isExchangeSortAvailable(sort) {
+  if (DENOMS.includes(/** @type {any} */ (sort))) {
+    return state.exchangeRatesEnabled === true && state.exchangeHasUsableSnapshot &&
+      Object.values(state.exchangeRatesBySlug).some(branch => Number.isSafeInteger(branch.rates?.[sort]?.rateScaledE6));
+  }
+  if (DENOMS_1965.includes(/** @type {any} */ (sort))) {
+    return state.exchange1965.enabled === true && state.exchange1965.hasUsableSnapshot &&
+      Object.values(state.exchange1965.ratesBySlug).some(branch => Number.isSafeInteger(branch.rates?.[sort]?.rateScaledE6));
+  }
+  return false;
+}
+
 /** @returns {ExchangeScheduleState} */
 function currentScheduleState() {
   return {
@@ -275,6 +288,7 @@ export function applyExchangeRatesPayload(payload, timing) {
     state.exchangeHasUsableSnapshot = false;
     state.exchangeUpdateCheckPending = false;
     recordExchangeFailure(timing.responseReceivedAtMs);
+    if (DENOMS.includes(/** @type {any} */ (state.exchangeSort))) state.exchangeSort = 'default';
     return;
   }
 
@@ -298,6 +312,9 @@ export function applyExchangeRatesPayload(payload, timing) {
       state.exchangeRatesBySlug = {};
       state.exchangeCompletedAt = null;
       state.exchangeExpiresAtMs = null;
+    }
+    if (state.exchangeSort !== 'default' && !isExchangeSortAvailable(state.exchangeSort)) {
+      state.exchangeSort = 'default';
     }
     return;
   }
@@ -384,26 +401,17 @@ export function scheduleExchangeAction() {
 }
 
 export function syncExchangeControls() {
-  const selectedBrand = DENOMS.includes(/** @type {any} */ (state.exchangeSort))
-    ? 'green'
-    : DENOMS_1965.includes(/** @type {any} */ (state.exchangeSort)) ? 'orange' : null;
-  if ((selectedBrand === 'green' && !state.exchangeHasUsableSnapshot) ||
-      (selectedBrand === 'orange' && !state.exchange1965.hasUsableSnapshot)) {
+  if (state.exchangeSort !== 'default' && !isExchangeSortAvailable(state.exchangeSort)) {
     state.exchangeSort = 'default';
   }
   const toggle = /** @type {HTMLInputElement|null} */ (document.getElementById('exchange-toggle'));
   const sort = /** @type {HTMLSelectElement|null} */ (document.getElementById('exchange-sort'));
   if (toggle) toggle.checked = state.exchangeLocationsOn;
   if (!sort) return;
-  const hasAnyUsableSnapshot = state.exchangeHasUsableSnapshot || state.exchange1965.hasUsableSnapshot;
-  sort.hidden = !state.exchangeLocationsOn || !hasAnyUsableSnapshot;
+  sort.hidden = !state.exchangeLocationsOn || !EXCHANGE_SORT_VALUES.some(isExchangeSortAvailable);
   sort.value = state.exchangeSort;
   for (const option of sort.options) {
-    if (DENOMS.includes(/** @type {any} */ (option.value))) {
-      option.disabled = state.exchangeRatesEnabled !== true || !state.exchangeHasUsableSnapshot;
-    } else if (DENOMS_1965.includes(/** @type {any} */ (option.value))) {
-      option.disabled = state.exchange1965.enabled !== true || !state.exchange1965.hasUsableSnapshot;
-    }
+    if (option.value !== 'default') option.disabled = !isExchangeSortAvailable(option.value);
   }
 }
 

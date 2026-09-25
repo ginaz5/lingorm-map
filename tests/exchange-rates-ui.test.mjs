@@ -10,6 +10,7 @@ import {
   parseExchangeRatesPayload,
   scheduleExchangeAction,
   setExchangeLocationsVisible,
+  syncExchangeControls,
 } from '../src/features/exchange-rates.js';
 import {
   matchesLocationFilters,
@@ -127,6 +128,66 @@ test('same run response never extends locally anchored deadlines', () => {
   });
   assert.equal(state.exchangeExpiresAtMs, expiry);
   assert.equal(state.exchangeNextUpdateAtMs, next);
+});
+
+test('a failed green snapshot clears only its selected best-rate sort', () => {
+  state.exchangeSort = 'TWD';
+  state.exchangeHasUsableSnapshot = true;
+  applyExchangeRatesPayload({ enabled: true, controlVersion: 'green-on', snapshot: null }, {
+    requestStartedAtMs: 1_000, responseReceivedAtMs: 1_100, waitingForNewRun: false,
+  });
+  assert.equal(state.exchangeSort, 'default');
+  assert.equal(state.exchangeHasUsableSnapshot, false);
+
+  state.exchangeSort = 'USD_1965';
+  applyExchangeRatesPayload({ enabled: true, controlVersion: 'green-on', snapshot: null }, {
+    requestStartedAtMs: 2_000, responseReceivedAtMs: 2_100, waitingForNewRun: false,
+  });
+  assert.equal(state.exchangeSort, 'USD_1965');
+});
+
+test('fresh snapshots without quotes disable best-rate sorting by denomination', () => {
+  const payload = apiPayload({ runId: 'all-failed' });
+  for (const branch of payload.snapshot.branches) {
+    branch.status = 'failed';
+    for (const cell of Object.values(branch.rates)) {
+      cell.rateScaledE6 = null;
+      cell.displayDecimals = null;
+      cell.unavailableReason = 'missing';
+    }
+  }
+  state.exchangeLocationsOn = true;
+  state.exchangeSort = 'USD_100';
+  applyExchangeRatesPayload(parseExchangeRatesPayload(payload), {
+    requestStartedAtMs: 1_000, responseReceivedAtMs: 1_100, waitingForNewRun: false,
+  });
+  assert.equal(state.exchangeHasUsableSnapshot, true);
+  assert.equal(state.exchangeSort, 'default');
+
+  const options = ['default', 'USD_100', 'USD_50', 'TWD'].map(value => ({ value, disabled: false }));
+  const sort = { hidden: false, value: '', options };
+  const previousDocument = globalThis.document;
+  globalThis.document = { getElementById: id => id === 'exchange-sort' ? sort : null };
+  try {
+    syncExchangeControls();
+    assert.equal(sort.hidden, true);
+    assert.ok(options.slice(1).every(option => option.disabled));
+
+    payload.snapshot.runId = 'one-quote';
+    payload.snapshot.branches[0].status = 'partial';
+    payload.snapshot.branches[0].rates.TWD = {
+      denom: 'TWD', rateScaledE6: 995_000, displayDecimals: 5, unavailableReason: null,
+    };
+    applyExchangeRatesPayload(parseExchangeRatesPayload(payload), {
+      requestStartedAtMs: 2_000, responseReceivedAtMs: 2_100, waitingForNewRun: false,
+    });
+    syncExchangeControls();
+    assert.equal(sort.hidden, false);
+    assert.equal(options.find(option => option.value === 'TWD').disabled, false);
+    assert.equal(options.find(option => option.value === 'USD_100').disabled, true);
+  } finally {
+    globalThis.document = previousDocument;
+  }
 });
 
 test('exchange rows ignore category and collection filters but keep shared filters', () => {

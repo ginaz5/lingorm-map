@@ -112,6 +112,8 @@ test('orange panel uses two orange buckets, company name, and orange official UR
   assert.match(html, /SuperRich Currency Exchange \(1965\) Company Limited\./);
   assert.match(html, /SuperRich 1965：USD 100＋50/);
   assert.match(html, /SuperRich 1965：TWD 1,000–100/);
+  assert.match(html, /1 TWD = 1\.02 THB/);
+  assert.doesNotMatch(html, /1 USD = 1\.02 THB/);
   assert.equal((html.match(/fx-rate-row/g) || []).length, 2);
   assert.match(html, /superrich1965\.com\/en\/exchange-rate/);
   assert.doesNotMatch(html, /superrichthailand\.com/);
@@ -153,6 +155,9 @@ test('shared controls keep one brand usable when the other is unavailable', () =
     state.exchangeHasUsableSnapshot = false;
     state.exchange1965.enabled = true;
     state.exchange1965.hasUsableSnapshot = true;
+    state.exchange1965.ratesBySlug = {
+      [orangeSlugs[0]]: { rates: { USD_1965: { rateScaledE6: 33_040_000 } } },
+    };
     syncExchangeControls();
 
     assert.equal(sort.hidden, false);
@@ -188,4 +193,38 @@ test('disabling or expiring one brand does not clear the other brand', () => {
   });
   assert.equal(state.exchangeSort, 'default');
   assert.equal(state.exchangeHasUsableSnapshot, true);
+});
+
+test('a failed orange snapshot clears only its selected best-rate sort', () => {
+  state.exchangeSort = 'TWD_1965';
+  state.exchange1965.hasUsableSnapshot = true;
+  applyExchangeRates1965Payload({ enabled: true, controlVersion: 'orange-on', snapshot: null }, {
+    requestStartedAtMs: 1_000, responseReceivedAtMs: 1_100, waitingForNewRun: false,
+  });
+  assert.equal(state.exchangeSort, 'default');
+  assert.equal(state.exchange1965.hasUsableSnapshot, false);
+
+  state.exchangeSort = 'USD_100';
+  applyExchangeRates1965Payload({ enabled: true, controlVersion: 'orange-on', snapshot: null }, {
+    requestStartedAtMs: 2_000, responseReceivedAtMs: 2_100, waitingForNewRun: false,
+  });
+  assert.equal(state.exchangeSort, 'USD_100');
+});
+
+test('fresh orange snapshot with all quotes unavailable resets its best-rate sort', () => {
+  const payload = orangePayload();
+  for (const branch of payload.snapshot.branches) {
+    branch.status = 'failed';
+    for (const cell of Object.values(branch.rates)) {
+      cell.rateScaledE6 = null;
+      cell.displayDecimals = null;
+      cell.unavailableReason = 'missing';
+    }
+  }
+  state.exchangeSort = 'TWD_1965';
+  applyExchangeRates1965Payload(parseExchangeRates1965Payload(payload), {
+    requestStartedAtMs: 1_000, responseReceivedAtMs: 1_100, waitingForNewRun: false,
+  });
+  assert.equal(state.exchange1965.hasUsableSnapshot, true);
+  assert.equal(state.exchangeSort, 'default');
 });
