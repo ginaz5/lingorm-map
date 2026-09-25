@@ -79,7 +79,7 @@ test('checkWhatsNew records a first visit without opening the modal', () => {
   }
 });
 
-test('checkWhatsNew reports all new releases but previews only the latest three', () => {
+test('checkWhatsNew previews the current release with general update copy', () => {
   const env = installEnvironment({
     lastVisit: String(Date.parse('2026-07-30T12:00:00+08:00')),
   });
@@ -91,15 +91,17 @@ test('checkWhatsNew reports all new releases but previews only the latest three'
     );
     assert.equal(env.dom.modalClasses.has('open'), true);
     assert.equal(WHATS_NEW_PREVIEW_LIMIT, 3);
-    assert.match(
-      env.dom.elements['wn-desc'].textContent,
-      new RegExp(String(currentReleaseItems.length)),
-    );
+    assert.equal(currentReleaseItems.length, 3);
+    assert.equal(env.dom.elements['wn-title'].textContent, '✨ 最近更新');
+    assert.equal(env.dom.elements['wn-desc'].textContent, '來看看上次造訪後的更新。');
     assert.equal(
       env.dom.elements['wn-list'].innerHTML.match(/class="wn-feat"/g)?.length,
-      1,
+      3,
     );
-    assert.match(env.dom.elements['wn-list'].innerHTML, /新增 SuperRich 換匯地圖/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /新增 SuperRich Thailand 換匯地圖/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /新增粉絲資源入口/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /標籤名稱與手機選單更好用/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /換匯報價與排序更清楚/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /手機版篩選與卡片定位更順手/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /更注重隱私的互動分析/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /篩選新增「標籤」與「目的地」/);

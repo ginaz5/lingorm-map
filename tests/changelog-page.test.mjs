@@ -19,14 +19,16 @@ test('changelog data is newest-first and has bilingual copy', () => {
 
   const latest = CHANGELOG[0];
   assert.equal(new Date(latest.publishTime).getUTCFullYear(), 2026);
-  assert.equal(localizeChangelogItem(latest, 'zh').title, '新增 SuperRich 換匯地圖');
-  assert.equal(localizeChangelogItem(latest, 'en').title, 'SuperRich exchange locations are now on the map');
+  assert.equal(localizeChangelogItem(latest, 'zh').title, '新增 SuperRich Thailand 換匯地圖');
+  assert.equal(localizeChangelogItem(latest, 'en').title, 'SuperRich Thailand exchange locations are now on the map');
 
   const currentReleaseItems = CHANGELOG.filter(
     item => item.releaseId === CURRENT_CHANGELOG_RELEASE_ID,
   );
-  assert.equal(currentReleaseItems.length, 1);
+  assert.deepEqual(currentReleaseItems.map(item => item.id), ['feat-014', 'feat-015', 'fix-005']);
   assert.ok(currentReleaseItems.every(item => item.publishTime === latest.publishTime));
+  assert.ok(currentReleaseItems.every(item =>
+    item.title.zh && item.title.en && item.description.zh && item.description.en));
   assert.equal(
     CHANGELOG.filter(item => item.releaseId === '2026-07-30-pr-2').length,
     7,
@@ -36,8 +38,8 @@ test('changelog data is newest-first and has bilingual copy', () => {
 test('changelog entries with the same UTC date share one group', () => {
   const groups = groupChangelogByDate(CHANGELOG);
 
-  assert.equal(groups[0].dateKey, '2026-09-09');
-  assert.equal(groups[0].items.length, 1);
+  assert.equal(groups[0].dateKey, '2026-09-25');
+  assert.equal(groups[0].items.length, 3);
   assert.equal(groups[1].dateKey, '2026-08-09');
   assert.equal(groups[1].items.length, 3);
   assert.equal(groups[2].dateKey, '2026-07-30');

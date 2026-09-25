@@ -12,7 +12,7 @@
  */
 /** @typedef {{ dateKey: string, publishTime: number, items: ChangelogItem[] }} ChangelogDateGroup */
 
-export const CURRENT_CHANGELOG_RELEASE_ID = '2026-09-09-superrich-exchange';
+export const CURRENT_CHANGELOG_RELEASE_ID = '2026-09-25-exchange-and-resources';
 
 /**
  * Shared release history for the What's New preview and the full changelog.
@@ -24,15 +24,43 @@ export const CHANGELOG = [
   {
     id: 'feat-014',
     title: {
-      zh: '新增 SuperRich 換匯地圖',
-      en: 'SuperRich exchange locations are now on the map',
+      zh: '新增 SuperRich Thailand 換匯地圖',
+      en: 'SuperRich Thailand exchange locations are now on the map',
     },
     description: {
-      zh: '開啟「顯示換匯點」即可查看 26 間 SuperRich Thailand 分店、USD 100／USD 50／TWD 買入匯率，以及各幣別的最佳匯率排序。',
-      en: 'Turn on Show currency exchange to browse 26 SuperRich Thailand branches, compare USD 100, USD 50, and TWD buying rates, and sort by the best available rate.',
+      zh: '開啟「顯示換匯點」可查看 26 間 SuperRich Thailand 分店；有報價時，還能比較 USD 100／USD 50／TWD 買入匯率並依最佳匯率排序。',
+      en: 'Turn on Show currency exchange to browse 26 SuperRich Thailand branches. When quotes are available, compare USD 100, USD 50, and TWD buying rates and sort by the best rate.',
     },
     badge: { zh: '功能', en: 'Feature' },
-    publishTime: Date.parse('2026-09-09T00:00:00Z'),
+    publishTime: Date.parse('2026-09-25T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-015',
+    title: {
+      zh: '新增粉絲資源入口',
+      en: 'Explore LingOrm fan resources',
+    },
+    description: {
+      zh: '從頁首或手機版「更多」開啟粉絲資源，查看 LingOrm Fanpage、行程捷徑、LOism、LingOrmNews 與 LingOrm Pics。',
+      en: 'Open Fan Resources from the header or mobile More menu to visit LingOrm Fanpage, its schedule, LOism, LingOrmNews, and LingOrm Pics.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-09-25T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'fix-005',
+    title: {
+      zh: '標籤名稱與手機選單更好用',
+      en: 'Clearer labels and mobile actions',
+    },
+    description: {
+      zh: '篩選與說明統一使用「標籤」名稱，手機版「更多」選單也調整寬度，避免選項被截斷。',
+      en: 'Filters and their guide now use “label” consistently. The mobile More menu also fits its actions without clipping.',
+    },
+    badge: { zh: '修復', en: 'Fix' },
+    publishTime: Date.parse('2026-09-25T00:00:00Z'),
     releaseId: CURRENT_CHANGELOG_RELEASE_ID,
   },
   {

@@ -2,8 +2,8 @@
 
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-09-09
-> - 最後更新：2026-09-11
-> - 目前里程碑：**M1、M2、M4 資料發布與 M3～M5 本機實作已完成**。38 筆 Place ID 與座標均完成審核；HERE 本機驗收通過，M3 部署首輪及 Google Maps 驗收待辦
+> - 最後更新：2026-09-25
+> - 目前里程碑：**M1、M2 與 M3～M5 本機實作已完成；M4 曾於 9 月 11 日完成發布測試**。目前提交的 CSV 快照已將 38 筆橘標分店改回 `Paused`；M3 部署首輪、重新發布及 Google Maps 驗收待辦
 > - 規格依據：[SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫](superrich1965-exchange-map-plan.zh-TW.md)
 > - 審閱歷程：[審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)
 
@@ -24,10 +24,10 @@
 | M1 | Phase A0（POST 可行性）+ Phase A1（來源契約與純解析） | 無 | **完成**：38 筆 Our Branch 收錄，E52-01 排除 |
 | M2 | Phase B（Our Branch 建檔）+ 橘標對照 validator | 無 | **完成**：38 筆身份、文字與座標審核通過 |
 | M3 | Phase C（排程、Blobs、breaker、控制旗標；預設停用） | 無 | **本機實作完成**；Deploy Preview 人工首輪待驗收 |
-| M4 | Phase D1（前端品牌分派、三色 marker／cluster）+ 分店轉 `Published` | **本機可見** | **資料發布完成**；瀏覽器驗收待辦 |
+| M4 | Phase D1（前端品牌分派、三色 marker／cluster）+ 分店轉 `Published` | **目前快照不可見** | **9 月 11 日本機發布測試完成**；現行快照為 `Paused`，重新發布與瀏覽器驗收待辦 |
 | M5 | Phase E（測試補齊、README、ADR） | 無 | **本機完成** |
 
-38 筆橘標分店已全部轉為 `Published`。本機開啟「顯示換匯點」後會顯示橘色 marker 與卡片；匯率列在橘標 API 尚未啟用或沒有可用快照時顯示暫無資料。
+9 月 11 日的本機驗收曾以 38 筆 `Published` 分店確認橘色 marker 與卡片。9 月 20 日提交的 `data/locations.csv` 將這 38 筆改為 `Paused`，因此目前版本開啟「顯示換匯點」也不會顯示橘標分店。此處只核對已提交快照，未重新查詢 Notion 的現行狀態。
 
 ---
 

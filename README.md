@@ -19,7 +19,7 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 - Mobile-responsive with map / list tab switching and scroll
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
-- Optional currency-exchange overlay with brand-isolated SuperRich Thailand and SuperRich 1965 rate services, brand-scoped best-rate sorting, and a persisted toggle (off by default; SuperRich 1965 records remain unpublished until their review gate passes — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
+- Optional currency-exchange overlay with brand-isolated SuperRich Thailand and SuperRich 1965 rate services, best-rate sorting for published SuperRich Thailand branches, and a persisted toggle (off by default; SuperRich 1965 records remain unpublished until their review gate passes — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
 
 ---
 

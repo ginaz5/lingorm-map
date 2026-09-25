@@ -105,8 +105,8 @@ export const T = {
     // Common
     opt: '（選填）', cancel: '取消',
     // What's New modal
-    whats_new_title: '✨ 新功能更新',
-    whats_new_desc: (/** @type {number} */ n) => `自上次造訪後，我們新增了 ${n} 項功能`,
+    whats_new_title: '✨ 最近更新',
+    whats_new_desc: '來看看上次造訪後的更新。',
     whats_new_got_it: '我知道了',
     whats_new_view_all: '查看完整更新紀錄',
     changelog_title: '更新紀錄',
@@ -217,8 +217,8 @@ export const T = {
     // Common
     opt: '(optional)', cancel: 'Cancel',
     // What's New modal
-    whats_new_title: "✨ What's new",
-    whats_new_desc: (/** @type {number} */ n) => `${n} new feature${n === 1 ? '' : 's'} since your last visit`,
+    whats_new_title: '✨ Latest updates',
+    whats_new_desc: "See what's changed since your last visit.",
     whats_new_got_it: 'Got it',
     whats_new_view_all: 'View full changelog',
     changelog_title: 'Changelog',

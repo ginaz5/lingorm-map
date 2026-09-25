@@ -1,6 +1,6 @@
 # SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫
 
-建立日期：2026-09-09；更新日期：2026-09-11。狀態：**M1～M5 本機實作、38 筆正式建檔與資料發布已完成**。Phase C 尚待 Deploy Preview 人工觸發首輪匯率快照，Phase D1 的 HERE fallback 本機驗收已通過，Google Maps 驗收待辦。進度與驗證見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)。
+建立日期：2026-09-09；更新日期：2026-09-25。狀態：**M1～M5 本機實作與 38 筆正式建檔已完成；9 月 11 日的資料發布測試為歷史紀錄**。目前提交的 CSV 快照中，38 筆橘標分店均為 `Paused`。Phase C 尚待 Deploy Preview 人工觸發首輪匯率快照，Google Maps 驗收待辦。進度與驗證見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)。
 
 已完成四輪審閱（共 19 點，全部採納）。本文只保留現行決定，完整審閱歷程見 [審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)——本文出現的「審閱意見 N」「意見 N」都是指該檔的編號。
 
@@ -230,7 +230,7 @@ A0 收尾時移除 `scripts/superrich1965-a0-probe.mjs` 與 `netlify/functions/s
 - Our Branch 中的 Vibhavadi 22（id 87）、Airport Rail Link Suvarnabhumi（94）、Airport Rail Link Phaya Thai（95）沒有出現在當前報價清單，列待補清單；不猜測 `branchNo`。
 - 沿用綠標 §4.2／§9.2 的正式欄位範本：`Category=Currency Exchange`、`Type` 空白、`Icon=💱`、`Source Tags` 空白；初始 `Status=Paused`、`Review Needed=true`、`Last Verified` 空白。Google Maps 使用官方 iframe 的分店 CID 連結，Google Place ID 尚未獨立取得則留空，兩種識別碼不可混用。
 - Lat／Lng 初建時保存官方分店 API 同一筆的成對原值並記來源；**Phase B 機器驗證只證明數值格式與欄位一致，不等於櫃位位置已核實**。2026-09-11 依使用者審核決議，13 筆疑點座標採用已由官方 iframe CID 核對身份的 Google Place ID 所回傳 Places Details 座標；其餘保留既有座標。
-- 對照與已匯出 CSV 的雙向名單驗證納入 `npm test`（pre-push／CI gate）與 `build.sh`。38 筆初始皆不公開；2026-09-11 完成審核後全部轉為 Published。
+- 對照與已匯出 CSV 的雙向名單驗證納入 `npm test`（pre-push／CI gate）與 `build.sh`。38 筆初始皆不公開；2026-09-11 完成審核後曾全部轉為 Published，現行快照已改回 `Paused`。
 
 ### 4.4 前端狀態隔離與共用資源的責任歸屬（新增，審閱意見 2）
 
@@ -303,7 +303,7 @@ A0 留下的限制與 Phase C 處理結果：
 9. **已解決（2026-09-10）**：Terminal 21 Pattaya 的 `groups[]` 為 `partner`（id 106），依第一版規則排除 `E52-01`。
 10.（次要，可以晚點）`data.update_time` 的語意還沒驗證，且原先「打兩次比較」的方法本身不成立（見 §2 修正說明）——優先度低，即使一直沒驗證，卡片預設行為（只顯示「本次查詢時間」）也不受影響，不會卡到任何 Phase。解析層已經把這個值解出來放在 `sourceUpdatedAtMs`，但明確標註語意未驗證、UI 不得當作「官網報價時間」顯示。
 
-A0／A1 已完成，38 筆正式資料已建檔、完成位置審核並發布。Phase C 的抓取預算及失敗處理依 §5 定案。
+A0／A1 已完成，38 筆正式資料已建檔、完成位置審核，並曾於 2026-09-11 發布測試。現行快照為 `Paused`。Phase C 的抓取預算及失敗處理依 §5 定案。
 
 ## 8. 本次交付界線
 
@@ -311,6 +311,6 @@ A0／A1 已完成，38 筆正式資料已建檔、完成位置審核並發布。
 
 本文件是規格，不記進度。已完成的工作、驗證結果、每個階段的未解問題，一律見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)；歷次審閱提出什麼、怎麼改的，見 [審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)。
 
-**目前的交付界線**：A0／A1、正式建檔、Phase C 後端、Phase D1 前端與 Phase E 測試手冊的本機工作均已完成。38 筆 Place ID 已用官方 Maps CID 逐店交叉核對；13 筆疑點座標依使用者決議採用 Place ID 座標，全部分店已為 Published。Phase C 尚未部署、啟用或產生正式匯率快照，HERE fallback 實際瀏覽器驗收已通過，Google Maps 驗收待完成。
+**目前的交付界線**：A0／A1、正式建檔、Phase C 後端、Phase D1 前端與 Phase E 測試手冊的本機工作均已完成。38 筆 Place ID 已用官方 Maps CID 逐店交叉核對；13 筆疑點座標依使用者決議採用 Place ID 座標。9 月 11 日曾以 `Published` 資料通過 HERE fallback 本機驗收，但 9 月 20 日提交的快照已將全部橘標分店改回 `Paused`。Phase C 尚未部署、啟用或產生正式匯率快照，Google Maps 驗收待完成。
 
-**下一步**：完成 Published 橘標的 Google Maps marker、卡片與排序驗收。Deploy Preview 保持 `EXCHANGE_RATES_1965_ENABLED` 未設定／false，先驗證停用回應，再由管理 CLI 人工啟用及觸發第一輪，核對 38 店快照後決定是否維持啟用。
+**下一步**：待重新發布橘標資料後，完成 Google Maps marker 與卡片驗收。Deploy Preview 保持 `EXCHANGE_RATES_1965_ENABLED` 未設定／false，先驗證停用回應，再由管理 CLI 人工啟用及觸發第一輪，核對 38 店快照後決定是否維持啟用。公開排序選單目前只有綠標面額選項。

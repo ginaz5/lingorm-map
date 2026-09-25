@@ -194,6 +194,10 @@ test('favorite storage notice is available in both supported languages', () => {
 });
 
 test('changelog navigation and page copy are available in both supported languages', () => {
+  assert.equal(T.zh.whats_new_title, '✨ 最近更新');
+  assert.equal(T.en.whats_new_title, '✨ Latest updates');
+  assert.equal(T.zh.whats_new_desc, '來看看上次造訪後的更新。');
+  assert.equal(T.en.whats_new_desc, "See what's changed since your last visit.");
   assert.equal(T.zh.whats_new_view_all, '查看完整更新紀錄');
   assert.equal(T.en.whats_new_view_all, 'View full changelog');
   assert.equal(T.zh.changelog_back, '返回地圖');
