@@ -114,7 +114,7 @@ test('buildTypeFilter localizes labels, preserves values, and hides unavailable 
 
     buildTypeFilter();
     assert.equal(typeFilter.value, 'JKR Picks');
-    assert.match(typeFilter.innerHTML, /<option value="">所有主題<\/option>/);
+    assert.match(typeFilter.innerHTML, /<option value="">所有標籤<\/option>/);
     assert.match(typeFilter.innerHTML, /<option value="LingOrm">LingOrm（2）<\/option>/);
     assert.match(typeFilter.innerHTML, /<option value="JKR Picks">JKR 推薦（1）<\/option>/);
     assert.match(typeFilter.innerHTML, /<option value="Admin Picks">留友看（1）<\/option>/);
@@ -123,7 +123,7 @@ test('buildTypeFilter localizes labels, preserves values, and hides unavailable 
     setLang('en');
     buildTypeFilter();
     assert.equal(typeFilter.value, 'JKR Picks');
-    assert.match(typeFilter.innerHTML, /<option value="">All collections<\/option>/);
+    assert.match(typeFilter.innerHTML, /<option value="">All label<\/option>/);
     assert.match(typeFilter.innerHTML, /<option value="JKR Picks">JKR Picks \(1\)<\/option>/);
     assert.match(typeFilter.innerHTML, /<option value="Admin Picks">Admin Picks \(1\)<\/option>/);
   } finally {
@@ -249,7 +249,7 @@ test('location list reuses popup actions without triggering its parent card', ()
   }
 });
 
-test('public filter controls are ordered category, theme, then destination', async () => {
+test('public filter controls are ordered category, label, then destination', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const categoryIndex = html.indexOf('id="cat-filter"');
   const themeIndex = html.indexOf('id="type-filter"');
@@ -307,7 +307,7 @@ test('all three public filters use the same dropdown arrow geometry', async () =
   assert.match(css, /\.dest-filter-btn svg\{width:16px;height:16px;fill:var\(--muted\);/);
 });
 
-test('narrow mobile filters can give category and Collection their own rows', async () => {
+test('narrow mobile filters can give category and label their own rows', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(

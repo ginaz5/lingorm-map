@@ -88,9 +88,9 @@ test('search placeholders explain that names and notes are searchable', () => {
   assert.equal(T.en.search_ph, 'Search names or notes…');
 });
 
-test('collection filter label is available in both supported languages', () => {
-  assert.equal(T.zh.theme_filter, '主題');
-  assert.equal(T.en.theme_filter, 'Collection');
+test('type filter label is available in both supported languages', () => {
+  assert.equal(T.zh.theme_filter, '標籤');
+  assert.equal(T.en.theme_filter, 'label');
 });
 
 test('currency exchange category has bilingual labels', () => {
@@ -99,6 +99,8 @@ test('currency exchange category has bilingual labels', () => {
 });
 
 test('currency exchange controls and required notices are bilingual', () => {
+  assert.equal(T.zh.fx_filter_note, '換匯點不受類別與標籤篩選影響。');
+  assert.equal(T.en.fx_filter_note, 'Exchange locations are not filtered by category or label.');
   const keys = [
     'fx_toggle', 'fx_filter_note', 'fx_loading', 'fx_unavailable',
     'fx_sort_default', 'fx_sort_usd_100', 'fx_sort_usd_50', 'fx_sort_twd',
@@ -150,21 +152,25 @@ test('exchange-rate sort menu exposes only green-brand choices', async () => {
   assert.doesNotMatch(select, /1965|fx_sort_usd_1965|fx_sort_twd_1965/);
 });
 
-test('unrestricted category and collection filters describe that all options are shown', () => {
+test('unrestricted filters show their category and label prompts', () => {
   assert.equal(T.zh.all_cat, '所有類別');
   assert.equal(T.en.all_cat, 'All categories');
-  assert.equal(T.zh.all_themes, '所有主題');
-  assert.equal(T.en.all_themes, 'All collections');
+  assert.equal(T.zh.all_themes, '所有標籤');
+  assert.equal(T.en.all_themes, 'All label');
 });
 
-test('collection guide explains every collection in both supported languages', () => {
-  assert.equal(T.zh.collection_info_title, '主題怎麼分類？');
+test('label guide explains every label in both supported languages', () => {
+  assert.equal(T.zh.collection_info_btn, '了解標籤分類');
+  assert.equal(T.zh.collection_info_close, '關閉標籤說明');
+  assert.equal(T.zh.collection_info_title, '標籤怎麼分類？');
   assert.match(T.zh.collection_info_lingorm, /劇集、綜藝節目取景地/);
   assert.equal(T.zh.collection_info_jkr_picks, '同擔分享的地點，必須得存個！');
   assert.match(T.zh.collection_info_jkr_projects, /曾經或正在進行應援活動/);
   assert.match(T.zh.collection_info_admin, /特別留給她看的哈哈/);
 
-  assert.equal(T.en.collection_info_title, 'What are collections?');
+  assert.equal(T.en.collection_info_btn, 'About labels');
+  assert.equal(T.en.collection_info_close, 'Close label guide');
+  assert.equal(T.en.collection_info_title, 'What are labels?');
   assert.match(T.en.collection_info_lingorm, /filming locations/);
   assert.match(T.en.collection_info_jkr_picks, /fellow fans/);
   assert.match(T.en.collection_info_jkr_projects, /fan support projects/);
@@ -200,6 +206,10 @@ test('every resources label and accessible link name is translated by updateLang
   const keys = bindings.map(match => match[2]);
   assert.ok(keys.includes('fan_resources_fanpage_desc'));
   assert.ok(keys.includes('fan_resources_schedule_aria'));
+  assert.ok(keys.includes('fan_resources_news_desc'));
+  assert.ok(keys.includes('fan_resources_news_aria'));
+  assert.ok(keys.includes('fan_resources_pics_desc'));
+  assert.ok(keys.includes('fan_resources_pics_aria'));
   for (const language of ['zh', 'en']) {
     const elements = bindings.map(([, aria, key]) => ({
       dataset: aria ? { i18nAria: key } : { i18n: key },
@@ -220,6 +230,15 @@ test('every resources label and accessible link name is translated by updateLang
       assert.notEqual(value, key);
     }
   }
+});
+
+test('Chinese fan resources intro displays the requested line break', async () => {
+  assert.equal(
+    T.zh.fan_resources_intro,
+    '剛認識 LingOrm，或想重溫喜歡的片段？\n這裡有粉絲用心整理的網站，陪你慢慢看、慢慢認識她們。',
+  );
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+  assert.match(css, /\.fan-resources-intro\{[^}]*white-space:pre-line/);
 });
 
 test('buildCatFilter preserves the selected category while rebuilding options', async () => {

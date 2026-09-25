@@ -151,9 +151,9 @@ http://localhost:8888
 - 沒有空白卡片
 - marker popup 不再顯示「在 Google Maps 開啟 / Open in Google Maps」
 - 語言切換正常
-- 篩選順序為「類別／主題／目的地」；英文篩選標籤為 Collection，中文主題顯示 LingOrm、JKR 推薦、JKR 應援、留友看，英文維持正式 Type 值
-- 主題旁的資訊按鈕可透過桌機 hover／focus 或點擊開啟分類說明，並能以點擊外部、再次點擊或 Escape 關閉；手機點擊可正常操作
-- 主題可與搜尋、類別、目的地及收藏條件正確交集篩選
+- 篩選順序為「類別／標籤／目的地」；預設選項為「所有標籤／All label」，中文標籤顯示 LingOrm、JKR 推薦、JKR 應援、留友看，英文維持正式 Type 值
+- 標籤旁的資訊按鈕可透過桌機 hover／focus 或點擊開啟分類說明，並能以點擊外部、再次點擊或 Escape 關閉；手機點擊可正常操作
+- 標籤可與搜尋、類別、目的地及收藏條件正確交集篩選
 - Google Maps 與 HERE Maps popup 都同時顯示類別與 Type badge
 - 手機版以 `Bar / Rooftop Club`、`JKR Fan Projects`、`酒吧/天台俱樂部` 等最長篩選文字檢查，320px 與一般手機寬度都不裁切或水平溢出
 - 手機版定位按鈕固定顯示於 header，且不再出現在「更多操作」選單
@@ -444,7 +444,7 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
 - 三列報價：顯示「暫無報價」（`fx_unavailable`），不是 0、空白或
   crash。
 - 免責文字、官網連結、Google Maps 營業時間連結：正常顯示，不受影響。
-- 篩選（換匯點略過類別／主題）、搜尋、目的地、收藏：正常運作。
+- 篩選（換匯點略過類別／標籤）、搜尋、目的地、收藏：正常運作。
 - 最佳匯率排序：三個排序選項變成 disabled，並自動退回一般排序（不是
   停在故障前選的排序基準上）。
 - 訪客端每 60 秒仍會照常向 `/api/exchange-rates` 確認一次；沒有因為故

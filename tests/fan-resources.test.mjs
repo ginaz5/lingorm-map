@@ -97,11 +97,13 @@ test('resource links distinguish the Fanpage homepage from its schedule shortcut
   const dialog = html.match(/<dialog\b[\s\S]*?<\/dialog>/)?.[0];
   assert.ok(dialog);
   const links = [...dialog.matchAll(/<a\b[^>]*>/g)].map(match => match[0]);
-  assert.equal(links.length, 3);
+  assert.equal(links.length, 5);
   for (const [url, className] of [
     ['https://www.lingorm.site/', 'fan-resource-visit'],
     ['https://www.lingorm.site/upcoming-schedule', 'fan-resource-shortcut'],
     ['https://loism1127.com/', 'fan-resource-visit'],
+    ['https://lingormnews.wordpress.com/', 'fan-resource-visit'],
+    ['https://lingorm.pics/', 'fan-resource-visit'],
   ]) {
     const link = links.find(markup => markup.includes(`href="${url}"`));
     assert.ok(link, url);

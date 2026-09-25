@@ -52,12 +52,12 @@ export const CHANGELOG = [
   {
     id: 'feat-013',
     title: {
-      zh: '主題分類更清楚',
-      en: 'Collections are easier to understand',
+      zh: '標籤分類更清楚',
+      en: 'Labels are easier to understand',
     },
     description: {
-      zh: '類別與主題選項現在會顯示地點數量，搜尋與篩選也有一致的 hover 回饋。主題分類說明在桌機移開游標後會自動收合，手機版則會保持開啟，直到使用者自行關閉。',
-      en: 'Category and collection options now show location counts with consistent hover feedback across search and filters. The collection guide closes when the pointer leaves on desktop, while staying open on touch devices until you dismiss it.',
+      zh: '類別與標籤選項現在會顯示地點數量，搜尋與篩選也有一致的 hover 回饋。標籤分類說明在桌機移開游標後會自動收合，手機版則會保持開啟，直到使用者自行關閉。',
+      en: 'Category and label options now show location counts with consistent hover feedback across search and filters. The label guide closes when the pointer leaves on desktop, while staying open on touch devices until you dismiss it.',
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-08-09T00:00:00Z'),
@@ -71,7 +71,7 @@ export const CHANGELOG = [
     },
     description: {
       zh: '新增一批 LingOrm 相關地點與粉絲分享的收藏，並補充既有地點的資訊、座標與分類。',
-      en: 'A new batch of LingOrm locations and fan-shared picks has arrived, along with refreshed details, coordinates, and collections.',
+      en: 'A new batch of LingOrm locations and fan-shared picks has arrived, along with refreshed details, coordinates, and labels.',
     },
     badge: { zh: '內容', en: 'Content' },
     publishTime: Date.parse('2026-08-09T00:00:00Z'),
@@ -80,12 +80,12 @@ export const CHANGELOG = [
   {
     id: 'feat-010',
     title: {
-      zh: '篩選新增「主題」與「目的地」',
-      en: 'Filter by theme and destination',
+      zh: '篩選新增「標籤」與「目的地」',
+      en: 'Filter by label and destination',
     },
     description: {
-      zh: '除了類別，現在也能依主題或目的地縮小範圍。地圖標記與清單會一起更新，選過的目的地也會保留。',
-      en: 'Narrow the map by category, theme, or destination. Markers and the location list stay in sync, and destination choices are remembered.',
+      zh: '除了類別，現在也能依標籤或目的地縮小範圍。地圖標記與清單會一起更新，選過的目的地也會保留。',
+      en: 'Narrow the map by category, label, or destination. Markers and the location list stay in sync, and destination choices are remembered.',
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-07-30T00:00:00Z'),
