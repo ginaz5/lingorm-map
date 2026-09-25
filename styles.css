@@ -175,7 +175,7 @@ header {
   background: var(--surface);
   color: var(--primary);
 }
-.mobile-actions-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:168px;
+.mobile-actions-menu{position:absolute;right:0;top:calc(100% + 8px);width:max-content;
   background:var(--canvas);border:1px solid var(--hairline);border-radius:12px;
   box-shadow:var(--shadow-md);padding:6px;z-index:700}
 .mobile-actions-menu[hidden]{display:none}
