@@ -13,6 +13,16 @@ export const PUBLIC_SCHEMA_VERSION = 1;
 export const HALF_HOUR_MS = 30 * 60 * 1000;
 export const SNAPSHOT_GRACE_MS = 90 * 1000;
 
+/**
+ * Asia/Bangkok uses UTC+7 year-round. Source fetching is allowed from
+ * 08:00 inclusive to 23:00 exclusive, independent of the server timezone.
+ * @param {number} nowMs
+ */
+export function isExchangeFetchTime(nowMs) {
+  const hour = new Date(nowMs + 7 * 60 * 60 * 1000).getUTCHours();
+  return hour >= 8 && hour < 23;
+}
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REASON_PATTERN = /^[a-z0-9_]{1,64}$/;
 const STATUS_VALUES = new Set(['ok', 'partial', 'failed']);

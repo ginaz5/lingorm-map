@@ -9,6 +9,7 @@ import { uuid } from './helpers/exchange-rates-store.mjs';
 
 for (const context of ['production', 'deploy-preview', 'branch-deploy', 'dev', undefined]) {
   test(`both function handlers use runtime deployment context: ${context ?? 'missing'}`, async t => {
+    t.mock.method(Date, 'now', () => Date.parse('2026-09-27T01:00:00Z'));
     const previousContext = process.env.CONTEXT;
     const previousBlobs = process.env.NETLIFY_BLOBS_CONTEXT;
     const previousGlobalBlobs = globalThis.netlifyBlobsContext;

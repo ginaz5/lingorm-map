@@ -202,6 +202,14 @@ git push -u origin <feature-branch>
 完成的驗證見 [進度紀錄](../docs/superrich-exchange-map-progress.zh-TW.md)；
 本節只記錄「正式環境要怎麼操作」，避免每次上線或排查問題都要重讀整份計畫。
 
+### 報價更新時段
+
+- 採泰國時間（`Asia/Bangkok`，UTC+7）：08:00 開始，每 30 分鐘一輪，最後一輪 22:30。
+- Netlify 使用 UTC cron `0,30 1-15 * * *`，每天 30 輪；23:00～隔天 08:00 不抓取來源。
+- 夜間按 Run now 或本機 invoke 也只記錄 `outside_window`、`sourceRequestCount: 0`，不讀寫 Blobs、不改 breaker 冷卻狀態。人工驗收抓取請選更新時段。
+- 22:30 的快照仍在 23:01:30 到期；夜間顯示「暫無報價」，最佳匯率排序停用，分店與連結仍可使用。
+- 前端每 60 秒向本站 API 確認狀態，這些請求不會抓取 SuperRich；08:00 新快照完成後恢復報價。
+
 ### 上線前的驗證清單
 
 除了本文件前面「每次修改後的本機測試流程」之外，換匯功能多這幾項：
@@ -246,7 +254,7 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
    npm run fx:control -- enable
    ```
 
-3. **人工觸發第一輪抓取**（不要空等排程），用 Netlify UI 的「Run now」或：
+3. **在泰國時間 08:00～23:00 內人工觸發第一輪抓取**（不要空等排程），用 Netlify UI 的「Run now」或：
 
    ```bash
    netlify functions:invoke exchange-rates-fetch
@@ -261,7 +269,7 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
    預期 `enabled: true`、`snapshot` 非 `null`；前台開啟換匯開關後 26 個
    分店都能看到三列報價（或明確的「暫無報價」，不是空白或錯誤畫面）。
 
-5. **再驗證接下來兩個排定批次**（每 30 分鐘一次；即等 30～60 分鐘後重
+5. **再驗證更新時段內接下來兩個排定批次**（每 30 分鐘一次；即等 30～60 分鐘後重
    查一次 API 的 `checkedAt`／`snapshot.completedAt` 有沒有前進），確認
    排程本身、不只是手動觸發那一次，是正常運作的。
 
@@ -298,7 +306,7 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
    到。
 2. 沒過期：等到期，或找到來源限流的根本原因後再等；不要反覆
    enable/disable 試探。
-3. 已過期：下一輪排程（每 30 分鐘）會自動恢復抓取，也可以用
+3. 已過期：下一輪排程（泰國時間 08:00～22:30，每 30 分鐘）會自動恢復抓取，也可以在更新時段用
    `netlify functions:invoke exchange-rates-fetch` 人工觸發一次確認。
 4. 恢復後應該看到 `breaker` 的失敗計數歸零、`snapshot` 更新到最新
    `completedAt`。

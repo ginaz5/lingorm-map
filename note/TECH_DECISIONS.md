@@ -284,12 +284,19 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 ## 換匯匯率：排程快照 + 執行期控制旗標（而非即時代理）
 
 **決策：** 前端**不會**在使用者每次開啟換匯開關時直接打 SuperRich 官方
-API；由獨立的 Netlify 排程 Function（`exchange-rates-fetch.mjs`，每 30
-分鐘）向來源抓一次、正規化後寫入 `@netlify/blobs` 快照，前端只打站內
+API；由獨立的 Netlify 排程 Function（`exchange-rates-fetch.mjs`，泰國時間
+08:00～22:30 每 30 分鐘）向來源抓一次、正規化後寫入 `@netlify/blobs` 快照，前端只打站內
 `/api/exchange-rates`（`exchange-rates.mjs`）讀最新快照。完整規格見
 [SuperRich 換匯地圖實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md)
 §4－§5；本節只記錄「為什麼這樣選」與上線／維運要點，執行細節與驗證見
 [換匯功能進度紀錄](../docs/superrich-exchange-map-progress.zh-TW.md)。
+
+**2026-09-27 時段調整：** 使用者確認以 `Asia/Bangkok` 為準，23:00～08:00
+停止來源抓取。UTC cron 為 `0,30 1-15 * * *`，每日 30 輪。Function 與 runner
+都檢查更新時段，夜間人工觸發回 `outside_window`，不改控制旗標、快照或
+breaker；開始來源查詢前再次檢查，避免儲存讀取跨過 23:00。到期規則維持
+下一個半小時邊界加 90 秒，22:30 的快照在 23:01:30 到期，不延長到隔天。
+前端仍每分鐘確認本站 API，08:00 的新快照完成後即可恢復報價。
 
 **為什麼不做即時代理：**
 

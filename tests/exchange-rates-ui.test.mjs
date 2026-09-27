@@ -338,6 +338,7 @@ test('exchange panel contains three rows and compact metadata without a duplicat
   assert.doesNotMatch(html, /鈔票/);
   assert.match(html, /<div class="fx-meta">/);
   assert.match(html, /<span class="fx-disclaimer">非即時匯率，以櫃檯為準<\/span>/);
+  assert.match(html, /報價更新時段：08:00–23:00（泰國時間）/);
   assert.match(html, /superrichthailand\.com\/exchange-rate/);
   assert.doesNotMatch(html, /https:\/\/maps\.google\.com\/example|Google Maps/);
   assert.doesNotMatch(html, /\(UTC\)/);
@@ -351,6 +352,7 @@ test('exchange panel contains three rows and compact metadata without a duplicat
   const unavailable = renderExchangeRates(row);
   assert.equal((unavailable.match(/暫無報價/g) || []).length, 3);
   assert.match(unavailable, /非即時匯率，以櫃檯為準/);
+  assert.match(unavailable, /報價更新時段：08:00–23:00（泰國時間）/);
 
   const previousLang = lang;
   const previousLocalStorage = globalThis.localStorage;
@@ -363,6 +365,7 @@ test('exchange panel contains three rows and compact metadata without a duplicat
     assert.match(enHtml, /USD 50/);
     assert.match(enHtml, /TWD 100–2,000/);
     assert.doesNotMatch(enHtml, /banknote/);
+    assert.match(enHtml, /Rate updates: 08:00–23:00 \(Thailand time\)/);
   } finally {
     setLang(previousLang);
     if (previousLocalStorage === undefined) delete globalThis.localStorage;

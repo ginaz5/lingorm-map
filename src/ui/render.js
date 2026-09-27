@@ -183,6 +183,7 @@ export function renderExchangeRates(row) {
     <div class="fx-meta">
       ${checked && state.exchangeHasUsableSnapshot ? `<time class="fx-checked" datetime="${escapeAttribute(state.exchangeCompletedAt || '')}">${t('fx_checked', checked)}</time>` : ''}
       <span class="fx-disclaimer">${t('fx_disclaimer')}</span>
+      <span class="fx-update-window">${t('fx_update_window')}</span>
       <a href="${OFFICIAL_EXCHANGE_URL}" target="_blank" rel="noopener" aria-label="${t('fx_source_note')}" onclick="event.stopPropagation()">${t('fx_source_note')}</a>
     </div>
     <div class="fx-branch-hint">${t('fx_branch_hint', escapeAttribute(row.nameEn))}</div>

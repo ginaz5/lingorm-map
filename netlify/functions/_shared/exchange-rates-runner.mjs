@@ -7,6 +7,7 @@ import {
   createBreaker,
   createControl,
   EXCHANGE_KEYS,
+  isExchangeFetchTime,
   isValidBreaker,
 } from './exchange-rates-contract.mjs';
 import { ensureFetchControl, readEffectiveControl, resetBreakerForControl } from './exchange-rates-control.mjs';
@@ -78,6 +79,7 @@ export async function runExchangeRateFetch({
   sourceDeadlineMs,
   requestTimeoutMs,
 }) {
+  if (!isExchangeFetchTime(nowImpl())) return { status: 'outside_window', sourceRequestCount: 0 };
   const effective = await ensureFetchControl(store, { enabledDefault, nowMs: functionStartedAtMs, randomUUIDImpl });
   if (!effective.enabled || !effective.control) return { status: 'disabled', sourceRequestCount: 0 };
   const control = effective.control;
@@ -94,6 +96,8 @@ export async function runExchangeRateFetch({
   }
 
   const attemptedAtMs = nowImpl();
+  // Storage reads can cross the closing boundary before source work starts.
+  if (!isExchangeFetchTime(attemptedAtMs)) return { status: 'outside_window', sourceRequestCount: 0 };
   const collection = await collectSourceQuotes({
     mapping,
     fetchImpl,

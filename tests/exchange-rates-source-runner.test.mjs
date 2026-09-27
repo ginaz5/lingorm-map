@@ -10,7 +10,7 @@ import {
   twoBranchMapping, uuid,
 } from './helpers/exchange-rates-store.mjs';
 
-function fakeClock(start = Date.parse('2026-09-09T00:00:00Z')) {
+function fakeClock(start = Date.parse('2026-09-09T01:00:00Z')) {
   let value = start;
   return {
     now: () => value,
@@ -224,15 +224,15 @@ test('runner publishes a complete snapshot and clears breaker using first-read C
 });
 
 test('disabled and temporarily blocked runners perform zero source requests', async () => {
+  const clock = fakeClock();
   let sourceCalls = 0;
   const disabledStore = new FakeBlobStore();
   const disabled = await runExchangeRateFetch({
-    store: disabledStore, mapping: twoBranchMapping(), enabledDefault: 'false',
+    store: disabledStore, mapping: twoBranchMapping(), enabledDefault: 'false', nowImpl: clock.now,
     fetchImpl: async () => { sourceCalls++; throw new Error('must not run'); },
   });
   assert.equal(disabled.status, 'disabled');
 
-  const clock = fakeClock();
   const blockedStore = new FakeBlobStore();
   blockedStore.seed(EXCHANGE_KEYS.control, enabledControl(uuid(1), clock.now()));
   blockedStore.seed(EXCHANGE_KEYS.breaker, createBreaker(uuid(1), new Date(clock.now() + 60_000).toISOString()));
