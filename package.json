@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "test": "node --test",
     "locations:export:notion": "node --env-file-if-exists=.env scripts/export-snapshot.mjs",
+    "locations:refresh": "npm run locations:export:notion -- --output data/locations.next.csv && node scripts/validate-location-snapshot.mjs data/locations.next.csv && node scripts/validate-favorite-compatibility.mjs data/locations.next.csv data/legacy-favorite-ids.json && mv data/locations.next.csv data/locations.csv",
     "location:verify": "node --env-file-if-exists=.env scripts/location-verification-runner.mjs",
     "location:verify:ui": "node --env-file-if-exists=.env scripts/location-verification-ui-server.mjs",
     "fx:control": "node --env-file-if-exists=.env scripts/exchange-rates-control.mjs",

@@ -60,6 +60,7 @@ when historical investigation is necessary.
 Useful commands:
 
 ```bash
+npm run locations:refresh   # export → validate candidate → promote to data/locations.csv
 npm run locations:export:notion
 node scripts/validate-location-snapshot.mjs data/locations.csv
 node scripts/validate-favorite-compatibility.mjs

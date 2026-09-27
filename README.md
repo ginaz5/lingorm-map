@@ -383,6 +383,20 @@ npm run locations:export:notion -- --output data/locations.next.csv
 node scripts/validate-location-snapshot.mjs data/locations.next.csv
 ```
 
+Or run the whole export → validate → promote chain in one step:
+
+```bash
+npm run locations:refresh
+```
+
+`locations:refresh` exports to `data/locations.next.csv`, runs snapshot and
+favorite-compatibility validation against that candidate, and only then moves
+it over `data/locations.csv`. Every step is chained with `&&`, so a failed
+export or validation leaves `data/locations.csv` untouched; the rejected
+candidate stays in the gitignored `data/locations.next.csv` for inspection.
+Review the promoted snapshot with `git diff data/locations.csv` before
+committing.
+
 The exporter reads `NOTION_API_KEY` (the sole Notion credential — see
 Environment variables above), verifies the live 20-property schema before
 querying rows, and never writes to Notion.
