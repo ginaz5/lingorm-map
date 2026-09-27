@@ -96,7 +96,7 @@ test('map markers keep their light style and use coral with contrast in dark mod
   assert.doesNotMatch(css, /\.marker-cluster\{[^}]*background:var\(--primary\)/);
 });
 
-test('all-exchange clusters reuse the single-marker green variant (Phase D2)', async () => {
+test('single-brand exchange clusters reuse their green or orange marker variant', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(
@@ -106,6 +106,14 @@ test('all-exchange clusters reuse the single-marker green variant (Phase D2)', a
   assert.match(
     css,
     /\.marker-dot\.is-exchange\{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7\}/,
+  );
+  assert.match(
+    css,
+    /\.marker-cluster\.is-exchange-orange\{--marker-bg:#f26622;--marker-fg:#fff;--marker-ring:#ffd0b8\}/,
+  );
+  assert.match(
+    css,
+    /\.marker-dot\.is-exchange-orange\{--marker-bg:#f26622;--marker-fg:#fff;--marker-ring:#ffd0b8\}/,
   );
 });
 

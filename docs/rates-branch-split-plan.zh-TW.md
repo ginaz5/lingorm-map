@@ -1,6 +1,6 @@
 # SuperRich 綠標／橘標分支拆分計劃
 
-日期：2026-09-20。狀態：規劃完成，尚未執行分支與程式碼拆分。
+建立日期：2026-09-20；更新日期：2026-09-27。狀態：綠標拆分已提交，§6 橘標還原與本機驗證完成；橘標功能已整理為獨立提交，尚未推送，Google SDK 與底圖驗收仍待完成。
 
 ## 目標與已確認範圍
 
@@ -9,13 +9,13 @@
 | 分支 | 拆分後內容 |
 | --- | --- |
 | `codex/rates` | 原有地圖功能與 SuperRich Thailand 綠標功能；保留最新的綠標前三名排序 |
-| `codex/rates-superrich1965`（建議名稱） | 以清理後的 `codex/rates` 為基礎，保留完整 SuperRich 1965 橘標功能，供後續獨立開發與合併 |
+| `codex/rates-superrich1965` | 以清理後的 `codex/rates` 為基礎，保留完整 SuperRich 1965 橘標功能，供後續獨立開發與合併 |
 
 新分支仍會包含綠標基礎功能；相對 `codex/rates` 的新增差異應集中在橘標。這次採向前新增變更，不重寫已推送的歷史，因此舊橘標實作仍可從 Git 歷史查到。
 
 本計劃不變更 Notion 發布狀態、既有 Slug、Netlify 線上設定或本機排程。橘標功能保留下來，不代表重新發布橘標分店。
 
-## 已核對的現況
+## 規劃時核對的現況
 
 - 工作分支為 `codex/rates`，HEAD 為 `c1589d9`；本機保存的 `origin/codex/rates` 指向相同 commit。本次未 fetch，因此實作開始前仍須確認遠端是否更新。
 - 盤點開始時工作目錄乾淨。
@@ -145,8 +145,37 @@ node scripts/validate-superrich1965-mapping.mjs data/superrich1965-branches.json
 
 完成時應交付：兩個通過檢查的分支、可回復的拆分前備份、變更與驗證摘要。若之後獲授權推送或合併，先確認遠端更新，再依專案規則進行 Deploy Preview 驗收；本計劃階段不觸發部署。
 
-## 本次規劃交付
+## 原規劃交付紀錄
 
 已檢查 Git 狀態與歷史、三份專案文件、橘標專用檔案、共用依賴、CSV 狀態與匯出流程。本次只新增此計劃文件，未建立分支、修改 runtime、執行 commit／push 或變更外部資料。
 
 未跑 typecheck、測試與 build：本次沒有程式碼變更；上述命令是後續實作驗收要求，不代表已通過。
+
+## §6 執行與驗證紀錄（2026-09-27）
+
+開始時三個分支已存在且工作目錄乾淨：`codex/rates` 與
+`codex/rates-superrich1965` 均指向 `156fb81`；拆分前備份
+`codex/rates-before-superrich1965-split` 指向 `6fd5f03`。
+在橘標分支加回備份中的專用功能及共用檔案的品牌分派，保留綠標分支新增的
+顯示 guard，將支援範圍擴充到兩份 mapping。目的地仍使用同一個
+`isPublicLocation()`，未支援品牌與未發布資料不會漏出。
+
+保留綠標前三名、切換清單與捲回頂部、UTC 日期、粉絲資源、標籤與一般地點
+功能。公開排序選單仍按既有規格只顯示綠標面額；橘標排序 key、品牌分桶與
+控制隔離已還原，公開選項留待後續發布決策。
+
+驗證結果：
+
+- 集中測試：217 項通過，包含來源、後端、本機 collector、兩品牌 UI、mapping、雙語與 marker／cluster。
+- `npm run typecheck`、`npm test`（529 項，0 失敗）、`npm run build` 與 `git diff --check` 通過。
+- 地點快照、收藏相容性與兩品牌 mapping 驗證通過：219 筆地點、98 個既有收藏 ID、26 間綠標 `Published`、38 間橘標 `Paused`。
+- 拆分後綠標 `156fb81` 已於提交前通過型別檢查、425 項測試、建置與資料驗證。
+- 離線 `netlify dev` 下，`/api/config`、`/api/locations` 與兩個匯率讀取 API 均回 200；本機兩品牌 API 皆為 enabled 且無有效快照，未呼叫來源抓取或發布指令。
+- 暫時的瀏覽器 fixture 在記憶體中把橘標設為 `Published` 並供應測試報價：38 張卡片共 76 列，38 個橘標官網連結，沒有綠標官網連結；未支援品牌搜尋為 0 筆。停用任一品牌時另一品牌報價仍可用，綠標前三名排序保持正常。
+- HERE marker、cluster 與 popup 通過 fixture 驗收，橘標色值為 `rgb(242, 102, 34)`；雙語卡片正常。HERE 圖磚在此環境出現 image decode 錯誤，底圖未驗收成功。本機 config 缺少 Google Maps 設定，Google 的實際 SDK 驗收仍待完成；其 marker／cluster 分派有自動測試覆蓋。
+- 回到正式快照的本機首頁驗證：開啟換匯後搜尋 `SuperRich` 為 26 張綠標卡片，搜尋 `SuperRich 1965` 為 0 筆，38 筆 `Paused` 橘標沒有露出。驗收後移除暫時 fixture 並停止本次啟動的伺服器。
+
+§6 驗證期間未變更 Notion、正式 CSV、發布狀態、Slug、Netlify 線上設定或本機排程，
+亦未提交、推送或部署。使用者其後授權提交橘標程式，橘標功能已於
+`codex/rates-superrich1965` 整理為獨立提交，形成上方關係圖中的 C commit；
+尚未推送或部署。Google SDK 與底圖的人工驗收仍待完成。

@@ -49,7 +49,9 @@ import {
   EXCHANGE_CATEGORY,
   initExchangeRates,
   isExchangeLocation,
+  syncExchangeControls,
 } from './features/exchange-rates.js';
+import { initExchangeRates1965 } from './features/exchange-rates-1965.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -239,6 +241,7 @@ const handleExchangeChange = change => {
   refreshActivePopup();
 };
 initExchangeRates(handleExchangeChange);
+initExchangeRates1965(handleExchangeChange, syncExchangeControls);
 
 // Static event listeners
 document.getElementById('fav-filter-btn').addEventListener('click', event => {

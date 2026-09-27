@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import BRANCH_MAPPING from '../data/superrich-branches.json' with { type: 'json' };
+import ORANGE_MAPPING from '../data/superrich1965-branches.json' with { type: 'json' };
 import { state } from '../src/core/state.js';
 import {
   applyExchangeRatesPayload,
@@ -69,6 +70,12 @@ function resetExchangeState() {
     exchangeRetryLevel: 0, exchangeLastAttemptAtMs: null,
     exchangeUpdateCheckPending: false, exchangeRatesLoading: false,
     exchangeHasUsableSnapshot: false,
+    exchange1965: {
+      ratesBySlug: {}, runId: null, controlVersion: null, enabled: null,
+      completedAt: null, nextUpdateAtMs: null, expiresAtMs: null,
+      retryLevel: 0, lastAttemptAtMs: null, updateCheckPending: false,
+      ratesLoading: false, hasUsableSnapshot: false,
+    },
   });
 }
 
@@ -130,7 +137,7 @@ test('same run response never extends locally anchored deadlines', () => {
   assert.equal(state.exchangeNextUpdateAtMs, next);
 });
 
-test('a failed green snapshot clears its selected best-rate sort', () => {
+test('a failed green snapshot clears only its selected best-rate sort', () => {
   state.exchangeSort = 'TWD';
   state.exchangeHasUsableSnapshot = true;
   applyExchangeRatesPayload({ enabled: true, controlVersion: 'green-on', snapshot: null }, {
@@ -138,6 +145,12 @@ test('a failed green snapshot clears its selected best-rate sort', () => {
   });
   assert.equal(state.exchangeSort, 'default');
   assert.equal(state.exchangeHasUsableSnapshot, false);
+
+  state.exchangeSort = 'USD_1965';
+  applyExchangeRatesPayload({ enabled: true, controlVersion: 'green-on', snapshot: null }, {
+    requestStartedAtMs: 2_000, responseReceivedAtMs: 2_100, waitingForNewRun: false,
+  });
+  assert.equal(state.exchangeSort, 'USD_1965');
 });
 
 test('fresh snapshots without quotes disable best-rate sorting by denomination', () => {
@@ -226,7 +239,10 @@ function topRateFixture() {
     catEn: 'Currency Exchange', catZh: '換匯', type: '', destinationKey: 'bangkok',
     alt: '', notesEn: '', notesZh: '', lat: '', lng: '', icon: '💱', maps: '',
   }));
-  state.visIdx = [4, 3, 2, 1, 0];
+  const orangeSlug = Object.keys(ORANGE_MAPPING.branches)[0];
+  state.data.push({ ...state.data[0], id: orangeSlug, nameEn: 'Orange branch' });
+  state.visIdx = [5, 4, 3, 2, 1, 0];
+  state.exchange1965.ratesBySlug = { [orangeSlug]: { rates: { USD_1965: { rateScaledE6: 99_000_000 } } } };
   state.data.slice(0, 5).forEach((row, index) => {
     state.exchangeRatesBySlug[row.id] = { rates: {
       USD_100: { rateScaledE6: [32_000_000, 34_000_000, null, 33_000_000, 31_000_000][index], displayDecimals: 2 },
@@ -298,7 +314,7 @@ test('selecting a green rate refreshes the list at the top while background upda
     [1, 3, 0],
   );
   assert.deepEqual(state.visIdx.slice(0, 3), [1, 3, 0]);
-  assert.equal((elements['loc-list'].innerHTML.match(/class="loc-card/g) || []).length, 5);
+  assert.equal((elements['loc-list'].innerHTML.match(/class="loc-card/g) || []).length, 6);
 
   elements['loc-list'].scrollTop = 400;
   applyFiltersAndSyncMap();
@@ -461,16 +477,21 @@ test('returning from a suspended tab clears expired prices before fetching', t =
   assert.deepEqual(observed, [false]);
 });
 
-test('published exchange rows outside the shipped rate mapping stay hidden everywhere', t => {
+test('both mapped brands can be published while unsupported exchange rows stay hidden everywhere', t => {
   const supported = {
     id: slugs[0], status: 'Published', catZh: '換匯', catEn: 'Currency Exchange',
     type: '', destinationKey: 'bangkok', nameZh: '支援換匯點', nameEn: 'Supported exchange',
     alt: '', notesZh: '', notesEn: '',
   };
+  const orange = {
+    ...supported, id: Object.keys(ORANGE_MAPPING.branches)[0],
+    type: 'LingOrm', destinationKey: 'pattaya',
+    nameZh: '橘標換匯點', nameEn: 'Orange exchange',
+  };
   // A future snapshot may publish a branch of a brand this build does not
   // carry. It must not leak in as a regular location either.
   const unsupported = {
-    ...supported, id: 'superrich1965-56', type: 'LingOrm', destinationKey: 'pattaya',
+    ...supported, id: 'unsupported-exchange', type: 'LingOrm', destinationKey: 'phuket',
     nameZh: '未支援換匯點', nameEn: 'Unsupported exchange',
   };
   const cafe = {
@@ -480,12 +501,18 @@ test('published exchange rows outside the shipped rate mapping stay hidden every
   };
 
   assert.equal(isSupportedLocation(supported), true);
+  assert.equal(isSupportedLocation(orange), true);
   assert.equal(isSupportedLocation(unsupported), false);
   assert.equal(isSupportedLocation(cafe), true);
   assert.equal(isPublicLocation(unsupported), false);
+  assert.equal(isPublicLocation(orange), true);
+  for (const status of ['Paused', 'Inactive']) {
+    assert.equal(isPublicLocation({ ...supported, status }), false);
+    assert.equal(isPublicLocation({ ...orange, status }), false);
+  }
 
   // List, search, favorites and category filter, with the toggle on or off.
-  state.favorites = new Set([unsupported.id]);
+  state.favorites = new Set([orange.id, unsupported.id]);
   for (const toggleOn of [true, false]) {
     state.exchangeLocationsOn = toggleOn;
     for (const favFilterOn of [false, true]) {
@@ -498,7 +525,18 @@ test('published exchange rows outside the shipped rate mapping stay hidden every
   state.favFilterOn = false;
   state.exchangeLocationsOn = true;
   assert.equal(matchesLocationFilters(supported, '', '', ''), true);
+  assert.equal(matchesLocationFilters(orange, '', '', ''), true);
+  assert.equal(matchesLocationFilters(orange, 'Orange', 'Cafe', 'Admin Picks'), true);
   assert.equal(matchesLocationFilters(cafe, '', '', ''), true);
+  state.favFilterOn = true;
+  assert.equal(matchesLocationFilters(orange, '', '', ''), true);
+  assert.equal(matchesLocationFilters(supported, '', '', ''), false);
+  state.exchangeLocationsOn = false;
+  assert.equal(matchesLocationFilters(orange, '', '', ''), false);
+  assert.equal(matchesLocationFilters(supported, '', '', ''), false);
+  assert.deepEqual([...state.favorites], [orange.id, unsupported.id]);
+  state.favFilterOn = false;
+  state.exchangeLocationsOn = true;
 
   // Category, label and destination options only count supported rows.
   const elements = { 'cat-filter': { value: '', innerHTML: '' }, 'type-filter': { value: '', innerHTML: '' } };
@@ -521,14 +559,14 @@ test('published exchange rows outside the shipped rate mapping stay hidden every
     }
   });
 
-  state.data = [supported, unsupported, cafe];
+  state.data = [supported, orange, unsupported, cafe];
   buildCatFilter();
   const exchangeLabel = lang === 'zh' ? supported.catZh : supported.catEn;
-  assert.ok(elements['cat-filter'].innerHTML.includes(translate('filter_option_count', exchangeLabel, 1)));
+  assert.ok(elements['cat-filter'].innerHTML.includes(translate('filter_option_count', exchangeLabel, 2)));
   buildTypeFilter();
-  assert.ok(elements['type-filter'].innerHTML.includes(translate('filter_option_count', locationTypeLabel('LingOrm', lang), 1)));
+  assert.ok(elements['type-filter'].innerHTML.includes(translate('filter_option_count', locationTypeLabel('LingOrm', lang), 2)));
 
-  state.selectedDestinations = new Set(['bangkok', 'pattaya']);
+  state.selectedDestinations = new Set(['bangkok', 'pattaya', 'phuket']);
   assert.equal(reconcileDestinationFilter(), true);
-  assert.deepEqual([...state.selectedDestinations], ['bangkok']);
+  assert.deepEqual([...state.selectedDestinations], ['bangkok', 'pattaya']);
 });

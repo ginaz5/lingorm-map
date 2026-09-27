@@ -1,0 +1,376 @@
+{
+  "schemaVersion": 1,
+  "reviewedOn": "2026-09-11",
+  "placeIdCount": 38,
+  "patches": [
+    {
+      "notionPageId": "3d7c2315-8ea2-8197-8384-cf4504796bcc",
+      "slug": "superrich1965-56",
+      "properties": {
+        "Google Place ID": "ChIJfdDileiZ4jARIrnxWlR779o",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=56、slug=silom、group=main-branch；報價 company_code=A04、branch_no=00（Silom Plaza (สีลมพลาซ่า)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=15775963621935397154（SuperRich Exchange Silom）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8117-bac5-d2043484f8ec",
+      "slug": "superrich1965-57",
+      "properties": {
+        "Google Place ID": "ChIJn8VBdk2f4jARjIZgLnLedq8",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=57、slug=ratchadamri-soi-2、group=main-branch；報價 company_code=A04、branch_no=35（Ratchadamri 2 (ราชดำริห์ 2)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=12643537585874962060（SuperRich Exchange Ratchadamri）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81ee-800d-f00c3bfc55c2",
+      "slug": "superrich1965-58",
+      "properties": {
+        "Google Place ID": "ChIJl7nMoyOf4jARkwneiySTrHM",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=58、slug=ratchamri-soi-1、group=main-branch；報價 company_code=A04、branch_no=36（Ratchadamri 1 (ราชดำริห์ 1)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8335198795530635667（SuperRich ราชดำริ ซอย1）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8195-a59a-f740af4fc3fe",
+      "slug": "superrich1965-59",
+      "properties": {
+        "Google Place ID": "ChIJgdJfolif4jARzc5ldbUTq5M",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=59、slug=big-c-ratchadamri、group=main-branch；報價 company_code=A04、branch_no=40（Big C Ratchadamri (ศูนย์การค้าบิ๊กซี ราชดำริห์)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=10640620214672543437（SuperRich Exchange @Big C Ratchadamri）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8154-a564-d0f8e1a72406",
+      "slug": "superrich1965-60",
+      "properties": {
+        "Google Place ID": "ChIJHUFcQcqd4jARtm3oXp62G9s",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=60、slug=big-c-place-ratchadapisek、group=main-branch；報價 company_code=A04、branch_no=50（Big C Ratchadapisek (ศูนย์การค้าบิ๊กซี รัชดาภิเษก)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=15788413709990784438（SuperRich บิ๊กซี เพลส รัชดาภิเษก）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8132-abca-f4e5c2922818",
+      "slug": "superrich1965-61",
+      "properties": {
+        "Google Place ID": "ChIJR_elbmOf4jAR5H_QiLp00vQ",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=61、slug=centralworld、group=main-branch；報價 company_code=A04、branch_no=34（Central World (เซ็นทรัลเวิลด์)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=17641291034871758820（SuperRich Exchange @CentralWorld）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-815f-a0a7-e9ac47890330",
+      "slug": "superrich1965-62",
+      "properties": {
+        "Google Place ID": "ChIJnf3dNyyd4jARB7cUv1E1krc",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=62、slug=central-eastville、group=main-branch；報價 company_code=A04、branch_no=23（Central Eastville(เซ็นทรัล อีสต์วิลล์)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=13227693680754996999（SuperRich เซ็นทรัลอีสต์วิลล์）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8100-838a-d8e924b05165",
+      "slug": "superrich1965-63",
+      "properties": {
+        "Google Place ID": "ChIJrdtlEiSd4jARjpffYvkf4Ic",
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 1st Floor, Central zone, near L’Occitane and the 1A parking exit.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Central Ladprao 1 樓 Central 區，鄰近 L’Occitane 專櫃及 1A 停車場出口。",
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1",
+          "https://www.superrich1965.com/newDetail.php?id=634e6bdb31be7269955a1341"
+        ],
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=63、slug=central-ladprao、group=main-branch；報價 company_code=A04、branch_no=03（Central Ladprao(เซ็นทรัล ลาดพร้าว)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=9790860745869596558（SuperRich เซ็นทรัลลาดพร้าว）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。2026-09-11 樓層採官方 landmark 三語一致的 1 樓；官網 2026 年公告亦稱 Central Ladprao ชั้น 1。address 的 OG／702 視為未同步舊欄位，不推定 OG 等於 1 樓。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8170-b0d1-f222dc34b5bf",
+      "slug": "superrich1965-64",
+      "properties": {
+        "Google Place ID": "ChIJMV4rSDid4jARijnZ94tCkp0",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=64、slug=central-embassy、group=main-branch；報價 company_code=A04、branch_no=19（Central Embassy(เซ็นทรัล แอมบาสซี)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=11354210779480537482（SuperRich เซ็นทรัลเอ็มบาสซี）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-813e-a8a2-cacc2a336572",
+      "slug": "superrich1965-65",
+      "properties": {
+        "Google Place ID": "ChIJzdimpsNfHTERZPni9_rKLYA",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=65、slug=central-bangna、group=main-branch；報價 company_code=A04、branch_no=05（Central Bangna(เซ็นทรัล บางนา)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=9236261590056237412（SuperRich เซ็นทรัลบางนา）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8186-ab35-c185ca7752d7",
+      "slug": "superrich1965-66",
+      "properties": {
+        "Google Place ID": "ChIJ8ZMvojSZ4jARDG9v6uZ8y_8",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=66、slug=central-pinklao、group=main-branch；報價 company_code=A04、branch_no=45（Central Pinklao(เซ็นทรัล ปิ่นเกล้า)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=18431963231161380620（SuperRich เซ็นทรัลปิ่นเกล้า）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81a0-9db7-fd566e465064",
+      "slug": "superrich1965-67",
+      "properties": {
+        "Google Place ID": "ChIJ0f2DB2Wf4jARLWwaUcKU6ZU",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=67、slug=dusit-central-park、group=main-branch；報價 company_code=A04、branch_no=62（Dusit Central Park (ดุสิตเซ็นทรัล พาร์ค)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=10802328743530097709（SuperRich Exchange @Dusit Central Park）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-819d-91ed-d28378156fa5",
+      "slug": "superrich1965-68",
+      "properties": {
+        "Google Place ID": "ChIJZRbtDMphHTERWgRJi1DngUI",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=68、slug=the-mall-lifestore-bangkapi、group=main-branch；報價 company_code=A04、branch_no=11（The Mall Bangkapi(เดอะมอลล์ บางกะปิ)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=4792365811619136602（SuperRich เดอะมอลล์บางกะปิ）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-815d-9618-e0dc8acde2fd",
+      "slug": "superrich1965-69",
+      "properties": {
+        "Google Place ID": "ChIJB5YEPHKd4jARxS-7k6UOXNc",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=69、slug=the-mall-lifestore-ngamwongwan、group=main-branch；報價 company_code=A04、branch_no=44（The Mall Ngamwongwan (เดอะมอลล์ งามวงศ์วาน)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=15518294520322797509（Superrich）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81cd-83f3-f55c55c47a86",
+      "slug": "superrich1965-70",
+      "properties": {
+        "Google Place ID": "ChIJw6Se5XphHTERVJMyUfH6wTg",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=70、slug=the-mall-lifestore-bangkae、group=main-branch；報價 company_code=A04、branch_no=26（The Mall Bangkae (เดอะมอลล์ บางแค)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=4089825850985452372（SuperRich The Mall Bangkae）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81d5-a7e1-d458cbcd8a61",
+      "slug": "superrich1965-71",
+      "properties": {
+        "Google Place ID": "ChIJJ16Dh3FgHTER90SBmCjz7L8",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=71、slug=seacon-square-srinakarin、group=main-branch；報價 company_code=A04、branch_no=20（Seacon Square Srinakarin(ซีคอนสแควร์ ศรีนครินทร์)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=13829695911430800631（SuperRich）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8190-b1a0-f2c540faebd1",
+      "slug": "superrich1965-72",
+      "properties": {
+        "Google Place ID": "ChIJc4U_UkiX4jARyeKVz_aGvnQ",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=72、slug=seacon-bangkae、group=main-branch；報價 company_code=A04、branch_no=46（Seacon Bangkae (ซีคอน บางแค)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8412309548577448649（SuperRich ซีคอนบางแค）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8121-96ff-e0bc37d7095f",
+      "slug": "superrich1965-73",
+      "properties": {
+        "Google Place ID": "ChIJfzm_pZWf4jARNeehA52tZbY",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=73、slug=mbk-center、group=main-branch；報價 company_code=A04、branch_no=21（MBK(เอ็ม บี เค)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=13143101977433073461（SuperRich MBK）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-813a-8b28-f9dbc2d703f4",
+      "slug": "superrich1965-74",
+      "properties": {
+        "Google Place ID": "ChIJy4Qz-LSf4jARBPe4nv0n53k",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=74、slug=mbk-skywalk、group=main-branch；報價 company_code=A04、branch_no=63（MBK Skywalk (เอ็ม บี เค สกายวอล์ก)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8784033568452572932（SuperRich Exchange @ MBK Skywalk (Branch 2)）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標位置與 MBK Skywalk 的地址範圍疑似不符；此為來源原值，公開前必須獨立複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81de-901e-cfd2478788ae",
+      "slug": "superrich1965-76",
+      "properties": {
+        "Google Place ID": "ChIJncssV2CZ4jAR4Lvr6cNxlH4",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=76、slug=ics-lifestyle-complex、group=main-branch；報價 company_code=A04、branch_no=47（ICS(ไอซีเอส)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=9121040231589198816（SuperRich Exchange ICS）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與「ICONSIAM 對面」位置描述疑似不符；此為來源原值，公開前必須獨立複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-817f-97d7-df85c31f6f3b",
+      "slug": "superrich1965-77",
+      "properties": {
+        "Google Place ID": "ChIJx1uxrtmZ4jARbY__ADd4rBk",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=77、slug=iconsiam、group=main-branch；報價 company_code=A04、branch_no=48（ICONSIAM(ไอคอนสยาม)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=1849985724577714029（SuperRich Exchange @ICONSIAM）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標是否落在 ICONSIAM 分店範圍尚待複核；未以商場或鄰店座標替換。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81f5-8ce1-f0189ae3983c",
+      "slug": "superrich1965-78",
+      "properties": {
+        "Google Place ID": "ChIJk7swNoKf4jARQOTZuNpag3Y",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=78、slug=bangkok-hospital、group=main-branch；報價 company_code=A04、branch_no=27（Bangkok Hospital(โรงพยาบาลกรุงเทพ(ตึกวัฒโนสถ ))）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8539769213875250240（SuperRich โรงพยาบาลกรุงเทพ）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81f1-a6d2-d1af48d58972",
+      "slug": "superrich1965-79",
+      "properties": {
+        "Google Place ID": "ChIJE6ZZ1V6f4jAR4iRwEaXirmQ",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=79、slug=samitivej-sukhumvit-hospital、group=main-branch；報價 company_code=A04、branch_no=52（Samitivej Sukhumvit Hospital (โรงพยาบาลสมิติเวช สุขุมวิท)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=7254985248330491106（SuperRich โรงพยาบาลสมิติเวช สุขุมวิท）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8106-8f65-dc845848eee4",
+      "slug": "superrich1965-80",
+      "properties": {
+        "Google Place ID": "ChIJiSYgci-f4jARqNboQA2qCC8",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=80、slug=the-market-bangkok、group=main-branch；報價 company_code=A04、branch_no=04（Platinum Pop (แพลทินัม ป๊อป )）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=3389145693496596136（SuperRich Exchange The Market Bangkok）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。Platinum POP 現名與 The Market Bangkok 舊地址並存；官方座標與 Ratchadamri 地址疑似不符，公開前必須複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-819c-b5f3-ebe72890ca6b",
+      "slug": "superrich1965-81",
+      "properties": {
+        "Google Place ID": "ChIJxdaRGN2Z4jARcLDPofkURxQ",
+        "Lat": 13.745495,
+        "Lng": 100.4998539,
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1",
+          "https://www.openstreetmap.org/node/11871723783"
+        ],
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=81、slug=the-old-siam-plaza、group=main-branch；報價 company_code=A04、branch_no=53（The Old Siam Plaza (ดิโอลด์ สยาม พลาซ่า)）。初次建檔採官方座標；2026-09-11 改採 OSM node 11871723783（SuperRich The Old Siam Plaza、bureau_de_change、brand=SuperRich）精確命名分店點位的成對座標，非商場中心、非 Google 座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=1461159666499170416（SuperRich ดิโอลด์สยาม）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8115-bfae-f599f42e518a",
+      "slug": "superrich1965-82",
+      "properties": {
+        "Google Place ID": "ChIJG_ilcIuZ4jARRQahSItV5vM",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=82、slug=station-one-yaowarat、group=main-branch；報價 company_code=A04、branch_no=09（Station One China Town (สเตชั่นวัน เยาวราช)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=17574828652567266885（SuperRich Exchange Station One Yaowarat）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-817b-ad65-d198d55a15b2",
+      "slug": "superrich1965-83",
+      "properties": {
+        "Google Place ID": "ChIJ1zx6PVuf4jARPFxDrkC92J0",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=83、slug=one-bangkok、group=main-branch；報價 company_code=A04、branch_no=57（One Bangkok (วัน แบงค็อก)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=11374048944423394364（SuperRich Exchange @One bangkok）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與 One Bangkok／Rama IV Road 地址疑似不符；此為來源原值，公開前必須獨立複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81bc-a1a0-f313560145e5",
+      "slug": "superrich1965-84",
+      "properties": {
+        "Google Place ID": "ChIJiUZQKXiZ4jARBD9-71GFPVw",
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. 1st Floor, Room A25, Baan Silom Lifestyle Arcade, Soi Silom 19, next to Subway.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Silom Soi 19 的 Baan Silom Lifestyle Arcade 1 樓 A25，Subway 旁。",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=84、slug=baan-silom-lifestyle-arcade-soi-silom-19、group=main-branch；報價 company_code=A04、branch_no=55（Baan Silom (โครงการบ้านสีลม)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=6646615212025593604（SuperRich Exchange @Baan Silom）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。2026-09-11 泰文 address 明載 ชั้น 1 ห้อง A25，landmark 三語皆為 1 樓；英文 4th Floor 與泰文不符，採 1 樓 A25。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81ae-bcdf-c726c6ac3fc9",
+      "slug": "superrich1965-85",
+      "properties": {
+        "Google Place ID": "ChIJY1dMtFSZ4jARIJ-843qVonI",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=85、slug=riverside-plaza、group=main-branch；報價 company_code=A04、branch_no=49（Riverside Plaza(ริเวอร์ไซด์ พลาซ่า)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8260329021590249248（SuperRich ริเวอร์ไซด์ พลาซ่า）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81aa-9f51-f9f26f313d4a",
+      "slug": "superrich1965-86",
+      "properties": {
+        "Google Place ID": "ChIJi5dCrDWD4jAR_EsWlV0cfEE",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=86、slug=around-lifestyle-station-ptt-station-soi-phetchaburi-29、group=main-branch；報價 company_code=A04、branch_no=56（Around Lifestyle Station (อะราวด์ ไลฟ์สไตล์สเตชั่น (ปตท.ประตูน้ำ))）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=4718677697836239868（SuperRich Exchange @Around Lifestyle Station (ปั๊มปตท.ถนนเพชรบุรี)）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與 Phetchaburi Soi 29 地址疑似不符；此為來源原值，公開前必須獨立複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81e1-8ae4-fbabb8fad6ab",
+      "slug": "superrich1965-88",
+      "properties": {
+        "Google Place ID": "ChIJV4C4Zn6h4jARgPSmB8dooto",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=88、slug=imperial-world-samrong、group=main-branch；報價 company_code=A04、branch_no=58（Imperial World Samrong (อิมพีเรียลเวิลด์ สำโรง)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=15754269650531579008（SuperRich Exchange @Imperial world samrong）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81c7-8a4b-f33d3f7ca492",
+      "slug": "superrich1965-89",
+      "properties": {
+        "Google Place ID": "ChIJv9_iPrOf4jARET9wtW8bonA",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=89、slug=mrt-sukhumvit、group=main-branch；報價 company_code=A04、branch_no=16（MRT Sukhumvit(MRT สุขุมวิท)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=8116079645074407185（SuperRich MRT Sukhumvit）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-8160-a1f0-ca7c7ca6a265",
+      "slug": "superrich1965-90",
+      "properties": {
+        "Google Place ID": "ChIJSxtHRImf4jARuEE7FKDC_8Y",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=90、slug=mrt-rama-9、group=main-branch；報價 company_code=A04、branch_no=17（MRT Phra Ram 9(MRT พระรามเก้า)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=14339393731360932280（SuperRich MRT พระราม9）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-816a-96c2-ea5df868b276",
+      "slug": "superrich1965-91",
+      "properties": {
+        "Google Place ID": "ChIJAWQrZFad4jARJUTFNHXZAc0",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=91、slug=mrt-chatuchak、group=main-branch；報價 company_code=A04、branch_no=41（MRT Chatuchak Park (MRT จตุจักร)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=14772327350171681829（SuperRich Currency Exchange）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-819b-b127-c16e1fbb0555",
+      "slug": "superrich1965-92",
+      "properties": {
+        "Google Place ID": "ChIJ1yJPaQCd4jARiLJWf7T_bTo",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=92、slug=mrt-kamphaeng-phet、group=main-branch；報價 company_code=A04、branch_no=60（MRT Kamphaeng Phet (MRT กำแพงเพชร)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=4210302377356866184（SuperRich Exchange @MRT Kamphaeng Phet）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81fc-b29d-fb5651050b0b",
+      "slug": "superrich1965-93",
+      "properties": {
+        "Google Place ID": "ChIJjXqwQc6Z4jARGOUuFPOXxNI",
+        "Notes EN": "SuperRich Currency Exchange (1965) Company Limited. MRT Sanam Chai, Phra Nakhon district, near Exit 1 for Museum Siam.",
+        "Notes ZH": "SuperRich 1965（橘標）換匯分店。位於 Phra Nakhon 區 MRT Sanam Chai 站，通往 Museum Siam 的 1 號出口附近。",
+        "Source URLs": [
+          "https://www.superrich1965.com/en/exchange-rate",
+          "https://www.superrich1965.com/spr/front/branches?limit=1000&page=1",
+          "https://metro.bemplc.co.th/MRT-System-Line?pid=3",
+          "https://metro.bemplc.co.th/Popular-Place-Detail?pid=148"
+        ],
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=93、slug=mrt-sanam-chai、group=main-branch；報價 company_code=A04、branch_no=59（MRT Sanam Chai (MRT สนามไชย)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=15187430913671619864（SuperRich Exchange @MRT Sanam Chai）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。2026-09-11 依 BEM 官方確認 Sanam Chai 站在 Phra Nakhon 區；不採分店 API 的 Khlong San／10600，未推定街區與郵遞區號。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-81c8-9444-fb0973bf5269",
+      "slug": "superrich1965-110",
+      "properties": {
+        "Google Place ID": "ChIJsYwMNA-f4jARviqLx0qC3iw",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=110、slug=emsphere-g-floor、group=main-branch；報價 company_code=A04、branch_no=64（THE EMSPHERE G FLOOR (ศูนย์การค้า ดิ เอ็มสเฟียร์ ชั้น G)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=3233164840185572030（SuperRich Exchange @Emsphere G Floor）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。"
+      }
+    },
+    {
+      "notionPageId": "3d7c2315-8ea2-811b-9748-e6f775531bf6",
+      "slug": "superrich1965-112",
+      "properties": {
+        "Google Place ID": "ChIJhx8TBwSf4jARCJA-0gt4pm0",
+        "Verification Note": "2026-09-10 建檔來源核對：官方 id=112、slug=emsphere-2nd-floor、group=main-branch；報價 company_code=A04、branch_no=51（The Emsphere 2nd Floor (ศูนย์การค้า ดิ เอ็มสเฟียร์ ชั้น 2)）。Lat/Lng 成對保存官方 /spr/front/branches 的 latitude/longitude 原值，非 Google 回傳座標；來源 https://www.superrich1965.com/spr/front/branches?page=1&limit=1000。Google Maps 使用官方 iframe 的分店 CID=7901134588435402760（SuperRich Exchange @Emsphere 2 FL.）；2026-09-11 已取得 Google Place ID，Places Details 的 CID 與官方 iframe 完全一致；未保存 Google 回傳座標。官方座標與櫃位位置仍需公開前複核。 Phase B 暫存，Status=Paused、Review Needed=true；尚未完成發布審核，Last Verified 留空。 2026-09-11 比對官方 CID 對應點位後，官方 API 座標仍有明顯落差；尚無可採用的精確分店非 Google 座標替代，保留來源原值及 Paused，公開前須修正。"
+      }
+    }
+  ],
+  "coordinateReviewIds": [
+    64,
+    65,
+    67,
+    69,
+    74,
+    76,
+    77,
+    80,
+    83,
+    86,
+    92,
+    93,
+    112
+  ],
+  "verification": {
+    "propertyChecks": 760,
+    "pagesVerified": 38,
+    "allPaused": true
+  },
+  "coordinateSource": {
+    "url": "https://api.openstreetmap.org/api/0.6/node/11871723783.json",
+    "attribution": "© OpenStreetMap contributors",
+    "license": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "element": {
+      "type": "node",
+      "id": 11871723783,
+      "lat": 13.745495,
+      "lon": 100.4998539,
+      "timestamp": "2024-05-01T12:56:54Z",
+      "version": 1,
+      "changeset": 150749333,
+      "user": "vkmod",
+      "uid": 699570,
+      "tags": {
+        "amenity": "bureau_de_change",
+        "brand": "SuperRich",
+        "name": "SuperRich The Old Siam Plaza"
+      }
+    }
+  }
+}

@@ -1,7 +1,10 @@
 import BRANCH_MAPPING from '../../data/superrich-branches.json' with { type: 'json' };
+import BRANCH_MAPPING_1965 from '../../data/superrich1965-branches.json' with { type: 'json' };
 
 import { state } from '../core/state.js';
 import { DENOMS } from '../data/exchange-rates.js';
+import { DENOMS_1965 } from '../data/exchange-rates-1965.js';
+import { setExchange1965LocationsVisible } from './exchange-rates-1965.js';
 
 export const EXCHANGE_CATEGORY = 'Currency Exchange';
 export const EXCHANGE_TOGGLE_STORAGE_KEY = 'showExchangeLocations';
@@ -9,13 +12,15 @@ export const EXCHANGE_API = '/api/exchange-rates';
 export const EXCHANGE_API_TIMEOUT_MS = 8_000;
 export const EXCHANGE_POLL_MS = 60_000;
 export const EXCHANGE_RETRY_DELAYS_MS = Object.freeze([10_000, 20_000, 40_000, 60_000]);
-export const EXCHANGE_SORT_VALUES = Object.freeze(['default', ...DENOMS]);
+export const EXCHANGE_SORT_VALUES = Object.freeze(['default', ...DENOMS, ...DENOMS_1965]);
 
 const BRANCHES = /** @type {Record<string, {officialId:number, branchCode:string}>} */ (BRANCH_MAPPING.branches);
 const BRANCH_SLUGS = new Set(Object.keys(BRANCHES));
+const BRANCH_SLUGS_1965 = new Set(Object.keys(BRANCH_MAPPING_1965.branches));
 const UNAVAILABLE_REASONS = new Set(['timeout', 'invalid', 'missing', 'http_error', 'expired']);
 
-/** @typedef {'default'|'USD_100'|'USD_50'|'TWD'} ExchangeSort */
+/** @typedef {'default'|'USD_100'|'USD_50'|'TWD'|'USD_1965'|'TWD_1965'} ExchangeSort */
+/** @typedef {'green'|'orange'} ExchangeBrand */
 /** @typedef {'fetch'|'expire'|'idle'} ExchangeAction */
 /**
  * @typedef {Object} ExchangeScheduleState
@@ -165,18 +170,23 @@ export function nextExchangeAction(now, schedule) {
   return { action: 'fetch', delayMs: Math.max(0, fetchAt - now) };
 }
 
+/** @param {string|{id?:string}} value @returns {ExchangeBrand|null} */
+export function getExchangeBrand(value) {
+  const slug = typeof value === 'string' ? value : value?.id;
+  if (typeof slug !== 'string') return null;
+  if (BRANCH_SLUGS.has(slug)) return /** @type {ExchangeBrand} */ ('green');
+  if (BRANCH_SLUGS_1965.has(slug)) return /** @type {ExchangeBrand} */ ('orange');
+  return null;
+}
+
 /** @param {string|{id?:string}} value */
 export function isExchangeLocation(value) {
-  const slug = typeof value === 'string' ? value : value?.id;
-  return typeof slug === 'string' && BRANCH_SLUGS.has(slug);
+  return getExchangeBrand(value) !== null;
 }
 
 /**
- * Whether this build supports showing a row at all. A Currency Exchange row
- * is supported only when its slug is in the rate mapping this version ships,
- * so a published branch of a brand this build does not carry stays hidden
- * everywhere instead of appearing as an ordinary location. The rule is by
- * mapping membership, never by a per-brand slug blocklist.
+ * Currency Exchange rows must belong to one of this build's shipped mappings.
+ * Other location categories remain supported without a rate mapping.
  * @param {{id?:string, catEn?:string}} row
  */
 export function isSupportedLocation(row) {
@@ -195,9 +205,15 @@ export function isExchangeSort(value) {
 
 /** @param {string} sort */
 export function isExchangeSortAvailable(sort) {
-  if (!DENOMS.includes(/** @type {any} */ (sort))) return false;
-  return state.exchangeRatesEnabled === true && state.exchangeHasUsableSnapshot &&
-    Object.values(state.exchangeRatesBySlug).some(branch => Number.isSafeInteger(branch.rates?.[sort]?.rateScaledE6));
+  if (DENOMS.includes(/** @type {any} */ (sort))) {
+    return state.exchangeRatesEnabled === true && state.exchangeHasUsableSnapshot &&
+      Object.values(state.exchangeRatesBySlug).some(branch => Number.isSafeInteger(branch.rates?.[sort]?.rateScaledE6));
+  }
+  if (DENOMS_1965.includes(/** @type {any} */ (sort))) {
+    return state.exchange1965.enabled === true && state.exchange1965.hasUsableSnapshot &&
+      Object.values(state.exchange1965.ratesBySlug).some(branch => Number.isSafeInteger(branch.rates?.[sort]?.rateScaledE6));
+  }
+  return false;
 }
 
 /** @returns {ExchangeScheduleState} */
@@ -412,6 +428,7 @@ export function syncExchangeControls() {
 export function setExchangeLocationsVisible(visible) {
   state.exchangeLocationsOn = visible;
   localStorage.setItem(EXCHANGE_TOGGLE_STORAGE_KEY, String(visible));
+  setExchange1965LocationsVisible(visible);
   if (!visible) {
     cancelTimer();
     cancelRequest();

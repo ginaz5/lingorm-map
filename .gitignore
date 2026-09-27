@@ -37,5 +37,5 @@ demo-output/
 lingorm-map-update-demo-threads-9x16.mp4
 
 # Machine-specific local tool state (run locks, cooldowns, last attempts).
-# Kept ignored even with no current writer so old local state is never committed.
+# Includes the orange-rate collector's run locks, cooldowns and last attempts.
 .local-state/
