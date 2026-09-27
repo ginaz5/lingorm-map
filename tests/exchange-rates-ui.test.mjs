@@ -6,6 +6,7 @@ import { state } from '../src/core/state.js';
 import {
   applyExchangeRatesPayload,
   initExchangeRates,
+  isSupportedLocation,
   nextExchangeAction,
   parseExchangeRatesPayload,
   scheduleExchangeAction,
@@ -13,12 +14,17 @@ import {
   syncExchangeControls,
 } from '../src/features/exchange-rates.js';
 import {
+  buildCatFilter,
+  buildTypeFilter,
+  isPublicLocation,
   matchesLocationFilters,
   renderExchangeRates,
   sortVisibleIndexes,
 } from '../src/ui/render.js';
 import { applyFiltersAndSyncMap } from '../src/app/app-coordinator.js';
-import { lang, setLang } from '../src/core/i18n.js';
+import { reconcileDestinationFilter } from '../src/features/destination-filter.js';
+import { locationTypeLabel } from '../src/data/location-types.js';
+import { lang, setLang, t as translate } from '../src/core/i18n.js';
 
 const slugs = Object.keys(BRANCH_MAPPING.branches);
 
@@ -63,12 +69,6 @@ function resetExchangeState() {
     exchangeRetryLevel: 0, exchangeLastAttemptAtMs: null,
     exchangeUpdateCheckPending: false, exchangeRatesLoading: false,
     exchangeHasUsableSnapshot: false,
-    exchange1965: {
-      ratesBySlug: {}, runId: null, controlVersion: null, enabled: null,
-      completedAt: null, nextUpdateAtMs: null, expiresAtMs: null,
-      retryLevel: 0, lastAttemptAtMs: null, updateCheckPending: false,
-      ratesLoading: false, hasUsableSnapshot: false,
-    },
   });
 }
 
@@ -130,7 +130,7 @@ test('same run response never extends locally anchored deadlines', () => {
   assert.equal(state.exchangeNextUpdateAtMs, next);
 });
 
-test('a failed green snapshot clears only its selected best-rate sort', () => {
+test('a failed green snapshot clears its selected best-rate sort', () => {
   state.exchangeSort = 'TWD';
   state.exchangeHasUsableSnapshot = true;
   applyExchangeRatesPayload({ enabled: true, controlVersion: 'green-on', snapshot: null }, {
@@ -138,12 +138,6 @@ test('a failed green snapshot clears only its selected best-rate sort', () => {
   });
   assert.equal(state.exchangeSort, 'default');
   assert.equal(state.exchangeHasUsableSnapshot, false);
-
-  state.exchangeSort = 'USD_1965';
-  applyExchangeRatesPayload({ enabled: true, controlVersion: 'green-on', snapshot: null }, {
-    requestStartedAtMs: 2_000, responseReceivedAtMs: 2_100, waitingForNewRun: false,
-  });
-  assert.equal(state.exchangeSort, 'USD_1965');
 });
 
 test('fresh snapshots without quotes disable best-rate sorting by denomination', () => {
@@ -232,9 +226,7 @@ function topRateFixture() {
     catEn: 'Currency Exchange', catZh: '換匯', type: '', destinationKey: 'bangkok',
     alt: '', notesEn: '', notesZh: '', lat: '', lng: '', icon: '💱', maps: '',
   }));
-  state.data.push({ ...state.data[0], id: 'superrich1965-56', nameEn: 'Orange branch' });
-  state.visIdx = [5, 4, 3, 2, 1, 0];
-  state.exchange1965.ratesBySlug = { 'superrich1965-56': { rates: { USD_1965: { rateScaledE6: 99_000_000 } } } };
+  state.visIdx = [4, 3, 2, 1, 0];
   state.data.slice(0, 5).forEach((row, index) => {
     state.exchangeRatesBySlug[row.id] = { rates: {
       USD_100: { rateScaledE6: [32_000_000, 34_000_000, null, 33_000_000, 31_000_000][index], displayDecimals: 2 },
@@ -306,7 +298,7 @@ test('selecting a green rate refreshes the list at the top while background upda
     [1, 3, 0],
   );
   assert.deepEqual(state.visIdx.slice(0, 3), [1, 3, 0]);
-  assert.equal((elements['loc-list'].innerHTML.match(/class="loc-card/g) || []).length, 6);
+  assert.equal((elements['loc-list'].innerHTML.match(/class="loc-card/g) || []).length, 5);
 
   elements['loc-list'].scrollTop = 400;
   applyFiltersAndSyncMap();
@@ -467,4 +459,76 @@ test('returning from a suspended tab clears expired prices before fetching', t =
   assert.equal(state.exchangeHasUsableSnapshot, false);
   t.mock.timers.tick(0);
   assert.deepEqual(observed, [false]);
+});
+
+test('published exchange rows outside the shipped rate mapping stay hidden everywhere', t => {
+  const supported = {
+    id: slugs[0], status: 'Published', catZh: '換匯', catEn: 'Currency Exchange',
+    type: '', destinationKey: 'bangkok', nameZh: '支援換匯點', nameEn: 'Supported exchange',
+    alt: '', notesZh: '', notesEn: '',
+  };
+  // A future snapshot may publish a branch of a brand this build does not
+  // carry. It must not leak in as a regular location either.
+  const unsupported = {
+    ...supported, id: 'superrich1965-56', type: 'LingOrm', destinationKey: 'pattaya',
+    nameZh: '未支援換匯點', nameEn: 'Unsupported exchange',
+  };
+  const cafe = {
+    id: 'cafe', status: 'Published', catZh: '咖啡廳', catEn: 'Cafe',
+    type: 'LingOrm', destinationKey: 'bangkok', nameZh: '咖啡店', nameEn: 'Cafe',
+    alt: '', notesZh: '', notesEn: '',
+  };
+
+  assert.equal(isSupportedLocation(supported), true);
+  assert.equal(isSupportedLocation(unsupported), false);
+  assert.equal(isSupportedLocation(cafe), true);
+  assert.equal(isPublicLocation(unsupported), false);
+
+  // List, search, favorites and category filter, with the toggle on or off.
+  state.favorites = new Set([unsupported.id]);
+  for (const toggleOn of [true, false]) {
+    state.exchangeLocationsOn = toggleOn;
+    for (const favFilterOn of [false, true]) {
+      state.favFilterOn = favFilterOn;
+      assert.equal(matchesLocationFilters(unsupported, '', '', ''), false);
+      assert.equal(matchesLocationFilters(unsupported, 'Unsupported', '', ''), false);
+      assert.equal(matchesLocationFilters(unsupported, '', 'Currency Exchange', ''), false);
+    }
+  }
+  state.favFilterOn = false;
+  state.exchangeLocationsOn = true;
+  assert.equal(matchesLocationFilters(supported, '', '', ''), true);
+  assert.equal(matchesLocationFilters(cafe, '', '', ''), true);
+
+  // Category, label and destination options only count supported rows.
+  const elements = { 'cat-filter': { value: '', innerHTML: '' }, 'type-filter': { value: '', innerHTML: '' } };
+  const storage = new Map();
+  const descriptors = {
+    document: Object.getOwnPropertyDescriptor(globalThis, 'document'),
+    localStorage: Object.getOwnPropertyDescriptor(globalThis, 'localStorage'),
+  };
+  Object.defineProperty(globalThis, 'document', {
+    configurable: true, writable: true, value: { getElementById: id => elements[id] ?? null },
+  });
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true, writable: true,
+    value: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
+  });
+  t.after(() => {
+    for (const [key, descriptor] of Object.entries(descriptors)) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+  });
+
+  state.data = [supported, unsupported, cafe];
+  buildCatFilter();
+  const exchangeLabel = lang === 'zh' ? supported.catZh : supported.catEn;
+  assert.ok(elements['cat-filter'].innerHTML.includes(translate('filter_option_count', exchangeLabel, 1)));
+  buildTypeFilter();
+  assert.ok(elements['type-filter'].innerHTML.includes(translate('filter_option_count', locationTypeLabel('LingOrm', lang), 1)));
+
+  state.selectedDestinations = new Set(['bangkok', 'pattaya']);
+  assert.equal(reconcileDestinationFilter(), true);
+  assert.deepEqual([...state.selectedDestinations], ['bangkok']);
 });

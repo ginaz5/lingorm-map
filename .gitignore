@@ -36,6 +36,6 @@ data/locations.next.csv
 demo-output/
 lingorm-map-update-demo-threads-9x16.mp4
 
-# Local orange-rate collector state (run lock + cooldown + last attempt),
-# written by `npm run fx:1965:fetch`. Machine-specific, never committed.
+# Machine-specific local tool state (run locks, cooldowns, last attempts).
+# Kept ignored even with no current writer so old local state is never committed.
 .local-state/

@@ -19,7 +19,7 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 - Mobile-responsive with map / list tab switching and scroll
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
-- Optional currency-exchange overlay with brand-isolated SuperRich Thailand and SuperRich 1965 rate services, best-rate sorting for published SuperRich Thailand branches, and a persisted toggle (off by default; SuperRich 1965 records remain unpublished until their review gate passes — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
+- Optional SuperRich Thailand currency-exchange overlay: 26 branches with live USD 100 / USD 50 / TWD buying rates, best-rate sorting, and a persisted toggle (off by default; gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
 
 ---
 
@@ -241,28 +241,9 @@ HERE_API_KEY=your_here_api_key          # required — fallback map provider
 GOOGLE_MAPS_KEY=your_google_maps_key    # optional — primary map provider
 GOOGLE_MAP_ID=your_google_map_id        # optional — required if using Google Maps
 DATA_SOURCE=notion                      # optional — notion is the default and only supported value
-EXCHANGE_RATES_1965_FETCH_MODE=netlify  # optional — netlify (default) or local; see below
-NETLIFY_SITE_ID=...                     # optional — admin CLIs only (rate control and the local collector)
+NETLIFY_SITE_ID=...                     # optional — admin CLI only (exchange-rate control)
 NETLIFY_AUTH_TOKEN=...                  # optional — admin CLIs only; never used by client code
 ```
-
-`EXCHANGE_RATES_1965_FETCH_MODE` decides **who fetches** the SuperRich 1965
-(orange) rates. It is not the public on/off switch:
-
-- `netlify` (default) — the Scheduled Function fetches every `:00` and `:30`.
-- `local` — the Scheduled Function returns before creating the Blobs store
-  (no control read, no breaker or snapshot write, no source request) and
-  `npm run fx:1965:fetch -- run --publish` on a developer machine publishes
-  the snapshot instead. `/api/exchange-rates-1965` keeps serving whatever
-  valid snapshot exists, so this is **not** interchangeable with
-  `fx:1965:control -- disable`, which also hides rates from the frontend.
-
-The orange source (`www.superrich1965.com`) has returned Cloudflare challenges
-to Netlify requests. Earlier probes succeeded both locally and on Netlify;
-the triggering rule and the reliability of local collection remain unverified.
-The green collector is unchanged.
-Operating steps are in
-[note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#橘標本機抓取collector).
 
 `DATA_SOURCE=sheet` (the legacy Google Sheets rollback path) is retired as of
 the 2026-07-21 three-status cutover — `normalizeStatus()` no longer maps
@@ -425,10 +406,10 @@ Markers are 28px brand-color emoji circles. Public status is intentionally not
 encoded in marker color. The emoji comes from `row.icon` and falls back to 📍
 if missing.
 
-Currency-exchange branches (`Category = Currency Exchange`) use green
-`.is-exchange` or orange `.is-exchange-orange` marker variants according to
-their company. A cluster made entirely of one brand uses that brand color;
-mixed-brand and mixed-category clusters keep the default color. See `makeMarkerContent`,
+Currency-exchange branches (`Category = Currency Exchange`) get a dedicated
+green `.is-exchange` variant on both the individual marker and, when a
+cluster is made up entirely of exchange branches, the cluster badge itself
+(a mixed cluster keeps the default color). See `makeMarkerContent`,
 `isExchangeOnlyCluster` (Google), and `isExchangeOnlyDataPoints` (HERE) in
 `src/map/map.js`.
 

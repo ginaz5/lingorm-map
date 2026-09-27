@@ -62,12 +62,9 @@ HERE Maps 的 browser key 同樣會由 SDK request 暴露；應在 HERE project 
 `src/map/map.js` 的 `makeMarkerContent(icon, isExchange)` 產生：
 
 ```js
-export function makeMarkerContent(icon, exchangeBrand = null) {
+export function makeMarkerContent(icon, isExchange = false) {
   const el = document.createElement('div');
-  const brandClass = exchangeBrand === 'green'
-    ? ' is-exchange'
-    : exchangeBrand === 'orange' ? ' is-exchange-orange' : '';
-  el.className = `marker-dot${brandClass}`;
+  el.className = `marker-dot${isExchange ? ' is-exchange' : ''}`;
   el.textContent = icon || '📍';
   return el;
 }
@@ -75,13 +72,13 @@ export function makeMarkerContent(icon, exchangeBrand = null) {
 
 - Emoji 取自 `row.icon`（由 `src/data/csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
 - 公開狀態刻意不編碼進顏色（`Published` 才會出現在地圖上，篩選已在更上游處理）。
-- 換匯顏色由 `getExchangeBrand(row)` 決定：`.is-exchange` 為綠標，
-  `.is-exchange-orange` 為橘標；`isExchangeLocation(row)` 對外仍回 boolean。
+- 唯一的顏色變體是 `.is-exchange`（`--marker-bg:#16835b` 綠），套用在
+  `Category = Currency Exchange` 的分店（`isExchangeLocation(row)`）。
 
-**群聚著色：** 全綠群聚顯示綠色、全橘群聚顯示橘色；混合品牌或含一般地點的群聚維持中性色：
+**群聚著色（Phase D2）：** 單店綠色標記之外，全部由換匯分店組成的群聚也會顯示同一組綠色，混合群聚維持原有樣式（可接受的降級，先於 Phase D1 就這樣約定）：
 
-- **Google：** `isExchangeOnlyCluster(markers)` 讀取各 marker 的綠／橘 class，僅在所有 marker 品牌一致時回傳該品牌。
-- **HERE：** `isExchangeOnlyDataPoints(forEachDataPoint)` 走訪葉節點的 `exchangeBrand`，套用相同三態規則。
+- **Google：** `MarkerClusterer` 的 `renderer.render(cluster, stats, map)` 收到的 `cluster.markers` 就是建立單店 marker 時保留的同一批物件（`m.__markerContent = el`），因此 `isExchangeOnlyCluster(markers)` 只需檢查每個 marker 的 `__markerContent.classList.contains('is-exchange')`。
+- **HERE：** `H.clustering.ICluster` 沒有現成的「成分清單」，改用 `cluster.forEachDataPoint(cb)` 走訪葉節點，`isExchangeOnlyDataPoints(forEachDataPoint)` 依此判斷是否每個 `DataPoint` 的 `getData().isExchange` 都是 `true`。
 - 兩個判斷函式都刻意設計成純函式（不依賴 Google／HERE 全域物件），方便在 Node 測試環境下單獨驗證，見 `tests/view-first-ui.test.mjs`。
 
 ---
@@ -334,45 +331,9 @@ null`，前端顯示「暫無報價」而不是隱藏整張卡片。
 安排查詢。自動停用後的 breaker 清理沿用該輪寫入的 ETag，遇到較新的
 手動控制變更就放棄清理，避免覆蓋重新啟用後的版本。
 
-SuperRich 1965（橘標）沿用同一種排程快照模式，但刻意使用平行模組、
-`exchange-rates-1965` store／key、`EXCHANGE_RATES_1965_ENABLED` 與
-`/api/exchange-rates-1965`，避免任一品牌的來源故障、breaker 或管理操作
-影響另一品牌。橘標來源每次只回單店且不帶可回查的分店識別碼，因此排程
-只讀已人工核對的 38 店 mapping，不在每輪抓 inventory 或自動配對；請求
-採併發 2、起始間隔 200ms、單次逾時 5 秒、整輪 25 秒與全輪最多一次
-retry。403、429 或 `cf-mitigated: challenge` 立即停止整輪，沿用
-6h→24h→自動停用的 breaker。完整規格見
-[橘標實作計畫](../docs/superrich1965-exchange-map-plan.zh-TW.md) §5。
-
-橘標另外保留「本機 collector」作為抓取來源的第二條路徑，原因是
-`www.superrich1965.com` 的匯率請求曾在 Netlify 收到
-`cf-mitigated: challenge`。本機及 Netlify 都曾成功取得匯率，具體觸發規則、
-出口 IP 的影響與本機持續可用性尚未確認，不能單靠回應 headers 判定挑戰
-類型或根因。先以既有本機成功紀錄驗證另一個執行位置，維持可辨識的
-User-Agent、退避與遇阻即停；綠標流程不變。
-
-`EXCHANGE_RATES_1965_FETCH_MODE=netlify|local` 只決定「誰抓」，與
-`EXCHANGE_RATES_1965_ENABLED`／control.enabled（決定「前台看不看得到」）
-完全分離。`local` 時排程 function 在建立 store 前就返回，記一筆
-`status:"skipped"`、`reason:"external_fetcher"` 的 INFO；停用公開報價仍然
-只能用 `fx:1965:control -- disable`。
-
-抓取節奏改為 profile 注入：`netlify` profile 維持併發 2、起始間隔 200ms、
-單次 5 秒、整輪 25 秒；`local` profile 為併發 1、起始間隔 1,500ms、單次
-5 秒、整輪 180 秒。`canRetry()` 與 pacing 讀同一份已解析的 profile，避免
-只改請求端、判斷端仍用寫死常數而互相矛盾。
-
-本機發布沿用同一組 contract：只有 `complete` 才以 ETag 條件寫入 snapshot，
-partial／failed／blocked、控制版本變動、寫入衝突與「整輪成功但已過
-`expiresAt`」都不覆寫舊報價、也不延長舊報價壽命；失敗仍更新 breaker 與新
-增的 `exchange-rates-1965/last-attempt` 摘要（有界、不含原始 response，較舊
-執行不覆蓋較新摘要）。本機另有 gitignored 的 `.local-state/` 執行鎖與冷卻；
-冷卻階梯刻意比遠端 breaker 溫和（30 分鐘→6 小時→24 小時），因為它要防的是
-人工反覆重跑探測，而不是每 30 分鐘無人看管的排程。鎖只由持有者刪除，異常
-退出時回報 pid 與持續時間交人工判斷。
-
-前端同樣隔離：綠標沿用既有扁平 state，橘標集中在
-`state.exchange1965`；兩套 timer、request、expiry 與 retry 各自運作。
-兩品牌只共用顯示開關與排序 select。排序 key 依品牌分桶，另一品牌不參與
-比較；任一品牌停用或快照過期，只會停用自己的選項與報價。卡片依品牌選擇
-面額、查詢時間和官網連結，並顯示公司名稱；橘標不得連到綠標官網。
+這一版只支援 SuperRich Thailand（綠標）。正式快照仍可能包含其他換匯品牌的
+資料列（例如已暫停的 SuperRich 1965），因此顯示規則改以「此版本支援的換匯點」
+判斷：`Category = Currency Exchange` 的地點必須在綠標 mapping 中才會顯示，
+由 `isSupportedLocation()` 併入 `isPublicLocation()`，清單、搜尋、收藏、篩選
+計數、目的地選項與 Google／HERE marker 共用同一個判斷。刻意不用品牌 Slug 黑名單；
+收藏中既有的其他品牌 ID 也不清除，日後支援該品牌時仍可對應。

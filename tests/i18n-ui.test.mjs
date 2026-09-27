@@ -104,8 +104,7 @@ test('currency exchange controls and required notices are bilingual', () => {
   const keys = [
     'fx_toggle', 'fx_filter_note', 'fx_loading', 'fx_unavailable',
     'fx_sort_default', 'fx_sort_usd_100', 'fx_sort_usd_50', 'fx_sort_twd',
-    'fx_brand_green', 'fx_disclaimer', 'fx_disclaimer_1965',
-    'fx_source_note', 'fx_source_note_1965',
+    'fx_brand_green', 'fx_disclaimer', 'fx_source_note',
   ];
   for (const key of keys) {
     assert.equal(typeof T.zh[key], 'string', `missing zh ${key}`);
@@ -122,14 +121,6 @@ test('currency exchange controls and required notices are bilingual', () => {
     assert.equal(T.zh[key], T.en[key], `${key} should match across languages`);
     assert.doesNotMatch(T.zh[key], /banknote|美元鈔|鈔票/);
   }
-
-  for (const key of ['fx_denom_usd_1965', 'fx_denom_twd_1965']) {
-    assert.match(T.zh[key], /SuperRich 1965/);
-    assert.match(T.en[key], /SuperRich 1965/);
-    assert.doesNotMatch(T.zh[key], /banknote|美元鈔|鈔票/);
-  }
-  assert.equal(T.zh.fx_brand_orange, 'SuperRich Currency Exchange (1965) Company Limited.');
-  assert.equal(T.en.fx_brand_orange, 'SuperRich Currency Exchange (1965) Company Limited.');
 
   assert.equal(T.zh.fx_rate_value('USD', '32.83'), '1 USD = 32.83 THB');
   assert.equal(T.zh.fx_disclaimer, '非即時匯率，以櫃檯為準');
