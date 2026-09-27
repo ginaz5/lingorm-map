@@ -97,8 +97,10 @@ test('resource links distinguish the Fanpage homepage from its schedule shortcut
   const dialog = html.match(/<dialog\b[\s\S]*?<\/dialog>/)?.[0];
   assert.ok(dialog);
   const links = [...dialog.matchAll(/<a\b[^>]*>/g)].map(match => match[0]);
-  assert.equal(links.length, 5);
+  assert.equal(links.length, 7);
   for (const [url, className] of [
+    ['https://maps.app.goo.gl/eSnPtMYzPsqS3PjU7?g_st=i', 'fan-resource-visit'],
+    ['https://www.threads.com/@___epoh___/post/DPv0bDVieSE', 'fan-resource-shortcut'],
     ['https://www.lingorm.site/', 'fan-resource-visit'],
     ['https://www.lingorm.site/upcoming-schedule', 'fan-resource-shortcut'],
     ['https://loism1127.com/', 'fan-resource-visit'],
@@ -112,4 +114,17 @@ test('resource links distinguish the Fanpage homepage from its schedule shortcut
     assert.match(link, /rel="noopener noreferrer"/);
     assert.match(link, /data-i18n-aria="fan_resources_/);
   }
+});
+
+test('the original map card keeps its author source beside the complete Google Maps list', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const card = [...html.matchAll(/<article class="fan-resource">[\s\S]*?<\/article>/g)]
+    .map(match => match[0])
+    .find(markup => markup.includes('https://maps.app.goo.gl/eSnPtMYzPsqS3PjU7?g_st=i'));
+  assert.ok(card);
+  assert.match(card, /data-i18n="fan_resources_map_subtitle"/);
+  assert.match(card, /data-i18n="fan_resources_map_desc"/);
+  assert.match(card, /href="https:\/\/www\.threads\.com\/@___epoh___\/post\/DPv0bDVieSE"/);
+  assert.match(card, /data-i18n="fan_resources_map_source"/);
+  assert.match(card, /data-i18n="fan_resources_map_open"/);
 });

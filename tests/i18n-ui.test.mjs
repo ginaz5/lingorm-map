@@ -201,6 +201,10 @@ test('every resources label and accessible link name is translated by updateLang
   const keys = bindings.map(match => match[2]);
   assert.ok(keys.includes('fan_resources_fanpage_desc'));
   assert.ok(keys.includes('fan_resources_schedule_aria'));
+  assert.ok(keys.includes('fan_resources_map_desc'));
+  assert.ok(keys.includes('fan_resources_map_source'));
+  assert.ok(keys.includes('fan_resources_map_source_aria'));
+  assert.ok(keys.includes('fan_resources_map_aria'));
   assert.ok(keys.includes('fan_resources_news_desc'));
   assert.ok(keys.includes('fan_resources_news_aria'));
   assert.ok(keys.includes('fan_resources_pics_desc'));
@@ -225,6 +229,17 @@ test('every resources label and accessible link name is translated by updateLang
       assert.notEqual(value, key);
     }
   }
+});
+
+test('the map resource credits its author and explains saving the full Maps list in both languages', () => {
+  for (const language of ['zh', 'en']) {
+    assert.match(T[language].fan_resources_map_subtitle, /Abu Chicken Kwong \(epoh\)/);
+    assert.match(T[language].fan_resources_map_source, /@___epoh___/);
+  }
+  assert.match(T.zh.fan_resources_map_desc, /地圖始祖/);
+  assert.match(T.zh.fan_resources_map_desc, /儲存整份清單/);
+  assert.match(T.en.fan_resources_map_desc, /original LingOrm map/);
+  assert.match(T.en.fan_resources_map_desc, /Save the entire list in Google Maps/);
 });
 
 test('Chinese fan resources intro displays the requested line break', async () => {

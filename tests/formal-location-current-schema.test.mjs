@@ -49,6 +49,7 @@ test('current formal schema matches the 20-property Notion contract', () => {
     { name: 'TW', color: 'pink' },
     { name: 'HK', color: 'yellow' },
     { name: 'MO', color: 'orange' },
+    { name: 'JP', color: 'red' },
   ]);
   assert.deepEqual(CURRENT_FORMAL_DESTINATION_OPTIONS, [
     { name: 'bangkok', color: 'blue' },
@@ -68,6 +69,7 @@ test('current formal schema matches the 20-property Notion contract', () => {
     { name: 'hualien', color: 'green' },
     { name: 'hong-kong', color: 'purple' },
     { name: 'macau', color: 'red' },
+    { name: 'tokyo', color: 'pink' },
   ]);
   assert.deepEqual(FORMAL_PROPERTIES_RETIRED_AFTER_20260720, [
     'Branch Group',
@@ -263,7 +265,7 @@ test('current formal schema inspection enforces geography taxonomy options', () 
   assert.deepEqual(inspectCurrentFormalCountryOptions(properties), {
     checked: true,
     ok: false,
-    missing: ['TW', 'HK', 'MO'],
+    missing: ['TW', 'HK', 'MO', 'JP'],
     unexpected: ['SG'],
     wrongColors: [],
   });
@@ -286,7 +288,7 @@ test('current formal schema inspection enforces geography taxonomy options', () 
   assert.equal(schema.ok, false);
   assert.match(
     currentFormalSchemaIssueMessages(schema).join('; '),
-    /Country Code options missing TW, HK, MO; unexpected SG/
+    /Country Code options missing TW, HK, MO, JP; unexpected SG/
   );
   assert.match(
     currentFormalSchemaIssueMessages(schema).join('; '),

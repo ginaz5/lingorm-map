@@ -14,7 +14,7 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 - Popup with Navigate + Open in Google Maps buttons (responsive: icon-only on mobile)
 - zh / en bilingual UI with one-click toggle
 - Light / dark theme
-- Bilingual Fan Resources dialog with LingOrm Fanpage, its schedule shortcut, LOism, LingOrmNews, and LingOrm Pics
+- Bilingual Fan Resources dialog with Abu Chicken Kwong (epoh)’s Google Maps list and source attribution, LingOrm Fanpage, its schedule shortcut, LOism, LingOrmNews, and LingOrm Pics
 - Low-friction issue reporting via Netlify Forms
 - Mobile-responsive with map / list tab switching and scroll
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
@@ -365,9 +365,10 @@ validation and therefore blocks the build/deploy path. Paused and inactive
 drafts may remain unclassified until they are ready to publish.
 
 The supported countries are Thailand (`TH`), Vietnam (`VN`), Taiwan (`TW`),
-Hong Kong (`HK`), and Macau (`MO`). Taiwan destinations are `taipei`,
+Hong Kong (`HK`), Macau (`MO`), and Japan (`JP`). Taiwan destinations are `taipei`,
 `taichung`, `kaohsiung`, `tainan`, and `hualien`; Hong Kong and Macau use
-`hong-kong` and `macau` respectively. The existing Thailand and Vietnam keys
+`hong-kong` and `macau` respectively; Japan currently supports `tokyo` (東京 / Tokyo).
+The existing Thailand and Vietnam keys
 remain stable.
 
 `Type` is exported as public location metadata and accepts `LingOrm`,

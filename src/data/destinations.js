@@ -15,6 +15,7 @@ export const COUNTRIES = Object.freeze([
   { code: 'TW', en: 'Taiwan', zh: '台灣', flag: '🇹🇼' },
   { code: 'HK', en: 'Hong Kong', zh: '香港', flag: '🇭🇰' },
   { code: 'MO', en: 'Macau', zh: '澳門', flag: '🇲🇴' },
+  { code: 'JP', en: 'Japan', zh: '日本', flag: '🇯🇵' },
 ]);
 
 /** @type {readonly Destination[]} */
@@ -36,6 +37,7 @@ export const DESTINATIONS = Object.freeze([
   { key: 'hualien', countryCode: 'TW', en: 'Hualien', zh: '花蓮' },
   { key: 'hong-kong', countryCode: 'HK', en: 'Hong Kong', zh: '香港' },
   { key: 'macau', countryCode: 'MO', en: 'Macau', zh: '澳門' },
+  { key: 'tokyo', countryCode: 'JP', en: 'Tokyo', zh: '東京' },
 ]);
 
 export const COUNTRY_CODES = Object.freeze(COUNTRIES.map(country => country.code));

@@ -16,11 +16,11 @@ import {
   saveDestinationFilter,
   toggleCountryDestinations,
 } from '../src/features/destination-filter.js';
-import { t } from '../src/core/i18n.js';
+import { lang, setLang, t } from '../src/core/i18n.js';
 import { state } from '../src/core/state.js';
 
 test('destination taxonomy exposes stable countries and valid pairs', () => {
-  assert.deepEqual(COUNTRY_CODES, ['TH', 'VN', 'TW', 'HK', 'MO']);
+  assert.deepEqual(COUNTRY_CODES, ['TH', 'VN', 'TW', 'HK', 'MO', 'JP']);
   assert.deepEqual(DESTINATION_KEYS, [
     'bangkok',
     'khon-kaen',
@@ -39,6 +39,7 @@ test('destination taxonomy exposes stable countries and valid pairs', () => {
     'hualien',
     'hong-kong',
     'macau',
+    'tokyo',
   ]);
   assert.equal(isValidDestinationPair('TH', 'bangkok'), true);
   assert.equal(isValidDestinationPair('TH', 'chonburi'), true);
@@ -49,6 +50,9 @@ test('destination taxonomy exposes stable countries and valid pairs', () => {
   assert.equal(isValidDestinationPair('HK', 'hong-kong'), true);
   assert.equal(isValidDestinationPair('MO', 'macau'), true);
   assert.equal(isValidDestinationPair('TW', 'hong-kong'), false);
+  assert.equal(isValidDestinationPair('JP', 'tokyo'), true);
+  assert.equal(isValidDestinationPair('TH', 'tokyo'), false);
+  assert.equal(isValidDestinationPair('JP', 'bangkok'), false);
 });
 
 test('destination menu height stays above the mobile panel boundary', () => {
@@ -120,7 +124,7 @@ test('destination selections persist across reload and ignore unknown keys', () 
   const values = new Map([
     [
       DESTINATION_FILTER_STORAGE_KEY,
-      JSON.stringify(['koh-samui', 'unknown', 'bangkok']),
+      JSON.stringify(['koh-samui', 'unknown', 'bangkok', 'tokyo']),
     ],
   ]);
   const previousStorageDescriptor = Object.getOwnPropertyDescriptor(
@@ -139,15 +143,15 @@ test('destination selections persist across reload and ignore unknown keys', () 
     loadDestinationFilter();
     assert.deepEqual(
       [...state.selectedDestinations].sort(),
-      ['bangkok', 'koh-samui']
+      ['bangkok', 'koh-samui', 'tokyo']
     );
     assert.equal(state.pendingDestinationFit, true);
 
-    state.selectedDestinations = new Set(['koh-samui', 'bangkok']);
+    state.selectedDestinations = new Set(['koh-samui', 'bangkok', 'tokyo']);
     saveDestinationFilter();
     assert.equal(
       values.get(DESTINATION_FILTER_STORAGE_KEY),
-      JSON.stringify(['bangkok', 'koh-samui'])
+      JSON.stringify(['bangkok', 'koh-samui', 'tokyo'])
     );
   } finally {
     if (previousStorageDescriptor) {
@@ -157,6 +161,62 @@ test('destination selections persist across reload and ignore unknown keys', () 
     }
     state.selectedDestinations = new Set();
     state.pendingDestinationFit = false;
+  }
+});
+
+test('Tokyo appears under Japan in both languages only after a location is published', () => {
+  const groups = { innerHTML: '', querySelectorAll: () => [] };
+  const elements = new Map([
+    ['dest-filter-label', { textContent: '' }],
+    ['dest-filter-groups', groups],
+    ['dest-filter-all', { checked: false }],
+  ]);
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  const previousStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  const previousLanguage = lang;
+  const previousData = state.data;
+  const previousSelection = state.selectedDestinations;
+  Object.defineProperty(globalThis, 'document', {
+    configurable: true,
+    value: { getElementById: id => elements.get(id) ?? null },
+  });
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: { setItem() {} },
+  });
+  state.data = [{ status: 'Paused', countryCode: 'JP', destinationKey: 'tokyo' }];
+  state.selectedDestinations = new Set();
+
+  try {
+    renderDestinationFilter();
+    assert.doesNotMatch(groups.innerHTML, /data-country-code="JP"/);
+    state.data[0].status = 'Published';
+    for (const [language, country, destination] of [
+      ['zh', '日本', '東京'],
+      ['en', 'Japan', 'Tokyo'],
+    ]) {
+      setLang(language);
+      renderDestinationFilter();
+      assert.match(groups.innerHTML, /data-country-code="JP"/);
+      assert.match(groups.innerHTML, /value="tokyo"/);
+      assert.ok(groups.innerHTML.includes(`<span>${country}</span>`));
+      assert.ok(groups.innerHTML.includes(`<span>${destination}</span>`));
+    }
+    toggleCountryDestinations('JP', new Set(['bangkok', 'tokyo']));
+    assert.deepEqual([...state.selectedDestinations], ['tokyo']);
+    assert.equal(countrySelectionState('JP', new Set(['tokyo'])).checked, true);
+    toggleCountryDestinations('JP', new Set(['bangkok', 'tokyo']));
+    assert.equal(state.selectedDestinations.size, 0);
+  } finally {
+    setLang(previousLanguage);
+    for (const [key, descriptor] of [
+      ['document', previousDocument], ['localStorage', previousStorage],
+    ]) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+    state.data = previousData;
+    state.selectedDestinations = previousSelection;
   }
 });
 

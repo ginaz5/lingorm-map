@@ -254,9 +254,9 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 **資料契約：** taxonomy 集中在 `src/data/destinations.js`。每個 `Published`
 地點必須具備受支援且互相匹配的 `Country Code` 與 `Destination Key`；
 匯出快照驗證失敗即阻擋 build/deploy。`Paused`／`Inactive` 草稿可暫時未分類。
-目前支援 `TH`、`VN`、`TW`、`HK`、`MO`；台灣目的地為 `taipei`、
+目前支援 `TH`、`VN`、`TW`、`HK`、`MO`、`JP`；台灣目的地為 `taipei`、
 `taichung`、`kaohsiung`、`tainan`、`hualien`，香港與澳門分別使用
-`hong-kong`、`macau`。既有泰國與越南 key 保持不變。
+`hong-kong`、`macau`，日本目前支援 `tokyo`（東京 / Tokyo）。既有泰國與越南 key 保持不變。
 
 ---
 

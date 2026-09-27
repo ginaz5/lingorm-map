@@ -334,8 +334,23 @@ test('Candidate address evidence suggests supported Country Code and Destination
   );
 });
 
-test('Candidate address evidence maps TW, HK, and MO destinations', () => {
+test('Candidate address evidence maps TW, HK, MO, and JP destinations', () => {
   const cases = [
+    ...['Tokyo', 'Tokyo-to', '東京都'].map(name => ({
+      countryCode: 'JP',
+      destinationKey: 'tokyo',
+      formattedAddress: `Marunouchi, Chiyoda City, ${name}, Japan`,
+      area: {
+        longText: name,
+        shortText: name,
+        types: ['administrative_area_level_1'],
+      },
+      country: {
+        longText: 'Japan',
+        shortText: 'JP',
+        types: ['country'],
+      },
+    })),
     {
       countryCode: 'TW',
       destinationKey: 'kaohsiung',
@@ -449,6 +464,19 @@ test('Candidate taxonomy suggestions fail closed for unsupported or unmapped add
   assert.equal(unsupportedCountry.countryCode.observedValue, 'SG');
   assert.equal(unsupportedCountry.countryCode.recommendedValue, null);
   assert.deepEqual(unsupportedCountry.destinationKey.options, []);
+
+  const osaka = buildCandidateLocationSuggestions({
+    candidate: {
+      formattedAddress: 'Chuo Ward, Osaka, Japan',
+      addressComponents: [
+        { longText: 'Osaka', shortText: 'Osaka', types: ['administrative_area_level_1'] },
+        { longText: 'Japan', shortText: 'JP', types: ['country'] },
+      ],
+    },
+  });
+  assert.equal(osaka.countryCode.recommendedValue, 'JP');
+  assert.equal(osaka.destinationKey.recommendedValue, null);
+  assert.deepEqual(osaka.destinationKey.options, []);
 });
 
 test('resolve dry-run defaults to legacy Place ID refresh and never writes Notion', async () => {

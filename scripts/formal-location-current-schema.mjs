@@ -81,6 +81,7 @@ const COUNTRY_OPTION_COLORS = Object.freeze({
   TW: 'pink',
   HK: 'yellow',
   MO: 'orange',
+  JP: 'red',
 });
 
 /** @type {Readonly<Record<string, string>>} */
@@ -102,6 +103,7 @@ const DESTINATION_OPTION_COLORS = Object.freeze({
   hualien: 'green',
   'hong-kong': 'purple',
   macau: 'red',
+  tokyo: 'pink',
 });
 
 export const CURRENT_FORMAL_COUNTRY_OPTIONS = Object.freeze(
