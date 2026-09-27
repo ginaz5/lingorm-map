@@ -253,8 +253,8 @@ export function buildPopupContent(i) {
     <div class="popup-name">${row.icon} ${name}</div>
     ${row.alt ? `<div class="popup-alt">${row.alt}</div>` : ''}
     <div class="badges popup-badges">
-      <span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-cat'}">${cat}</span>
-      ${type ? `<span class="badge b-type">${type}</span>` : ''}
+      ${cat ? `<span class="badge b-cat">${cat}</span>` : ''}
+      ${type ? `<span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-type'}">${type}</span>` : ''}
     </div>
     <div class="popup-notes">${notes}</div>
     ${renderExchangeRates(row)}
@@ -295,8 +295,8 @@ export function renderList() {
         </div>
       </div>
       <div class="badges">
-        <span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-cat'}">${cat}</span>
-        ${type ? `<span class="badge b-type">${type}</span>` : ''}
+        ${cat ? `<span class="badge b-cat">${cat}</span>` : ''}
+        ${type ? `<span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-type'}">${type}</span>` : ''}
       </div>
       <div class="card-notes">${notes}</div>
       ${renderExchangeRates(row)}
@@ -429,7 +429,7 @@ export function buildCatFilter() {
     .filter(isPublicLocation)
     .forEach(row => {
       const category = lang === 'zh' ? row.catZh : row.catEn;
-      categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
+      if (category) categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
     });
   const catFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('cat-filter'));
   if (!catFilter) throw new Error('Missing required element #cat-filter');

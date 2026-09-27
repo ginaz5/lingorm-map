@@ -464,14 +464,14 @@ test('returning from a suspended tab clears expired prices before fetching', t =
 
 test('published exchange rows outside the shipped rate mapping stay hidden everywhere', t => {
   const supported = {
-    id: slugs[0], status: 'Published', catZh: '換匯', catEn: 'Currency Exchange',
-    type: '', destinationKey: 'bangkok', nameZh: '支援換匯點', nameEn: 'Supported exchange',
+    id: slugs[0], status: 'Published', catZh: '', catEn: '',
+    type: 'Currency Exchange', destinationKey: 'bangkok', nameZh: '支援換匯點', nameEn: 'Supported exchange',
     alt: '', notesZh: '', notesEn: '',
   };
   // A future snapshot may publish a branch of a brand this build does not
   // carry. It must not leak in as a regular location either.
   const unsupported = {
-    ...supported, id: 'superrich1965-56', type: 'LingOrm', destinationKey: 'pattaya',
+    ...supported, id: 'superrich1965-56', destinationKey: 'pattaya',
     nameZh: '未支援換匯點', nameEn: 'Unsupported exchange',
   };
   const cafe = {
@@ -485,19 +485,21 @@ test('published exchange rows outside the shipped rate mapping stay hidden every
   assert.equal(isSupportedLocation(cafe), true);
   assert.equal(isPublicLocation(unsupported), false);
 
-  // List, search, favorites and category filter.
+  // List, search, favorites and label filter.
   state.favorites = new Set([unsupported.id]);
   for (const favFilterOn of [false, true]) {
     state.favFilterOn = favFilterOn;
     assert.equal(matchesLocationFilters(unsupported, '', '', ''), false);
     assert.equal(matchesLocationFilters(unsupported, 'Unsupported', '', ''), false);
-    assert.equal(matchesLocationFilters(unsupported, '', 'Currency Exchange', ''), false);
+    assert.equal(matchesLocationFilters(unsupported, '', '', 'Currency Exchange'), false);
   }
   state.favFilterOn = false;
   assert.equal(matchesLocationFilters(supported, '', '', ''), true);
   assert.equal(matchesLocationFilters(cafe, '', '', ''), true);
 
-  // Category, label and destination options only count supported rows.
+  // Category, label and destination options only count supported rows;
+  // exchange rows have no Category (they're tagged via Type only), so they
+  // never contribute a blank/empty category option.
   const elements = { 'cat-filter': { value: '', innerHTML: '' }, 'type-filter': { value: '', innerHTML: '' } };
   const storage = new Map();
   const descriptors = {
@@ -520,9 +522,11 @@ test('published exchange rows outside the shipped rate mapping stay hidden every
 
   state.data = [supported, unsupported, cafe];
   buildCatFilter();
-  const exchangeLabel = lang === 'zh' ? supported.catZh : supported.catEn;
-  assert.ok(elements['cat-filter'].innerHTML.includes(translate('filter_option_count', exchangeLabel, 1)));
+  assert.doesNotMatch(elements['cat-filter'].innerHTML, /Currency Exchange|換匯/);
   buildTypeFilter();
+  assert.ok(elements['type-filter'].innerHTML.includes(
+    translate('filter_option_count', locationTypeLabel('Currency Exchange', lang), 1)
+  ));
   assert.ok(elements['type-filter'].innerHTML.includes(translate('filter_option_count', locationTypeLabel('LingOrm', lang), 1)));
 
   state.selectedDestinations = new Set(['bangkok', 'pattaya']);

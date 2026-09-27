@@ -3,7 +3,7 @@ import BRANCH_MAPPING from '../../data/superrich-branches.json' with { type: 'js
 import { state } from '../core/state.js';
 import { DENOMS } from '../data/exchange-rates.js';
 
-export const EXCHANGE_CATEGORY = 'Currency Exchange';
+export const EXCHANGE_TYPE = 'Currency Exchange';
 export const EXCHANGE_API = '/api/exchange-rates';
 export const EXCHANGE_API_TIMEOUT_MS = 8_000;
 export const EXCHANGE_POLL_MS = 60_000;
@@ -171,14 +171,15 @@ export function isExchangeLocation(value) {
 
 /**
  * Whether this build supports showing a row at all. A Currency Exchange row
+ * (tagged via Type, not Category — Category is left blank for exchange rows)
  * is supported only when its slug is in the rate mapping this version ships,
  * so a published branch of a brand this build does not carry stays hidden
  * everywhere instead of appearing as an ordinary location. The rule is by
  * mapping membership, never by a per-brand slug blocklist.
- * @param {{id?:string, catEn?:string}} row
+ * @param {{id?:string, type?:string}} row
  */
 export function isSupportedLocation(row) {
-  return row?.catEn !== EXCHANGE_CATEGORY || isExchangeLocation(row);
+  return row?.type !== EXCHANGE_TYPE || isExchangeLocation(row);
 }
 
 /** @param {string} slug @param {'USD_100'|'USD_50'|'TWD'} denom */

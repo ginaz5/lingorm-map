@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
+import BRANCH_MAPPING from '../data/superrich-branches.json' with { type: 'json' };
 import { setLang } from '../src/core/i18n.js';
 import { state } from '../src/core/state.js';
 import {
@@ -188,6 +189,28 @@ test('map popup adds the localized Type badge and omits it when Type is blank', 
     assert.match(enPopup, /<span class="badge b-type">JKR Picks<\/span>/);
 
     assert.doesNotMatch(buildPopupContent(1), /b-type/);
+  } finally {
+    restore();
+  }
+});
+
+test('exchange locations have no Category badge and carry the green styling on the label badge instead', () => {
+  const restore = installGlobals({});
+  const exchangeSlug = Object.keys(BRANCH_MAPPING.branches)[0];
+
+  try {
+    state.data = [
+      makeLocation({ id: exchangeSlug, catEn: '', catZh: '', type: 'Currency Exchange' }),
+    ];
+
+    const zhPopup = buildPopupContent(0);
+    assert.doesNotMatch(zhPopup, /badge b-cat/);
+    assert.match(zhPopup, /<span class="badge b-exchange">換匯<\/span>/);
+
+    setLang('en');
+    const enPopup = buildPopupContent(0);
+    assert.doesNotMatch(enPopup, /badge b-cat/);
+    assert.match(enPopup, /<span class="badge b-exchange">Currency Exchange<\/span>/);
   } finally {
     restore();
   }
