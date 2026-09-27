@@ -1,6 +1,7 @@
 import { state } from '../core/state.js';
 import { getEffectiveTheme } from '../ui/ui.js';
 import { buildPopupContent, activateCard, isPublicLocation } from '../ui/render.js';
+import { cancelPopupCenter, openLocationPopup } from './popup.js';
 import { isExchangeLocation } from '../features/exchange-rates.js';
 // MarkerClusterer is loaded lazily to avoid CJS/ESM issues in Node.js test env
 /** @type {typeof import('@googlemaps/markerclusterer').MarkerClusterer|null} */
@@ -147,6 +148,7 @@ export function refreshActivePopup() {
 }
 
 export function clearActiveLocation() {
+  cancelPopupCenter();
   state.activeIdx = -1;
   document.querySelectorAll('.loc-card').forEach(card => card.classList.remove('active'));
   state.markers.forEach(marker => marker?.__markerContent?.classList.remove('active'));
@@ -421,8 +423,7 @@ export async function buildMarkers(options = {}) {
       });
       m.__markerContent = el;
       m.addListener('click', () => {
-        state.infoWindow.setContent(buildPopupContent(i));
-        state.infoWindow.open({ anchor: m, map: state.map });
+        openLocationPopup(i, buildPopupContent(i));
         activateCard(i, { centerMap: false, source: 'map_marker' });
       });
       state.markers[i] = m;
@@ -482,14 +483,7 @@ export async function buildMarkers(options = {}) {
         const pointData = data;
         const i = pointData?.index;
         if (i != null) {
-          const row = state.data[i];
-          const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
-          if (state.infoBubble) {
-            state.hereUi.removeBubble(state.infoBubble);
-            state.infoBubble = null;
-          }
-          state.infoBubble = new H.ui.InfoBubble({ lat, lng }, { content: buildPopupContent(i) });
-          state.hereUi.addBubble(state.infoBubble);
+          openLocationPopup(i, buildPopupContent(i));
           activateCard(i, { centerMap: false, source: 'map_marker' });
         }
       }

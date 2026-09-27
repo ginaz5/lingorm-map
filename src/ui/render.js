@@ -14,6 +14,7 @@ import {
 } from '../data/location-types.js';
 import { trackLocationOpen } from '../services/analytics.js';
 import { switchTab } from './ui.js';
+import { openLocationPopup } from '../map/popup.js';
 
 // ISO commit time of data/locations.csv, injected by Vite (see vite.config.js).
 // Guarded so non-Vite contexts (Node tests) don't throw a ReferenceError.
@@ -326,21 +327,11 @@ export function activateCard(i, options = {}) {
     if (state.provider === 'google') {
       state.map.setCenter({ lat, lng });
       state.map.setZoom(15);
-      if (state.markers[i] && state.infoWindow) {
-        state.infoWindow.setContent(buildPopupContent(i));
-        state.infoWindow.open({ anchor: state.markers[i], map: state.map });
-      }
+      openLocationPopup(i, buildPopupContent(i));
     } else if (state.provider === 'here') {
       state.map.setCenter({ lat, lng });
       state.map.setZoom(15);
-      if (state.hereUi) {
-        if (state.infoBubble) {
-          state.hereUi.removeBubble(state.infoBubble);
-          state.infoBubble = null;
-        }
-        state.infoBubble = new H.ui.InfoBubble({ lat, lng }, { content: buildPopupContent(i) });
-        state.hereUi.addBubble(state.infoBubble);
-      }
+      openLocationPopup(i, buildPopupContent(i));
     }
   }
 

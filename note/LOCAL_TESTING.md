@@ -161,6 +161,7 @@ http://localhost:8888
 - 目的地可跨國複選，國家 checkbox 能全選／取消子目的地，部分選取時顯示 indeterminate
 - 目的地變更立即套用，重新整理後保留，且地圖自動縮放至全部篩選結果
 - 手機版 map/list tab 正常
+- 手機版 320px／390px：點地圖標記或列表卡片後，資訊卡片本體在地圖可視範圍置中；測試長短內容、連續選取及關閉後重開。Google Maps 與 HERE 都要確認；點標記維持原縮放，桌機維持原有行為。回歸測試：`node --test tests/mobile-popup.test.mjs`。
 - 問題回報可開啟、驗證必填欄位並完成本機 mock 送出
 - 列表與地圖只顯示 `Published`
 
