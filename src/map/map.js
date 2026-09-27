@@ -413,7 +413,6 @@ export async function buildMarkers(options = {}) {
     state.data.forEach((row, i) => {
       const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
       if (!isPublicLocation(row)) return;
-      if (isExchangeLocation(row) && !state.exchangeLocationsOn) return;
       if (!lat || !lng) return;
       const el = makeMarkerContent(row.icon, isExchangeLocation(row));
       if (state.activeIdx === i) el.classList.add('active');
@@ -450,7 +449,6 @@ export async function buildMarkers(options = {}) {
     state.data.forEach((row, i) => {
       const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
       if (!isPublicLocation(row)) return;
-      if (isExchangeLocation(row) && !state.exchangeLocationsOn) return;
       if (!visibleIndexes.has(i)) return;
       if (!lat || !lng) return;
       dataPoints.push(new H.clustering.DataPoint(lat, lng, null, {

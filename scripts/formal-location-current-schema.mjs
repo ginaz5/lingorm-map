@@ -72,6 +72,7 @@ export const CURRENT_FORMAL_TYPE_OPTIONS = Object.freeze([
   { name: LOCATION_TYPES[1], color: 'green' },
   { name: LOCATION_TYPES[2], color: 'pink' },
   { name: LOCATION_TYPES[3], color: 'default' },
+  { name: LOCATION_TYPES[4], color: 'green' },
 ]);
 
 /** @type {Readonly<Record<string, string>>} */

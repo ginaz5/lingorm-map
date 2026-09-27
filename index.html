@@ -182,15 +182,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </button>
       </div>
       <div class="exchange-toolbar">
-        <label class="exchange-toggle">
-          <input id="exchange-toggle" type="checkbox" role="switch">
-          <span class="exchange-switch" aria-hidden="true"></span>
-          <span class="exchange-copy">
-            <strong data-i18n="fx_toggle"></strong>
-            <small data-i18n="fx_filter_note"></small>
-          </span>
-        </label>
-        <select class="filter-sel exchange-sort" id="exchange-sort" data-i18n-aria="fx_sort_label" hidden>
+        <label class="exchange-sort-label" for="exchange-sort" id="exchange-sort-label" data-i18n="fx_sort_label" hidden></label>
+        <select class="filter-sel exchange-sort" id="exchange-sort" hidden>
           <option value="default" data-i18n="fx_sort_default"></option>
           <option value="USD_100" data-i18n="fx_sort_usd_100"></option>
           <option value="USD_50" data-i18n="fx_sort_usd_50"></option>

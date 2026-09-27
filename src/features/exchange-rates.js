@@ -4,7 +4,6 @@ import { state } from '../core/state.js';
 import { DENOMS } from '../data/exchange-rates.js';
 
 export const EXCHANGE_CATEGORY = 'Currency Exchange';
-export const EXCHANGE_TOGGLE_STORAGE_KEY = 'showExchangeLocations';
 export const EXCHANGE_API = '/api/exchange-rates';
 export const EXCHANGE_API_TIMEOUT_MS = 8_000;
 export const EXCHANGE_POLL_MS = 60_000;
@@ -28,7 +27,6 @@ const UNAVAILABLE_REASONS = new Set(['timeout', 'invalid', 'missing', 'http_erro
  * @property {number|null} lastAttemptAtMs
  * @property {boolean} visible
  * @property {boolean} online
- * @property {boolean} toggleOn
  * @property {boolean} hasUsableSnapshot
  * @property {boolean} updateCheckPending
  * @property {boolean} [requestInFlight]
@@ -146,7 +144,7 @@ export function nextExchangeAction(now, schedule) {
   if (expiresAt !== null && expiresAt <= now) return { action: 'expire', delayMs: 0 };
   // Pausing requests must never pause expiration, including while a slow
   // request is in flight or the browser is offline/backgrounded.
-  if (!schedule.toggleOn || !schedule.visible || !schedule.online || schedule.requestInFlight) {
+  if (!schedule.visible || !schedule.online || schedule.requestInFlight) {
     return expiresAt === null
       ? { action: 'idle', delayMs: null }
       : { action: 'expire', delayMs: expiresAt - now };
@@ -212,7 +210,6 @@ function currentScheduleState() {
     lastAttemptAtMs: state.exchangeLastAttemptAtMs,
     visible: document.visibilityState !== 'hidden',
     online: navigator.onLine !== false,
-    toggleOn: state.exchangeLocationsOn,
     hasUsableSnapshot: state.exchangeHasUsableSnapshot,
     updateCheckPending: state.exchangeUpdateCheckPending,
     requestInFlight: requestController !== null,
@@ -224,7 +221,7 @@ let timer = null;
 /** @type {AbortController|null} */
 let requestController = null;
 let requestSequence = 0;
-/** @type {((change:{exchangeHidden?:boolean,locationsChanged?:boolean,sortChanged?:boolean})=>void)|null} */
+/** @type {((change:{sortChanged?:boolean})=>void)|null} */
 let changeListener = null;
 
 function notify(change = {}) {
@@ -331,6 +328,11 @@ function cancelRequest() {
   state.exchangeRatesLoading = false;
 }
 
+export function cancelExchangeScheduling() {
+  cancelTimer();
+  cancelRequest();
+}
+
 async function fetchExchangeRates() {
   cancelTimer();
   const requestStartedAtMs = Date.now();
@@ -397,40 +399,22 @@ export function syncExchangeControls() {
   if (state.exchangeSort !== 'default' && !isExchangeSortAvailable(state.exchangeSort)) {
     state.exchangeSort = 'default';
   }
-  const toggle = /** @type {HTMLInputElement|null} */ (document.getElementById('exchange-toggle'));
   const sort = /** @type {HTMLSelectElement|null} */ (document.getElementById('exchange-sort'));
-  if (toggle) toggle.checked = state.exchangeLocationsOn;
+  const sortLabel = document.getElementById('exchange-sort-label');
   if (!sort) return;
-  sort.hidden = !state.exchangeLocationsOn || !EXCHANGE_SORT_VALUES.some(isExchangeSortAvailable);
+  const sortHidden = !EXCHANGE_SORT_VALUES.some(isExchangeSortAvailable);
+  sort.hidden = sortHidden;
+  if (sortLabel) sortLabel.hidden = sortHidden;
   sort.value = state.exchangeSort;
   for (const option of sort.options) {
     if (option.value !== 'default') option.disabled = !isExchangeSortAvailable(option.value);
   }
 }
 
-/** @param {boolean} visible */
-export function setExchangeLocationsVisible(visible) {
-  state.exchangeLocationsOn = visible;
-  localStorage.setItem(EXCHANGE_TOGGLE_STORAGE_KEY, String(visible));
-  if (!visible) {
-    cancelTimer();
-    cancelRequest();
-    state.exchangeSort = 'default';
-    notify({ exchangeHidden: true, locationsChanged: true });
-    scheduleExchangeAction();
-    return;
-  }
-  notify({ locationsChanged: true });
-  scheduleExchangeAction();
-}
-
-/** @param {(change:{exchangeHidden?:boolean,locationsChanged?:boolean,sortChanged?:boolean})=>void} onChange */
+/** @param {(change:{sortChanged?:boolean})=>void} onChange */
 export function initExchangeRates(onChange) {
   changeListener = onChange;
-  state.exchangeLocationsOn = localStorage.getItem(EXCHANGE_TOGGLE_STORAGE_KEY) === 'true';
-  const toggle = /** @type {HTMLInputElement|null} */ (document.getElementById('exchange-toggle'));
   const sort = /** @type {HTMLSelectElement|null} */ (document.getElementById('exchange-sort'));
-  toggle?.addEventListener('change', () => setExchangeLocationsVisible(toggle.checked));
   sort?.addEventListener('change', () => {
     state.exchangeSort = isExchangeSort(sort.value) ? sort.value : 'default';
     notify({ sortChanged: true });

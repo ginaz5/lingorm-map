@@ -98,13 +98,11 @@ test('currency exchange category has bilingual labels', () => {
   assert.equal(T.en.category_currency_exchange, 'Currency Exchange');
 });
 
-test('currency exchange controls and required notices are bilingual', () => {
-  assert.equal(T.zh.fx_filter_note, '換匯點不受類別與標籤篩選影響。');
-  assert.equal(T.en.fx_filter_note, 'Exchange locations are not filtered by category or label.');
+test('currency exchange rate panel notices are bilingual', () => {
   const keys = [
-    'fx_toggle', 'fx_filter_note', 'fx_loading', 'fx_unavailable',
+    'fx_loading', 'fx_unavailable',
     'fx_sort_default', 'fx_sort_usd_100', 'fx_sort_usd_50', 'fx_sort_twd',
-    'fx_brand_green', 'fx_disclaimer', 'fx_source_note', 'fx_update_window',
+    'fx_brand_green', 'fx_disclaimer', 'fx_source_note',
   ];
   for (const key of keys) {
     assert.equal(typeof T.zh[key], 'string', `missing zh ${key}`);

@@ -206,16 +206,8 @@ header {
 .search-input::placeholder{color:var(--text-muted)}
 .filter-row{display:flex;gap:8px;flex-wrap:wrap}
 .exchange-toolbar{display:flex;align-items:center;gap:8px;min-width:0}
-.exchange-toggle{display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer}
-.exchange-toggle input{position:absolute;opacity:0;pointer-events:none}
-.exchange-switch{width:34px;height:20px;flex:0 0 34px;border-radius:999px;background:var(--border);position:relative;transition:background .18s}
-.exchange-switch::after{content:"";position:absolute;width:16px;height:16px;left:2px;top:2px;border-radius:50%;background:var(--canvas);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s}
-.exchange-toggle input:checked + .exchange-switch{background:#16835b}
-.exchange-toggle input:checked + .exchange-switch::after{transform:translateX(14px)}
-.exchange-toggle input:focus-visible + .exchange-switch{outline:2px solid var(--brand-accent);outline-offset:2px}
-.exchange-copy{display:flex;flex-direction:column;min-width:0;color:var(--primary)}
-.exchange-copy strong{font-size:12px;line-height:1.25;font-weight:600}
-.exchange-copy small{font-size:10px;line-height:1.35;color:var(--text-muted)}
+.exchange-sort-label{font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap;flex:0 0 auto}
+.exchange-sort-label[hidden]{display:none}
 .exchange-sort{flex:0 1 145px;max-width:145px}
 .exchange-sort[hidden]{display:none}
 .filter-sel{flex:1;min-width:0;height:35px;background:var(--canvas);border:1px solid var(--border);

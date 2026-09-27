@@ -28,7 +28,6 @@
  * @property {boolean} favFilterOn
  * @property {Set<string>} selectedDestinations
  * @property {boolean} pendingDestinationFit
- * @property {boolean} exchangeLocationsOn
  * @property {'default'|'USD_100'|'USD_50'|'TWD'} exchangeSort
  * @property {boolean|null} exchangeRatesEnabled
  * @property {string|null} exchangeControlVersion
@@ -93,8 +92,6 @@ export const state = {
   // Fit the map after it becomes available (used when restoring a saved filter).
   pendingDestinationFit: false,
 
-  // Currency exchange locations are opt-in and persist per browser.
-  exchangeLocationsOn: false,
   exchangeSort: 'default',
   // null means the public API has not confirmed the service state yet.
   exchangeRatesEnabled: null,

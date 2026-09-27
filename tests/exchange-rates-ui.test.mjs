@@ -5,12 +5,12 @@ import BRANCH_MAPPING from '../data/superrich-branches.json' with { type: 'json'
 import { state } from '../src/core/state.js';
 import {
   applyExchangeRatesPayload,
+  cancelExchangeScheduling,
   initExchangeRates,
   isSupportedLocation,
   nextExchangeAction,
   parseExchangeRatesPayload,
   scheduleExchangeAction,
-  setExchangeLocationsVisible,
   syncExchangeControls,
 } from '../src/features/exchange-rates.js';
 import {
@@ -61,7 +61,7 @@ function apiPayload({ runId = 'run-1', controlVersion = 'control-1' } = {}) {
 function resetExchangeState() {
   Object.assign(state, {
     data: [], visIdx: [], favorites: new Set(), favFilterOn: false, isLoading: false,
-    selectedDestinations: new Set(), exchangeLocationsOn: false,
+    selectedDestinations: new Set(),
     exchangeSort: 'default', exchangeRatesEnabled: null,
     exchangeControlVersion: null, exchangeRunId: null,
     exchangeRatesBySlug: {}, exchangeCompletedAt: null,
@@ -89,10 +89,10 @@ test('scheduler pauses polling but retains expiration when hidden, offline, or f
     enabled: true, controlVersion: 'v1', runId: 'r1',
     nextUpdateAtMs: 80_000, expiresAtMs: 10_500,
     retryLevel: 0, lastAttemptAtMs: 1_000,
-    visible: true, online: true, toggleOn: true,
+    visible: true, online: true,
     hasUsableSnapshot: true, updateCheckPending: true,
   };
-  for (const paused of [{ visible: false }, { online: false }, { toggleOn: false }, { requestInFlight: true }]) {
+  for (const paused of [{ visible: false }, { online: false }, { requestInFlight: true }]) {
     assert.deepEqual(nextExchangeAction(10_000, { ...base, ...paused }), { action: 'expire', delayMs: 500 });
     assert.deepEqual(nextExchangeAction(10_000, { ...base, ...paused, hasUsableSnapshot: false }), { action: 'idle', delayMs: null });
   }
@@ -105,7 +105,7 @@ test('scheduler uses retry delay instead of immediately rechecking a stale run',
     enabled: true, controlVersion: 'v1', runId: 'r1',
     nextUpdateAtMs: 2_000, expiresAtMs: 100_000,
     retryLevel: 1, lastAttemptAtMs: 1_000,
-    visible: true, online: true, toggleOn: true,
+    visible: true, online: true,
     hasUsableSnapshot: true, updateCheckPending: true,
   });
   assert.deepEqual(decision, { action: 'fetch', delayMs: 6_000 });
@@ -150,7 +150,6 @@ test('fresh snapshots without quotes disable best-rate sorting by denomination',
       cell.unavailableReason = 'missing';
     }
   }
-  state.exchangeLocationsOn = true;
   state.exchangeSort = 'USD_100';
   applyExchangeRatesPayload(parseExchangeRatesPayload(payload), {
     requestStartedAtMs: 1_000, responseReceivedAtMs: 1_100, waitingForNewRun: false,
@@ -184,7 +183,7 @@ test('fresh snapshots without quotes disable best-rate sorting by denomination',
   }
 });
 
-test('exchange rows ignore category and collection filters but keep shared filters', () => {
+test('exchange rows are filtered by category and type like any other location', () => {
   const exchange = {
     id: slugs[0], status: 'Published', catZh: '換匯', catEn: 'Currency Exchange',
     type: '', destinationKey: 'bangkok', nameZh: '換匯店', nameEn: 'Exchange', alt: '', notesZh: '', notesEn: '',
@@ -193,12 +192,12 @@ test('exchange rows ignore category and collection filters but keep shared filte
     id: 'cafe', status: 'Published', catZh: '咖啡廳', catEn: 'Cafe',
     type: 'LingOrm', destinationKey: 'bangkok', nameZh: '咖啡店', nameEn: 'Cafe', alt: '', notesZh: '', notesEn: '',
   };
-  state.exchangeLocationsOn = true;
-  assert.equal(matchesLocationFilters(exchange, '', '咖啡廳', 'LingOrm'), true);
+  assert.equal(matchesLocationFilters(exchange, '', '', ''), true);
+  assert.equal(matchesLocationFilters(exchange, '', '換匯', ''), true);
+  assert.equal(matchesLocationFilters(exchange, '', '咖啡廳', ''), false);
+  assert.equal(matchesLocationFilters(exchange, '', '', 'LingOrm'), false);
   assert.equal(matchesLocationFilters(cafe, '', '換匯', ''), false);
   assert.equal(matchesLocationFilters(exchange, '不存在', '', ''), false);
-  state.exchangeLocationsOn = false;
-  assert.equal(matchesLocationFilters(exchange, '', '', ''), false);
 });
 
 test('best-rate sort keeps valid exchange rates first and regular locations last', () => {
@@ -217,7 +216,6 @@ test('best-rate sort keeps valid exchange rates first and regular locations last
 });
 
 function topRateFixture() {
-  state.exchangeLocationsOn = true;
   state.exchangeRatesEnabled = true;
   state.exchangeHasUsableSnapshot = true;
   state.exchangeSort = 'USD_100';
@@ -278,7 +276,7 @@ test('selecting a green rate refreshes the list at the top while background upda
     Object.defineProperty(globalThis, key, { value, writable: true, configurable: true });
   }
   t.after(() => {
-    setExchangeLocationsVisible(false);
+    cancelExchangeScheduling();
     for (const [key, descriptor] of Object.entries(descriptors)) {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor);
       else delete globalThis[key];
@@ -338,7 +336,8 @@ test('exchange panel contains three rows and compact metadata without a duplicat
   assert.doesNotMatch(html, /鈔票/);
   assert.match(html, /<div class="fx-meta">/);
   assert.match(html, /<span class="fx-disclaimer">非即時匯率，以櫃檯為準<\/span>/);
-  assert.match(html, /報價更新時段：08:00–23:00（泰國時間）/);
+  // The disclaimer already says rates are not real-time; no separate update-window label.
+  assert.doesNotMatch(html, /報價更新時段|fx-update-window/);
   assert.match(html, /superrichthailand\.com\/exchange-rate/);
   assert.doesNotMatch(html, /https:\/\/maps\.google\.com\/example|Google Maps/);
   assert.doesNotMatch(html, /\(UTC\)/);
@@ -352,7 +351,7 @@ test('exchange panel contains three rows and compact metadata without a duplicat
   const unavailable = renderExchangeRates(row);
   assert.equal((unavailable.match(/暫無報價/g) || []).length, 3);
   assert.match(unavailable, /非即時匯率，以櫃檯為準/);
-  assert.match(unavailable, /報價更新時段：08:00–23:00（泰國時間）/);
+  assert.doesNotMatch(unavailable, /報價更新時段/);
 
   const previousLang = lang;
   const previousLocalStorage = globalThis.localStorage;
@@ -365,7 +364,7 @@ test('exchange panel contains three rows and compact metadata without a duplicat
     assert.match(enHtml, /USD 50/);
     assert.match(enHtml, /TWD 100–2,000/);
     assert.doesNotMatch(enHtml, /banknote/);
-    assert.match(enHtml, /Rate updates: 08:00–23:00 \(Thailand time\)/);
+    assert.doesNotMatch(enHtml, /Rate updates/);
   } finally {
     setLang(previousLang);
     if (previousLocalStorage === undefined) delete globalThis.localStorage;
@@ -389,9 +388,8 @@ function browserHarness(t, onChange = () => {}) {
     Object.defineProperty(globalThis, key, { value, writable: true, configurable: true });
   }
   t.after(async () => {
-    setExchangeLocationsVisible(false);
     state.exchangeHasUsableSnapshot = false;
-    scheduleExchangeAction();
+    cancelExchangeScheduling();
     await new Promise(resolve => setImmediate(resolve));
     for (const [key, descriptor] of Object.entries(descriptors)) {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor);
@@ -487,19 +485,15 @@ test('published exchange rows outside the shipped rate mapping stay hidden every
   assert.equal(isSupportedLocation(cafe), true);
   assert.equal(isPublicLocation(unsupported), false);
 
-  // List, search, favorites and category filter, with the toggle on or off.
+  // List, search, favorites and category filter.
   state.favorites = new Set([unsupported.id]);
-  for (const toggleOn of [true, false]) {
-    state.exchangeLocationsOn = toggleOn;
-    for (const favFilterOn of [false, true]) {
-      state.favFilterOn = favFilterOn;
-      assert.equal(matchesLocationFilters(unsupported, '', '', ''), false);
-      assert.equal(matchesLocationFilters(unsupported, 'Unsupported', '', ''), false);
-      assert.equal(matchesLocationFilters(unsupported, '', 'Currency Exchange', ''), false);
-    }
+  for (const favFilterOn of [false, true]) {
+    state.favFilterOn = favFilterOn;
+    assert.equal(matchesLocationFilters(unsupported, '', '', ''), false);
+    assert.equal(matchesLocationFilters(unsupported, 'Unsupported', '', ''), false);
+    assert.equal(matchesLocationFilters(unsupported, '', 'Currency Exchange', ''), false);
   }
   state.favFilterOn = false;
-  state.exchangeLocationsOn = true;
   assert.equal(matchesLocationFilters(supported, '', '', ''), true);
   assert.equal(matchesLocationFilters(cafe, '', '', ''), true);
 

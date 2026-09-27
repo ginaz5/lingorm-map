@@ -225,7 +225,7 @@ test('snapshot exporter rejects retired or miscolored Type options', () => {
 
   assert.throws(
     () => assertCurrentFormalSchema({ properties }),
-    /Type options: missing JKR Fan Projects, Admin Picks; unexpected Bookmark; wrong colors LingOrm/
+    /Type options: missing JKR Fan Projects, Admin Picks, Currency Exchange; unexpected Bookmark; wrong colors LingOrm/
   );
 });
 

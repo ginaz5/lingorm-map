@@ -42,6 +42,7 @@ test('current formal schema matches the 20-property Notion contract', () => {
     { name: 'JKR Picks', color: 'green' },
     { name: 'JKR Fan Projects', color: 'pink' },
     { name: 'Admin Picks', color: 'default' },
+    { name: 'Currency Exchange', color: 'green' },
   ]);
   assert.deepEqual(CURRENT_FORMAL_COUNTRY_OPTIONS, [
     { name: 'TH', color: 'blue' },
@@ -203,7 +204,7 @@ test('current formal schema inspection enforces exactly three Status options', (
   });
 });
 
-test('current formal schema inspection enforces exactly four Type options', () => {
+test('current formal schema inspection enforces the exact Type option set', () => {
   const properties = {
     Type: {
       type: 'select',
@@ -228,7 +229,7 @@ test('current formal schema inspection enforces exactly four Type options', () =
   assert.deepEqual(inspectCurrentFormalTypeOptions(properties), {
     checked: true,
     ok: false,
-    missing: ['JKR Fan Projects', 'Admin Picks'],
+    missing: ['JKR Fan Projects', 'Admin Picks', 'Currency Exchange'],
     unexpected: ['Bookmark'],
     wrongColors: [
       { name: 'LingOrm', expected: 'blue', actual: 'red' },

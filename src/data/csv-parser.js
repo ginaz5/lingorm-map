@@ -4,7 +4,7 @@
 import { T } from '../core/i18n.js';
 
 /** @typedef {'Published'|'Paused'|'Inactive'} LocationStatus */
-/** @typedef {'LingOrm'|'JKR Picks'|'JKR Fan Projects'|'Admin Picks'|''} LocationType */
+/** @typedef {'LingOrm'|'JKR Picks'|'JKR Fan Projects'|'Admin Picks'|'Currency Exchange'|''} LocationType */
 /**
  * @typedef {Object} LocationRow
  * @property {string} id
@@ -152,6 +152,7 @@ export const LOCATION_TYPES = Object.freeze([
   "JKR Picks",
   "JKR Fan Projects",
   "Admin Picks",
+  "Currency Exchange",
 ]);
 
 /**

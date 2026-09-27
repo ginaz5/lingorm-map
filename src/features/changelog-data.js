@@ -28,8 +28,8 @@ export const CHANGELOG = [
       en: 'SuperRich Thailand exchange locations are now on the map',
     },
     description: {
-      zh: '開啟「顯示換匯點」可查看 26 間 SuperRich Thailand 分店；有報價時，還能比較 USD 100／USD 50／TWD 買入匯率並依最佳匯率排序。',
-      en: 'Turn on Show currency exchange to browse 26 SuperRich Thailand branches. When quotes are available, compare USD 100, USD 50, and TWD buying rates and sort by the best rate.',
+      zh: '地圖上可查看 26 間 SuperRich Thailand 分店；有報價時，還能比較 USD 100／USD 50／TWD 買入匯率並依最佳匯率排序。',
+      en: 'Browse 26 SuperRich Thailand branches on the map. When quotes are available, compare USD 100, USD 50, and TWD buying rates and sort by the best rate.',
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-09-25T00:00:00Z'),

@@ -1,7 +1,6 @@
 import { lang, t } from '../core/i18n.js';
 import { state } from '../core/state.js';
 import {
-  EXCHANGE_CATEGORY,
   getExchangeRateCell,
   isExchangeSortAvailable,
   isExchangeLocation,
@@ -184,7 +183,6 @@ export function renderExchangeRates(row) {
     <div class="fx-meta">
       ${checked && state.exchangeHasUsableSnapshot ? `<time class="fx-checked" datetime="${escapeAttribute(state.exchangeCompletedAt || '')}">${t('fx_checked', checked)}</time>` : ''}
       <span class="fx-disclaimer">${t('fx_disclaimer')}</span>
-      <span class="fx-update-window">${t('fx_update_window')}</span>
       <a href="${OFFICIAL_EXCHANGE_URL}" target="_blank" rel="noopener" aria-label="${t('fx_source_note')}" onclick="event.stopPropagation()">${t('fx_source_note')}</a>
     </div>
     <div class="fx-branch-hint">${t('fx_branch_hint', escapeAttribute(row.nameEn))}</div>
@@ -377,11 +375,6 @@ export function matchesLocationFilters(row, query, category, type) {
     state.selectedDestinations.size === 0 ||
     state.selectedDestinations.has(row.destinationKey);
 
-  const exchangeCategorySelected = category === EXCHANGE_CATEGORY || category === t('category_currency_exchange');
-  if (isExchangeLocation(row)) {
-    return state.exchangeLocationsOn && queryHit && destinationHit;
-  }
-  if (exchangeCategorySelected) return false;
   return queryHit && categoryHit && typeHit && destinationHit;
 }
 
@@ -397,9 +390,7 @@ export function applyFilters() {
     state.visIdx = sortVisibleIndexes(state.visIdx, state.exchangeSort);
   }
   renderList();
-  const publicTotal = state.data.filter(row =>
-    isPublicLocation(row) && (state.exchangeLocationsOn || !isExchangeLocation(row))
-  ).length;
+  const publicTotal = state.data.filter(isPublicLocation).length;
   requiredElement('result-info').textContent = state.isLoading ? '' : t('count', state.visIdx.length, publicTotal);
   const updatedEl = document.getElementById('last-updated');
   if (updatedEl) {
@@ -435,7 +426,7 @@ export function buildCatFilter() {
   /** @type {Map<string, number>} */
   const categoryCounts = new Map();
   state.data
-    .filter(row => isPublicLocation(row) && (state.exchangeLocationsOn || !isExchangeLocation(row)))
+    .filter(isPublicLocation)
     .forEach(row => {
       const category = lang === 'zh' ? row.catZh : row.catEn;
       categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);

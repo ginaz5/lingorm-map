@@ -19,7 +19,7 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 - Mobile-responsive with map / list tab switching and scroll
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
-- Optional SuperRich Thailand currency-exchange overlay: 26 branches with USD 100 / USD 50 / TWD buying rates updated every 30 minutes from 08:00 to 22:30 Thailand time, best-rate sorting, and a persisted toggle (off by default; gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
+- SuperRich Thailand currency-exchange overlay: 26 branches shown like any other location, with USD 100 / USD 50 / TWD buying rates updated every 30 minutes from 08:00 to 22:30 Thailand time and best-rate sorting when quotes are available (rate fetching is gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
 
 ---
 
@@ -372,7 +372,7 @@ The existing Thailand and Vietnam keys
 remain stable.
 
 `Type` is exported as public location metadata and accepts `LingOrm`,
-`JKR Picks`, `JKR Fan Projects`, or `Admin Picks`. A blank Type remains
+`JKR Picks`, `JKR Fan Projects`, `Admin Picks`, or `Currency Exchange`. A blank Type remains
 parseable and is surfaced as a warning in the localhost verification UI;
 unknown non-empty values fail snapshot validation.
 

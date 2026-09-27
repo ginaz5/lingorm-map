@@ -17,7 +17,6 @@ import {
   loadMapScript,
   updateMapTheme,
   buildMarkers,
-  clearActiveLocation,
   fitMapToVisibleLocations,
   refreshActivePopup,
 } from './map/map.js';
@@ -45,11 +44,7 @@ import {
 } from './features/destination-filter.js';
 import { initCollectionInfo } from './features/collection-info.js';
 import { initFanResources } from './features/fan-resources.js';
-import {
-  EXCHANGE_CATEGORY,
-  initExchangeRates,
-  isExchangeLocation,
-} from './features/exchange-rates.js';
+import { initExchangeRates } from './features/exchange-rates.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -220,22 +215,9 @@ initDestinationFilter(change => {
 });
 initCollectionInfo();
 const fanResources = initFanResources();
-/** @param {{exchangeHidden?:boolean,locationsChanged?:boolean,sortChanged?:boolean}} change */
+/** @param {{sortChanged?: boolean}} change */
 const handleExchangeChange = change => {
-  if (change.exchangeHidden) {
-    const category = /** @type {HTMLSelectElement} */ (document.getElementById('cat-filter'));
-    if (category.value === EXCHANGE_CATEGORY || category.value === t('category_currency_exchange')) {
-      category.value = '';
-    }
-    if (isExchangeLocation(state.data[state.activeIdx])) clearActiveLocation();
-  }
-  buildCatFilter();
-  if (change.locationsChanged && state.map) {
-    applyFilters();
-    void buildMarkers();
-  } else {
-    applyFiltersAndSyncMap({ exchangeSortChanged: change.sortChanged });
-  }
+  applyFiltersAndSyncMap({ exchangeSortChanged: change.sortChanged });
   refreshActivePopup();
 };
 initExchangeRates(handleExchangeChange);

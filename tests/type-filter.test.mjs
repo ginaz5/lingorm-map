@@ -84,10 +84,11 @@ test('location Type labels use the requested Chinese copy and raw English values
     'JKR Picks',
     'JKR Fan Projects',
     'Admin Picks',
+    'Currency Exchange',
   ]);
   assert.deepEqual(
     LOCATION_TYPES.map(type => locationTypeLabel(type, 'zh')),
-    ['LingOrm', 'JKR 推薦', 'JKR 應援', '留友看'],
+    ['LingOrm', 'JKR 推薦', 'JKR 應援', '留友看', '換匯'],
   );
   assert.deepEqual(
     LOCATION_TYPES.map(type => locationTypeLabel(type, 'en')),
