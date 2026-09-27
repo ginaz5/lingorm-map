@@ -176,12 +176,15 @@ header {
   color: var(--primary);
 }
 .mobile-actions-menu{position:absolute;right:0;top:calc(100% + 8px);width:max-content;
+  max-width:calc(100vw - 32px);display:grid;grid-template-columns:minmax(0,1fr);
   background:var(--canvas);border:1px solid var(--hairline);border-radius:12px;
   box-shadow:var(--shadow-md);padding:6px;z-index:700}
 .mobile-actions-menu[hidden]{display:none}
-.mobile-action-item{width:100%;background:none;border:none;color:var(--primary);cursor:pointer;
+.mobile-action-item{min-width:0;background:none;border:none;color:var(--primary);cursor:pointer;
   display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:6px;
-  font-size:13px;font-weight:500;text-align:left;white-space:nowrap;text-decoration:none}
+  font-family:inherit;font-size:13px;font-weight:500;text-align:left;white-space:normal;text-decoration:none}
+.mobile-action-item svg{flex-shrink:0}
+.mobile-action-item span{min-width:0;overflow-wrap:anywhere}
 .mobile-action-item:hover{background:var(--surface);color:var(--primary)}
 
 /* Layout */

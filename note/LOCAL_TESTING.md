@@ -157,6 +157,7 @@ http://localhost:8888
 - Google Maps 與 HERE Maps popup 都同時顯示類別與 Type badge
 - 手機版以 `Bar / Rooftop Club`、`JKR Fan Projects`、`酒吧/天台俱樂部` 等最長篩選文字檢查，320px 與一般手機寬度都不裁切或水平溢出
 - 手機版定位按鈕固定顯示於 header，且不再出現在「更多操作」選單
+- 「更多操作」選單在 320px、390px 與 768px 寬度下，中英文文字完整顯示，選單不超出螢幕；放大文字時允許換行且圖示不被擠壓。可開啟本機 [版面回歸測試頁](../tests/fixtures/mobile-actions-width.html)（英文；網址加上 `?lang=zh` 測中文），以實際選單 markup、翻譯和樣式驗證 52px 放大文字，預期顯示 `PASS`。這是瀏覽器測試，`npm test` 不會執行。
 - 目的地可跨國複選，國家 checkbox 能全選／取消子目的地，部分選取時顯示 indeterminate
 - 目的地變更立即套用，重新整理後保留，且地圖自動縮放至全部篩選結果
 - 手機版 map/list tab 正常
