@@ -332,13 +332,15 @@ header {
     max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);border-radius:20px 20px 0 0;
     background:var(--canvas);color:var(--primary);box-shadow:0 -8px 24px rgba(0,0,0,.12);overflow:hidden}
   .filter-sheet::backdrop{background:rgba(0,0,0,.25)}
-  .filter-sheet-content{display:flex;flex-direction:column;flex:1;min-height:0}
+  /* flex:1 1 auto, not flex:1 — the sheet has only max-height, and WebKit (all iOS browsers)
+     resolves a 0% basis to 0 here, collapsing the open dialog to 0px behind its backdrop. */
+  .filter-sheet-content{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
   .sheet-handle{width:34px;height:4px;border-radius:4px;background:var(--border);margin:10px auto 4px;flex-shrink:0}
   .filter-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:4px 16px 12px;flex-shrink:0}
   .filter-sheet-head h2{font-size:17px;font-weight:600}
   .filter-sheet-reset{border:0;background:none;color:var(--brand-accent);font:inherit;font-size:14px;
     font-weight:500;padding:6px;margin-right:-6px;cursor:pointer}
-  .filter-sheet-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 16px}
+  .filter-sheet-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 16px}
   .filter-sheet-foot{flex-shrink:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));
     border-top:1px solid var(--hairline)}
   .filter-sheet-done{width:100%;height:44px;border:0;border-radius:10px;background:var(--primary);
