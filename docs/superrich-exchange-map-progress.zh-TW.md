@@ -139,6 +139,8 @@ npm audit                                                   # 0 vulnerabilities
 
 **2026-09-27 時段調整：** 已依計畫 §1／§5 限制為泰國時間 08:00～23:00，排程最後一輪 22:30。夜間手動觸發零來源請求、不改儲存與冷卻；22:30 快照仍於 23:01:30 到期。卡片與 popup 補上雙語更新時段。新增 7 項時區、邊界、夜間跳過、早上恢復與到期測試；集中測試 59 項、全套 437 項、typecheck、build 均通過，未部署或請求真實來源。
 
+**2026-09-28 移除程式內時段檢查：** 依使用者決定拿掉 Function 與 runner 的時段檢查及 `isExchangeFetchTime`，時段只由 cron 限制；人工觸發（Run now、`netlify functions:invoke`）任何時間都會抓取並發布，仍受控制旗標與 breaker 限制。`tests/exchange-rates-schedule.test.mjs` 改為驗證夜間 handler 會讀取儲存、夜間 runner 仍受 breaker 冷卻限制且冷卻結束後發布，並檢查到期時間；集中測試 87 項、全套 448 項、typecheck 通過；build 未在此環境執行，未部署或請求真實來源。同日依使用者決定移除卡片與 popup 的「報價更新時段」文字及雙語 `fx_update_window`，由 `fx_disclaimer` 說明非即時報價。
+
 **未解問題：無。** M2 完成時前台沒有可見變更；M3 才發布分店與使用者介面。
 
 ## M3 · Phase D1a／D1b — 前端

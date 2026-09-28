@@ -142,7 +142,7 @@ M1 匯出後 `data/locations.csv` 有 181 筆地點、其中 135 筆 `Published`
 - 所有價格均標明「每 1 USD／TWD 可換得多少 THB」；100／50 是鈔票面額，不是報價的計價單位。
 - 只顯示「本次查詢時間／Last checked」，值為快照的 `completedAt`，使用 UTC 並標明時區（全站更新時間一律 UTC）。**不顯示官網報價時間**——來源未提供報價發布時間（§2.2），不得用 API 回應時間冒充。
 - 首次查詢尚未完成時使用雙語 `fx_loading`：「匯率載入中／Loading rates」。沒有可用快照或查詢失敗後顯示「暫無報價」；重新查詢既有有效快照時不切回載入畫面，也不延長報價有效期。
-- 卡片與 popup 顯示「報價更新時段：08:00–23:00（泰國時間）／Rate updates: 08:00–23:00 (Thailand time)」，有報價或暫無報價時都保留。
+- 卡片與 popup 不另外顯示報價更新時段；`fx_disclaimer`「非即時匯率，以櫃檯為準」已說明報價性質（2026-09-28 移除 `fx_update_window`）。
 - **不顯示營業時間**。卡片的 `fx_hours_note`（「營業時間請見 Google Maps／Check opening hours on Google Maps」）指向該分店的 Google Maps 連結，由使用者自行確認。系統不解析、不儲存、不顯示來源的營業文字。
 - 沿用分店名稱、地址／樓層、導航、Google Maps、收藏，以及上節已確認的官網查詢方式。
 - 暫無報價仍保留分店、綠色標記與連結。僅缺一列就只將那列設為無報價；整店失敗則三列都無報價。
@@ -156,7 +156,6 @@ M1 匯出後 `data/locations.csv` 有 181 筆地點、其中 135 筆 `Published`
 | --- | --- | --- |
 | `fx_disclaimer` | 匯率僅供參考，實際以分店櫃檯為準。 | Rates are indicative only; the branch counter is authoritative. |
 | `fx_source_note` | 資料來源：SuperRich Thailand 官網 | Source: SuperRich Thailand official website |
-| `fx_update_window` | 報價更新時段：08:00–23:00（泰國時間） | Rate updates: 08:00–23:00 (Thailand time) |
 | `fx_hours_note` | 營業時間請見 Google Maps | Check opening hours on Google Maps |
 
 - 上述文字都由 `src/core/i18n.js` 產生，不從來源帶入，並納入 `tests/i18n-ui.test.mjs`。
@@ -302,7 +301,7 @@ M1 匯出後 `data/locations.csv` 有 181 筆地點、其中 135 筆 `Published`
 
 儲存層需新增相依 `@netlify/blobs`（目前不在 `package.json`），並使用 `getDeployStore()` 取得 deploy-scoped store 以隔離非正式環境；正式環境使用站台層級 store（`getStore()`）。快照、circuit breaker 狀態與控制旗標分屬三個 key，避免條件寫入互相干擾。
 
-1. **排程與請求量**：cron `0,30 1-15 * * *`（UTC），對應泰國時間 08:00～22:30 每 30 分鐘一輪，一天 30 輪。目前 26 店加一次分店清單，正常一輪約 27 個來源請求、每天約 810 個來源請求，比全天 48 輪的約 1,296 減少 37.5%。這不是 Netlify 計費金額估算。Function 與 runner 都檢查泰國時間是否在 `[08:00, 23:00)`；夜間人工觸發也回 `outside_window`、零來源請求，不讀寫儲存、不改控制或 breaker。儲存讀取跨過 23:00 時，runner 在開始來源查詢前再次檢查並跳過。逐店營業時間仍由使用者自行確認（§1、§3.2）。
+1. **排程與請求量**：cron `0,30 1-15 * * *`（UTC），對應泰國時間 08:00～22:30 每 30 分鐘一輪，一天 30 輪。目前 26 店加一次分店清單，正常一輪約 27 個來源請求、每天約 810 個來源請求，比全天 48 輪的約 1,296 減少 37.5%。這不是 Netlify 計費金額估算。時段只由 cron 限制，Function 與 runner 不再檢查時間（2026-09-28）；人工觸發（Run now、`netlify functions:invoke`）任何時間都會抓取來源並寫入快照，仍受控制旗標與 breaker 限制。逐店營業時間仍由使用者自行確認（§1、§3.2）。
 2. **單輪請求節奏**：取得分店清單後，以最多 2 個同時請求抓逐店匯率。整輪共用同一個派送器，任兩次請求啟動至少相隔 200ms，包含分店清單與重試；上限約每秒啟動 5 次，不宣稱每秒 1 次。正常輪次不重複抓座標，也不呼叫歷史或圖表 API。
 3. **逾時與來源重試預算**：
 
@@ -328,7 +327,7 @@ M1 匯出後 `data/locations.csv` 有 181 筆地點、其中 135 筆 `Published`
     | `expiresAt` | `nextUpdateAt + 90 秒` | 到此仍未拿到新資料才清空價格 |
 
     已知抓取失敗立即撤下對應舊價。若排程整體未執行或儲存失敗，舊快照在 `expiresAt` 之後失效，對外呈現「暫無報價」。
-    22:30 的最後一輪仍以 23:00 為 `nextUpdateAt`、23:01:30 為 `expiresAt`，不因夜間停抓而延長到隔天 08:00。夜間只暫停來源抓取，站內 API 輪詢照常，早上取得新快照後恢復。
+    22:30 的最後一輪仍以 23:00 為 `nextUpdateAt`、23:01:30 為 `expiresAt`，不因夜間停抓而延長到隔天 08:00。夜間只暫停排程抓取，站內 API 輪詢照常，早上取得新快照後恢復。
 8. 「抓取新鮮度」一律依本站實際成功查詢時間（`completedAt`）計算；來源沒有報價發布時間可引用（§2.2），不得以 API 回應時間替代。來源在休息時間沒有改價，不等於系統抓取失敗。跨日空回應不得自行挪用歷史資料。
 9. **公開 API 不快取**：API 只讀控制旗標與共用快照，不因訪客請求重抓 SuperRich。所有正常、停用及錯誤回應都送 `Cache-Control: no-store` 與 `Netlify-CDN-Cache-Control: no-store`；瀏覽器使用 `fetch(..., { cache: 'no-store' })`。不得另設 stale-while-revalidate 或以 ETag 304 略過控制狀態確認。前端記憶體只保留尚未到期的快照，每次 API 仍重新讀取控制狀態。參考 [HTTP 快取規則](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control#no-store)、[Netlify 快取標頭](https://docs.netlify.com/build/caching/caching-overview/#supported-cache-control-headers)。
 10. **前端查詢、到期與恢復使用同一套排程**：
@@ -427,7 +426,7 @@ M1 匯出後 `data/locations.csv` 有 181 筆地點、其中 135 筆 `Published`
 - **換匯點開關與篩選**：預設關閉且持久化；關閉時分店不進入 `visIdx`、marker、計數及類別選項。開啟後，曼谷 + LingOrm + 餐廳仍能看到曼谷換匯分店；目的地、搜尋與收藏仍可排除分店，踩點維持既有全部篩選。選換匯類別後關閉開關，類別回「全部」；其他類別／主題不被重置。切換關閉時排序回一般、換匯 `activeIdx` 清除但收藏不刪除；停用匯率服務則保留分店選取狀態。
 - **來源契約**：以 §2.2 的實測 fixture 驗證 `unit`+`denomRem` 完全相符才對應列舉；`20 - 10`／`5`／`1` 被忽略；面額字串被改動時記為 `missing` 而非猜測。驗證兩種 `googleLink` 網域（`www.google.com`、`maps.app.goo.gl`）都通過白名單，其他網域被丟棄。驗證同一店各列 `branchCode` 不一致時整店標記失敗。
 - **排程純函式**：`nextExchangeAction(now, state)` 的全部時序驗收（60s、`nextUpdateAt` jitter、10/20/40 退避、`expiresAt` 到期、背景／離線、取消後晚到回應）以直接呼叫純函式斷言，不使用真實計時器等待。
-- **抓取節奏**：泰國時間 08:00～22:30 每 30 分鐘；07:59:59 與 23:00 手動觸發零來源請求且不改 breaker，08:00 恢復。單輪併發不超過 2、所有請求啟動間隔至少 200ms。驗證 5 秒單次 timeout、25 秒來源截止、取消未完成請求及儲存餘裕；正常請求數為「分店數 + 1」，額外來源重試全輪至多 1 次且不包含 403／429。重試不能擠掉其他分店的首次派送，`Retry-After` 超出預算則放棄重試。
+- **抓取節奏**：泰國時間 08:00～22:30 每 30 分鐘；夜間手動觸發照常抓取並發布，仍受 breaker 冷卻限制，快照在下一個半小時邊界加 90 秒到期。單輪併發不超過 2、所有請求啟動間隔至少 200ms。驗證 5 秒單次 timeout、25 秒來源截止、取消未完成請求及儲存餘裕；正常請求數為「分店數 + 1」，額外來源重試全輪至多 1 次且不包含 403／429。重試不能擠掉其他分店的首次派送，`Retry-After` 超出預算則放棄重試。
 - **API 與快取**：正常、停用與錯誤回應均 no-store，瀏覽器也不用快取。先讀舊批次再更新 Blobs，下一次 API 必須反映新結果；停用回固定外層、`enabled: false`、`snapshot: null`，所有路徑都不回過期或版本不符的數字。控制讀取故障回 503，不回退環境變數或誤報停用。
 - **刷新與恢復**：可見且換匯點開啟時每 60 秒確認，另在 `nextUpdateAt`～`nextUpdateAt + 30s` 確認新輪次；來源正常於 25 秒內完成且 API 正常時不出現空窗。涵蓋初次失敗、相同 `runId`、空快照、HTTP 錯誤、跨過 `expiresAt` 的 10s／20s／40s → 60s 重試；過期撤價後仍能無需重新整理而恢復。重讀相同批次不延長壽命，過去的更新時點不造成忙迴圈，同時最多一個 API 請求。
 - **背景與離線**：隱藏頁面或關閉開關不持續輪詢；取消後舊回應不得覆蓋新狀態。切回可見或恢復連線時先處理到期，再立即確認；模擬裝置時鐘偏差也不能延長報價壽命。正常可見及 API 可用時，驗證停用確認不晚於下一個 60 秒時點加最多 8 秒請求時間。

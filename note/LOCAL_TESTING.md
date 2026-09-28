@@ -207,9 +207,10 @@ git push -u origin <feature-branch>
 ### 報價更新時段
 
 - 採泰國時間（`Asia/Bangkok`，UTC+7）：08:00 開始，每 30 分鐘一輪，最後一輪 22:30。
-- Netlify 使用 UTC cron `0,30 1-15 * * *`，每天 30 輪；23:00～隔天 08:00 不抓取來源。
-- 夜間按 Run now 或本機 invoke 也只記錄 `outside_window`、`sourceRequestCount: 0`，不讀寫 Blobs、不改 breaker 冷卻狀態。人工驗收抓取請選更新時段。
-- 22:30 的快照仍在 23:01:30 到期；夜間顯示「暫無報價」，最佳匯率排序停用，分店與連結仍可使用。
+- Netlify 使用 UTC cron `0,30 1-15 * * *`，每天 30 輪；23:00～隔天 08:00 排程不抓取來源。
+- 時段只由 cron 控制。Run now 或本機 `netlify functions:invoke` 任何時間都會真的抓取來源（一輪約 27 個請求）並寫入快照，仍受控制旗標與 breaker 冷卻限制；失敗也會計入 breaker。
+- 夜間手動抓到的快照同樣在下一個半小時邊界加 90 秒到期（例：23:10 抓取 → 23:31:30 到期），之後回到「暫無報價」。
+- 沒有手動觸發時，22:30 的快照在 23:01:30 到期；夜間顯示「暫無報價」，最佳匯率排序停用，分店與連結仍可使用。
 - 前端每 60 秒向本站 API 確認狀態，這些請求不會抓取 SuperRich；08:00 新快照完成後恢復報價。
 
 ### 上線前的驗證清單
@@ -256,7 +257,7 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
    npm run fx:control -- enable
    ```
 
-3. **在泰國時間 08:00～23:00 內人工觸發第一輪抓取**（不要空等排程），用 Netlify UI 的「Run now」或：
+3. **人工觸發第一輪抓取**（不要空等排程；任何時段都能觸發，但夜間快照約 30 分鐘後到期），用 Netlify UI 的「Run now」或：
 
    ```bash
    netlify functions:invoke exchange-rates-fetch
@@ -308,7 +309,7 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
    到。
 2. 沒過期：等到期，或找到來源限流的根本原因後再等；不要反覆
    enable/disable 試探。
-3. 已過期：下一輪排程（泰國時間 08:00～22:30，每 30 分鐘）會自動恢復抓取，也可以在更新時段用
+3. 已過期：下一輪排程（泰國時間 08:00～22:30，每 30 分鐘）會自動恢復抓取，也可以隨時用
    `netlify functions:invoke exchange-rates-fetch` 人工觸發一次確認。
 4. 恢復後應該看到 `breaker` 的失敗計數歸零、`snapshot` 更新到最新
    `completedAt`。
