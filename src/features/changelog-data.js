@@ -12,7 +12,7 @@
  */
 /** @typedef {{ dateKey: string, publishTime: number, items: ChangelogItem[] }} ChangelogDateGroup */
 
-export const CURRENT_CHANGELOG_RELEASE_ID = '2026-09-25-exchange-and-resources';
+export const CURRENT_CHANGELOG_RELEASE_ID = '2026-09-28-mobile-filters-and-map-updates';
 
 /**
  * Shared release history for the What's New preview and the full changelog.
@@ -21,6 +21,76 @@ export const CURRENT_CHANGELOG_RELEASE_ID = '2026-09-25-exchange-and-resources';
  * @type {ChangelogItem[]}
  */
 export const CHANGELOG = [
+  {
+    id: 'feat-016',
+    title: {
+      zh: '手機版新增篩選面板',
+      en: 'A new filter sheet on mobile',
+    },
+    description: {
+      zh: '點選搜尋列旁的「篩選」，即可設定類別、標籤與目的地，並查看符合條件的地點數量。已套用的條件會顯示在搜尋列下方，可逐一移除或一次清除。',
+      en: 'Tap Filters beside search to choose categories, labels, and destinations and see the matching location count. Active filters appear below search, where you can remove them individually or clear them all.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-09-28T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-017',
+    title: {
+      zh: '從「換匯」標籤找分店與比較匯率',
+      en: 'Find exchange branches with the Currency Exchange label',
+    },
+    description: {
+      zh: 'SuperRich Thailand 分店現在可由「換匯」標籤篩選；有報價時，可依 USD 100／USD 50／TWD 買入匯率排序，清單會標示目前篩選結果中的最佳報價。匯率於泰國時間 08:00～22:30 每半小時排程更新，非即時報價，以櫃檯為準。',
+      en: 'Filter SuperRich Thailand branches with the Currency Exchange label. When quotes are available, sort by USD 100, USD 50, or TWD buying rates and see the best quotes among your filtered results. Updates are scheduled every half hour from 08:00 to 22:30 Thailand time; rates are not real-time and counter rates apply.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-09-28T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-018',
+    title: {
+      zh: '粉絲資源加入原始踩點地圖與作者連結',
+      en: 'Fan resources now include the original location map',
+    },
+    description: {
+      zh: '新增 Abu Chicken Kwong (epoh) 整理的 LingOrm Google Maps 清單與分享原文，並補上各資源的作者或來源連結及中英文介紹，方便找到地圖、行程、文章與照片典藏。',
+      en: 'Explore Abu Chicken Kwong (epoh)’s LingOrm Google Maps list and original post. Resource cards also include creator or source links and refreshed bilingual descriptions for maps, schedules, articles, and photo archives.',
+    },
+    badge: { zh: '內容', en: 'Content' },
+    publishTime: Date.parse('2026-09-28T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'fix-006',
+    title: {
+      zh: '手機地圖彈窗置中，地點筆記更好讀',
+      en: 'Centered mobile popups and clearer location notes',
+    },
+    description: {
+      zh: '手機上點選標記或清單卡片後，地點彈窗會置中顯示；Google Maps 與 HERE Maps 都支援。筆記保留原有換行，清單卡片則省略空白分隔行，讓兩行摘要顯示更多內容；桌機卡片也能直接點愛心收藏。',
+      en: 'Opening a marker or list card centers its popup on mobile in both Google Maps and HERE Maps. Notes keep their line breaks, while list cards omit blank separators to fit more text into the two-line preview. Desktop cards also show a heart for saving favorites.',
+    },
+    badge: { zh: '改善', en: 'Improvement' },
+    publishTime: Date.parse('2026-09-28T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-019',
+    title: {
+      zh: '新增東京目的地與更多踩點',
+      en: 'Tokyo and more locations added',
+    },
+    description: {
+      zh: '目的地篩選新增日本／東京，並收錄更多踩點、更新既有地點的筆記與標籤。春武里與是拉差也加入目的地選項，可依行程縮小搜尋範圍。',
+      en: 'The destination filter now includes Japan and Tokyo, along with Chonburi and Si Racha. More locations have been added, with refreshed notes and labels for existing places.',
+    },
+    badge: { zh: '內容', en: 'Content' },
+    publishTime: Date.parse('2026-09-28T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
   {
     id: 'feat-014',
     title: {
@@ -33,7 +103,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-09-25T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-25-exchange-and-resources',
   },
   {
     id: 'feat-015',
@@ -47,7 +117,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-09-25T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-25-exchange-and-resources',
   },
   {
     id: 'fix-005',
@@ -61,7 +131,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '修復', en: 'Fix' },
     publishTime: Date.parse('2026-09-25T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-25-exchange-and-resources',
   },
   {
     id: 'fix-004',
