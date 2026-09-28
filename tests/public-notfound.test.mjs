@@ -27,7 +27,7 @@ test('public filters and list show only Published locations', async () => {
   const elements = {
     search: { value: '' },
     'cat-filter': { value: '' },
-    'type-filter': { value: '' },
+    'label-filter': { value: '' },
     'loc-list': { innerHTML: '' },
     'result-info': { textContent: '' },
   };

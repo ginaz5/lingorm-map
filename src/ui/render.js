@@ -254,7 +254,7 @@ export function buildPopupContent(i) {
     ${row.alt ? `<div class="popup-alt">${row.alt}</div>` : ''}
     <div class="badges popup-badges">
       ${cat ? `<span class="badge b-cat">${cat}</span>` : ''}
-      ${type ? `<span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-type'}">${type}</span>` : ''}
+      ${type ? `<span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-label'}">${type}</span>` : ''}
     </div>
     <div class="popup-notes">${notes}</div>
     ${renderExchangeRates(row)}
@@ -306,7 +306,7 @@ export function renderList() {
       </div>
       <div class="badges">
         ${cat ? `<span class="badge b-cat">${cat}</span>` : ''}
-        ${type ? `<span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-type'}">${type}</span>` : ''}
+        ${type ? `<span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-label'}">${type}</span>` : ''}
       </div>
       <div class="card-notes">${compactCardNotes(notes)}</div>
       ${renderExchangeRates(row)}
@@ -391,7 +391,7 @@ export function matchesLocationFilters(row, query, category, type) {
 export function applyFilters() {
   const query = requiredInput('search').value;
   const category = requiredSelect('cat-filter').value;
-  const type = requiredSelect('type-filter').value;
+  const type = requiredSelect('label-filter').value;
   state.visIdx = [];
   state.data.forEach((row, i) => {
     if (matchesLocationFilters(row, query, category, type)) state.visIdx.push(i);
@@ -460,11 +460,11 @@ export function buildTypeFilter() {
     .forEach(row => {
       if (row.type) typeCounts.set(row.type, (typeCounts.get(row.type) ?? 0) + 1);
     });
-  const typeFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('type-filter'));
-  if (!typeFilter) throw new Error('Missing required element #type-filter');
+  const typeFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('label-filter'));
+  if (!typeFilter) throw new Error('Missing required element #label-filter');
   rebuildSelect(
     typeFilter,
-    `<option value="">${t('all_themes')}</option>` +
+    `<option value="">${t('all_labels')}</option>` +
     LOCATION_TYPES
       .filter(type => typeCounts.has(type))
       .map(type => `<option value="${type}">${t('filter_option_count', locationTypeLabel(type, lang), typeCounts.get(type) ?? 0)}</option>`)

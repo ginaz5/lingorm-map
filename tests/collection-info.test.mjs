@@ -69,9 +69,9 @@ function makeEnvironment({ canHover = false } = {}) {
   wrapper.append(trigger);
   wrapper.append(popover);
   popover.append(closeButton);
-  documentRoot.elements.set('type-info-btn', trigger);
-  documentRoot.elements.set('type-info-popover', popover);
-  documentRoot.elements.set('type-info-close', closeButton);
+  documentRoot.elements.set('label-info-btn', trigger);
+  documentRoot.elements.set('label-info-popover', popover);
+  documentRoot.elements.set('label-info-close', closeButton);
 
   initCollectionInfo(/** @type {Document} */ (/** @type {unknown} */ (documentRoot)));
   return { documentRoot, wrapper, trigger, popover, closeButton, outside };
@@ -159,6 +159,6 @@ test('collection guide is height constrained and scrollable in short viewports',
 
   assert.match(
     css,
-    /\.type-info-popover\{[^}]*max-height:min\(360px,calc\(100dvh - 195px\)\);overflow-y:auto;/,
+    /\.label-info-popover\{[^}]*max-height:min\(360px,calc\(100dvh - 195px\)\);overflow-y:auto;/,
   );
 });

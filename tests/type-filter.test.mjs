@@ -99,7 +99,7 @@ test('location Type labels use the requested Chinese copy and raw English values
 
 test('buildTypeFilter localizes labels, preserves values, and hides unavailable Types', () => {
   const typeFilter = { value: 'JKR Picks', innerHTML: '' };
-  const restore = installGlobals({ 'type-filter': typeFilter });
+  const restore = installGlobals({ 'label-filter': typeFilter });
 
   try {
     state.data = [
@@ -137,7 +137,7 @@ test('theme combines with category and destination filters using AND', () => {
   const elements = {
     search: { value: '' },
     'cat-filter': { value: '咖啡廳' },
-    'type-filter': { value: 'JKR Picks' },
+    'label-filter': { value: 'JKR Picks' },
     'loc-list': { innerHTML: '' },
     'result-info': { textContent: '' },
   };
@@ -181,14 +181,14 @@ test('map popup adds the localized Type badge and omits it when Type is blank', 
 
     const zhPopup = buildPopupContent(0);
     assert.match(zhPopup, /<span class="badge b-cat">咖啡廳<\/span>/);
-    assert.match(zhPopup, /<span class="badge b-type">JKR 推薦<\/span>/);
+    assert.match(zhPopup, /<span class="badge b-label">JKR 推薦<\/span>/);
 
     setLang('en');
     const enPopup = buildPopupContent(0);
     assert.match(enPopup, /<span class="badge b-cat">Cafe<\/span>/);
-    assert.match(enPopup, /<span class="badge b-type">JKR Picks<\/span>/);
+    assert.match(enPopup, /<span class="badge b-label">JKR Picks<\/span>/);
 
-    assert.doesNotMatch(buildPopupContent(1), /b-type/);
+    assert.doesNotMatch(buildPopupContent(1), /b-label/);
   } finally {
     restore();
   }
@@ -230,14 +230,14 @@ test('location list adds the localized Type badge and omits it when Type is blan
 
     renderList();
     assert.match(list.innerHTML, /<span class="badge b-cat">咖啡廳<\/span>/);
-    assert.match(list.innerHTML, /<span class="badge b-type">JKR 應援<\/span>/);
-    assert.equal(list.innerHTML.match(/class="badge b-type"/g)?.length, 1);
+    assert.match(list.innerHTML, /<span class="badge b-label">JKR 應援<\/span>/);
+    assert.equal(list.innerHTML.match(/class="badge b-label"/g)?.length, 1);
 
     setLang('en');
     renderList();
     assert.match(list.innerHTML, /<span class="badge b-cat">Cafe<\/span>/);
-    assert.match(list.innerHTML, /<span class="badge b-type">JKR Fan Projects<\/span>/);
-    assert.equal(list.innerHTML.match(/class="badge b-type"/g)?.length, 1);
+    assert.match(list.innerHTML, /<span class="badge b-label">JKR Fan Projects<\/span>/);
+    assert.equal(list.innerHTML.match(/class="badge b-label"/g)?.length, 1);
   } finally {
     restore();
   }
@@ -276,7 +276,7 @@ test('location list reuses popup actions without triggering its parent card', ()
 test('public filter controls are ordered category, label, then destination', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const categoryIndex = html.indexOf('id="cat-filter"');
-  const themeIndex = html.indexOf('id="type-filter"');
+  const themeIndex = html.indexOf('id="label-filter"');
   const destinationIndex = html.indexOf('id="dest-filter-btn"');
 
   assert.ok(categoryIndex >= 0);
@@ -291,20 +291,20 @@ test('filter layout uses content-aware widths so selected labels are not clipped
   assert.match(css, /\.filter-row\{display:flex;gap:8px;flex-wrap:wrap\}/);
   assert.match(
     css,
-    /#cat-filter,\.type-filter\{flex:1 1 calc\(50% - 4px\);min-width:max-content;max-width:100%\}/,
+    /#cat-filter,\.label-filter\{flex:1 1 calc\(50% - 4px\);min-width:max-content;max-width:100%\}/,
   );
   assert.match(
     css,
     /\.destination-filter\{position:relative;flex:1 1 calc\(100% - 48px\);min-width:0\}/,
   );
-  assert.doesNotMatch(css, /#type-filter\{flex:0 0 70px\}/);
+  assert.doesNotMatch(css, /#label-filter\{flex:0 0 70px\}/);
 });
 
 test('all filter-row controls share a 35px height', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(css, /\.filter-sel\{[^}]*height:35px/);
-  assert.match(css, /\.type-info-btn\{[^}]*height:35px/);
+  assert.match(css, /\.label-info-btn\{[^}]*height:35px/);
   assert.match(css, /\.dest-filter-btn\{[^}]*height:35px/);
   assert.match(css, /\.fav-filter-btn\{[^}]*height:\s*35px/);
 });
@@ -340,6 +340,6 @@ test('narrow mobile filters can give category and label their own rows', async (
   );
   assert.match(
     css,
-    /@media\(max-width:340px\)\{\s*#cat-filter,\.type-filter\{flex-basis:100%\}/,
+    /@media\(max-width:340px\)\{\s*#cat-filter,\.label-filter\{flex-basis:100%\}/,
   );
 });

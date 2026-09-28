@@ -243,7 +243,7 @@ document.getElementById('search').addEventListener('input', handleSearchInput);
 document.getElementById('cat-filter').addEventListener('change', event => {
   handleSelectFilter('category', /** @type {HTMLSelectElement} */ (event.currentTarget));
 });
-document.getElementById('type-filter').addEventListener('change', event => {
+document.getElementById('label-filter').addEventListener('change', event => {
   handleSelectFilter('type', /** @type {HTMLSelectElement} */ (event.currentTarget));
 });
 document.getElementById('issue-btn').addEventListener('click', openIssueModal);

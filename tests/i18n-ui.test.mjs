@@ -89,8 +89,8 @@ test('search placeholders explain that names and notes are searchable', () => {
 });
 
 test('type filter label is available in both supported languages', () => {
-  assert.equal(T.zh.theme_filter, '標籤');
-  assert.equal(T.en.theme_filter, 'label');
+  assert.equal(T.zh.label_filter, '標籤');
+  assert.equal(T.en.label_filter, 'label');
 });
 
 test('currency exchange category has bilingual labels', () => {
@@ -144,8 +144,8 @@ test('exchange-rate sort menu exposes only green-brand choices', async () => {
 test('unrestricted filters show their category and label prompts', () => {
   assert.equal(T.zh.all_cat, '所有類別');
   assert.equal(T.en.all_cat, 'All categories');
-  assert.equal(T.zh.all_themes, '所有標籤');
-  assert.equal(T.en.all_themes, 'All label');
+  assert.equal(T.zh.all_labels, '所有標籤');
+  assert.equal(T.en.all_labels, 'All label');
 });
 
 test('label guide explains every label in both supported languages', () => {

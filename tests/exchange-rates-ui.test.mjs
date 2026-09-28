@@ -261,7 +261,7 @@ test('selecting a green rate refreshes the list at the top while background upda
   const listeners = {};
   const makePanel = () => ({ setAttribute(name, value) { this[name] = value; }, classList: { toggle() {} } });
   const elements = {
-    search: { value: '' }, 'cat-filter': { value: '' }, 'type-filter': { value: '' },
+    search: { value: '' }, 'cat-filter': { value: '' }, 'label-filter': { value: '' },
     'loc-list': { innerHTML: '', scrollTop: 900 }, 'result-info': {},
     panel: makePanel(), 'map-wrap': makePanel(), 'tab-map': makePanel(), 'tab-list': makePanel(),
     'exchange-sort': { value: 'default', options: [], addEventListener(name, fn) { listeners[name] = fn; } },
@@ -500,7 +500,7 @@ test('published exchange rows outside the shipped rate mapping stay hidden every
   // Category, label and destination options only count supported rows;
   // exchange rows have no Category (they're tagged via Type only), so they
   // never contribute a blank/empty category option.
-  const elements = { 'cat-filter': { value: '', innerHTML: '' }, 'type-filter': { value: '', innerHTML: '' } };
+  const elements = { 'cat-filter': { value: '', innerHTML: '' }, 'label-filter': { value: '', innerHTML: '' } };
   const storage = new Map();
   const descriptors = {
     document: Object.getOwnPropertyDescriptor(globalThis, 'document'),
@@ -524,10 +524,10 @@ test('published exchange rows outside the shipped rate mapping stay hidden every
   buildCatFilter();
   assert.doesNotMatch(elements['cat-filter'].innerHTML, /Currency Exchange|換匯/);
   buildTypeFilter();
-  assert.ok(elements['type-filter'].innerHTML.includes(
+  assert.ok(elements['label-filter'].innerHTML.includes(
     translate('filter_option_count', locationTypeLabel('Currency Exchange', lang), 1)
   ));
-  assert.ok(elements['type-filter'].innerHTML.includes(translate('filter_option_count', locationTypeLabel('LingOrm', lang), 1)));
+  assert.ok(elements['label-filter'].innerHTML.includes(translate('filter_option_count', locationTypeLabel('LingOrm', lang), 1)));
 
   state.selectedDestinations = new Set(['bangkok', 'pattaya']);
   assert.equal(reconcileDestinationFilter(), true);
