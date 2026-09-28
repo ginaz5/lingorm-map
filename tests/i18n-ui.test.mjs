@@ -231,7 +231,7 @@ test('every resources label and accessible link name is translated by updateLang
 
 test('the map resource credits its author and describes the Maps list and custom features in both languages', () => {
   for (const language of ['zh', 'en']) {
-    assert.match(T[language].fan_resources_map_subtitle, /Abu Chicken Kwong \(epoh\)/);
+    assert.match(T[language].fan_resources_map_subtitle, /\bepoh$/);
     assert.match(T[language].fan_resources_map_source, /@___epoh___/);
   }
   assert.match(T.zh.fan_resources_map_desc, /地圖始祖/);

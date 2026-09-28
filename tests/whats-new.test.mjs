@@ -102,7 +102,7 @@ test('checkWhatsNew previews the current release with general update copy', () =
     );
     assert.match(env.dom.elements['wn-list'].innerHTML, /手機版新增篩選面板/);
     assert.match(env.dom.elements['wn-list'].innerHTML, /從「換匯」標籤找分店與比較匯率/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /粉絲資源加入原始踩點地圖與作者連結/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /新增JKR資源區/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /手機地圖彈窗置中，地點筆記更好讀/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增東京目的地與更多踩點/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增 SuperRich Thailand 換匯地圖/);
@@ -130,7 +130,7 @@ test('checkWhatsNew shows the new release after September 25 and refreshes its p
     assert.equal(html.match(/class="wn-feat"/g)?.length, WHATS_NEW_PREVIEW_LIMIT);
     assert.match(html, /A new filter sheet on mobile/);
     assert.match(html, /Find exchange branches with the Currency Exchange label/);
-    assert.match(html, /Fan resources now include the original location map/);
+    assert.match(html, /Add JKR resources/);
     assert.doesNotMatch(html, /Tokyo and more locations added/);
     assert.equal(env.dom.elements['wn-title'].textContent, '✨ Latest updates');
     assert.equal(env.dom.elements['wn-changelog-link'].textContent, 'View full changelog');
