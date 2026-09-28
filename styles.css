@@ -361,6 +361,11 @@ header {
   .filter-sheet .dest-filter-menu{position:static;width:auto;max-height:none!important;
     overflow:visible;margin-top:8px;box-shadow:none;z-index:auto}
   .filter-sheet .dest-option{min-height:44px;font-size:15px}
+  /* The desktop toolbar puts the label beside a 145px select; at sheet width and 16px
+     text that clips the option label, so stack it like the other sheet controls. */
+  .filter-sheet .exchange-toolbar{flex-direction:column;align-items:stretch;gap:6px}
+  .filter-sheet .exchange-sort-label{font-size:13px;white-space:normal}
+  .filter-sheet .exchange-sort{flex:0 0 auto;width:100%;max-width:none}
 }
 
 /* Cards */
