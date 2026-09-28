@@ -17,7 +17,7 @@ export function validateSuperrichMapping(mapping, csv, { sourceIds } = {}) {
   const entries = Object.entries(mapping.branches);
   if (entries.length === 0) throw new Error('SuperRich mapping must contain branches.');
   const [header, ...rows] = tokenizeCSV(csv);
-  const required = ['Slug', 'Category', 'Country Code', 'Destination Key', 'Verification Status', 'Lat', 'Lng'];
+  const required = ['Slug', 'Type', 'Country Code', 'Destination Key', 'Verification Status', 'Lat', 'Lng'];
   if (!header || required.some(key => !header.includes(key))) {
     throw new Error('SuperRich mapping requires the formal location snapshot headers.');
   }
@@ -44,7 +44,7 @@ export function validateSuperrichMapping(mapping, csv, { sourceIds } = {}) {
     codes.add(branch.branchCode);
     const row = locations.get(slug);
     if (!row) throw new Error(`Mapped Slug is absent from snapshot: ${slug}`);
-    if (row.Category !== 'Currency Exchange') throw new Error(`Mapped Slug must be Currency Exchange: ${slug}`);
+    if (row.Type !== 'Currency Exchange') throw new Error(`Mapped Slug must have Type Currency Exchange: ${slug}`);
     if (row['Country Code'] !== 'TH' || !isValidDestinationPair('TH', row['Destination Key'])) {
       throw new Error(`Mapped branch needs a valid Thai destination: ${slug}`);
     }
