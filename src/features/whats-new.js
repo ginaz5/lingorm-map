@@ -44,7 +44,7 @@ export function checkWhatsNew() {
 
   if (newItems.length === 0) return;
 
-  _populateModal(newItems.slice(0, WHATS_NEW_PREVIEW_LIMIT), newItems.length);
+  _populateModal(newItems.slice(0, WHATS_NEW_PREVIEW_LIMIT));
 
   setTimeout(() => {
     document.getElementById('whats-new-modal')?.classList.add('open');
@@ -55,8 +55,6 @@ export function checkWhatsNew() {
 // DOM — populate feature list + static text
 // ═══════════════════════════════════════════════════
 
-/** @type {number} */
-let _lastCount = 0;
 /** @type {typeof CHANGELOG} */
 let _lastItems = [];
 
@@ -67,16 +65,15 @@ export function updateWhatsNewLangUI() {
   const gotItBtn = document.getElementById('wn-got-it-btn');
   const viewAllLink = document.getElementById('wn-changelog-link');
   if (titleEl)  titleEl.textContent  = /** @type {string} */ (t('whats_new_title'));
-  if (descEl)   descEl.textContent   = /** @type {string} */ (t('whats_new_desc', _lastCount));
+  if (descEl)   descEl.textContent   = /** @type {string} */ (t('whats_new_desc'));
   if (gotItBtn) gotItBtn.textContent = /** @type {string} */ (t('whats_new_got_it'));
   if (viewAllLink) viewAllLink.textContent = /** @type {string} */ (t('whats_new_view_all'));
   _renderItems();
 }
 
-/** @param {typeof CHANGELOG} items @param {number} totalCount */
-function _populateModal(items, totalCount) {
+/** @param {typeof CHANGELOG} items */
+function _populateModal(items) {
   _lastItems = items;
-  _lastCount = totalCount;
   updateWhatsNewLangUI();
 }
 

@@ -19,32 +19,49 @@ test('changelog data is newest-first and has bilingual copy', () => {
 
   const latest = CHANGELOG[0];
   assert.equal(new Date(latest.publishTime).getUTCFullYear(), 2026);
-  assert.equal(localizeChangelogItem(latest, 'zh').title, '手機版篩選與卡片定位更順手');
-  assert.equal(localizeChangelogItem(latest, 'en').title, 'Smoother mobile filters and card positioning');
+  assert.equal(localizeChangelogItem(latest, 'zh').title, '手機版新增篩選面板');
+  assert.equal(localizeChangelogItem(latest, 'en').title, 'A new filter sheet on mobile');
+  assert.equal(new Set(CHANGELOG.map(item => item.id)).size, CHANGELOG.length);
+  for (const item of CHANGELOG) {
+    for (const language of ['zh', 'en']) {
+      const localized = localizeChangelogItem(item, language);
+      assert.ok(localized.title && localized.description && localized.badge);
+    }
+  }
 
   const currentReleaseItems = CHANGELOG.filter(
     item => item.releaseId === CURRENT_CHANGELOG_RELEASE_ID,
   );
-  assert.equal(currentReleaseItems.length, 3);
+  assert.deepEqual(currentReleaseItems.map(item => item.id), ['feat-016', 'feat-017', 'feat-018', 'fix-006', 'feat-019']);
   assert.ok(currentReleaseItems.every(item => item.publishTime === latest.publishTime));
+  assert.ok(currentReleaseItems.every(item =>
+    item.title.zh && item.title.en && item.description.zh && item.description.en));
+  assert.equal(
+    CHANGELOG.filter(item => item.releaseId === '2026-09-25-exchange-and-resources').length,
+    3,
+  );
   assert.equal(
     CHANGELOG.filter(item => item.releaseId === '2026-07-30-pr-2').length,
     7,
   );
 });
 
-test('changelog entries with the same GMT+8 date share one group', () => {
+test('changelog entries with the same UTC date share one group', () => {
   const groups = groupChangelogByDate(CHANGELOG);
 
-  assert.equal(groups[0].dateKey, '2026-08-09');
-  assert.equal(groups[0].items.length, 3);
-  assert.equal(groups[1].dateKey, '2026-07-30');
-  assert.equal(groups[1].items.length, 7);
+  assert.equal(groups[0].dateKey, '2026-09-28');
+  assert.equal(groups[0].items.length, 5);
+  assert.equal(groups[1].dateKey, '2026-09-25');
+  assert.equal(groups[1].items.length, 3);
+  assert.equal(groups[2].dateKey, '2026-08-09');
+  assert.equal(groups[2].items.length, 3);
+  assert.equal(groups[3].dateKey, '2026-07-30');
+  assert.equal(groups[3].items.length, 7);
   assert.equal(groups.length < CHANGELOG.length, true);
 });
 
-test('changelog dates render in the selected language and GMT+8 calendar day', () => {
-  const publishTime = Date.parse('2026-07-21T00:00:00+08:00');
+test('changelog dates render in the selected language and UTC calendar day', () => {
+  const publishTime = Date.parse('2026-07-21T00:00:00Z');
   assert.equal(formatChangelogDate(publishTime, 'zh'), '2026年7月21日');
   assert.equal(formatChangelogDate(publishTime, 'en'), 'July 21, 2026');
 });

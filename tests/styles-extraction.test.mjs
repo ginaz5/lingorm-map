@@ -42,12 +42,12 @@ test('popup badges use compact spacing without changing list badges', async () =
   assert.match(css, /\.badge\{\s*font-size:11px;font-weight:500;\s*padding:3px 8px;/);
 });
 
-test('result metadata uses the same inline spacing at every viewport', async () => {
+test('result metadata keeps the update date visible and wraps at narrow viewports', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(
     css,
-    /\.result-meta\{display:flex;align-items:baseline;gap:6px;padding:0 2px\}/,
+    /\.result-meta\{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;padding:0 2px\}/,
   );
   assert.match(css, /\.last-updated\{font-size:12px;color:var\(--text-muted\)\}/);
   assert.match(
@@ -55,19 +55,24 @@ test('result metadata uses the same inline spacing at every viewport', async () 
     /\.last-updated:not\(:empty\)::before\{content:"·";margin-right:6px;/,
   );
   assert.doesNotMatch(css, /\.result-meta\{[^}]*flex-direction:/);
+  assert.doesNotMatch(css, /\.last-updated\s*\{[^}]*display:\s*none/);
   assert.doesNotMatch(css, /@media\(min-width:1100px\)[\s\S]*?\.result-meta/);
 });
 
-test('location card actions are visible only at the mobile breakpoint', async () => {
+test('location card favorite heart is visible at every viewport; nav/maps buttons stay mobile-only', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(
     css,
-    /\.card-footer\{display:none;align-items:center;justify-content:flex-end;margin-top:8px\}/,
+    /\.card-footer\{display:flex;align-items:center;justify-content:flex-end;margin-top:8px\}/,
   );
   assert.match(
     css,
-    /@media\(max-width:700px\)\{\s*\.card-footer\{display:flex\}/,
+    /\.card-footer \.popup-nav-btn,\.card-footer \.popup-maps-btn\{display:none\}/,
+  );
+  assert.match(
+    css,
+    /@media\(max-width:700px\)\{\s*\.card-footer \.popup-nav-btn,\.card-footer \.popup-maps-btn\{display:inline-flex\}/,
   );
   assert.doesNotMatch(css, /\.popup-footer\{[^}]*display:none/);
 });
@@ -90,6 +95,19 @@ test('map markers keep their light style and use coral with contrast in dark mod
   assert.match(css, /\.marker-cluster\{[^}]*border:2px solid var\(--marker-ring\);box-shadow:0 4px 12px rgba\(0,0,0,\.4\)/);
   assert.match(css, /\.marker-dot\.active\{[^}]*0 0 15px rgba\(255,255,255,\.6\)/);
   assert.doesNotMatch(css, /\.marker-cluster\{[^}]*background:var\(--primary\)/);
+});
+
+test('all-exchange clusters reuse the single-marker green variant (Phase D2)', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(
+    css,
+    /\.marker-cluster\.is-exchange\{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7\}/,
+  );
+  assert.match(
+    css,
+    /\.marker-dot\.is-exchange\{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7\}/,
+  );
 });
 
 test('light mode cards have scoped accessible contrast styles', async () => {
@@ -124,4 +142,21 @@ test('favorite buttons avoid a black flash while becoming active', async () => {
   assert.match(css, /\.fav-btn:not\(\.fav-active\):hover\{color:#e05252\}/);
   assert.match(css, /\.fav-btn:not\(\.fav-active\):hover svg\{stroke:#e05252\}/);
   assert.doesNotMatch(css, /\.fav-btn:not\(\.fav-active\):hover(?: svg)?\{[^}]*#111827/);
+});
+
+test('popup, list card, and fan resource descriptions share the left-rule style', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  for (const cls of ['popup-notes', 'card-notes', 'fan-resource-description']) {
+    assert.match(css, new RegExp(`\\.${cls}\\{[^}]*white-space:pre-line`));
+    assert.match(css, new RegExp(`\\.${cls}\\{[^}]*padding:0 0 0 10px;\\s*border-left:3px solid var\\(--border\\)`));
+    assert.doesNotMatch(css, new RegExp(`\\.${cls}\\{[^}]*background:`));
+  }
+  for (const cls of ['popup-notes', 'card-notes']) {
+    assert.match(css, new RegExp(`\\.${cls}:empty\\{display:none\\}`));
+  }
+  // flex:1 would stretch the fan resource rule into the empty space above the footer.
+  assert.match(css, /\.fan-resource-description\{[^}]*margin-bottom:auto/);
+  assert.doesNotMatch(css, /\.fan-resource-description\{[^}]*flex:1/);
+  assert.match(css, /\.card-notes\{[^}]*-webkit-line-clamp:2/);
 });

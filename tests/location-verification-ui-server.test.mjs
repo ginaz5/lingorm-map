@@ -246,6 +246,7 @@ function fakeOperations(configuration = {}) {
             { name: 'JKR Picks', color: 'green' },
             { name: 'JKR Fan Projects', color: 'pink' },
             { name: 'Admin Picks', color: 'default' },
+            { name: 'Currency Exchange', color: 'green' },
           ],
         };
       },
@@ -446,7 +447,7 @@ test('schema summary reports the exact Type option contract', () => {
   assert.equal(summary.ok, true);
   assert.deepEqual(
     summary.allowedTypes.map(({ name }) => name),
-    ['LingOrm', 'JKR Picks', 'JKR Fan Projects', 'Admin Picks']
+    ['LingOrm', 'JKR Picks', 'JKR Fan Projects', 'Admin Picks', 'Currency Exchange']
   );
   assert.equal(summary.countryOptions.ok, true);
   assert.equal(summary.destinationOptions.ok, true);

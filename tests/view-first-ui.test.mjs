@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { makeMarkerContent } from '../src/map/map.js';
-import { buildPopupContent, renderList } from '../src/ui/render.js';
+import { isExchangeOnlyCluster, isExchangeOnlyDataPoints, makeMarkerContent } from '../src/map/map.js';
+import { buildPopupContent, compactCardNotes, renderList } from '../src/ui/render.js';
 import { state } from '../src/core/state.js';
 
 const REMOVED_UI_TOKENS = [
@@ -98,6 +98,67 @@ test('markers use one status-independent marker class', () => {
     const marker = makeMarkerContent('☕');
     assert.equal(marker.className, 'marker-dot');
     assert.equal(marker.textContent, '☕');
+  } finally {
+    globalThis.document = previousDocument;
+  }
+});
+
+test('exchange markers use the dedicated green marker variant', () => {
+  const previousDocument = globalThis.document;
+  globalThis.document = {
+    createElement: () => ({ className: '', textContent: '' }),
+  };
+
+  try {
+    const marker = makeMarkerContent('💱', true);
+    assert.equal(marker.className, 'marker-dot is-exchange');
+    assert.equal(marker.textContent, '💱');
+  } finally {
+    globalThis.document = previousDocument;
+  }
+});
+
+function fakeClusteredMarker(isExchange) {
+  const classes = new Set(isExchange ? ['marker-dot', 'is-exchange'] : ['marker-dot']);
+  return { __markerContent: { classList: { contains: cls => classes.has(cls) } } };
+}
+
+test('Google cluster renderer colors a cluster green only when every marker is an exchange location', () => {
+  assert.equal(isExchangeOnlyCluster([fakeClusteredMarker(true), fakeClusteredMarker(true)]), true);
+  assert.equal(isExchangeOnlyCluster([fakeClusteredMarker(true), fakeClusteredMarker(false)]), false);
+  assert.equal(isExchangeOnlyCluster([fakeClusteredMarker(false)]), false);
+  assert.equal(isExchangeOnlyCluster([]), false);
+});
+
+function fakeDataPoint(isExchange) {
+  return { getData: () => ({ isExchange }) };
+}
+
+test('HERE cluster theme colors a cluster green only when every leaf data point is an exchange location', () => {
+  const forEachOf = points => callback => points.forEach(callback);
+
+  assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint(true), fakeDataPoint(true)])), true);
+  assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint(true), fakeDataPoint(false)])), false);
+  assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint(false)])), false);
+  assert.equal(isExchangeOnlyDataPoints(forEachOf([])), false);
+});
+
+test('list card notes drop blank separator lines; popup keeps notes as authored', () => {
+  assert.equal(compactCardNotes('Title\n\nHighlight\n \n\nMore\n'), 'Title\nHighlight\nMore');
+  assert.equal(compactCardNotes('One line'), 'One line');
+  assert.equal(compactCardNotes(''), '');
+
+  const elements = { 'loc-list': { innerHTML: '' } };
+  const previousDocument = globalThis.document;
+  globalThis.document = { getElementById: (id) => elements[id] ?? null };
+  try {
+    state.isLoading = false;
+    state.data = [{ ...makeLocation(), notesEn: 'Title\n\nBody', notesZh: '標題\n\n內文' }];
+    state.visIdx = [0];
+    state.favorites = new Set();
+    renderList();
+    assert.match(elements['loc-list'].innerHTML, /<div class="card-notes">(Title\nBody|標題\n內文)<\/div>/);
+    assert.match(buildPopupContent(0), /<div class="popup-notes">(Title\n\nBody|標題\n\n內文)<\/div>/);
   } finally {
     globalThis.document = previousDocument;
   }

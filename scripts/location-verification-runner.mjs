@@ -119,6 +119,7 @@ const TEXT_SEARCH_FIELD_MASK = PLACE_FIELD_MASK
   .join(',');
 
 const DESTINATION_ADDRESS_ALIASES = Object.freeze({
+  tokyo: ['Tokyo', 'Tokyo-to', '東京都', '東京'],
   bangkok: [
     'Bangkok',
     'Krung Thep Maha Nakhon',

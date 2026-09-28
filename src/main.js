@@ -18,6 +18,7 @@ import {
   updateMapTheme,
   buildMarkers,
   fitMapToVisibleLocations,
+  refreshActivePopup,
 } from './map/map.js';
 import {
   applyFiltersAndSyncMap,
@@ -37,11 +38,16 @@ import {
   trackTabView,
 } from './services/analytics.js';
 import {
+  closeDestinationFilter,
   initDestinationFilter,
   reconcileDestinationFilter,
   renderDestinationFilter,
+  saveDestinationFilter,
 } from './features/destination-filter.js';
+import { initFilterSheet } from './features/filter-sheet.js';
 import { initCollectionInfo } from './features/collection-info.js';
+import { initFanResources } from './features/fan-resources.js';
+import { initExchangeRates } from './features/exchange-rates.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -123,6 +129,7 @@ function runMobileAction(event) {
   const action = event.currentTarget.dataset.mobileAction;
   closeMobileActions();
   if (action === 'issue') openIssueModal();
+  if (action === 'fan-resources') fanResources?.open(document.getElementById('mobile-actions-btn'));
 }
 
 /**
@@ -199,7 +206,8 @@ setLang(localStorage.getItem('lang') || 'zh');
 
 // Restore favorites from URL or localStorage
 loadFavorites();
-initDestinationFilter(change => {
+/** @param {{filterValue: string, filterAction: 'select'|'deselect'|'clear'}} change */
+function handleDestinationChange(change) {
   applyFiltersAndSyncMap({ fitMap: true });
   trackFilterApply(
     'destination',
@@ -208,8 +216,54 @@ initDestinationFilter(change => {
     change.filterAction,
     state.selectedDestinations.size,
   );
+}
+
+/** @param {'category'|'type'} filterType */
+function clearSelectFilter(filterType) {
+  const select = /** @type {HTMLSelectElement|null} */ (
+    document.getElementById(filterType === 'category' ? 'cat-filter' : 'label-filter')
+  );
+  if (!select || !select.value) return;
+  select.value = '';
+  handleSelectFilter(filterType, select);
+}
+
+/** @param {string} [key] Remove one destination, or all when omitted. */
+function clearDestinationFilter(key) {
+  if (key === undefined) {
+    if (state.selectedDestinations.size === 0) return;
+    state.selectedDestinations.clear();
+  } else if (!state.selectedDestinations.delete(key)) {
+    return;
+  }
+  saveDestinationFilter();
+  renderDestinationFilter();
+  handleDestinationChange(key === undefined
+    ? { filterValue: 'all', filterAction: 'clear' }
+    : { filterValue: `destination:${key}`, filterAction: 'deselect' });
+}
+
+initDestinationFilter(handleDestinationChange);
+initFilterSheet({
+  beforeOpen: closeDestinationFilter,
+  onRemove: ({ filter, value }) => {
+    if (filter === 'destination') clearDestinationFilter(value);
+    else clearSelectFilter(filter);
+  },
+  onClearAll: () => {
+    clearSelectFilter('category');
+    clearSelectFilter('type');
+    clearDestinationFilter();
+  },
 });
 initCollectionInfo();
+const fanResources = initFanResources();
+/** @param {{sortChanged?: boolean}} change */
+const handleExchangeChange = change => {
+  applyFiltersAndSyncMap({ exchangeSortChanged: change.sortChanged });
+  refreshActivePopup();
+};
+initExchangeRates(handleExchangeChange);
 
 // Static event listeners
 document.getElementById('fav-filter-btn').addEventListener('click', event => {
@@ -232,7 +286,7 @@ document.getElementById('search').addEventListener('input', handleSearchInput);
 document.getElementById('cat-filter').addEventListener('change', event => {
   handleSelectFilter('category', /** @type {HTMLSelectElement} */ (event.currentTarget));
 });
-document.getElementById('type-filter').addEventListener('change', event => {
+document.getElementById('label-filter').addEventListener('change', event => {
   handleSelectFilter('type', /** @type {HTMLSelectElement} */ (event.currentTarget));
 });
 document.getElementById('issue-btn').addEventListener('click', openIssueModal);

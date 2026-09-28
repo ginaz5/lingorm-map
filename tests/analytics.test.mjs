@@ -5,6 +5,7 @@ import { setLang } from '../src/core/i18n.js';
 import { state } from '../src/core/state.js';
 import {
   trackEvent,
+  trackFanResourcesOpen,
   trackFavoriteToggle,
   trackFilterApply,
   trackLanguageChange,
@@ -133,6 +134,7 @@ test('discovery and preference analytics exclude raw search and location data', 
     trackLocateResult('denied');
     trackTabView('map');
     trackLanguageChange('zh', 'en');
+    trackFanResourcesOpen('mobile_menu');
 
     assert.deepEqual(globalThis.window.dataLayer, [
       {
@@ -155,6 +157,9 @@ test('discovery and preference analytics exclude raw search and location data', 
       {
         map_provider: 'here', ui_language: 'zh', from_language: 'zh',
         to_language: 'en', event: 'language_change',
+      },
+      {
+        ui_language: 'zh', interaction_source: 'mobile_menu', event: 'fan_resources_open',
       },
     ]);
 

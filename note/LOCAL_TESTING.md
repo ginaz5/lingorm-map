@@ -2,8 +2,9 @@
 
 本專案使用 Netlify 免費方案時，建議先在本機完整測試，確認沒問題後才 push 到 GitHub 觸發 Netlify deploy，以節省 deploy credits。
 
-Notion snapshot 的完整 export → preview → production → rollback 流程請參考
-[`docs/notion-deploy-workflow.md`](../docs/notion-deploy-workflow.md)。
+Location 資料以已驗證的 CSV 快照隨程式版本部署：由 Notion 匯出 → 驗證 → 更新
+`data/locations.csv` → 提交部署；回滾即 `git revert` 該筆 `data/locations.csv` 變更。
+指令見 `CLAUDE.md` 的 Location data workflow。
 
 ## 目標
 
@@ -150,15 +151,17 @@ http://localhost:8888
 - 沒有空白卡片
 - marker popup 不再顯示「在 Google Maps 開啟 / Open in Google Maps」
 - 語言切換正常
-- 篩選順序為「類別／主題／目的地」；英文篩選標籤為 Collection，中文主題顯示 LingOrm、JKR 推薦、JKR 應援、留友看，英文維持正式 Type 值
-- 主題旁的資訊按鈕可透過桌機 hover／focus 或點擊開啟分類說明，並能以點擊外部、再次點擊或 Escape 關閉；手機點擊可正常操作
-- 主題可與搜尋、類別、目的地及收藏條件正確交集篩選
+- 篩選順序為「類別／標籤／目的地」；預設選項為「所有標籤／All label」，中文標籤顯示 LingOrm、JKR 推薦、JKR 應援、留友看，英文維持正式 Type 值
+- 標籤旁的資訊按鈕可透過桌機 hover／focus 或點擊開啟分類說明，並能以點擊外部、再次點擊或 Escape 關閉；手機點擊可正常操作
+- 標籤可與搜尋、類別、目的地及收藏條件正確交集篩選
 - Google Maps 與 HERE Maps popup 都同時顯示類別與 Type badge
 - 手機版以 `Bar / Rooftop Club`、`JKR Fan Projects`、`酒吧/天台俱樂部` 等最長篩選文字檢查，320px 與一般手機寬度都不裁切或水平溢出
 - 手機版定位按鈕固定顯示於 header，且不再出現在「更多操作」選單
+- 「更多操作」選單在 320px、390px 與 768px 寬度下，中英文文字完整顯示，選單不超出螢幕；放大文字時允許換行且圖示不被擠壓。可開啟本機 [版面回歸測試頁](../tests/fixtures/mobile-actions-width.html)（英文；網址加上 `?lang=zh` 測中文），以實際選單 markup、翻譯和樣式驗證 52px 放大文字，預期顯示 `PASS`。這是瀏覽器測試，`npm test` 不會執行。
 - 目的地可跨國複選，國家 checkbox 能全選／取消子目的地，部分選取時顯示 indeterminate
 - 目的地變更立即套用，重新整理後保留，且地圖自動縮放至全部篩選結果
 - 手機版 map/list tab 正常
+- 手機版 320px／390px：點地圖標記或列表卡片後，資訊卡片本體在地圖可視範圍置中；測試長短內容、連續選取及關閉後重開。Google Maps 與 HERE 都要確認；點標記維持原縮放，桌機維持原有行為。回歸測試：`node --test tests/mobile-popup.test.mjs`。
 - 問題回報可開啟、驗證必填欄位並完成本機 mock 送出
 - 列表與地圖只顯示 `Published`
 
@@ -193,6 +196,150 @@ git push -u origin <feature-branch>
 - 不要直接 push 到 `main`；使用 feature branch + PR Deploy Preview。
 - 等本機確認後再 push feature branch。
 - PR preview 驗證完成後才 merge；production branch 的更新會觸發 production deploy。
+
+## 換匯功能上線與維運手冊
+
+換匯（SuperRich）功能的資料模型與階段設計以
+[實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md) 為準、進度與已
+完成的驗證見 [進度紀錄](../docs/superrich-exchange-map-progress.zh-TW.md)；
+本節只記錄「正式環境要怎麼操作」，避免每次上線或排查問題都要重讀整份計畫。
+
+### 報價更新時段
+
+- 採泰國時間（`Asia/Bangkok`，UTC+7）：08:00 開始，每 30 分鐘一輪，最後一輪 22:30。
+- Netlify 使用 UTC cron `0,30 1-15 * * *`，每天 30 輪；23:00～隔天 08:00 排程不抓取來源。
+- 時段只由 cron 控制。Run now 或本機 `netlify functions:invoke` 任何時間都會真的抓取來源（一輪約 27 個請求）並寫入快照，仍受控制旗標與 breaker 冷卻限制；失敗也會計入 breaker。
+- 夜間手動抓到的快照同樣在下一個半小時邊界加 35 分鐘到期（例：23:10 抓取 → 下一輪 23:30 → 隔天 00:05 到期），之後回到「暫無報價」。
+- 沒有手動觸發時，22:30 的快照在 23:35 到期；夜間顯示「暫無報價」，最佳匯率排序停用，分店與連結仍可使用。
+- 前端每 60 秒向本站 API 確認狀態，這些請求不會抓取 SuperRich；08:00 新快照完成後恢復報價。
+
+### 上線前的驗證清單
+
+除了本文件前面「每次修改後的本機測試流程」之外，換匯功能多這幾項：
+
+```bash
+node --test tests/exchange-rates-*.test.mjs tests/i18n-ui.test.mjs tests/styles-extraction.test.mjs tests/view-first-ui.test.mjs
+node scripts/validate-superrich-mapping.mjs data/superrich-branches.json data/locations.csv
+npm run fx:control -- status
+```
+
+`fx:control -- status` 在本機／未設定 Netlify 憑證時會失敗是正常的——這
+支指令設計上只連正式或已 `netlify link` 的站台儲存；本機驗證的重點是
+`node --test` 全過與 mapping 腳本無誤。
+
+到期行為另以有有效報價的頁面驗證：切成離線、讓 API 請求跨過到期時間，
+以及切到背景後等到過期再切回。三種情況都應撤下數字與「最佳」標示、
+回一般排序；恢復連線且取得新快照後可以再次顯示報價。
+`tests/exchange-rates-ui.test.mjs` 以模擬時鐘涵蓋這些情境。
+
+換匯點的顯示以綠標 mapping 為準：`Type = Currency Exchange` 但 Slug 不在
+`data/superrich-branches.json` 的地點，即使是 `Published`，也不會出現在清單、搜尋、
+收藏、類別／標籤計數、目的地選項或地圖上（`isSupportedLocation()`）；綠標與一般地點
+不受影響。
+
+### 排程首次啟用（正式環境）
+
+Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；即使
+`main` 已 merge，正式環境的 Netlify Scheduled Function 要等下一個排定
+時間才會第一次自動執行。因此第一次上線要依序做：
+
+1. 先確認正式環境目前的控制狀態：
+
+   ```bash
+   npm run fx:control -- status
+   ```
+
+   `control` 為 `null` 代表尚未建立過控制物件，會回退到 `EXCHANGE_RATES_ENABLED`。
+   **這個回退值決定要不要做第 2 步**：設為 `false`（或未設定）時服務保持
+   disabled，必須人工啟用；設為 `true` 時第一次排程執行會自己以
+   `ensureFetchControl()` 建立 enabled 的控制物件並開始發布快照，第 2 步變成
+   非必要，第 1 步看到 `enabled: true` 也屬正常。
+
+2. 若回退值是 `false`（或想明確建立一個有版本的控制物件），建立／更新正式的控制旗標：
+
+   ```bash
+   npm run fx:control -- enable
+   ```
+
+3. **人工觸發第一輪抓取**（不要空等排程；任何時段都能觸發，但夜間快照約 30 分鐘後到期），用 Netlify UI 的「Run now」或：
+
+   ```bash
+   netlify functions:invoke exchange-rates-fetch
+   ```
+
+4. 確認 API 與前台數字：
+
+   ```text
+   https://lingorm-map.netlify.app/api/exchange-rates
+   ```
+
+   預期 `enabled: true`、`snapshot` 非 `null`；前台以「換匯」標籤篩選後，26 個
+   分店都能看到三列報價（或明確的「暫無報價」，不是空白或錯誤畫面）。
+
+5. **再驗證更新時段內接下來兩個排定批次**（每 30 分鐘一次；即等 30～60 分鐘後重
+   查一次 API 的 `checkedAt`／`snapshot.completedAt` 有沒有前進），確認
+   排程本身、不只是手動觸發那一次，是正常運作的。
+
+只改 `EXCHANGE_RATES_ENABLED` 這個環境變數**不會**讓上面任何一步提前生
+效——見下一節。
+
+### 執行期停用 vs. 環境變數：差異與怎麼操作
+
+這是兩層不同的開關，日常操作幾乎都只會用到第一種：
+
+| | 執行期控制旗標 | `EXCHANGE_RATES_ENABLED` 環境變數 |
+| --- | --- | --- |
+| 怎麼改 | `npm run fx:control -- enable` / `disable --reason <code>` | Netlify 網站設定裡改環境變數 |
+| 何時生效 | **立即**（下一次 API 讀取／排程檢查就看到） | **只在下一次部署之後**才生效 |
+| 用途 | 日常開關、來源出事故時緊急停用 | 這個站台從一開始要不要有這個功能（沒有控制旗標時的預設回退值） |
+| 停用後前台行為 | `enabled:false`；卡片、綠色標記與標籤選項都還在，只是三列報價變成「暫無報價」，篩選與收藏不受影響 | 同左 |
+
+**常見誤區：** 改了 Netlify 環境變數的 `EXCHANGE_RATES_ENABLED` 之後，
+以為存檔就生效——實際上要另外觸發一次部署（哪怕程式碼沒改）才會被讀
+到新值。日常「先關掉」請一律用 `npm run fx:control -- disable --reason
+<code>`，不要改環境變數。
+
+### Circuit breaker 復原
+
+來源回應 403／429 會被視為「來源在限流／封鎖」，立即封鎖並依
+6h → 24h → 自動停用逐步升級；連續 3 輪全失敗（非 403／429）則退避 1
+小時。**`npm run fx:control -- enable` 只會清除連續失敗計數，不會清除
+尚未到期的封鎖期限**（含 `Retry-After`）——這是刻意的：如果來源還在限
+流，手動重新啟用又立刻重抓只會再觸發一次封鎖。
+
+排查步驟：
+
+1. `npm run fx:control -- status`，看 `breaker.blockedUntil` 是否還沒
+   到。
+2. 沒過期：等到期，或找到來源限流的根本原因後再等；不要反覆
+   enable/disable 試探。
+3. 已過期：下一輪排程（泰國時間 08:00～22:30，每 30 分鐘）會自動恢復抓取，也可以隨時用
+   `netlify functions:invoke exchange-rates-fetch` 人工觸發一次確認。
+4. 恢復後應該看到 `breaker` 的失敗計數歸零、`snapshot` 更新到最新
+   `completedAt`。
+
+### 資料來源故障時，預期會發生什麼（降級檢查清單）
+
+來源故障（逾時、格式錯誤、HTTP 錯誤、封鎖中）時，前台**不應該**看到
+任何額外的錯誤畫面、彈窗或空白區塊；逐項確認：
+
+- 「換匯」標籤選項、26 個分店卡片、地圖上的綠色標記／綠色群聚：都還在。
+- 三列報價：顯示「暫無報價」（`fx_unavailable`），不是 0、空白或
+  crash。
+- 免責文字、官網連結、Google Maps 營業時間連結：正常顯示，不受影響。
+- 類別／標籤、搜尋、目的地、收藏依交集篩選換匯點；換匯點的類別為空，
+  可透過「換匯」標籤選取。
+- 最佳匯率排序：沒有可用報價時隱藏排序控制，三個排序選項變成 disabled，
+  並自動退回一般排序；有部分報價時，只停用缺少報價的幣別選項。
+- 訪客端每 60 秒仍會照常向 `/api/exchange-rates` 確認一次；沒有因為故
+  障就停止確認或需要重新整理頁面才能恢復。
+
+若上面任何一項不成立，先查 `npm run fx:control -- status` 的
+`control`／`breaker`／`snapshot` 三個物件，再對照
+[實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md) §4－§5 的契約
+定義；這是故障排查的第一步，不是重新部署。
+
+---
 
 ## 常見問題
 

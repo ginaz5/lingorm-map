@@ -7,13 +7,13 @@ function requiredElement(documentRoot, id) {
 
 /** @param {Document} [documentRoot] */
 export function initCollectionInfo(documentRoot = document) {
-  const parent = requiredElement(documentRoot, 'type-info-popover').parentElement;
+  const parent = requiredElement(documentRoot, 'label-info-popover').parentElement;
   if (!parent) throw new Error('Missing collection info wrapper');
   const wrapper = parent;
 
-  const trigger = requiredElement(documentRoot, 'type-info-btn');
-  const popover = requiredElement(documentRoot, 'type-info-popover');
-  const closeButton = requiredElement(documentRoot, 'type-info-close');
+  const trigger = requiredElement(documentRoot, 'label-info-btn');
+  const popover = requiredElement(documentRoot, 'label-info-popover');
+  const closeButton = requiredElement(documentRoot, 'label-info-close');
   const canHover = documentRoot.defaultView?.matchMedia?.('(hover: hover)').matches ?? false;
   let pinned = false;
   let suppressFocusOpen = false;

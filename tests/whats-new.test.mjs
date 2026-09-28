@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { setLang } from '../src/core/i18n.js';
 
 import {
   checkWhatsNew,
   closeWhatsNew,
+  updateWhatsNewLangUI,
   WHATS_NEW_PREVIEW_LIMIT,
 } from '../src/features/whats-new.js';
 import {
@@ -79,7 +81,7 @@ test('checkWhatsNew records a first visit without opening the modal', () => {
   }
 });
 
-test('checkWhatsNew reports all new releases but previews only the latest three', () => {
+test('checkWhatsNew previews the current release with general update copy', () => {
   const env = installEnvironment({
     lastVisit: String(Date.parse('2026-07-30T12:00:00+08:00')),
   });
@@ -91,21 +93,49 @@ test('checkWhatsNew reports all new releases but previews only the latest three'
     );
     assert.equal(env.dom.modalClasses.has('open'), true);
     assert.equal(WHATS_NEW_PREVIEW_LIMIT, 3);
-    assert.match(
-      env.dom.elements['wn-desc'].textContent,
-      new RegExp(String(currentReleaseItems.length)),
-    );
+    assert.equal(currentReleaseItems.length, 5);
+    assert.equal(env.dom.elements['wn-title'].textContent, '✨ 最近更新');
+    assert.equal(env.dom.elements['wn-desc'].textContent, '來看看上次造訪後的更新。');
     assert.equal(
       env.dom.elements['wn-list'].innerHTML.match(/class="wn-feat"/g)?.length,
       3,
     );
-    assert.match(env.dom.elements['wn-list'].innerHTML, /手機版篩選與卡片定位更順手/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /主題分類更清楚/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /地圖收錄更多踩點/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /手機版新增篩選面板/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /從「換匯」標籤找分店與比較匯率/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /新增JKR資源區/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /手機地圖彈窗置中，地點筆記更好讀/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增東京目的地與更多踩點/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增 SuperRich Thailand 換匯地圖/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /手機版篩選與卡片定位更順手/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /更注重隱私的互動分析/);
-    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /篩選新增「主題」與「目的地」/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /篩選新增「標籤」與「目的地」/);
     assert.equal(env.dom.elements['wn-changelog-link'].textContent, '查看完整更新紀錄');
   } finally {
+    cleanupEnvironment(env.originalSetTimeout);
+  }
+});
+
+test('checkWhatsNew shows the new release after September 25 and refreshes its preview in English', () => {
+  const env = installEnvironment({
+    lastVisit: String(Date.parse('2026-09-25T12:00:00Z')),
+    seenRelease: '2026-09-25-exchange-and-resources',
+  });
+  try {
+    checkWhatsNew();
+    assert.equal(env.dom.modalClasses.has('open'), true);
+
+    setLang('en');
+    updateWhatsNewLangUI();
+    const html = env.dom.elements['wn-list'].innerHTML;
+    assert.equal(html.match(/class="wn-feat"/g)?.length, WHATS_NEW_PREVIEW_LIMIT);
+    assert.match(html, /A new filter sheet on mobile/);
+    assert.match(html, /Find exchange branches with the Currency Exchange label/);
+    assert.match(html, /Add JKR resources/);
+    assert.doesNotMatch(html, /Tokyo and more locations added/);
+    assert.equal(env.dom.elements['wn-title'].textContent, '✨ Latest updates');
+    assert.equal(env.dom.elements['wn-changelog-link'].textContent, 'View full changelog');
+  } finally {
+    setLang('zh');
     cleanupEnvironment(env.originalSetTimeout);
   }
 });

@@ -11,7 +11,6 @@ Other required reading, by task:
 - `README.md` — full architecture diagrams, data schema, deploy config
 - `note/TECH_DECISIONS.md` — ADRs
 - `note/LOCAL_TESTING.md` — local verification procedure
-- `docs/notion-deploy-workflow.md` — Notion snapshot → production workflow
 
 `docs/archive/` is historical only — do not treat it as current requirements.
 
@@ -35,6 +34,7 @@ node --test tests/parsecsv.test.mjs
 Location data workflow (requires `NOTION_API_KEY` in `.env`):
 
 ```bash
+npm run locations:refresh                       # export → validate candidate → promote to data/locations.csv
 npm run locations:export:notion -- --output data/locations.next.csv
 node scripts/validate-location-snapshot.mjs data/locations.next.csv
 node scripts/validate-favorite-compatibility.mjs data/locations.csv data/legacy-favorite-ids.json

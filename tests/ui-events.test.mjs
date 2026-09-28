@@ -71,15 +71,15 @@ test('search and select filters use module listeners instead of inline analytics
   assert.doesNotMatch(mainSrc, /const resultCount = state\.visIdx\.length/);
   assert.match(mainSrc, /}, 700\)/);
   assert.match(mainSrc, /getElementById\('cat-filter'\)\.addEventListener\('change'/);
-  assert.match(mainSrc, /getElementById\('type-filter'\)\.addEventListener\('change'/);
+  assert.match(mainSrc, /getElementById\('label-filter'\)\.addEventListener\('change'/);
 });
 
 test('collection guide exposes accessible static markup', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 
-  assert.match(html, /id="type-filter"[^>]*data-i18n-aria="theme_filter"/);
-  assert.match(html, /id="type-info-btn"[^>]*aria-expanded="false"[^>]*aria-haspopup="dialog"[^>]*aria-controls="type-info-popover"/);
-  assert.match(html, /id="type-info-popover"[^>]*role="dialog"[^>]*aria-labelledby="type-info-title"[^>]*hidden/);
+  assert.match(html, /id="label-filter"[^>]*data-i18n-aria="label_filter"/);
+  assert.match(html, /id="label-info-btn"[^>]*aria-expanded="false"[^>]*aria-haspopup="dialog"[^>]*aria-controls="label-info-popover"/);
+  assert.match(html, /id="label-info-popover"[^>]*role="dialog"[^>]*aria-labelledby="label-info-title"[^>]*hidden/);
   assert.match(html, /data-i18n="collection_info_lingorm"/);
   assert.match(html, /data-i18n="collection_info_jkr_picks"/);
   assert.match(html, /data-i18n="collection_info_jkr_projects"/);

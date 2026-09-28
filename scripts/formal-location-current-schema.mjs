@@ -72,6 +72,7 @@ export const CURRENT_FORMAL_TYPE_OPTIONS = Object.freeze([
   { name: LOCATION_TYPES[1], color: 'green' },
   { name: LOCATION_TYPES[2], color: 'pink' },
   { name: LOCATION_TYPES[3], color: 'default' },
+  { name: LOCATION_TYPES[4], color: 'green' },
 ]);
 
 /** @type {Readonly<Record<string, string>>} */
@@ -81,6 +82,7 @@ const COUNTRY_OPTION_COLORS = Object.freeze({
   TW: 'pink',
   HK: 'yellow',
   MO: 'orange',
+  JP: 'red',
 });
 
 /** @type {Readonly<Record<string, string>>} */
@@ -91,6 +93,8 @@ const DESTINATION_OPTION_COLORS = Object.freeze({
   'khao-yai': 'brown',
   'koh-samui': 'blue',
   pattaya: 'purple',
+  chonburi: 'orange',
+  'si-racha': 'green',
   'ubon-ratchathani': 'pink',
   'ho-chi-minh-city': 'red',
   taipei: 'pink',
@@ -100,6 +104,7 @@ const DESTINATION_OPTION_COLORS = Object.freeze({
   hualien: 'green',
   'hong-kong': 'purple',
   macau: 'red',
+  tokyo: 'pink',
 });
 
 export const CURRENT_FORMAL_COUNTRY_OPTIONS = Object.freeze(

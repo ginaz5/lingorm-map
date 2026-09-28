@@ -35,3 +35,7 @@ data/locations.next.csv
 # Local-only demo/preview renders (map update walkthrough videos, etc.)
 demo-output/
 lingorm-map-update-demo-threads-9x16.mp4
+
+# Machine-specific local tool state (run locks, cooldowns, last attempts).
+# Kept ignored even with no current writer so old local state is never committed.
+.local-state/

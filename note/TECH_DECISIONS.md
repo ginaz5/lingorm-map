@@ -55,26 +55,31 @@ HERE Maps 的 browser key 同樣會由 SDK request 暴露；應在 HERE project 
 
 ## 地圖 Marker：Emoji 圓形 badge
 
-**架構：** `AdvancedMarkerElement` + 自訂 HTML content（28px 圓形 div）
+> 本節先前記錄的「依 Verification Status 上色」模型已隨換匯功能改版；
+> 目前程式**不再**依審核狀態決定 marker 顏色，一律以下列現行行為為準。
+
+**架構：** `AdvancedMarkerElement` + 自訂 HTML content（28px 圓形 div），由
+`src/map/map.js` 的 `makeMarkerContent(icon, isExchange)` 產生：
 
 ```js
-export function makeMarkerContent(status, icon) {
+export function makeMarkerContent(icon, isExchange = false) {
   const el = document.createElement('div');
-  el.className = `marker-dot ${getBadgeClass(status).replace('b-', 'marker-')}`;
+  el.className = `marker-dot${isExchange ? ' is-exchange' : ''}`;
   el.textContent = icon || '📍';
   return el;
 }
 ```
 
-**顏色對應 status：**
+- Emoji 取自 `row.icon`（由 `src/data/csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
+- 公開狀態刻意不編碼進顏色（`Published` 才會出現在地圖上，篩選已在更上游處理）。
+- 唯一的顏色變體是 `.is-exchange`（`--marker-bg:#16835b` 綠），套用在
+  `Category = Currency Exchange` 的分店（`isExchangeLocation(row)`）。
 
-| Status | CSS class | 顏色 |
-|--------|-----------|------|
-| Verified | `.marker-verified` | `#2f7d4f` 綠 |
-| Needs Review | `.marker-review` | `#c2772a` 橘 |
-| Could Not Find | `.marker-notfound` | `#b1452f` 紅（不顯示於公開清單） |
+**群聚著色（Phase D2）：** 單店綠色標記之外，全部由換匯分店組成的群聚也會顯示同一組綠色，混合群聚維持原有樣式（可接受的降級，先於 Phase D1 就這樣約定）：
 
-Emoji 取自 `row.icon`（由 `src/data/csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
+- **Google：** `MarkerClusterer` 的 `renderer.render(cluster, stats, map)` 收到的 `cluster.markers` 就是建立單店 marker 時保留的同一批物件（`m.__markerContent = el`），因此 `isExchangeOnlyCluster(markers)` 只需檢查每個 marker 的 `__markerContent.classList.contains('is-exchange')`。
+- **HERE：** `H.clustering.ICluster` 沒有現成的「成分清單」，改用 `cluster.forEachDataPoint(cb)` 走訪葉節點，`isExchangeOnlyDataPoints(forEachDataPoint)` 依此判斷是否每個 `DataPoint` 的 `getData().isExchange` 都是 `true`。
+- 兩個判斷函式都刻意設計成純函式（不依賴 Google／HERE 全域物件），方便在 Node 測試環境下單獨驗證，見 `tests/view-first-ui.test.mjs`。
 
 ---
 
@@ -119,7 +124,7 @@ data/locations.csv（隨版本提交）
 
 **選用理由：**
 - Notion 作為可協作的主要資料來源，但 production request 不直接依賴 Notion API
-- 已驗證的 CSV 快照會隨程式版本保存，部署與回滾都可重現（回滾＝ git revert `data/locations.csv`，見 `docs/notion-deploy-workflow.md`）
+- 已驗證的 CSV 快照會隨程式版本保存，部署與回滾都可重現（回滾＝ git revert `data/locations.csv`）
 - 前端不會暴露 Notion 憑證
 
 **限制：**
@@ -237,7 +242,7 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 
 **決策：** 地理篩選採兩層式 `Country Code` → `Destination Key` taxonomy。
 目的地代表城市或旅遊目的地，不代表曼谷行政區或街區。篩選器允許跨國複選；
-同一層目的地之間使用 OR，並與搜尋、類別、主題、收藏條件使用 AND。
+同一層目的地之間使用 OR，並與搜尋、類別、標籤、收藏條件使用 AND。
 
 **互動：**
 
@@ -249,18 +254,18 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 **資料契約：** taxonomy 集中在 `src/data/destinations.js`。每個 `Published`
 地點必須具備受支援且互相匹配的 `Country Code` 與 `Destination Key`；
 匯出快照驗證失敗即阻擋 build/deploy。`Paused`／`Inactive` 草稿可暫時未分類。
-目前支援 `TH`、`VN`、`TW`、`HK`、`MO`；台灣目的地為 `taipei`、
+目前支援 `TH`、`VN`、`TW`、`HK`、`MO`、`JP`；台灣目的地為 `taipei`、
 `taichung`、`kaohsiung`、`tainan`、`hualien`，香港與澳門分別使用
-`hong-kong`、`macau`。既有泰國與越南 key 保持不變。
+`hong-kong`、`macau`，日本目前支援 `tokyo`（東京 / Tokyo）。既有泰國與越南 key 保持不變。
 
 ---
 
-## 地點主題篩選
+## 地點標籤篩選
 
-**決策：** 公開網站將正式資料的 `Type` 欄位顯示為「主題」，以單選下拉
+**決策：** 公開網站將正式資料的 `Type` 欄位顯示為「標籤」，以單選下拉
 與搜尋、類別、目的地及收藏條件使用 AND。篩選順序固定為
-「類別／主題／目的地」，只顯示目前 `Published` 地點中實際存在的選項。
-英文篩選器顯示為 `Collection`，避免和地點類別混淆；正式資料欄位仍維持
+「類別／標籤／目的地」，只顯示目前 `Published` 地點中實際存在的選項。
+英文篩選器顯示為 `label`，避免和地點類別混淆；正式資料欄位仍維持
 `Type`。篩選器旁的資訊按鈕會在 hover、focus 或點擊時顯示雙語分類說明，
 並支援點擊外部或按 Escape 關閉。地圖 popup 則在類別 badge 旁顯示依目前
 語言轉換的 Type badge。
@@ -273,3 +278,84 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 | `JKR Picks` | JKR 推薦 |
 | `JKR Fan Projects` | JKR 應援 |
 | `Admin Picks` | 留友看 |
+
+---
+
+## 換匯匯率：排程快照 + 執行期控制旗標（而非即時代理）
+
+**決策：** 前端透過本站 API 讀取換匯報價；由獨立的 Netlify 排程 Function
+（`exchange-rates-fetch.mjs`，泰國時間
+08:00～22:30 每 30 分鐘）向來源抓一次、正規化後寫入 `@netlify/blobs` 快照，前端只打站內
+`/api/exchange-rates`（`exchange-rates.mjs`）讀最新快照。完整規格見
+[SuperRich 換匯地圖實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md)
+§4－§5；本節只記錄「為什麼這樣選」與上線／維運要點，執行細節與驗證見
+[換匯功能進度紀錄](../docs/superrich-exchange-map-progress.zh-TW.md)。
+
+**2026-09-27 時段調整：** 使用者確認以 `Asia/Bangkok` 為準，23:00～08:00
+停止來源抓取。UTC cron 為 `0,30 1-15 * * *`，每日 30 輪。當時 Function 與
+runner 另外檢查更新時段（已於 2026-09-28 移除，見下段）。到期規則維持
+下一個半小時邊界加 90 秒，22:30 的快照在 23:01:30 到期，不延長到隔天。
+前端仍每分鐘確認本站 API，08:00 的新快照完成後即可恢復報價。
+
+**2026-09-28 移除程式內時段檢查：** 使用者決定拿掉 Function 與 runner 的
+`[08:00, 23:00)` 檢查（含 `isExchangeFetchTime`）。排程與人工觸發（UI
+Run now、`netlify functions:invoke`）沒有可靠、文件化的欄位可以區分，因此
+只保留 cron 作為唯一時段限制：排程行為不變；人工觸發任何時間都會抓取來源
+並寫入快照，仍受控制旗標與 breaker 限制。夜間手動快照沿用同一到期規則
+（下一個半小時邊界加 90 秒）。代價：夜間手動觸發會多打一輪來源（約 27 個
+請求），失敗也會計入 breaker。
+
+**2026-09-28 到期寬限延長為 35 分鐘：** 使用者反映 90 秒寬限太短，排程稍微
+延遲或單輪失敗就立刻顯示「暫無報價」。改為 `SNAPSHOT_GRACE_MS = 35 分鐘`
+（約一個更新週期），單一延遲或失敗的一輪不會清空畫面，要等到連續兩輪都
+沒有新快照才會過期顯示「暫無報價」。`nextUtcHalfHour` 與排程週期本身不變，
+只調整 `expiresAt = nextUpdateAt + 寬限`；22:30 的最後一輪 `expiresAt` 從
+23:01:30 延到 23:35。代價：畫面可能多顯示最長 35 分鐘的舊報價。
+
+**為什麼不做即時代理：**
+
+| 考量 | 排程快照（現行） | 每次請求即時代理 |
+| --- | --- | --- |
+| 對來源的負載 | 固定、可預期（≤ 每 30 分鐘 1 次） | 隨訪客流量線性成長，容易被來源限流或封鎖 |
+| 來源故障時的使用者體驗 | 只影響「下一次更新」，舊快照或「暫無報價」照常顯示 | 來源逾時／出錯會直接拖慢或打斷使用者的請求 |
+| Netlify Function 執行時間 | 抓取與前端讀取互不影響（各自的 function） | 前端請求必須等來源回應，容易撞到 10 秒執行上限 |
+
+**執行期停用 vs. 環境變數：兩者不是同一層開關。** 這是刻意的分工，
+避免「改完環境變數卻沒生效」或「想暫停卻要重新部署」：
+
+- **執行期控制旗標**（`scripts/exchange-rates-control.mjs` → `npm run
+  fx:control -- status|enable|disable`）寫入 Blobs 裡的控制物件，**立即生
+  效、不需重新部署**。用於日常開關、來源出問題時先緊急停用。
+- **`EXCHANGE_RATES_ENABLED` 環境變數**只在控制旗標**尚未存在**時作為
+  預設回退；改環境變數之後必須另外觸發一次部署才會被讀到新值。這層只
+  用於「這個站台一開始要不要有這個功能」，日常開關一律用控制旗標。
+
+**儲存範圍由 Function 的 `context.deploy.context` 決定。** API 與排程
+都把執行期 context 傳入儲存工廠：`production` 使用與管理指令相同的
+site-wide store；Preview、branch deploy、本機及缺少 context 時使用
+deploy-specific store。不要依賴 `process.env.CONTEXT`，它是建置期變數。
+
+**Circuit breaker 不是「重新啟用就重抓」。** 403／429 會立即封鎖
+6h→24h→自動停用；`npm run fx:control -- enable` 只清除連續失敗計數，
+**保留尚未到期的 `blockedUntil`**——這樣管理者才不會在來源還在限流時，
+因為手動重新啟用而立刻又觸發一次封鎖。封鎖期滿後，下一輪排程（或人工
+觸發一次）就會自動恢復抓取；等待期間 API 回 `enabled: true, snapshot:
+null`，前端顯示「暫無報價」而不是隱藏整張卡片。
+
+**來源故障時的降級路徑，全部發生在既有 UI 骨架內：** 換匯標籤、分店卡
+片、綠色標記、Google Maps／導航連結、收藏都不受影響；只有三列報價本
+身在 `enabled:false` 或快照過期時顯示「暫無報價」並回到一般排序。沒有
+額外的錯誤畫面或彈窗。
+
+報價到期不受輪詢暫停影響：離線、背景頁面，以及 API
+請求尚未完成時，仍保留到期計時；頁面恢復執行時先撤下過期數字，再
+安排查詢。自動停用後的 breaker 清理沿用該輪寫入的 ETag，遇到較新的
+手動控制變更就放棄清理，避免覆蓋重新啟用後的版本。
+
+這一版只支援 SuperRich Thailand（綠標）。正式快照仍可能包含其他換匯品牌的
+資料列（例如已暫停的 SuperRich 1965），因此顯示規則改以「此版本支援的換匯點」
+判斷：`Type = Currency Exchange` 的地點必須在綠標 mapping 中才會顯示；
+換匯點的 `Category` 留空，以標籤作為單一換匯篩選入口。
+由 `isSupportedLocation()` 併入 `isPublicLocation()`，清單、搜尋、收藏、篩選
+計數、目的地選項與 Google／HERE marker 共用同一個判斷。刻意不用品牌 Slug 黑名單；
+收藏中既有的其他品牌 ID 也不清除，日後支援該品牌時仍可對應。

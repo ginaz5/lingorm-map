@@ -42,6 +42,7 @@ test('current formal schema matches the 20-property Notion contract', () => {
     { name: 'JKR Picks', color: 'green' },
     { name: 'JKR Fan Projects', color: 'pink' },
     { name: 'Admin Picks', color: 'default' },
+    { name: 'Currency Exchange', color: 'green' },
   ]);
   assert.deepEqual(CURRENT_FORMAL_COUNTRY_OPTIONS, [
     { name: 'TH', color: 'blue' },
@@ -49,6 +50,7 @@ test('current formal schema matches the 20-property Notion contract', () => {
     { name: 'TW', color: 'pink' },
     { name: 'HK', color: 'yellow' },
     { name: 'MO', color: 'orange' },
+    { name: 'JP', color: 'red' },
   ]);
   assert.deepEqual(CURRENT_FORMAL_DESTINATION_OPTIONS, [
     { name: 'bangkok', color: 'blue' },
@@ -57,6 +59,8 @@ test('current formal schema matches the 20-property Notion contract', () => {
     { name: 'khao-yai', color: 'brown' },
     { name: 'koh-samui', color: 'blue' },
     { name: 'pattaya', color: 'purple' },
+    { name: 'chonburi', color: 'orange' },
+    { name: 'si-racha', color: 'green' },
     { name: 'ubon-ratchathani', color: 'pink' },
     { name: 'ho-chi-minh-city', color: 'red' },
     { name: 'taipei', color: 'pink' },
@@ -66,6 +70,7 @@ test('current formal schema matches the 20-property Notion contract', () => {
     { name: 'hualien', color: 'green' },
     { name: 'hong-kong', color: 'purple' },
     { name: 'macau', color: 'red' },
+    { name: 'tokyo', color: 'pink' },
   ]);
   assert.deepEqual(FORMAL_PROPERTIES_RETIRED_AFTER_20260720, [
     'Branch Group',
@@ -199,7 +204,7 @@ test('current formal schema inspection enforces exactly three Status options', (
   });
 });
 
-test('current formal schema inspection enforces exactly four Type options', () => {
+test('current formal schema inspection enforces the exact Type option set', () => {
   const properties = {
     Type: {
       type: 'select',
@@ -224,7 +229,7 @@ test('current formal schema inspection enforces exactly four Type options', () =
   assert.deepEqual(inspectCurrentFormalTypeOptions(properties), {
     checked: true,
     ok: false,
-    missing: ['JKR Fan Projects', 'Admin Picks'],
+    missing: ['JKR Fan Projects', 'Admin Picks', 'Currency Exchange'],
     unexpected: ['Bookmark'],
     wrongColors: [
       { name: 'LingOrm', expected: 'blue', actual: 'red' },
@@ -261,7 +266,7 @@ test('current formal schema inspection enforces geography taxonomy options', () 
   assert.deepEqual(inspectCurrentFormalCountryOptions(properties), {
     checked: true,
     ok: false,
-    missing: ['TW', 'HK', 'MO'],
+    missing: ['TW', 'HK', 'MO', 'JP'],
     unexpected: ['SG'],
     wrongColors: [],
   });
@@ -284,10 +289,24 @@ test('current formal schema inspection enforces geography taxonomy options', () 
   assert.equal(schema.ok, false);
   assert.match(
     currentFormalSchemaIssueMessages(schema).join('; '),
-    /Country Code options missing TW, HK, MO; unexpected SG/
+    /Country Code options missing TW, HK, MO, JP; unexpected SG/
   );
   assert.match(
     currentFormalSchemaIssueMessages(schema).join('; '),
     /Destination Key options missing macau; wrong colors hong-kong:yellow->purple/
   );
+});
+
+test('exchange destinations require matching source options and colors before export', () => {
+  const inspect = options => inspectCurrentFormalDestinationOptions({
+    'Destination Key': { type: 'select', select: { options } },
+  });
+  const correct = CURRENT_FORMAL_DESTINATION_OPTIONS.map(option => ({ ...option }));
+  assert.equal(inspect(correct).ok, true);
+  assert.deepEqual(inspect(correct.filter(option => !['chonburi', 'si-racha'].includes(option.name))).missing, ['chonburi', 'si-racha']);
+  assert.deepEqual(inspect([...correct, { name: 'unconfigured-destination', color: 'blue' }]).unexpected, ['unconfigured-destination']);
+  for (const color of ['red', undefined]) {
+    const mismatched = correct.map(option => option.name === 'si-racha' ? { name: option.name, color } : option);
+    assert.deepEqual(inspect(mismatched).wrongColors, [{ name: 'si-racha', expected: 'green', actual: color }]);
+  }
 });

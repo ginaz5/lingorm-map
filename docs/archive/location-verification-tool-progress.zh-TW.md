@@ -333,20 +333,20 @@ pending → completed
 
 新增／更新：
 
-- [`scripts/location-verification-core.mjs`](../scripts/location-verification-core.mjs)
-- [`scripts/location-verification-runner.mjs`](../scripts/location-verification-runner.mjs)
-- [`scripts/location-verification-validator.mjs`](../scripts/location-verification-validator.mjs)
-- [`scripts/location-verification-ui-server.mjs`](../scripts/location-verification-ui-server.mjs)
-- [`tools/location-verification-ui/index.html`](../tools/location-verification-ui/index.html)
-- [`tools/location-verification-ui/app.js`](../tools/location-verification-ui/app.js)
-- [`tools/location-verification-ui/styles.css`](../tools/location-verification-ui/styles.css)
+- [`../../scripts/location-verification-core.mjs`](../../scripts/location-verification-core.mjs)
+- [`../../scripts/location-verification-runner.mjs`](../../scripts/location-verification-runner.mjs)
+- [`../../scripts/location-verification-validator.mjs`](../../scripts/location-verification-validator.mjs)
+- [`../../scripts/location-verification-ui-server.mjs`](../../scripts/location-verification-ui-server.mjs)
+- [`../../tools/location-verification-ui/index.html`](../../tools/location-verification-ui/index.html)
+- [`../../tools/location-verification-ui/app.js`](../../tools/location-verification-ui/app.js)
+- [`../../tools/location-verification-ui/styles.css`](../../tools/location-verification-ui/styles.css)
 - [`location-verification-formal-change-approvals.json`](location-verification-formal-change-approvals.json)
-- [`tests/location-verification-core.test.mjs`](../tests/location-verification-core.test.mjs)
-- [`tests/location-verification-runner.test.mjs`](../tests/location-verification-runner.test.mjs)
-- [`tests/location-verification-ui-server.test.mjs`](../tests/location-verification-ui-server.test.mjs)
-- [`tests/location-verification-validator.test.mjs`](../tests/location-verification-validator.test.mjs)
-- [`.env.example`](../.env.example)
-- [`package.json`](../package.json)
+- [`../../tests/location-verification-core.test.mjs`](../../tests/location-verification-core.test.mjs)
+- [`../../tests/location-verification-runner.test.mjs`](../../tests/location-verification-runner.test.mjs)
+- [`../../tests/location-verification-ui-server.test.mjs`](../../tests/location-verification-ui-server.test.mjs)
+- [`../../tests/location-verification-validator.test.mjs`](../../tests/location-verification-validator.test.mjs)
+- [`.env.example`](../../.env.example)
+- [`../../package.json`](../../package.json)
 
 核心已涵蓋：
 
@@ -717,7 +717,7 @@ Places content persistence 稽核：
 - `Candidate Payload` 的禁止鍵與 discriminated-union validator 同時用於 write 前與 98 筆 live validation。
 - Candidate converter 只允許五個 workflow 欄位；Apply 不會把 Places Lat/Lng 寫入正式座標。
 - Resolver 的名稱、地址、Places Lat/Lng、營業狀態與距離只存在當次 process 記憶體並直接顯示於互動 terminal；沒有持久化 log 或 snapshot sink。
-- `docs/` 與 `data/` 掃描未發現 resolver 的暫時候選輸出格式，也未發現帶禁止鍵的 `lv2:` Payload。測試檔內的 `Example Address` 等內容是合成 fixture，不是真實 Places response。
+- `..` 與 `data/` 掃描未發現 resolver 的暫時候選輸出格式，也未發現帶禁止鍵的 `lv2:` Payload。測試檔內的 `Example Address` 等內容是合成 fixture，不是真實 Places response。
 - runner 唯一的檔案寫入是作業系統暫存目錄中的 apply lock 與 maintenance metadata，不包含地點或候選內容。
 
 最終重跑：
@@ -986,7 +986,7 @@ Rehearsal schema 與初始化：
 
 Snapshot gate：
 
-- 新增 [`location-snapshot-policy-v1.json`](../data/location-snapshot-policy-v1.json)，以 `minimumRowCount = 98` 允許正常新增。
+- 新增 [`location-snapshot-policy-v1.json`](../../data/location-snapshot-policy-v1.json)，以 `minimumRowCount = 98` 允許正常新增。
 - 98 個 legacy Slug 仍由 `legacy-favorite-ids.json` 保護；少一個舊 Slug 即使補一個新 Slug仍失敗。
 - 刪除／封存必須有包含 Slug、核准時間、核准者與原因的 deletion manifest。
 - 所有 raw status 必須屬於遷移期 union；所有非空 Lat/Lng 必須合法且成對。
@@ -1569,7 +1569,7 @@ Apply approval contract 已整合進第三段：
 
 實作與驗證：
 
-- 新增純函式模組 `tools/location-verification-ui/workflow.js`，集中判斷 Apply
+- 新增純函式模組 `../../tools/location-verification-ui/workflow.js`，集中判斷 Apply
   完成條件與下一筆 queue 選取。
 - 新增 queue 順序、循環與無下一筆案例測試，並補上 `/workflow.js` 靜態資源測試；
   相關測試 `17/17` 通過。
@@ -1780,14 +1780,14 @@ Apply preview：
   `Coordinates Approx`；正式 3 個檢核欄位仍不匯出。
 - `src/csv-parser.js` 對新的 Notion snapshot 將座標語意視為空白／未指定；
   舊 Google Sheet rollback CSV 若仍帶 `Coordinates Approx`，仍可相容解析。
-- `scripts/export-snapshot.mjs` 現在：
+- `../../scripts/export-snapshot.mjs` 現在：
   - 只讀 `NOTION_FORMAL_READ_API_KEY`。
   - data source 固定受正式 allowlist
     `e55c2315-8ea2-837d-9637-07c1118486c8` 保護。
   - 查詢前先驗證 17 個必要 property 與型別。
   - 依 Slug 排序，並可用 `--output` 原子寫入候選檔。
   - 不包含任何 Notion write route。
-- committed `data/locations.csv` 已機械式移除舊欄，並以最新正式 Notion
+- committed `../../data/locations.csv` 已機械式移除舊欄，並以最新正式 Notion
   100 筆資料重新產生。
 - 正式唯讀 dry-run 實際讀到 100 筆、schema 17/17：
   - `Published` 99、`Inactive` 1。
@@ -1805,7 +1805,7 @@ Apply preview：
   以精確核准替代記錄 `by → plantiful-sukhumvit-61`，總數仍為 98。
 - 正式候選已通過 snapshot validator：100 筆、100 個唯一 Slug、99 筆符合
   UI 呈現資格；favorite compatibility 亦通過：98 個受保護 ID、2 個新增
-  Slug。通過後才取代 committed `data/locations.csv`。
+  Slug。通過後才取代 committed `../../data/locations.csv`。
 - 全專案 248/248、typecheck、production build 與 `git diff --check` 通過；
   localhost `/api/locations`／地圖 UI 實際顯示 99/99 個公開地點，Kate、
   Khlong 與 Plantiful 均已載入。
@@ -1827,7 +1827,7 @@ Apply preview：
 - 2026-07-28 首次唯讀匯出讀到 schema 20/20 與 130 筆，但
   `ama-bakery-silom` 一度只有 `Country Code = TH`。維護者其後在 Notion 補上
   `Destination Key = bangkok`；重新匯出的 130 筆已通過 snapshot validator
-  與 favorite compatibility，並晉升為正式 `data/locations.csv`。
+  與 favorite compatibility，並晉升為正式 `../../data/locations.csv`。
 
 ### 7.39 Candidate Country／Destination 建議
 

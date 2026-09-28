@@ -9,15 +9,17 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 ## Features
 
 - Interactive map with consistent brand-color emoji category markers
-- Card list with search, category, collection (stored as `Type`), destination, and favorites filters
+- Card list with search, category, label (stored as `Type`), destination, and favorites filters
 - Country-grouped destination multi-select with persisted choices and automatic map fitting
 - Popup with Navigate + Open in Google Maps buttons (responsive: icon-only on mobile)
 - zh / en bilingual UI with one-click toggle
 - Light / dark theme
+- Bilingual Fan Resources dialog with Abu Chicken Kwong (epoh)’s Google Maps list and source attribution, LingOrm Fanpage, its schedule shortcut, LOism, LingOrmNews, and LingOrm Pics
 - Low-friction issue reporting via Netlify Forms
 - Mobile-responsive with map / list tab switching and scroll
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
+- SuperRich Thailand currency-exchange overlay: 26 branches shown like any other location, with USD 100 / USD 50 / TWD buying rates updated every 30 minutes from 08:00 to 22:30 Thailand time and best-rate sorting when quotes are available (rate fetching is gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
 
 ---
 
@@ -136,7 +138,7 @@ graph LR
 | `map/map.js` | Google / HERE map init, marker synchronization, popup refresh, and theme sync |
 | `map/map-globals.d.ts` | Ambient types for dynamically loaded Google and HERE SDK globals |
 | `features/destination-filter.js` | Destination multi-select UI, country grouping, and persisted selection |
-| `features/collection-info.js` | Collection guide hover, focus, click, and dismissal behavior |
+| `features/collection-info.js` | Label guide hover, focus, click, and dismissal behavior |
 | `features/favorites.js` | Favorite persistence and toggle behavior |
 | `features/forms.js` | Issue report modal, validation, and location-data loading |
 | `features/changelog-data.js` | Shared bilingual changelog release data |
@@ -193,7 +195,7 @@ lingorm_bangkok_map/
 │   ├── features/
 │   │   ├── favorites.js    # Favorite persistence and toggles
 │   │   ├── destination-filter.js # Destination multi-select and persistence
-│   │   ├── collection-info.js # Collection guide interactions
+│   │   ├── collection-info.js # Label guide interactions
 │   │   ├── forms.js        # Issue report modal and location-data loading
 │   │   ├── changelog-data.js # Shared bilingual release data
 │   │   └── whats-new.js    # Changelog modal
@@ -239,6 +241,8 @@ HERE_API_KEY=your_here_api_key          # required — fallback map provider
 GOOGLE_MAPS_KEY=your_google_maps_key    # optional — primary map provider
 GOOGLE_MAP_ID=your_google_map_id        # optional — required if using Google Maps
 DATA_SOURCE=notion                      # optional — notion is the default and only supported value
+NETLIFY_SITE_ID=...                     # optional — admin CLI only (exchange-rate control)
+NETLIFY_AUTH_TOKEN=...                  # optional — admin CLIs only; never used by client code
 ```
 
 `DATA_SOURCE=sheet` (the legacy Google Sheets rollback path) is retired as of
@@ -288,8 +292,9 @@ Use a feature branch and PR Deploy Preview. After preview verification, merge
 the PR into `main`; Netlify runs `bash build.sh && npm run build` and publishes
 `dist/`.
 
-For the complete Notion snapshot, preview, production, and rollback procedure,
-see [Notion Data Source Deployment Workflow](docs/notion-deploy-workflow.md).
+Location data ships as a committed snapshot: export from Notion, validate, then
+update `data/locations.csv` and deploy. See the Location data workflow commands
+in `CLAUDE.md`. Rollback is `git revert` of the `data/locations.csv` change.
 
 Required Netlify environment variables (Dashboard → Site Settings → Environment Variables):
 
@@ -299,8 +304,17 @@ Required Netlify environment variables (Dashboard → Site Settings → Environm
 | `GOOGLE_MAPS_KEY` | optional | Google Maps JS API key (primary provider) |
 | `GOOGLE_MAP_ID` | optional | Map ID for dark mode + AdvancedMarkerElement |
 | `DATA_SOURCE` | optional | `notion` (default and only supported value); requires a redeploy when changed |
+| `EXCHANGE_RATES_ENABLED` | optional | `true` or `false` (default `false` when unset). Fallback default used only until a runtime control exists in Blobs; requires a redeploy when changed |
 
 If `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` are omitted, the map loads HERE Maps directly. If both Google and HERE keys are present, Google Maps is used as primary with HERE as fallback.
+
+`EXCHANGE_RATES_ENABLED` must be exactly `true` or `false`; any other value makes
+`/api/exchange-rates` return `503 invalid_configuration` until a control exists.
+With `true`, the first scheduled fetch creates an enabled control on its own and
+starts publishing snapshots. Day-to-day on/off is the runtime control flag
+(`npm run fx:control -- enable|disable --reason <code>`), which applies
+immediately without a redeploy — see
+[note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#執行期停用-vs-環境變數差異與怎麼操作).
 
 ### Netlify Forms
 
@@ -311,7 +325,7 @@ Enable form detection in Netlify Dashboard → **Forms → Enable form detection
 GTM is embedded in `index.html` (`<head>` + noscript `<body>`). The application
 queues first-party interaction events in `dataLayer`; GTM routes them to GA4.
 The event contract, GTM setup, verification checklist, and future measurement
-plan are documented in [Analytics Tracking](docs/analytics-tracking.md).
+plan are documented in [Analytics Tracking](docs/archive/analytics-tracking.md).
 
 ### Browser map key protection
 
@@ -360,13 +374,14 @@ validation and therefore blocks the build/deploy path. Paused and inactive
 drafts may remain unclassified until they are ready to publish.
 
 The supported countries are Thailand (`TH`), Vietnam (`VN`), Taiwan (`TW`),
-Hong Kong (`HK`), and Macau (`MO`). Taiwan destinations are `taipei`,
+Hong Kong (`HK`), Macau (`MO`), and Japan (`JP`). Taiwan destinations are `taipei`,
 `taichung`, `kaohsiung`, `tainan`, and `hualien`; Hong Kong and Macau use
-`hong-kong` and `macau` respectively. The existing Thailand and Vietnam keys
+`hong-kong` and `macau` respectively; Japan currently supports `tokyo` (東京 / Tokyo).
+The existing Thailand and Vietnam keys
 remain stable.
 
 `Type` is exported as public location metadata and accepts `LingOrm`,
-`JKR Picks`, `JKR Fan Projects`, or `Admin Picks`. A blank Type remains
+`JKR Picks`, `JKR Fan Projects`, `Admin Picks`, or `Currency Exchange`. A blank Type remains
 parseable and is surfaced as a warning in the localhost verification UI;
 unknown non-empty values fail snapshot validation.
 
@@ -376,6 +391,20 @@ Generate a candidate snapshot from the allowlisted formal data source with:
 npm run locations:export:notion -- --output data/locations.next.csv
 node scripts/validate-location-snapshot.mjs data/locations.next.csv
 ```
+
+Or run the whole export → validate → promote chain in one step:
+
+```bash
+npm run locations:refresh
+```
+
+`locations:refresh` exports to `data/locations.next.csv`, runs snapshot and
+favorite-compatibility validation against that candidate, and only then moves
+it over `data/locations.csv`. Every step is chained with `&&`, so a failed
+export or validation leaves `data/locations.csv` untouched; the rejected
+candidate stays in the gitignored `data/locations.next.csv` for inspection.
+Review the promoted snapshot with `git diff data/locations.csv` before
+committing.
 
 The exporter reads `NOTION_API_KEY` (the sole Notion credential — see
 Environment variables above), verifies the live 20-property schema before
@@ -400,6 +429,17 @@ promoted.
 Markers are 28px brand-color emoji circles. Public status is intentionally not
 encoded in marker color. The emoji comes from `row.icon` and falls back to 📍
 if missing.
+
+Currency-exchange branches in `data/superrich-branches.json` get a dedicated
+green `.is-exchange` variant on both the individual marker and, when a
+cluster is made up entirely of exchange branches, the cluster badge itself
+(a mixed cluster keeps the default color). See `makeMarkerContent`,
+`isExchangeOnlyCluster` (Google), and `isExchangeOnlyDataPoints` (HERE) in
+`src/map/map.js`.
+
+These branches use `Type = Currency Exchange` with a blank Category, so the
+label filter is their single exchange-specific filter. Published exchange
+rows outside the shipped branch mapping remain hidden from the public UI.
 
 ---
 

@@ -1,6 +1,8 @@
 import { state } from '../core/state.js';
 import { getEffectiveTheme } from '../ui/ui.js';
 import { buildPopupContent, activateCard, isPublicLocation } from '../ui/render.js';
+import { cancelPopupCenter, openLocationPopup } from './popup.js';
+import { isExchangeLocation } from '../features/exchange-rates.js';
 // MarkerClusterer is loaded lazily to avoid CJS/ESM issues in Node.js test env
 /** @type {typeof import('@googlemaps/markerclusterer').MarkerClusterer|null} */
 let _MarkerClusterer = null;
@@ -27,6 +29,37 @@ function requiredElement(id) {
   return el;
 }
 
+/** @returns {{lat: number, lng: number}[]} */
+function collectVisiblePoints() {
+  return state.visIdx.flatMap(index => {
+    const row = state.data[index];
+    if (String(row?.lat ?? '').trim() === '' || String(row?.lng ?? '').trim() === '') {
+      return [];
+    }
+
+    const lat = Number(row?.lat);
+    const lng = Number(row?.lng);
+    return Number.isFinite(lat) && Number.isFinite(lng)
+      ? [{ lat, lng }]
+      : [];
+  });
+}
+
+/**
+ * @param {{lat: number, lng: number}[]} points
+ * @returns {{north: number, south: number, east: number, west: number}}
+ */
+function boundsFromPoints(points) {
+  const lats = points.map(point => point.lat);
+  const lngs = points.map(point => point.lng);
+  return {
+    north: Math.max(...lats),
+    south: Math.min(...lats),
+    east: Math.max(...lngs),
+    west: Math.min(...lngs),
+  };
+}
+
 /**
  * Fit the active map provider to every currently visible location.
  * A single result uses a useful place-level zoom; no results preserve the
@@ -39,18 +72,7 @@ export function fitMapToVisibleLocations() {
     return false;
   }
 
-  const points = state.visIdx.flatMap(index => {
-    const row = state.data[index];
-    if (String(row?.lat ?? '').trim() === '' || String(row?.lng ?? '').trim() === '') {
-      return [];
-    }
-
-    const lat = Number(row?.lat);
-    const lng = Number(row?.lng);
-    return Number.isFinite(lat) && Number.isFinite(lng)
-      ? [{ lat, lng }]
-      : [];
-  });
+  const points = collectVisiblePoints();
   state.pendingDestinationFit = false;
   if (!points.length) return false;
 
@@ -60,14 +82,7 @@ export function fitMapToVisibleLocations() {
     return true;
   }
 
-  const lats = points.map(point => point.lat);
-  const lngs = points.map(point => point.lng);
-  const bounds = {
-    north: Math.max(...lats),
-    south: Math.min(...lats),
-    east: Math.max(...lngs),
-    west: Math.min(...lngs),
-  };
+  const bounds = boundsFromPoints(points);
 
   if (state.provider === 'google') {
     state.map.fitBounds(bounds, 48);
@@ -84,6 +99,62 @@ export function fitMapToVisibleLocations() {
     }, true);
   }
   return true;
+}
+
+/**
+ * Approximate the view `fitMapToVisibleLocations` would settle on, usable
+ * before a map exists. HERE's `H.Map` constructor only takes a center/zoom
+ * pair, not bounds — painting a throwaway Bangkok default when a destination
+ * fit is already pending makes the SDK fetch tiles for that view and then
+ * cancel them a tick later once the real fit runs, which HERE logs as
+ * BaseTileLoader AbortErrors. Seeding construction with this estimate keeps
+ * the first paint close enough that little or nothing needs re-fetching; the
+ * exact padded fit still runs afterward via `fitMapToVisibleLocations`.
+ * @param {number} containerWidth
+ * @param {number} containerHeight
+ * @returns {{center: {lat: number, lng: number}, zoom: number}|null}
+ */
+function estimatePendingFitView(containerWidth, containerHeight) {
+  const points = collectVisiblePoints();
+  if (!points.length) return null;
+
+  if (points.length === 1) {
+    return { center: points[0], zoom: 14 };
+  }
+
+  const bounds = boundsFromPoints(points);
+  const center = {
+    lat: (bounds.north + bounds.south) / 2,
+    lng: (bounds.east + bounds.west) / 2,
+  };
+  if (!(containerWidth > 0) || !(containerHeight > 0)) {
+    return { center, zoom: 11 };
+  }
+
+  // Standard Web Mercator fit-bounds-to-zoom estimate (same approach as
+  // Google Maps' getBoundsZoomLevel recipe), not HERE's own fitting
+  // algorithm — this only needs to land close, not pixel-exact.
+  /** @param {number} lat */
+  const latRad = lat => {
+    const sin = Math.sin(lat * Math.PI / 180);
+    const radians = Math.log((1 + sin) / (1 - sin)) / 2;
+    return Math.max(Math.min(radians, Math.PI), -Math.PI) / 2;
+  };
+  const TILE_SIZE = 256;
+  const PADDING_PX = 48;
+  const latFraction = (latRad(bounds.north) - latRad(bounds.south)) / Math.PI;
+  const lngSpan = bounds.east - bounds.west;
+  const lngFraction = (lngSpan < 0 ? lngSpan + 360 : lngSpan) / 360;
+  /** @param {number} pixels @param {number} fraction */
+  const zoomForDim = (pixels, fraction) => fraction > 0
+    ? Math.log2((pixels - PADDING_PX * 2) / TILE_SIZE / fraction)
+    : 21;
+  const zoom = Math.floor(Math.min(
+    zoomForDim(containerWidth, lngFraction),
+    zoomForDim(containerHeight, latFraction),
+  ));
+
+  return { center, zoom: Math.max(1, Math.min(zoom, 20)) };
 }
 
 /**
@@ -143,6 +214,18 @@ export function refreshActivePopup() {
     return true;
   }
   return false;
+}
+
+export function clearActiveLocation() {
+  cancelPopupCenter();
+  state.activeIdx = -1;
+  document.querySelectorAll('.loc-card').forEach(card => card.classList.remove('active'));
+  state.markers.forEach(marker => marker?.__markerContent?.classList.remove('active'));
+  if (state.provider === 'google') state.infoWindow?.close?.();
+  if (state.provider === 'here' && state.infoBubble && state.hereUi) {
+    state.hereUi.removeBubble(state.infoBubble);
+    state.infoBubble = null;
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -264,24 +347,40 @@ export function getHereLanguagePreferences(browserLanguages = []) {
 // ═══════════════════════════════════════════════════
 // MARKERS & CLUSTERING
 // ═══════════════════════════════════════════════════
-/** @param {string} icon @returns {HTMLDivElement} */
-export function makeMarkerContent(icon) {
+/** @param {string} icon @param {boolean} [isExchange] @returns {HTMLDivElement} */
+export function makeMarkerContent(icon, isExchange = false) {
   const el = document.createElement('div');
-  el.className = 'marker-dot';
+  el.className = `marker-dot${isExchange ? ' is-exchange' : ''}`;
   el.textContent = icon || '📍';
   return el;
 }
 
 /**
+ * Whether every marker in a Google cluster is a currency-exchange location.
+ * Reads the class MarkerClusterer's own `markers` list carries (set on
+ * `__markerContent` when each marker is created in {@link buildMarkers}), so
+ * this stays a pure, easily testable check independent of the Google Maps
+ * runtime.
+ * @param {readonly {__markerContent?: {classList?: {contains: (cls: string) => boolean}}}[]} markers
+ * @returns {boolean}
+ */
+export function isExchangeOnlyCluster(markers) {
+  return markers.length > 0 &&
+    markers.every(marker => marker?.__markerContent?.classList?.contains('is-exchange') === true);
+}
+
+/**
  * Custom renderer for Google MarkerClusterer.
- * Draws a circle with the cluster count.
- * @param {{ count: number, position: any }} param0
+ * Draws a circle with the cluster count; clusters made up entirely of
+ * currency-exchange markers get the green `.is-exchange` treatment (Phase D2
+ * — mixed clusters keep the default style).
+ * @param {{ count: number, position: any, markers: any[] }} param0
  * @returns {any}
  */
-function clusterRenderer({ count, position }) {
+function clusterRenderer({ count, position, markers }) {
   const size = count >= 100 ? 48 : count >= 10 ? 40 : 32;
   const el = document.createElement('div');
-  el.className = 'marker-cluster';
+  el.className = `marker-cluster${isExchangeOnlyCluster(markers) ? ' is-exchange' : ''}`;
   el.textContent = String(count);
   el.style.width = `${size}px`;
   el.style.height = `${size}px`;
@@ -293,6 +392,25 @@ function clusterRenderer({ count, position }) {
 }
 
 /**
+ * Whether every leaf data point inside a HERE cluster is a currency-exchange
+ * location (Phase D2). HERE's `H.clustering.ICluster` exposes `forEachDataPoint`
+ * to walk its leaves recursively; this helper takes that iterator function
+ * directly (rather than the cluster object) so it can be unit-tested without
+ * the HERE Maps runtime.
+ * @param {(callback: (dataPoint: {getData: () => any}) => void) => void} forEachDataPoint
+ * @returns {boolean}
+ */
+export function isExchangeOnlyDataPoints(forEachDataPoint) {
+  let sawDataPoint = false;
+  let allExchange = true;
+  forEachDataPoint(dataPoint => {
+    sawDataPoint = true;
+    if (dataPoint?.getData?.()?.isExchange !== true) allExchange = false;
+  });
+  return sawDataPoint && allExchange;
+}
+
+/**
  * Custom theme for HERE Maps clustering.
  * Provides consistent visual style with Google clustering.
  * @returns {any}
@@ -301,9 +419,10 @@ function makeHereClusterTheme() {
   return {
     getClusterPresentation: (/** @type {any} */ cluster) => {
       const weight = cluster.getWeight();
+      const isExchangeCluster = isExchangeOnlyDataPoints(cluster.forEachDataPoint.bind(cluster));
       const size = weight >= 100 ? 48 : weight >= 10 ? 40 : 32;
       const el = document.createElement('div');
-      el.className = 'marker-cluster';
+      el.className = `marker-cluster${isExchangeCluster ? ' is-exchange' : ''}`;
       el.textContent = String(weight);
       el.style.width = `${size}px`;
       el.style.height = `${size}px`;
@@ -318,7 +437,7 @@ function makeHereClusterTheme() {
     },
     getNoisePresentation: (/** @type {any} */ noisePoint) => {
       const data = noisePoint.getData();
-      const el = makeMarkerContent(data?.icon || '📍');
+      const el = makeMarkerContent(data?.icon || '📍', data?.isExchange === true);
       if (data?.index === state.activeIdx) el.classList.add('active');
       const domIcon = new H.map.DomIcon(el);
       const marker = new H.map.DomMarker(noisePoint.getPosition(), {
@@ -364,7 +483,7 @@ export async function buildMarkers(options = {}) {
       const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
       if (!isPublicLocation(row)) return;
       if (!lat || !lng) return;
-      const el = makeMarkerContent(row.icon);
+      const el = makeMarkerContent(row.icon, isExchangeLocation(row));
       if (state.activeIdx === i) el.classList.add('active');
       // NOTE: do NOT set map here; MarkerClusterer will manage it
       const m = new google.maps.marker.AdvancedMarkerElement({
@@ -372,8 +491,7 @@ export async function buildMarkers(options = {}) {
       });
       m.__markerContent = el;
       m.addListener('click', () => {
-        state.infoWindow.setContent(buildPopupContent(i));
-        state.infoWindow.open({ anchor: m, map: state.map });
+        openLocationPopup(i, buildPopupContent(i));
         activateCard(i, { centerMap: false, source: 'map_marker' });
       });
       state.markers[i] = m;
@@ -402,7 +520,11 @@ export async function buildMarkers(options = {}) {
       if (!isPublicLocation(row)) return;
       if (!visibleIndexes.has(i)) return;
       if (!lat || !lng) return;
-      dataPoints.push(new H.clustering.DataPoint(lat, lng, null, { index: i, icon: row.icon }));
+      dataPoints.push(new H.clustering.DataPoint(lat, lng, null, {
+        index: i,
+        icon: row.icon,
+        isExchange: isExchangeLocation(row),
+      }));
     });
 
     const clusterProvider = new H.clustering.Provider(dataPoints, {
@@ -428,14 +550,7 @@ export async function buildMarkers(options = {}) {
         const pointData = data;
         const i = pointData?.index;
         if (i != null) {
-          const row = state.data[i];
-          const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
-          if (state.infoBubble) {
-            state.hereUi.removeBubble(state.infoBubble);
-            state.infoBubble = null;
-          }
-          state.infoBubble = new H.ui.InfoBubble({ lat, lng }, { content: buildPopupContent(i) });
-          state.hereUi.addBubble(state.infoBubble);
+          openLocationPopup(i, buildPopupContent(i));
           activateCard(i, { centerMap: false, source: 'map_marker' });
         }
       }
@@ -569,14 +684,19 @@ function initWithHere(apiKey) {
   });
   state.hereLayers = layers;
 
+  const mapEl = requiredElement('map');
+  const initialView = state.pendingDestinationFit
+    ? estimatePendingFitView(mapEl.clientWidth, mapEl.clientHeight)
+    : null;
+
   state.map = new H.Map(
-    requiredElement('map'),
+    mapEl,
     getHereBaseLayer(layers, state.mapTheme),
     {
       engineType: H.Map.EngineType.HARP,
       pixelRatio: window.devicePixelRatio || 1,
-      zoom: 11,
-      center: { lat: 13.82, lng: 100.52 },
+      zoom: initialView?.zoom ?? 11,
+      center: initialView?.center ?? { lat: 13.82, lng: 100.52 },
     }
   );
   new H.mapevents.Behavior(new H.mapevents.MapEvents(state.map));

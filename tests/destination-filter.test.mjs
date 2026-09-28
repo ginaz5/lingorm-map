@@ -10,17 +10,18 @@ import {
   DESTINATION_FILTER_STORAGE_KEY,
   countrySelectionState,
   fitDestinationMenuHeight,
+  initDestinationFilter,
   loadDestinationFilter,
   reconcileDestinationFilter,
   renderDestinationFilter,
   saveDestinationFilter,
   toggleCountryDestinations,
 } from '../src/features/destination-filter.js';
-import { t } from '../src/core/i18n.js';
+import { lang, setLang, t } from '../src/core/i18n.js';
 import { state } from '../src/core/state.js';
 
 test('destination taxonomy exposes stable countries and valid pairs', () => {
-  assert.deepEqual(COUNTRY_CODES, ['TH', 'VN', 'TW', 'HK', 'MO']);
+  assert.deepEqual(COUNTRY_CODES, ['TH', 'VN', 'TW', 'HK', 'MO', 'JP']);
   assert.deepEqual(DESTINATION_KEYS, [
     'bangkok',
     'khon-kaen',
@@ -28,6 +29,8 @@ test('destination taxonomy exposes stable countries and valid pairs', () => {
     'khao-yai',
     'koh-samui',
     'pattaya',
+    'chonburi',
+    'si-racha',
     'ubon-ratchathani',
     'ho-chi-minh-city',
     'taipei',
@@ -37,13 +40,20 @@ test('destination taxonomy exposes stable countries and valid pairs', () => {
     'hualien',
     'hong-kong',
     'macau',
+    'tokyo',
   ]);
   assert.equal(isValidDestinationPair('TH', 'bangkok'), true);
+  assert.equal(isValidDestinationPair('TH', 'chonburi'), true);
+  assert.equal(isValidDestinationPair('TH', 'si-racha'), true);
+  assert.equal(isValidDestinationPair('VN', 'si-racha'), false);
   assert.equal(isValidDestinationPair('VN', 'bangkok'), false);
   assert.equal(isValidDestinationPair('TW', 'kaohsiung'), true);
   assert.equal(isValidDestinationPair('HK', 'hong-kong'), true);
   assert.equal(isValidDestinationPair('MO', 'macau'), true);
   assert.equal(isValidDestinationPair('TW', 'hong-kong'), false);
+  assert.equal(isValidDestinationPair('JP', 'tokyo'), true);
+  assert.equal(isValidDestinationPair('TH', 'tokyo'), false);
+  assert.equal(isValidDestinationPair('JP', 'bangkok'), false);
 });
 
 test('destination menu height stays above the mobile panel boundary', () => {
@@ -115,7 +125,7 @@ test('destination selections persist across reload and ignore unknown keys', () 
   const values = new Map([
     [
       DESTINATION_FILTER_STORAGE_KEY,
-      JSON.stringify(['koh-samui', 'unknown', 'bangkok']),
+      JSON.stringify(['koh-samui', 'unknown', 'bangkok', 'tokyo']),
     ],
   ]);
   const previousStorageDescriptor = Object.getOwnPropertyDescriptor(
@@ -134,15 +144,15 @@ test('destination selections persist across reload and ignore unknown keys', () 
     loadDestinationFilter();
     assert.deepEqual(
       [...state.selectedDestinations].sort(),
-      ['bangkok', 'koh-samui']
+      ['bangkok', 'koh-samui', 'tokyo']
     );
     assert.equal(state.pendingDestinationFit, true);
 
-    state.selectedDestinations = new Set(['koh-samui', 'bangkok']);
+    state.selectedDestinations = new Set(['koh-samui', 'bangkok', 'tokyo']);
     saveDestinationFilter();
     assert.equal(
       values.get(DESTINATION_FILTER_STORAGE_KEY),
-      JSON.stringify(['bangkok', 'koh-samui'])
+      JSON.stringify(['bangkok', 'koh-samui', 'tokyo'])
     );
   } finally {
     if (previousStorageDescriptor) {
@@ -152,6 +162,62 @@ test('destination selections persist across reload and ignore unknown keys', () 
     }
     state.selectedDestinations = new Set();
     state.pendingDestinationFit = false;
+  }
+});
+
+test('Tokyo appears under Japan in both languages only after a location is published', () => {
+  const groups = { innerHTML: '', querySelectorAll: () => [] };
+  const elements = new Map([
+    ['dest-filter-label', { textContent: '' }],
+    ['dest-filter-groups', groups],
+    ['dest-filter-all', { checked: false }],
+  ]);
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  const previousStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  const previousLanguage = lang;
+  const previousData = state.data;
+  const previousSelection = state.selectedDestinations;
+  Object.defineProperty(globalThis, 'document', {
+    configurable: true,
+    value: { getElementById: id => elements.get(id) ?? null },
+  });
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: { setItem() {} },
+  });
+  state.data = [{ status: 'Paused', countryCode: 'JP', destinationKey: 'tokyo' }];
+  state.selectedDestinations = new Set();
+
+  try {
+    renderDestinationFilter();
+    assert.doesNotMatch(groups.innerHTML, /data-country-code="JP"/);
+    state.data[0].status = 'Published';
+    for (const [language, country, destination] of [
+      ['zh', '日本', '東京'],
+      ['en', 'Japan', 'Tokyo'],
+    ]) {
+      setLang(language);
+      renderDestinationFilter();
+      assert.match(groups.innerHTML, /data-country-code="JP"/);
+      assert.match(groups.innerHTML, /value="tokyo"/);
+      assert.ok(groups.innerHTML.includes(`<span>${country}</span>`));
+      assert.ok(groups.innerHTML.includes(`<span>${destination}</span>`));
+    }
+    toggleCountryDestinations('JP', new Set(['bangkok', 'tokyo']));
+    assert.deepEqual([...state.selectedDestinations], ['tokyo']);
+    assert.equal(countrySelectionState('JP', new Set(['tokyo'])).checked, true);
+    toggleCountryDestinations('JP', new Set(['bangkok', 'tokyo']));
+    assert.equal(state.selectedDestinations.size, 0);
+  } finally {
+    setLang(previousLanguage);
+    for (const [key, descriptor] of [
+      ['document', previousDocument], ['localStorage', previousStorage],
+    ]) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+    state.data = previousData;
+    state.selectedDestinations = previousSelection;
   }
 });
 
@@ -238,6 +304,56 @@ test('empty public data preserves saved destinations after a loading failure', (
     assert.deepEqual([...state.selectedDestinations], ['koh-samui']);
     assert.equal(state.pendingDestinationFit, true);
   } finally {
+    state.selectedDestinations = new Set();
+    state.pendingDestinationFit = false;
+  }
+});
+
+test('Escape closes an open destination menu without also dismissing a surrounding dialog', () => {
+  const saved = ['document', 'window', 'localStorage']
+    .map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]);
+  const node = (extra = {}) => Object.assign(new EventTarget(), {
+    hidden: false, textContent: '', innerHTML: '', checked: false, style: {},
+    attributes: new Map(),
+    setAttribute(name, value) { this.attributes.set(name, value); },
+    getAttribute(name) { return this.attributes.get(name); },
+    querySelectorAll: () => [],
+    getBoundingClientRect: () => ({ bottom: 700 }),
+    focus() {},
+    ...extra,
+  });
+  const menu = node({ hidden: true });
+  const button = node();
+  const elements = new Map([
+    ['dest-filter-btn', button], ['dest-filter-menu', menu], ['dest-filter-groups', node()],
+    ['dest-filter-all', node()], ['dest-filter-clear', node()], ['dest-filter-label', node()],
+    ['panel', node()],
+  ]);
+  const documentRoot = Object.assign(new EventTarget(), { getElementById: id => elements.get(id) ?? null });
+  for (const [key, value] of [
+    ['document', documentRoot],
+    ['window', new EventTarget()],
+    ['localStorage', { getItem: () => null, setItem() {} }],
+  ]) Object.defineProperty(globalThis, key, { configurable: true, value });
+
+  try {
+    initDestinationFilter(() => {});
+    button.dispatchEvent(new Event('click'));
+    assert.equal(menu.hidden, false);
+
+    const escape = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
+    documentRoot.dispatchEvent(escape);
+    assert.equal(menu.hidden, true);
+    assert.equal(escape.defaultPrevented, true, 'dialog close request must be suppressed');
+
+    const secondEscape = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
+    documentRoot.dispatchEvent(secondEscape);
+    assert.equal(secondEscape.defaultPrevented, false, 'closed menu lets Escape reach the dialog');
+  } finally {
+    for (const [key, descriptor] of saved) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
     state.selectedDestinations = new Set();
     state.pendingDestinationFit = false;
   }

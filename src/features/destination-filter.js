@@ -7,6 +7,7 @@ import {
 } from '../data/destinations.js';
 import { lang, t } from '../core/i18n.js';
 import { state } from '../core/state.js';
+import { isPublicLocation } from '../ui/render.js';
 
 export const DESTINATION_FILTER_STORAGE_KEY = 'destinationFilters';
 
@@ -21,7 +22,7 @@ function requiredElement(id) {
 function availableDestinationKeys() {
   return new Set(
     state.data
-      .filter(row => row.status === 'Published' && row.destinationKey)
+      .filter(row => isPublicLocation(row) && row.destinationKey)
       .map(row => row.destinationKey)
   );
 }
@@ -250,6 +251,9 @@ export function initDestinationFilter(onSelectionChange) {
   document.addEventListener('click', closeDestinationFilter);
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape' || menu.hidden) return;
+    // Inside the mobile filter sheet, Escape should close only this menu,
+    // not also the surrounding <dialog>.
+    event.preventDefault();
     closeDestinationFilter();
     button.focus();
   });

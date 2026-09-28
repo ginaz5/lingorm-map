@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mobile menu width check</title>
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  .mobile-actions{display:block;position:absolute;right:16px;top:16px}
+  .mobile-action-item{font-size:52px}
+  output{position:fixed;bottom:16px;left:16px;right:16px;white-space:pre-wrap}
+</style>
+<body>
+<output id="result">Checking enlarged menu text…</output>
+<script type="module">
+  import { T } from '../../src/core/i18n.js';
+  const language = new URLSearchParams(location.search).get("lang") === "zh" ? "zh" : "en";
+  const html = await (await fetch('../../index.html')).text();
+  const parsed = new DOMParser().parseFromString(html, 'text/html');
+  const actions = parsed.querySelector('.mobile-actions');
+  actions.querySelector('#mobile-actions-menu').hidden = false;
+  for (const span of actions.querySelectorAll('[data-i18n]')) {
+    span.textContent = T[language][span.dataset.i18n];
+  }
+  document.body.append(actions);
+  await document.fonts.ready;
+  const menu = actions.querySelector('#mobile-actions-menu');
+  const box = menu.getBoundingClientRect();
+  const items = [...menu.querySelectorAll('.mobile-action-item')];
+  const failures = [];
+  if (box.left < 16 || box.right > innerWidth - 16) failures.push('menu outside viewport');
+  if (menu.scrollWidth > menu.clientWidth) failures.push('menu overflows');
+  for (const item of items) {
+    if (item.scrollWidth > item.clientWidth) failures.push('item overflows');
+    if (item.querySelector('svg').getBoundingClientRect().width !== 14) failures.push('icon shrinks');
+  }
+  document.querySelector('#result').textContent = failures.length
+    ? `FAIL: ${failures.join(', ')}` : `PASS: ${language}, ${innerWidth}px viewport, 52px text, no overflow`;
+</script>
+</body>
+</html>

@@ -9,6 +9,7 @@ export const LOCATION_TYPE_LABELS = Object.freeze({
   'JKR Picks': Object.freeze({ en: 'JKR Picks', zh: 'JKR 推薦' }),
   'JKR Fan Projects': Object.freeze({ en: 'JKR Fan Projects', zh: 'JKR 應援' }),
   'Admin Picks': Object.freeze({ en: 'Admin Picks', zh: '留友看' }),
+  'Currency Exchange': Object.freeze({ en: 'Currency Exchange', zh: '換匯' }),
 });
 
 /**
