@@ -162,3 +162,10 @@ test('collection guide is height constrained and scrollable in short viewports',
     /\.label-info-popover\{[^}]*max-height:min\(360px,calc\(100dvh - 195px\)\);overflow-y:auto;/,
   );
 });
+
+test('collection guide descriptions share one column and align with their badges', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.label-info-list\{display:grid;grid-template-columns:max-content minmax\(0,1fr\)/);
+  assert.match(css, /\.label-info-item\{[^}]*grid-column:1\/-1;[^}]*grid-template-columns:subgrid;align-items:baseline/);
+});

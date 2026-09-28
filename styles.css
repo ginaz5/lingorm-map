@@ -243,8 +243,10 @@ header {
 .label-info-close:focus-visible{outline:2px solid var(--brand-accent);outline-offset:1px}
 .label-info-close svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round}
-.label-info-list{display:flex;flex-direction:column;gap:10px}
-.label-info-item{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:start;gap:10px}
+/* Rows share one badge column (subgrid) so descriptions start at the same x; baseline aligns badge and text. */
+.label-info-list{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:10px}
+.label-info-item{display:grid;grid-column:1/-1;grid-template-columns:max-content minmax(0,1fr);
+  grid-template-columns:subgrid;align-items:baseline}
 .label-info-item dt,.label-info-item dd{margin:0}
 .label-info-item dd{font-size:12px;line-height:1.5;color:var(--text-muted)}
 .label-info-item .badge{white-space:nowrap}
@@ -534,7 +536,8 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
   border-radius:12px;background:var(--canvas)}
 .fan-resource h3{font-size:18px;font-weight:600;line-height:1.35;letter-spacing:-.4px}
 .fan-resource-subtitle{font-size:12px;color:var(--muted);margin-top:4px}
-.fan-resource-description{font-size:13px;line-height:1.7;margin-top:13px;color:var(--muted);flex:1}
+/* margin-bottom:auto (not flex:1) keeps footers bottom-aligned without stretching the left rule. */
+.fan-resource-description{font-size:13px;line-height:1.7;margin-top:13px;margin-bottom:auto;color:var(--muted);padding:0 0 0 10px;border-left:3px solid var(--border);white-space:pre-line}
 .fan-resource-shortcut{display:inline-flex;align-items:center;align-self:flex-start;gap:6px;margin-top:13px;
   font-size:12px;color:var(--brand-accent-hover);text-decoration:none}
 .fan-resource-shortcut svg{width:14px;height:14px;flex-shrink:0}

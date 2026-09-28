@@ -143,14 +143,19 @@ test('favorite buttons avoid a black flash while becoming active', async () => {
   assert.doesNotMatch(css, /\.fav-btn:not\(\.fav-active\):hover(?: svg)?\{[^}]*#111827/);
 });
 
-test('popup and list card notes keep authored line breaks behind a left rule', async () => {
+test('popup, list card, and fan resource descriptions share the left-rule style', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-  for (const cls of ['popup-notes', 'card-notes']) {
+  for (const cls of ['popup-notes', 'card-notes', 'fan-resource-description']) {
     assert.match(css, new RegExp(`\\.${cls}\\{[^}]*white-space:pre-line`));
     assert.match(css, new RegExp(`\\.${cls}\\{[^}]*padding:0 0 0 10px;\\s*border-left:3px solid var\\(--border\\)`));
     assert.doesNotMatch(css, new RegExp(`\\.${cls}\\{[^}]*background:`));
+  }
+  for (const cls of ['popup-notes', 'card-notes']) {
     assert.match(css, new RegExp(`\\.${cls}:empty\\{display:none\\}`));
   }
+  // flex:1 would stretch the fan resource rule into the empty space above the footer.
+  assert.match(css, /\.fan-resource-description\{[^}]*margin-bottom:auto/);
+  assert.doesNotMatch(css, /\.fan-resource-description\{[^}]*flex:1/);
   assert.match(css, /\.card-notes\{[^}]*-webkit-line-clamp:2/);
 });
