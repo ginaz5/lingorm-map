@@ -304,8 +304,17 @@ Required Netlify environment variables (Dashboard → Site Settings → Environm
 | `GOOGLE_MAPS_KEY` | optional | Google Maps JS API key (primary provider) |
 | `GOOGLE_MAP_ID` | optional | Map ID for dark mode + AdvancedMarkerElement |
 | `DATA_SOURCE` | optional | `notion` (default and only supported value); requires a redeploy when changed |
+| `EXCHANGE_RATES_ENABLED` | optional | `true` or `false` (default `false` when unset). Fallback default used only until a runtime control exists in Blobs; requires a redeploy when changed |
 
 If `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` are omitted, the map loads HERE Maps directly. If both Google and HERE keys are present, Google Maps is used as primary with HERE as fallback.
+
+`EXCHANGE_RATES_ENABLED` must be exactly `true` or `false`; any other value makes
+`/api/exchange-rates` return `503 invalid_configuration` until a control exists.
+With `true`, the first scheduled fetch creates an enabled control on its own and
+starts publishing snapshots. Day-to-day on/off is the runtime control flag
+(`npm run fx:control -- enable|disable --reason <code>`), which applies
+immediately without a redeploy — see
+[note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#執行期停用-vs-環境變數差異與怎麼操作).
 
 ### Netlify Forms
 

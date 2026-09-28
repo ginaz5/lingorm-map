@@ -19,4 +19,8 @@
   # Required: HERE_API_KEY
   # Data: DATA_SOURCE=notion (default; only supported value — sheet is retired)
   # Optional: GOOGLE_MAPS_KEY, GOOGLE_MAP_ID
-  # Exchange rates: EXCHANGE_RATES_ENABLED is intentionally unset/false until M3
+  # Exchange rates: EXCHANGE_RATES_ENABLED must be exactly true or false — any
+  # other value makes /api/exchange-rates return 503 invalid_configuration.
+  # It is only the fallback default used until a runtime control exists in
+  # Blobs; day-to-day on/off is `npm run fx:control -- enable|disable` (takes
+  # effect immediately, no redeploy). Changing this variable needs a redeploy.

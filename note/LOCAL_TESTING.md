@@ -243,15 +243,19 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
 `main` 已 merge，正式環境的 Netlify Scheduled Function 要等下一個排定
 時間才會第一次自動執行。因此第一次上線要依序做：
 
-1. 確認正式環境目前是 **disabled**：
+1. 先確認正式環境目前的控制狀態：
 
    ```bash
    npm run fx:control -- status
    ```
 
-   `control.enabled` 應為 `false` 或整個 `control` 為 `null`（代表尚未建立過控制物件，會回退到 `EXCHANGE_RATES_ENABLED`，預設也是 `false`）。
+   `control` 為 `null` 代表尚未建立過控制物件，會回退到 `EXCHANGE_RATES_ENABLED`。
+   **這個回退值決定要不要做第 2 步**：設為 `false`（或未設定）時服務保持
+   disabled，必須人工啟用；設為 `true` 時第一次排程執行會自己以
+   `ensureFetchControl()` 建立 enabled 的控制物件並開始發布快照，第 2 步變成
+   非必要，第 1 步看到 `enabled: true` 也屬正常。
 
-2. 建立／更新正式的控制旗標：
+2. 若回退值是 `false`（或想明確建立一個有版本的控制物件），建立／更新正式的控制旗標：
 
    ```bash
    npm run fx:control -- enable
