@@ -142,3 +142,15 @@ test('favorite buttons avoid a black flash while becoming active', async () => {
   assert.match(css, /\.fav-btn:not\(\.fav-active\):hover svg\{stroke:#e05252\}/);
   assert.doesNotMatch(css, /\.fav-btn:not\(\.fav-active\):hover(?: svg)?\{[^}]*#111827/);
 });
+
+test('popup and list card notes keep authored line breaks behind a left rule', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  for (const cls of ['popup-notes', 'card-notes']) {
+    assert.match(css, new RegExp(`\\.${cls}\\{[^}]*white-space:pre-line`));
+    assert.match(css, new RegExp(`\\.${cls}\\{[^}]*padding:0 0 0 10px;\\s*border-left:3px solid var\\(--border\\)`));
+    assert.doesNotMatch(css, new RegExp(`\\.${cls}\\{[^}]*background:`));
+    assert.match(css, new RegExp(`\\.${cls}:empty\\{display:none\\}`));
+  }
+  assert.match(css, /\.card-notes\{[^}]*-webkit-line-clamp:2/);
+});

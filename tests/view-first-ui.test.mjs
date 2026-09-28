@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { isExchangeOnlyCluster, isExchangeOnlyDataPoints, makeMarkerContent } from '../src/map/map.js';
-import { buildPopupContent, renderList } from '../src/ui/render.js';
+import { buildPopupContent, compactCardNotes, renderList } from '../src/ui/render.js';
 import { state } from '../src/core/state.js';
 
 const REMOVED_UI_TOKENS = [
@@ -141,4 +141,25 @@ test('HERE cluster theme colors a cluster green only when every leaf data point 
   assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint(true), fakeDataPoint(false)])), false);
   assert.equal(isExchangeOnlyDataPoints(forEachOf([fakeDataPoint(false)])), false);
   assert.equal(isExchangeOnlyDataPoints(forEachOf([])), false);
+});
+
+test('list card notes drop blank separator lines; popup keeps notes as authored', () => {
+  assert.equal(compactCardNotes('Title\n\nHighlight\n \n\nMore\n'), 'Title\nHighlight\nMore');
+  assert.equal(compactCardNotes('One line'), 'One line');
+  assert.equal(compactCardNotes(''), '');
+
+  const elements = { 'loc-list': { innerHTML: '' } };
+  const previousDocument = globalThis.document;
+  globalThis.document = { getElementById: (id) => elements[id] ?? null };
+  try {
+    state.isLoading = false;
+    state.data = [{ ...makeLocation(), notesEn: 'Title\n\nBody', notesZh: '標題\n\n內文' }];
+    state.visIdx = [0];
+    state.favorites = new Set();
+    renderList();
+    assert.match(elements['loc-list'].innerHTML, /<div class="card-notes">(Title\nBody|標題\n內文)<\/div>/);
+    assert.match(buildPopupContent(0), /<div class="popup-notes">(Title\n\nBody|標題\n\n內文)<\/div>/);
+  } finally {
+    globalThis.document = previousDocument;
+  }
 });

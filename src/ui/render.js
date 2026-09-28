@@ -269,6 +269,16 @@ export function buildPopupContent(i) {
 // ═══════════════════════════════════════════════════
 // CARD LIST
 // ═══════════════════════════════════════════════════
+/**
+ * List cards clamp notes to two lines, so blank separator lines would waste
+ * that budget. The popup keeps the notes exactly as authored.
+ * @param {string} notes
+ * @returns {string}
+ */
+export function compactCardNotes(notes) {
+  return (notes || '').trim().replace(/\n[ \t]*(?:\n[ \t]*)+/g, '\n');
+}
+
 export function renderList() {
   const list = requiredElement('loc-list');
   if (state.isLoading) {
@@ -298,7 +308,7 @@ export function renderList() {
         ${cat ? `<span class="badge b-cat">${cat}</span>` : ''}
         ${type ? `<span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-type'}">${type}</span>` : ''}
       </div>
-      <div class="card-notes">${notes}</div>
+      <div class="card-notes">${compactCardNotes(notes)}</div>
       ${renderExchangeRates(row)}
       ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
       ${renderSources(row)}
