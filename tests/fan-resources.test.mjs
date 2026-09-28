@@ -97,15 +97,19 @@ test('resource links distinguish the Fanpage homepage from its schedule shortcut
   const dialog = html.match(/<dialog\b[\s\S]*?<\/dialog>/)?.[0];
   assert.ok(dialog);
   const links = [...dialog.matchAll(/<a\b[^>]*>/g)].map(match => match[0]);
-  assert.equal(links.length, 7);
+  assert.equal(links.length, 11);
   for (const [url, className] of [
     ['https://maps.app.goo.gl/eSnPtMYzPsqS3PjU7?g_st=i', 'fan-resource-visit'],
-    ['https://www.threads.com/@___epoh___/post/DPv0bDVieSE', 'fan-resource-shortcut'],
+    ['https://www.threads.com/@___epoh___/post/DPv0bDVieSE', 'fan-resource-source'],
     ['https://www.lingorm.site/', 'fan-resource-visit'],
+    ['https://x.com/phicha__', 'fan-resource-source'],
     ['https://www.lingorm.site/upcoming-schedule', 'fan-resource-shortcut'],
     ['https://loism1127.com/', 'fan-resource-visit'],
+    ['https://www.threads.com/share/P9Qe99Kfr/', 'fan-resource-source'],
     ['https://lingormnews.wordpress.com/', 'fan-resource-visit'],
+    ['https://www.threads.com/@lingormcrew', 'fan-resource-source'],
     ['https://lingorm.pics/', 'fan-resource-visit'],
+    ['https://x.com/_rr0715', 'fan-resource-source'],
   ]) {
     const link = links.find(markup => markup.includes(`href="${url}"`));
     assert.ok(link, url);
