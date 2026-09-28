@@ -119,7 +119,7 @@ test('public API always uses fixed outer fields, no-store headers, and hides unu
   const fresh = await serveExchangeRates({ store, nowMs: START + 2_000 });
   assert.equal((await fresh.json()).snapshot.runId, uuid(9));
 
-  const expired = await serveExchangeRates({ store, nowMs: Date.parse('2026-09-09T00:31:30Z') });
+  const expired = await serveExchangeRates({ store, nowMs: Date.parse('2026-09-09T01:05:00Z') });
   assert.equal((await expired.json()).snapshot, null);
 
   store.seed(EXCHANGE_KEYS.snapshot, { bad: true });

@@ -31,7 +31,7 @@ test('control, breaker and snapshot contracts reject malformed state', () => {
   });
   assert.ok(isValidSnapshot(snapshot));
   assert.equal(snapshot.nextUpdateAt, '2026-09-09T00:30:00.000Z');
-  assert.equal(snapshot.expiresAt, '2026-09-09T00:31:30.000Z');
+  assert.equal(snapshot.expiresAt, '2026-09-09T01:05:00.000Z');
   assert.equal(nextUtcHalfHour(Date.parse('2026-09-09T00:30:00Z')), Date.parse('2026-09-09T01:00:00Z'));
   assert.ok(!JSON.stringify(snapshot).includes('<script>'));
   assert.ok(!isValidSnapshot({ ...snapshot, expiresAt: '2026-09-09T00:32:00.000Z' }));

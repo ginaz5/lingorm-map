@@ -11,7 +11,9 @@ export const EXCHANGE_KEYS = Object.freeze({
 export const SNAPSHOT_SCHEMA_VERSION = 1;
 export const PUBLIC_SCHEMA_VERSION = 1;
 export const HALF_HOUR_MS = 30 * 60 * 1000;
-export const SNAPSHOT_GRACE_MS = 90 * 1000;
+// One missed cycle's worth of slack so a single late/failed run doesn't blank
+// the UI before the following run has a chance to publish.
+export const SNAPSHOT_GRACE_MS = 35 * 60 * 1000;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REASON_PATTERN = /^[a-z0-9_]{1,64}$/;

@@ -99,8 +99,8 @@ test('manual nighttime runs still honor the breaker, then fetch and publish', as
   assert.equal(requests, 0);
 
   for (const [time, nextUpdateAt, expiresAt] of [
-    ['2026-09-27T23:40:00+07:00', '2026-09-27T17:00:00.000Z', '2026-09-27T17:01:30.000Z'],
-    ['2026-09-28T07:59:00+07:00', '2026-09-28T01:00:00.000Z', '2026-09-28T01:01:30.000Z'],
+    ['2026-09-27T23:40:00+07:00', '2026-09-27T17:00:00.000Z', '2026-09-27T17:35:00.000Z'],
+    ['2026-09-28T07:59:00+07:00', '2026-09-28T01:00:00.000Z', '2026-09-28T01:35:00.000Z'],
   ]) {
     nowMs = Date.parse(time);
     const before = requests;
@@ -114,7 +114,7 @@ test('manual nighttime runs still honor the breaker, then fetch and publish', as
   assert.deepEqual(store.entries.get(EXCHANGE_KEYS.breaker).data, createBreaker(uuid(1)));
 });
 
-test('last snapshot expires at 23:01:30 instead of extending until the morning', async () => {
+test('last snapshot expires at 23:35 instead of extending until the morning', async () => {
   const attemptedAtMs = Date.parse('2026-09-27T22:30:00+07:00');
   const quote = parseBranchExchange(sourceQuote('H01'), { officialId: 10, expectedBranchCode: 'H01' });
   const snapshot = buildSnapshot({
@@ -123,7 +123,7 @@ test('last snapshot expires at 23:01:30 instead of extending until the morning',
     branches: [{ slug: 'superrich-thailand-10', officialId: 10, branchCode: 'H01', status: quote.status, rates: quote.rates }],
   });
   assert.equal(snapshot.nextUpdateAt, '2026-09-27T16:00:00.000Z');
-  assert.equal(snapshot.expiresAt, '2026-09-27T16:01:30.000Z');
+  assert.equal(snapshot.expiresAt, '2026-09-27T16:35:00.000Z');
   const store = new FakeBlobStore();
   store.seed(EXCHANGE_KEYS.control, enabledControl(uuid(1), attemptedAtMs));
   store.seed(EXCHANGE_KEYS.snapshot, snapshot);
