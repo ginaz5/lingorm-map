@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import BRANCH_MAPPING from '../data/superrich-branches.json' with { type: 'json' };
@@ -22,6 +23,8 @@ import {
   sortVisibleIndexes,
 } from '../src/ui/render.js';
 import { applyFiltersAndSyncMap } from '../src/app/app-coordinator.js';
+import { parseCSV } from '../src/data/csv-parser.js';
+import { refreshActivePopup } from '../src/map/map.js';
 import { reconcileDestinationFilter } from '../src/features/destination-filter.js';
 import { locationTypeLabel } from '../src/data/location-types.js';
 import { lang, setLang, t as translate } from '../src/core/i18n.js';
@@ -128,6 +131,26 @@ test('same run response never extends locally anchored deadlines', () => {
   });
   assert.equal(state.exchangeExpiresAtMs, expiry);
   assert.equal(state.exchangeNextUpdateAtMs, next);
+});
+
+test('a new control version replaces quotes and resets retries even when the run ID is reused', () => {
+  const timing = { requestStartedAtMs: 1_000, responseReceivedAtMs: 1_100, waitingForNewRun: false };
+  applyExchangeRatesPayload(parseExchangeRatesPayload(apiPayload()), timing);
+  state.exchangeRetryLevel = 4;
+  state.exchangeSort = 'TWD';
+
+  const replacement = apiPayload({ controlVersion: 'control-2' });
+  replacement.snapshot.branches[0].rates.TWD.rateScaledE6 = 1_005_000;
+  applyExchangeRatesPayload(parseExchangeRatesPayload(replacement), {
+    ...timing, requestStartedAtMs: 2_000, responseReceivedAtMs: 2_100,
+  });
+
+  assert.equal(state.exchangeControlVersion, 'control-2');
+  assert.equal(state.exchangeRetryLevel, 0);
+  assert.equal(state.exchangeLastAttemptAtMs, 2_000);
+  assert.equal(state.exchangeUpdateCheckPending, true);
+  assert.equal(state.exchangeRatesBySlug[slugs[0]].rates.TWD.rateScaledE6, 1_005_000);
+  assert.equal(state.exchangeSort, 'TWD');
 });
 
 test('a failed green snapshot clears its selected best-rate sort', () => {
@@ -407,6 +430,76 @@ function browserHarness(t, onChange = () => {}) {
   state.visIdx = [0];
   initExchangeRates(onChange);
   return { listeners, browserDocument, browserNavigator, row };
+}
+
+for (const provider of ['google', 'here']) {
+  test(`${provider} popup and list clear expired quotes, keep branches, and recover from a new snapshot`, async t => {
+    const rows = parseCSV(readFileSync(new URL('../data/locations.csv', import.meta.url), 'utf8'));
+    const branch = rows.find(row => row.id === slugs[0]);
+    const regular = rows.find(row => isPublicLocation(row) && row.type !== 'Currency Exchange');
+    assert.ok(branch);
+    assert.ok(regular);
+    assert.equal(branch.type, 'Currency Exchange');
+    assert.equal(branch.catEn, '');
+
+    const mapKeys = ['provider', 'map', 'activeIdx', 'infoWindow', 'infoBubble', 'markers', 'markerClusterer'];
+    const previousMapState = Object.fromEntries(mapKeys.map(key => [key, state[key]]));
+    t.after(() => Object.assign(state, previousMapState));
+    const elements = {
+      search: { value: '' }, 'cat-filter': { value: '' }, 'label-filter': { value: '' },
+      'loc-list': { innerHTML: '' }, 'result-info': { textContent: '' },
+      'exchange-sort': { value: 'USD_100', options: ['default', 'USD_100', 'USD_50', 'TWD'].map(value => ({ value })), addEventListener() {} },
+      'exchange-sort-label': { hidden: false },
+    };
+    let popupHtml = '';
+    const popup = { setContent: html => { popupHtml = html; } };
+    const { browserDocument, browserNavigator, listeners } = browserHarness(t, () => {
+      applyFiltersAndSyncMap();
+      refreshActivePopup();
+    });
+    browserDocument.getElementById = id => elements[id] ?? null;
+    Object.assign(state, {
+      data: [regular, branch], activeIdx: 1, provider, map: null, markers: [], markerClusterer: null,
+      infoWindow: provider === 'google' ? popup : null,
+      infoBubble: provider === 'here' ? popup : null,
+    });
+    syncExchangeControls();
+    applyFiltersAndSyncMap();
+    refreshActivePopup();
+    for (const html of [elements['loc-list'].innerHTML, popupHtml]) {
+      assert.match(html, /32\.83 THB/);
+      assert.match(html, /fx-best/);
+      assert.match(html, /class="fx-checked"/);
+    }
+    assert.deepEqual(state.visIdx, [1, 0]);
+
+    browserNavigator.onLine = false;
+    listeners.offline();
+    t.mock.timers.tick(5_000);
+    for (const html of [elements['loc-list'].innerHTML, popupHtml]) {
+      assert.doesNotMatch(html, /32\.83 THB|fx-best|class="fx-checked"/);
+      assert.equal((html.match(/暫無報價/g) || []).length, 3);
+    }
+    assert.equal(elements['exchange-sort'].hidden, true);
+    assert.equal(elements['exchange-sort-label'].hidden, true);
+    assert.equal(state.exchangeSort, 'default');
+    assert.deepEqual(state.visIdx, [0, 1]);
+
+    t.mock.method(globalThis, 'fetch', async () => Response.json(apiPayload({ runId: 'recovered-run' })));
+    browserNavigator.onLine = true;
+    listeners.online();
+    t.mock.timers.tick(0);
+    await new Promise(resolve => setImmediate(resolve));
+    for (const html of [elements['loc-list'].innerHTML, popupHtml]) {
+      assert.match(html, /32\.83 THB/);
+      assert.match(html, /class="fx-checked"/);
+      assert.doesNotMatch(html, /暫無報價|fx-best/);
+    }
+    assert.equal(elements['exchange-sort'].hidden, false);
+    assert.equal(elements['exchange-sort-label'].hidden, false);
+    assert.equal(state.exchangeRunId, 'recovered-run');
+    assert.deepEqual(state.visIdx, [0, 1]);
+  });
 }
 
 test('going offline expires rendered rates and best badges without another API request', t => {

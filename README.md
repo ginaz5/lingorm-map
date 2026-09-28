@@ -421,12 +421,16 @@ Markers are 28px brand-color emoji circles. Public status is intentionally not
 encoded in marker color. The emoji comes from `row.icon` and falls back to 📍
 if missing.
 
-Currency-exchange branches (`Category = Currency Exchange`) get a dedicated
+Currency-exchange branches in `data/superrich-branches.json` get a dedicated
 green `.is-exchange` variant on both the individual marker and, when a
 cluster is made up entirely of exchange branches, the cluster badge itself
 (a mixed cluster keeps the default color). See `makeMarkerContent`,
 `isExchangeOnlyCluster` (Google), and `isExchangeOnlyDataPoints` (HERE) in
 `src/map/map.js`.
+
+These branches use `Type = Currency Exchange` with a blank Category, so the
+label filter is their single exchange-specific filter. Published exchange
+rows outside the shipped branch mapping remain hidden from the public UI.
 
 ---
 

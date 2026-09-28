@@ -283,8 +283,8 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 
 ## 換匯匯率：排程快照 + 執行期控制旗標（而非即時代理）
 
-**決策：** 前端**不會**在使用者每次開啟換匯開關時直接打 SuperRich 官方
-API；由獨立的 Netlify 排程 Function（`exchange-rates-fetch.mjs`，泰國時間
+**決策：** 前端透過本站 API 讀取換匯報價；由獨立的 Netlify 排程 Function
+（`exchange-rates-fetch.mjs`，泰國時間
 08:00～22:30 每 30 分鐘）向來源抓一次、正規化後寫入 `@netlify/blobs` 快照，前端只打站內
 `/api/exchange-rates`（`exchange-rates.mjs`）讀最新快照。完整規格見
 [SuperRich 換匯地圖實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md)
@@ -342,19 +342,20 @@ deploy-specific store。不要依賴 `process.env.CONTEXT`，它是建置期變�
 觸發一次）就會自動恢復抓取；等待期間 API 回 `enabled: true, snapshot:
 null`，前端顯示「暫無報價」而不是隱藏整張卡片。
 
-**來源故障時的降級路徑，全部發生在既有 UI 骨架內：** 換匯開關、分店卡
+**來源故障時的降級路徑，全部發生在既有 UI 骨架內：** 換匯標籤、分店卡
 片、綠色標記、Google Maps／導航連結、收藏都不受影響；只有三列報價本
 身在 `enabled:false` 或快照過期時顯示「暫無報價」並回到一般排序。沒有
 額外的錯誤畫面或彈窗。
 
-報價到期不受輪詢暫停影響：離線、背景頁面、關閉換匯開關，以及 API
+報價到期不受輪詢暫停影響：離線、背景頁面，以及 API
 請求尚未完成時，仍保留到期計時；頁面恢復執行時先撤下過期數字，再
 安排查詢。自動停用後的 breaker 清理沿用該輪寫入的 ETag，遇到較新的
 手動控制變更就放棄清理，避免覆蓋重新啟用後的版本。
 
 這一版只支援 SuperRich Thailand（綠標）。正式快照仍可能包含其他換匯品牌的
 資料列（例如已暫停的 SuperRich 1965），因此顯示規則改以「此版本支援的換匯點」
-判斷：`Category = Currency Exchange` 的地點必須在綠標 mapping 中才會顯示，
+判斷：`Type = Currency Exchange` 的地點必須在綠標 mapping 中才會顯示；
+換匯點的 `Category` 留空，以標籤作為單一換匯篩選入口。
 由 `isSupportedLocation()` 併入 `isPublicLocation()`，清單、搜尋、收藏、篩選
 計數、目的地選項與 Google／HERE marker 共用同一個判斷。刻意不用品牌 Slug 黑名單；
 收藏中既有的其他品牌 ID 也不清除，日後支援該品牌時仍可對應。

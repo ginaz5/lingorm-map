@@ -232,7 +232,7 @@ npm run fx:control -- status
 回一般排序；恢復連線且取得新快照後可以再次顯示報價。
 `tests/exchange-rates-ui.test.mjs` 以模擬時鐘涵蓋這些情境。
 
-換匯點的顯示以綠標 mapping 為準：`Category = Currency Exchange` 但 Slug 不在
+換匯點的顯示以綠標 mapping 為準：`Type = Currency Exchange` 但 Slug 不在
 `data/superrich-branches.json` 的地點，即使是 `Published`，也不會出現在清單、搜尋、
 收藏、類別／標籤計數、目的地選項或地圖上（`isSupportedLocation()`）；綠標與一般地點
 不受影響。
@@ -269,7 +269,7 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
    https://lingorm-map.netlify.app/api/exchange-rates
    ```
 
-   預期 `enabled: true`、`snapshot` 非 `null`；前台開啟換匯開關後 26 個
+   預期 `enabled: true`、`snapshot` 非 `null`；前台以「換匯」標籤篩選後，26 個
    分店都能看到三列報價（或明確的「暫無報價」，不是空白或錯誤畫面）。
 
 5. **再驗證更新時段內接下來兩個排定批次**（每 30 分鐘一次；即等 30～60 分鐘後重
@@ -288,7 +288,7 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
 | 怎麼改 | `npm run fx:control -- enable` / `disable --reason <code>` | Netlify 網站設定裡改環境變數 |
 | 何時生效 | **立即**（下一次 API 讀取／排程檢查就看到） | **只在下一次部署之後**才生效 |
 | 用途 | 日常開關、來源出事故時緊急停用 | 這個站台從一開始要不要有這個功能（沒有控制旗標時的預設回退值） |
-| 停用後前台行為 | `enabled:false`；卡片、綠色標記、開關本身都還在，只是三列報價變成「暫無報價」，篩選與收藏不受影響 | 同左 |
+| 停用後前台行為 | `enabled:false`；卡片、綠色標記與標籤選項都還在，只是三列報價變成「暫無報價」，篩選與收藏不受影響 | 同左 |
 
 **常見誤區：** 改了 Netlify 環境變數的 `EXCHANGE_RATES_ENABLED` 之後，
 以為存檔就生效——實際上要另外觸發一次部署（哪怕程式碼沒改）才會被讀
@@ -319,13 +319,14 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
 來源故障（逾時、格式錯誤、HTTP 錯誤、封鎖中）時，前台**不應該**看到
 任何額外的錯誤畫面、彈窗或空白區塊；逐項確認：
 
-- 換匯開關、26 個分店卡片、地圖上的綠色標記／綠色群聚：都還在。
+- 「換匯」標籤選項、26 個分店卡片、地圖上的綠色標記／綠色群聚：都還在。
 - 三列報價：顯示「暫無報價」（`fx_unavailable`），不是 0、空白或
   crash。
 - 免責文字、官網連結、Google Maps 營業時間連結：正常顯示，不受影響。
-- 篩選（換匯點略過類別／標籤）、搜尋、目的地、收藏：正常運作。
-- 最佳匯率排序：三個排序選項變成 disabled，並自動退回一般排序（不是
-  停在故障前選的排序基準上）。
+- 類別／標籤、搜尋、目的地、收藏依交集篩選換匯點；換匯點的類別為空，
+  可透過「換匯」標籤選取。
+- 最佳匯率排序：沒有可用報價時隱藏排序控制，三個排序選項變成 disabled，
+  並自動退回一般排序；有部分報價時，只停用缺少報價的幣別選項。
 - 訪客端每 60 秒仍會照常向 `/api/exchange-rates` 確認一次；沒有因為故
   障就停止確認或需要重新整理頁面才能恢復。
 
