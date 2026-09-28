@@ -10,6 +10,7 @@ import {
   DESTINATION_FILTER_STORAGE_KEY,
   countrySelectionState,
   fitDestinationMenuHeight,
+  initDestinationFilter,
   loadDestinationFilter,
   reconcileDestinationFilter,
   renderDestinationFilter,
@@ -303,6 +304,56 @@ test('empty public data preserves saved destinations after a loading failure', (
     assert.deepEqual([...state.selectedDestinations], ['koh-samui']);
     assert.equal(state.pendingDestinationFit, true);
   } finally {
+    state.selectedDestinations = new Set();
+    state.pendingDestinationFit = false;
+  }
+});
+
+test('Escape closes an open destination menu without also dismissing a surrounding dialog', () => {
+  const saved = ['document', 'window', 'localStorage']
+    .map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]);
+  const node = (extra = {}) => Object.assign(new EventTarget(), {
+    hidden: false, textContent: '', innerHTML: '', checked: false, style: {},
+    attributes: new Map(),
+    setAttribute(name, value) { this.attributes.set(name, value); },
+    getAttribute(name) { return this.attributes.get(name); },
+    querySelectorAll: () => [],
+    getBoundingClientRect: () => ({ bottom: 700 }),
+    focus() {},
+    ...extra,
+  });
+  const menu = node({ hidden: true });
+  const button = node();
+  const elements = new Map([
+    ['dest-filter-btn', button], ['dest-filter-menu', menu], ['dest-filter-groups', node()],
+    ['dest-filter-all', node()], ['dest-filter-clear', node()], ['dest-filter-label', node()],
+    ['panel', node()],
+  ]);
+  const documentRoot = Object.assign(new EventTarget(), { getElementById: id => elements.get(id) ?? null });
+  for (const [key, value] of [
+    ['document', documentRoot],
+    ['window', new EventTarget()],
+    ['localStorage', { getItem: () => null, setItem() {} }],
+  ]) Object.defineProperty(globalThis, key, { configurable: true, value });
+
+  try {
+    initDestinationFilter(() => {});
+    button.dispatchEvent(new Event('click'));
+    assert.equal(menu.hidden, false);
+
+    const escape = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
+    documentRoot.dispatchEvent(escape);
+    assert.equal(menu.hidden, true);
+    assert.equal(escape.defaultPrevented, true, 'dialog close request must be suppressed');
+
+    const secondEscape = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
+    documentRoot.dispatchEvent(secondEscape);
+    assert.equal(secondEscape.defaultPrevented, false, 'closed menu lets Escape reach the dialog');
+  } finally {
+    for (const [key, descriptor] of saved) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
     state.selectedDestinations = new Set();
     state.pendingDestinationFit = false;
   }

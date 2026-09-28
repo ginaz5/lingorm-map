@@ -14,6 +14,7 @@ import {
 import { trackLocationOpen } from '../services/analytics.js';
 import { switchTab } from './ui.js';
 import { openLocationPopup } from '../map/popup.js';
+import { renderActiveFilters } from '../features/filter-sheet.js';
 
 // ISO commit time of data/locations.csv, injected by Vite (see vite.config.js).
 // Guarded so non-Vite contexts (Node tests) don't throw a ReferenceError.
@@ -407,6 +408,7 @@ export function applyFilters() {
     const updated = formatUpdated(DATA_UPDATED_ISO);
     updatedEl.textContent = state.isLoading || !updated ? '' : t('updated', updated);
   }
+  renderActiveFilters();
 }
 
 // ═══════════════════════════════════════════════════

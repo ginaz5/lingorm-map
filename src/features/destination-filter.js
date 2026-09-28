@@ -251,6 +251,9 @@ export function initDestinationFilter(onSelectionChange) {
   document.addEventListener('click', closeDestinationFilter);
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape' || menu.hidden) return;
+    // Inside the mobile filter sheet, Escape should close only this menu,
+    // not also the surrounding <dialog>.
+    event.preventDefault();
     closeDestinationFilter();
     button.focus();
   });
