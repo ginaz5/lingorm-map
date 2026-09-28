@@ -229,15 +229,20 @@ test('every resources label and accessible link name is translated by updateLang
   }
 });
 
-test('the map resource credits its author and explains saving the full Maps list in both languages', () => {
+test('the map resource credits its author and describes the Maps list and custom features in both languages', () => {
   for (const language of ['zh', 'en']) {
     assert.match(T[language].fan_resources_map_subtitle, /Abu Chicken Kwong \(epoh\)/);
     assert.match(T[language].fan_resources_map_source, /@___epoh___/);
   }
   assert.match(T.zh.fan_resources_map_desc, /地圖始祖/);
-  assert.match(T.zh.fan_resources_map_desc, /儲存整份清單/);
-  assert.match(T.en.fan_resources_map_desc, /original LingOrm map/);
-  assert.match(T.en.fan_resources_map_desc, /Save the entire list in Google Maps/);
+  assert.match(T.zh.fan_resources_map_desc, /google 清單/);
+  assert.match(T.zh.fan_resources_map_desc, /客製化（玩）/);
+  assert.match(T.en.fan_resources_map_desc, /original LingOrm location map/);
+  assert.match(T.en.fan_resources_map_desc, /Google Maps list/);
+  assert.match(T.en.fan_resources_map_desc, /customise \(and play around with\)/);
+  for (const language of ['zh', 'en']) {
+    assert.equal(T[language].fan_resources_map_desc.split('\n\n').length, 2);
+  }
 });
 
 test('Chinese fan resources intro displays the requested line break', async () => {
