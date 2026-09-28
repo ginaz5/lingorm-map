@@ -134,6 +134,28 @@ export function trackTabView(tab) {
   });
 }
 
+/** @param {'desktop_header'|'mobile_menu'|'unknown'} source */
+export function trackFanResourcesOpen(source) {
+  return trackEvent('fan_resources_open', {
+    ui_language: lang,
+    interaction_source: source,
+  });
+}
+
+/**
+ * @param {string} resourceId
+ * @param {'website'|'source'|'schedule'} linkType
+ * @param {'desktop_header'|'mobile_menu'|'unknown'} source
+ */
+export function trackFanResourceClick(resourceId, linkType, source) {
+  return trackEvent('fan_resource_click', {
+    resource_id: resourceId,
+    link_type: linkType,
+    ui_language: lang,
+    interaction_source: source,
+  });
+}
+
 /** @param {'zh'|'en'} fromLanguage @param {'zh'|'en'} toLanguage */
 export function trackLanguageChange(fromLanguage, toLanguage) {
   return trackEvent('language_change', {

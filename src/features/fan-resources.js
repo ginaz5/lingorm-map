@@ -1,3 +1,5 @@
+import { trackFanResourceClick, trackFanResourcesOpen } from '../services/analytics.js';
+
 /** Set up the native dialog so keyboard focus stays inside while it is open.
  * @param {Document} [documentRoot]
  */
@@ -14,6 +16,8 @@ export function initFanResources(documentRoot = document) {
   /** @type {HTMLElement|null} */
   let returnFocus = null;
   let startedOnBackdrop = false;
+  /** @type {'desktop_header'|'mobile_menu'|'unknown'} */
+  let interactionSource = 'unknown';
 
   /** @param {boolean} expanded */
   function setExpanded(expanded) {
@@ -28,6 +32,10 @@ export function initFanResources(documentRoot = document) {
     returnFocus = trigger;
     startedOnBackdrop = false;
     dialog.showModal();
+    interactionSource = trigger && trigger === desktopTrigger ? 'desktop_header'
+      : trigger && (trigger === moreButton || trigger === mobileTrigger) ? 'mobile_menu'
+      : 'unknown';
+    trackFanResourcesOpen(interactionSource);
     setExpanded(true);
     closeButton.focus();
   }
@@ -45,6 +53,22 @@ export function initFanResources(documentRoot = document) {
   }
 
   desktopTrigger?.addEventListener('click', () => open(desktopTrigger));
+  const resourceLinks = /** @type {NodeListOf<HTMLAnchorElement>} */ (dialog.querySelectorAll('a[data-resource-link]'));
+  for (const link of resourceLinks) {
+    const resourceId = link.closest('[data-resource-id]')?.getAttribute('data-resource-id');
+    const linkType = link.getAttribute('data-resource-link');
+    if (!resourceId || (linkType !== 'website' && linkType !== 'source' && linkType !== 'schedule')) continue;
+    /** @param {MouseEvent} event */
+    const trackLink = event => {
+      if (!dialog.open || event.defaultPrevented) return;
+      if (event.type === 'auxclick' && event.button !== 1) return;
+      trackFanResourceClick(resourceId, linkType, interactionSource);
+    };
+    // One listener on the anchor also covers nested text/icons and keyboard
+    // activation. Middle clicks use auxclick; right clicks are not navigation.
+    link.addEventListener('click', trackLink);
+    link.addEventListener('auxclick', trackLink);
+  }
   closeButton.addEventListener('click', close);
   dialog.addEventListener('pointerdown', event => { startedOnBackdrop = isBackdrop(event); });
   dialog.addEventListener('click', event => {
