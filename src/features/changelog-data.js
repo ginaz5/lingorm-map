@@ -52,12 +52,12 @@ export const CHANGELOG = [
   {
     id: 'feat-018',
     title: {
-      zh: '粉絲資源加入原始踩點地圖與作者連結',
-      en: 'Fan resources now include the original location map',
+      zh: '新增JKR資源區',
+      en: 'Add JKR resources',
     },
     description: {
-      zh: '新增 Abu Chicken Kwong (epoh) 整理的 LingOrm Google Maps 清單與分享原文，並補上各資源的作者或來源連結及中英文介紹，方便找到地圖、行程、文章與照片典藏。',
-      en: 'Explore Abu Chicken Kwong (epoh)’s LingOrm Google Maps list and original post. Resource cards also include creator or source links and refreshed bilingual descriptions for maps, schedules, articles, and photo archives.',
+      zh: '新增各個強大JKR的網站及中英文介紹，方便找到地圖、行程、文章與照片典藏。',
+      en: 'Add links to JKR creators and sources, along with introductions in both Chinese and English, making it easier to find maps, itineraries, articles, and photo archives.',
     },
     badge: { zh: '內容', en: 'Content' },
     publishTime: Date.parse('2026-09-28T00:00:00Z'),
