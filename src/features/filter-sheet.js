@@ -113,8 +113,14 @@ export function initFilterSheet({
   onClearAll,
   beforeOpen,
   documentRoot = document,
-  mobileQuery = documentRoot.defaultView?.matchMedia?.('(max-width: 700px)') ?? null,
+  mobileQuery,
 }) {
+  // Resolve the default here, not in the parameter list: esbuild lowers `?.`
+  // for the chrome87 build target, and lowering inside a parameter default
+  // emits a temp var scoped to a nested IIFE -> "r is not defined" at runtime.
+  const mediaQuery = mobileQuery === undefined
+    ? documentRoot.defaultView?.matchMedia?.('(max-width: 700px)') ?? null
+    : mobileQuery;
   const dialogElement = /** @type {HTMLDialogElement|null} */ (documentRoot.getElementById('filter-sheet'));
   const triggerElement = documentRoot.getElementById('filter-open-btn');
   const bodyElement = documentRoot.getElementById('filter-sheet-body');
@@ -185,7 +191,7 @@ export function initFilterSheet({
   });
 
   // Rotating or resizing into the desktop layout returns controls inline.
-  mobileQuery?.addEventListener?.('change', event => {
+  mediaQuery?.addEventListener?.('change', event => {
     if (!event.matches) close();
   });
 
