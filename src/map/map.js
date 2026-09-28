@@ -29,6 +29,37 @@ function requiredElement(id) {
   return el;
 }
 
+/** @returns {{lat: number, lng: number}[]} */
+function collectVisiblePoints() {
+  return state.visIdx.flatMap(index => {
+    const row = state.data[index];
+    if (String(row?.lat ?? '').trim() === '' || String(row?.lng ?? '').trim() === '') {
+      return [];
+    }
+
+    const lat = Number(row?.lat);
+    const lng = Number(row?.lng);
+    return Number.isFinite(lat) && Number.isFinite(lng)
+      ? [{ lat, lng }]
+      : [];
+  });
+}
+
+/**
+ * @param {{lat: number, lng: number}[]} points
+ * @returns {{north: number, south: number, east: number, west: number}}
+ */
+function boundsFromPoints(points) {
+  const lats = points.map(point => point.lat);
+  const lngs = points.map(point => point.lng);
+  return {
+    north: Math.max(...lats),
+    south: Math.min(...lats),
+    east: Math.max(...lngs),
+    west: Math.min(...lngs),
+  };
+}
+
 /**
  * Fit the active map provider to every currently visible location.
  * A single result uses a useful place-level zoom; no results preserve the
@@ -41,18 +72,7 @@ export function fitMapToVisibleLocations() {
     return false;
   }
 
-  const points = state.visIdx.flatMap(index => {
-    const row = state.data[index];
-    if (String(row?.lat ?? '').trim() === '' || String(row?.lng ?? '').trim() === '') {
-      return [];
-    }
-
-    const lat = Number(row?.lat);
-    const lng = Number(row?.lng);
-    return Number.isFinite(lat) && Number.isFinite(lng)
-      ? [{ lat, lng }]
-      : [];
-  });
+  const points = collectVisiblePoints();
   state.pendingDestinationFit = false;
   if (!points.length) return false;
 
@@ -62,14 +82,7 @@ export function fitMapToVisibleLocations() {
     return true;
   }
 
-  const lats = points.map(point => point.lat);
-  const lngs = points.map(point => point.lng);
-  const bounds = {
-    north: Math.max(...lats),
-    south: Math.min(...lats),
-    east: Math.max(...lngs),
-    west: Math.min(...lngs),
-  };
+  const bounds = boundsFromPoints(points);
 
   if (state.provider === 'google') {
     state.map.fitBounds(bounds, 48);
@@ -86,6 +99,62 @@ export function fitMapToVisibleLocations() {
     }, true);
   }
   return true;
+}
+
+/**
+ * Approximate the view `fitMapToVisibleLocations` would settle on, usable
+ * before a map exists. HERE's `H.Map` constructor only takes a center/zoom
+ * pair, not bounds — painting a throwaway Bangkok default when a destination
+ * fit is already pending makes the SDK fetch tiles for that view and then
+ * cancel them a tick later once the real fit runs, which HERE logs as
+ * BaseTileLoader AbortErrors. Seeding construction with this estimate keeps
+ * the first paint close enough that little or nothing needs re-fetching; the
+ * exact padded fit still runs afterward via `fitMapToVisibleLocations`.
+ * @param {number} containerWidth
+ * @param {number} containerHeight
+ * @returns {{center: {lat: number, lng: number}, zoom: number}|null}
+ */
+function estimatePendingFitView(containerWidth, containerHeight) {
+  const points = collectVisiblePoints();
+  if (!points.length) return null;
+
+  if (points.length === 1) {
+    return { center: points[0], zoom: 14 };
+  }
+
+  const bounds = boundsFromPoints(points);
+  const center = {
+    lat: (bounds.north + bounds.south) / 2,
+    lng: (bounds.east + bounds.west) / 2,
+  };
+  if (!(containerWidth > 0) || !(containerHeight > 0)) {
+    return { center, zoom: 11 };
+  }
+
+  // Standard Web Mercator fit-bounds-to-zoom estimate (same approach as
+  // Google Maps' getBoundsZoomLevel recipe), not HERE's own fitting
+  // algorithm — this only needs to land close, not pixel-exact.
+  /** @param {number} lat */
+  const latRad = lat => {
+    const sin = Math.sin(lat * Math.PI / 180);
+    const radians = Math.log((1 + sin) / (1 - sin)) / 2;
+    return Math.max(Math.min(radians, Math.PI), -Math.PI) / 2;
+  };
+  const TILE_SIZE = 256;
+  const PADDING_PX = 48;
+  const latFraction = (latRad(bounds.north) - latRad(bounds.south)) / Math.PI;
+  const lngSpan = bounds.east - bounds.west;
+  const lngFraction = (lngSpan < 0 ? lngSpan + 360 : lngSpan) / 360;
+  /** @param {number} pixels @param {number} fraction */
+  const zoomForDim = (pixels, fraction) => fraction > 0
+    ? Math.log2((pixels - PADDING_PX * 2) / TILE_SIZE / fraction)
+    : 21;
+  const zoom = Math.floor(Math.min(
+    zoomForDim(containerWidth, lngFraction),
+    zoomForDim(containerHeight, latFraction),
+  ));
+
+  return { center, zoom: Math.max(1, Math.min(zoom, 20)) };
 }
 
 /**
@@ -615,14 +684,19 @@ function initWithHere(apiKey) {
   });
   state.hereLayers = layers;
 
+  const mapEl = requiredElement('map');
+  const initialView = state.pendingDestinationFit
+    ? estimatePendingFitView(mapEl.clientWidth, mapEl.clientHeight)
+    : null;
+
   state.map = new H.Map(
-    requiredElement('map'),
+    mapEl,
     getHereBaseLayer(layers, state.mapTheme),
     {
       engineType: H.Map.EngineType.HARP,
       pixelRatio: window.devicePixelRatio || 1,
-      zoom: 11,
-      center: { lat: 13.82, lng: 100.52 },
+      zoom: initialView?.zoom ?? 11,
+      center: initialView?.center ?? { lat: 13.82, lng: 100.52 },
     }
   );
   new H.mapevents.Behavior(new H.mapevents.MapEvents(state.map));
