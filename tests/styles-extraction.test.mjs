@@ -42,12 +42,12 @@ test('popup badges use compact spacing without changing list badges', async () =
   assert.match(css, /\.badge\{\s*font-size:11px;font-weight:500;\s*padding:3px 8px;/);
 });
 
-test('result metadata uses the same inline spacing at every viewport', async () => {
+test('result metadata keeps the update date visible and wraps at narrow viewports', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(
     css,
-    /\.result-meta\{display:flex;align-items:baseline;gap:6px;padding:0 2px\}/,
+    /\.result-meta\{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;padding:0 2px\}/,
   );
   assert.match(css, /\.last-updated\{font-size:12px;color:var\(--text-muted\)\}/);
   assert.match(
@@ -55,6 +55,7 @@ test('result metadata uses the same inline spacing at every viewport', async () 
     /\.last-updated:not\(:empty\)::before\{content:"·";margin-right:6px;/,
   );
   assert.doesNotMatch(css, /\.result-meta\{[^}]*flex-direction:/);
+  assert.doesNotMatch(css, /\.last-updated\s*\{[^}]*display:\s*none/);
   assert.doesNotMatch(css, /@media\(min-width:1100px\)[\s\S]*?\.result-meta/);
 });
 
