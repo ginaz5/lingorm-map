@@ -16,6 +16,7 @@ import {
   loadMapScript,
   updateMapTheme,
   buildMarkers,
+  clearActiveLocation,
   fitMapToVisibleLocations,
   refreshActivePopup,
 } from './map/map.js';
@@ -44,6 +45,7 @@ import {
   saveDestinationFilter,
 } from './features/destination-filter.js';
 import { initFilterSheet } from './features/filter-sheet.js';
+import { initHomeReset } from './features/home-reset.js';
 import { initCollectionInfo } from './features/collection-info.js';
 import { initFanResources } from './features/fan-resources.js';
 import { initExchangeRates, syncExchangeControls } from './features/exchange-rates.js';
@@ -243,6 +245,34 @@ function clearDestinationFilter(key) {
     : { filterValue: `destination:${key}`, filterAction: 'deselect' });
 }
 
+function clearAllFilters() {
+  clearSelectFilter('category');
+  clearSelectFilter('type');
+  clearDestinationFilter();
+}
+
+/**
+ * Single owner of the favorites-only control, shared by its button and the
+ * header reset, so the class, aria-pressed, icon and analytics stay in step.
+ * @param {boolean} on
+ */
+function setFavoritesFilter(on) {
+  if (state.favFilterOn === on) return;
+  state.favFilterOn = on;
+  const favBtn = document.getElementById('fav-filter-btn');
+  favBtn.classList.toggle('active', on);
+  favBtn.setAttribute('aria-pressed', String(on));
+  favBtn.innerHTML = heartSVG(on);
+  applyFiltersAndSyncMap();
+  trackFilterApply(
+    'favorites',
+    on ? 'on' : 'off',
+    state.visIdx.length,
+    on ? 'enable' : 'disable',
+    on ? state.favorites.size : 0,
+  );
+}
+
 initDestinationFilter(handleDestinationChange);
 initFilterSheet({
   beforeOpen: closeDestinationFilter,
@@ -250,11 +280,14 @@ initFilterSheet({
     if (filter === 'destination') clearDestinationFilter(value);
     else clearSelectFilter(filter);
   },
-  onClearAll: () => {
-    clearSelectFilter('category');
-    clearSelectFilter('type');
-    clearDestinationFilter();
-  },
+  onClearAll: clearAllFilters,
+});
+initHomeReset({
+  clearFilters: clearAllFilters,
+  setFavoritesFilter,
+  clearActiveLocation,
+  switchTab,
+  applyFilters: () => applyFiltersAndSyncMap(),
 });
 initCollectionInfo();
 const fanResources = initFanResources();
@@ -271,19 +304,7 @@ initBranchQueries(() => {
 
 // Static event listeners
 document.getElementById('fav-filter-btn').addEventListener('click', event => {
-  state.favFilterOn = !state.favFilterOn;
-  const favBtn = document.getElementById('fav-filter-btn');
-  favBtn.classList.toggle('active', state.favFilterOn);
-  favBtn.setAttribute('aria-pressed', String(state.favFilterOn));
-  favBtn.innerHTML = heartSVG(state.favFilterOn);
-  applyFiltersAndSyncMap();
-  trackFilterApply(
-    'favorites',
-    state.favFilterOn ? 'on' : 'off',
-    state.visIdx.length,
-    state.favFilterOn ? 'enable' : 'disable',
-    state.favFilterOn ? state.favorites.size : 0,
-  );
+  setFavoritesFilter(!state.favFilterOn);
   releasePointerFocus(event);
 });
 document.getElementById('search').addEventListener('input', handleSearchInput);

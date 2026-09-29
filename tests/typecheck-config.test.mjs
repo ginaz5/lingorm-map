@@ -41,6 +41,7 @@ test('configures strict JavaScript type checking', async () => {
     'src/features/changelog-data.js',
     'src/features/collection-info.js',
     'src/features/fan-resources.js',
+    'src/features/home-reset.js',
     'src/map/map.js',
     'src/features/forms.js',
     'src/map/map-globals.d.ts',
