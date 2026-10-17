@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "branches": {
+    "superrich1965-56": {
+      "officialId": 56,
+      "branchNo": "00",
+      "companyCode": "A04"
+    },
+    "superrich1965-57": {
+      "officialId": 57,
+      "branchNo": "35",
+      "companyCode": "A04"
+    },
+    "superrich1965-58": {
+      "officialId": 58,
+      "branchNo": "36",
+      "companyCode": "A04"
+    },
+    "superrich1965-59": {
+      "officialId": 59,
+      "branchNo": "40",
+      "companyCode": "A04"
+    },
+    "superrich1965-60": {
+      "officialId": 60,
+      "branchNo": "50",
+      "companyCode": "A04"
+    },
+    "superrich1965-61": {
+      "officialId": 61,
+      "branchNo": "34",
+      "companyCode": "A04"
+    },
+    "superrich1965-62": {
+      "officialId": 62,
+      "branchNo": "23",
+      "companyCode": "A04"
+    },
+    "superrich1965-63": {
+      "officialId": 63,
+      "branchNo": "03",
+      "companyCode": "A04"
+    },
+    "superrich1965-64": {
+      "officialId": 64,
+      "branchNo": "19",
+      "companyCode": "A04"
+    },
+    "superrich1965-65": {
+      "officialId": 65,
+      "branchNo": "05",
+      "companyCode": "A04"
+    },
+    "superrich1965-66": {
+      "officialId": 66,
+      "branchNo": "45",
+      "companyCode": "A04"
+    },
+    "superrich1965-67": {
+      "officialId": 67,
+      "branchNo": "62",
+      "companyCode": "A04"
+    },
+    "superrich1965-68": {
+      "officialId": 68,
+      "branchNo": "11",
+      "companyCode": "A04"
+    },
+    "superrich1965-69": {
+      "officialId": 69,
+      "branchNo": "44",
+      "companyCode": "A04"
+    },
+    "superrich1965-70": {
+      "officialId": 70,
+      "branchNo": "26",
+      "companyCode": "A04"
+    },
+    "superrich1965-71": {
+      "officialId": 71,
+      "branchNo": "20",
+      "companyCode": "A04"
+    },
+    "superrich1965-72": {
+      "officialId": 72,
+      "branchNo": "46",
+      "companyCode": "A04"
+    },
+    "superrich1965-73": {
+      "officialId": 73,
+      "branchNo": "21",
+      "companyCode": "A04"
+    },
+    "superrich1965-74": {
+      "officialId": 74,
+      "branchNo": "63",
+      "companyCode": "A04"
+    },
+    "superrich1965-76": {
+      "officialId": 76,
+      "branchNo": "47",
+      "companyCode": "A04"
+    },
+    "superrich1965-77": {
+      "officialId": 77,
+      "branchNo": "48",
+      "companyCode": "A04"
+    },
+    "superrich1965-78": {
+      "officialId": 78,
+      "branchNo": "27",
+      "companyCode": "A04"
+    },
+    "superrich1965-79": {
+      "officialId": 79,
+      "branchNo": "52",
+      "companyCode": "A04"
+    },
+    "superrich1965-80": {
+      "officialId": 80,
+      "branchNo": "04",
+      "companyCode": "A04"
+    },
+    "superrich1965-81": {
+      "officialId": 81,
+      "branchNo": "53",
+      "companyCode": "A04"
+    },
+    "superrich1965-82": {
+      "officialId": 82,
+      "branchNo": "09",
+      "companyCode": "A04"
+    },
+    "superrich1965-83": {
+      "officialId": 83,
+      "branchNo": "57",
+      "companyCode": "A04"
+    },
+    "superrich1965-84": {
+      "officialId": 84,
+      "branchNo": "55",
+      "companyCode": "A04"
+    },
+    "superrich1965-85": {
+      "officialId": 85,
+      "branchNo": "49",
+      "companyCode": "A04"
+    },
+    "superrich1965-86": {
+      "officialId": 86,
+      "branchNo": "56",
+      "companyCode": "A04"
+    },
+    "superrich1965-88": {
+      "officialId": 88,
+      "branchNo": "58",
+      "companyCode": "A04"
+    },
+    "superrich1965-89": {
+      "officialId": 89,
+      "branchNo": "16",
+      "companyCode": "A04"
+    },
+    "superrich1965-90": {
+      "officialId": 90,
+      "branchNo": "17",
+      "companyCode": "A04"
+    },
+    "superrich1965-91": {
+      "officialId": 91,
+      "branchNo": "41",
+      "companyCode": "A04"
+    },
+    "superrich1965-92": {
+      "officialId": 92,
+      "branchNo": "60",
+      "companyCode": "A04"
+    },
+    "superrich1965-93": {
+      "officialId": 93,
+      "branchNo": "59",
+      "companyCode": "A04"
+    },
+    "superrich1965-110": {
+      "officialId": 110,
+      "branchNo": "64",
+      "companyCode": "A04"
+    },
+    "superrich1965-112": {
+      "officialId": 112,
+      "branchNo": "51",
+      "companyCode": "A04"
+    }
+  }
+}

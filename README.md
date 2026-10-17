@@ -21,6 +21,12 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
 - SuperRich Thailand currency-exchange overlay: 26 branches shown like any other location, with USD 100 / USD 50 / TWD buying rates updated every 30 minutes from 08:00 to 22:30 Thailand time and best-rate sorting when quotes are available (rate fetching is gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
 
+SuperRich 1965（橘標）程式已整合：沿用同一個「換匯」標籤、卡片與排序選單，
+提供獨立的 USD／TWD 報價、橘色 marker／群聚、API 及本機抓取工具。
+目前正式快照的 38 家橘標分店維持 `Paused`，因此不會出現在地圖或列表；
+本次合併不發布分店、不啟用服務、不安裝抓取排程。
+操作方式見 [橘標整合與維運](note/LOCAL_TESTING.md#橘標整合與維運)。
+
 ---
 
 ## Architecture

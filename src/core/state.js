@@ -28,7 +28,7 @@
  * @property {boolean} favFilterOn
  * @property {Set<string>} selectedDestinations
  * @property {boolean} pendingDestinationFit
- * @property {'default'|'USD_100'|'USD_50'|'TWD'} exchangeSort
+ * @property {'default'|'USD_100'|'USD_50'|'TWD'|'USD_1965'|'TWD_1965'} exchangeSort
  * @property {boolean|null} exchangeRatesEnabled
  * @property {string|null} exchangeControlVersion
  * @property {string|null} exchangeRunId
@@ -40,6 +40,7 @@
  * @property {number|null} exchangeLastAttemptAtMs
  * @property {boolean} exchangeUpdateCheckPending
  * @property {boolean} exchangeRatesLoading
+ * @property {{ratesBySlug:Record<string,any>,runId:string|null,controlVersion:string|null,enabled:boolean|null,completedAt:string|null,nextUpdateAtMs:number|null,expiresAtMs:number|null,retryLevel:number,lastAttemptAtMs:number|null,updateCheckPending:boolean,ratesLoading:boolean,hasUsableSnapshot:boolean}} exchange1965
  * @property {boolean} exchangeHasUsableSnapshot
  */
 
@@ -107,4 +108,18 @@ export const state = {
   exchangeUpdateCheckPending: false,
   exchangeRatesLoading: false,
   exchangeHasUsableSnapshot: false,
+  exchange1965: {
+    ratesBySlug: {},
+    runId: null,
+    controlVersion: null,
+    enabled: null,
+    completedAt: null,
+    nextUpdateAtMs: null,
+    expiresAtMs: null,
+    retryLevel: 0,
+    lastAttemptAtMs: null,
+    updateCheckPending: false,
+    ratesLoading: false,
+    hasUsableSnapshot: false,
+  },
 };

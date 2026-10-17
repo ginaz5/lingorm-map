@@ -379,3 +379,36 @@ http://localhost:8888/api/config
 ### 直接開 index.html 看起來正常，可以算通過嗎？
 
 不算。直接開檔案只能測靜態 HTML 和內建資料，不能測 Netlify Function、環境變數、`/api/locations`。
+
+
+## 橘標整合與維運
+
+2026-10-17：橘標程式接入 main 的「換匯」標籤與現有排序選單，不新增獨立
+換匯開關。38 家橘標分店在正式快照中維持 `Paused`，不會出現在公開清單、
+收藏結果、目的地計數或地圖。本次不更動 Notion、CSV 或正式環境控制旗標。
+
+- 橘標使用 `/api/exchange-rates-1965`，獨立 state、control、breaker 與 snapshot。
+- 卡片／popup 固定兩列：USD 100＋50、TWD 1,000–100。報價到期時清除數字與
+  最佳標記，保留綠標報價；恢復新快照後重新顯示。
+- Google 與 HERE 的橘標單店／純橘標群聚為橘色；跨品牌／一般地點混合群聚
+  使用原本樣式。保留 main 的手機 popup 置中與 filter sheet。
+- `EXCHANGE_RATES_1965_ENABLED` 預設未設定／false，既有 runtime control 優先。
+- `EXCHANGE_RATES_1965_FETCH_MODE=local` 讓 Scheduled Function 跳過來源抓取，
+  API 照常讀有效快照。未設定時相容預設為 `netlify`；不代表服務已 enabled。
+
+程式驗證（不打真實來源、不寫正式資料）：
+
+```bash
+npm run typecheck
+npm test
+npm run build
+node scripts/validate-location-snapshot.mjs data/locations.csv
+node scripts/validate-favorite-compatibility.mjs
+node scripts/validate-superrich1965-mapping.mjs data/superrich1965-branches.json data/locations.csv
+```
+
+未來要上線橘標，先在 Notion 核對分店並明確發布，再使用
+`npm run locations:refresh` 匯出與驗證。之後另行驗收 Deploy Preview、確認正式
+control、抓取方式與來源可用性。不要以手改 CSV 或本次 merge 代替發布。
+本機 collector 的 probe、dry-run、publish 都會打真實來源，詳細操作與冷卻規則見
+[本機抓取計畫](../docs/superrich1965-local-fetch-plan.zh-TW.md)。

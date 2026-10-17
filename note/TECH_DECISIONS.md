@@ -352,10 +352,19 @@ null`，前端顯示「暫無報價」而不是隱藏整張卡片。
 安排查詢。自動停用後的 breaker 清理沿用該輪寫入的 ETag，遇到較新的
 手動控制變更就放棄清理，避免覆蓋重新啟用後的版本。
 
-這一版只支援 SuperRich Thailand（綠標）。正式快照仍可能包含其他換匯品牌的
-資料列（例如已暫停的 SuperRich 1965），因此顯示規則改以「此版本支援的換匯點」
-判斷：`Type = Currency Exchange` 的地點必須在綠標 mapping 中才會顯示；
-換匯點的 `Category` 留空，以標籤作為單一換匯篩選入口。
-由 `isSupportedLocation()` 併入 `isPublicLocation()`，清單、搜尋、收藏、篩選
-計數、目的地選項與 Google／HERE marker 共用同一個判斷。刻意不用品牌 Slug 黑名單；
-收藏中既有的其他品牌 ID 也不清除，日後支援該品牌時仍可對應。
+**2026-10-17 橘標整合：** 沿用 main 的標籤篩選、filter sheet、popup 置中與粉絲資源
+分析事件，新增 SuperRich 1965 的獨立報價 state／輪詢、API、來源抓取及管理工具。
+兩品牌共用「換匯」標籤與排序選單；綠標維持三列，橘標顯示 USD 100＋50、
+TWD 1,000–100 兩列。單一品牌停用、失敗或到期不會清除另一品牌報價。
+單品牌群聚使用該品牌顏色，混合群聚維持預設樣式，Google／HERE 行為一致。
+
+`isSupportedLocation()` 接受兩份已驗證 mapping；未知換匯點仍不公開。
+舊橘標快照使用 `Category = Currency Exchange`，CSV parser 在 runtime 將它
+轉為空 Category 與 `Type = Currency Exchange`，以沿用 main 的唯一標籤入口。
+不修改正式 CSV；未來由 Notion exporter 產生的新資料可直接使用 Type 欄位，
+mapping validator 同時接受這兩種表示。所有 `Paused` 狀態與收藏 Slug 保持不變。
+
+目前 38 家橘標仍為 Paused；整合程式不代表發布分店或啟用報價服務。
+橘標服務預設 disabled，`EXCHANGE_RATES_1965_FETCH_MODE=local` 時雲端排程
+不打來源，由既有本機 CLI 明確發布快照；未設定 FETCH_MODE 的相容預設仍為
+`netlify`，但抓取仍受 disabled/control/breaker 限制。本次未更動線上設定。

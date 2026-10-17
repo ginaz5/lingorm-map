@@ -47,7 +47,8 @@ import {
 import { initFilterSheet } from './features/filter-sheet.js';
 import { initCollectionInfo } from './features/collection-info.js';
 import { initFanResources } from './features/fan-resources.js';
-import { initExchangeRates } from './features/exchange-rates.js';
+import { initExchangeRates, syncExchangeControls } from './features/exchange-rates.js';
+import { initExchangeRates1965 } from './features/exchange-rates-1965.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -264,6 +265,7 @@ const handleExchangeChange = change => {
   refreshActivePopup();
 };
 initExchangeRates(handleExchangeChange);
+initExchangeRates1965(handleExchangeChange, syncExchangeControls);
 
 // Static event listeners
 document.getElementById('fav-filter-btn').addEventListener('click', event => {

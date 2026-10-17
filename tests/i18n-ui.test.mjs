@@ -129,16 +129,20 @@ test('currency exchange rate panel notices are bilingual', () => {
   assert.equal(T.en.fx_branch_hint('Airport'), 'Official branch · Airport');
 });
 
-test('exchange-rate sort menu exposes only green-brand choices', async () => {
+test('exchange-rate sort menu exposes both brands without a separate toggle', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const select = html.match(/<select class="filter-sel exchange-sort"[\s\S]*?<\/select>/)?.[0];
 
   assert.ok(select, 'exchange-rate sort select should exist');
   assert.deepEqual(
     [...select.matchAll(/<option value="([^"]+)"/g)].map(match => match[1]),
-    ['default', 'USD_100', 'USD_50', 'TWD'],
+    ['default', 'USD_100', 'USD_50', 'TWD', 'USD_1965', 'TWD_1965'],
   );
-  assert.doesNotMatch(select, /1965|fx_sort_usd_1965|fx_sort_twd_1965/);
+  assert.doesNotMatch(html, /id="exchange-toggle"/);
+  for (const key of ['fx_brand_orange', 'fx_denom_usd_1965', 'fx_denom_twd_1965', 'fx_sort_usd_1965', 'fx_sort_twd_1965', 'fx_disclaimer_1965', 'fx_source_note_1965']) {
+    assert.equal(typeof T.zh[key], 'string');
+    assert.equal(typeof T.en[key], 'string');
+  }
 });
 
 test('unrestricted filters show their category and label prompts', () => {

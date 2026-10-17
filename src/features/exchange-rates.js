@@ -2,19 +2,21 @@ import BRANCH_MAPPING from '../../data/superrich-branches.json' with { type: 'js
 
 import { state } from '../core/state.js';
 import { DENOMS } from '../data/exchange-rates.js';
+import { DENOMS_1965 } from '../data/exchange-rates-1965.js';
+import { isExchange1965Location, cancelExchangeScheduling1965 } from './exchange-rates-1965.js';
 
 export const EXCHANGE_TYPE = 'Currency Exchange';
 export const EXCHANGE_API = '/api/exchange-rates';
 export const EXCHANGE_API_TIMEOUT_MS = 8_000;
 export const EXCHANGE_POLL_MS = 60_000;
 export const EXCHANGE_RETRY_DELAYS_MS = Object.freeze([10_000, 20_000, 40_000, 60_000]);
-export const EXCHANGE_SORT_VALUES = Object.freeze(['default', ...DENOMS]);
+export const EXCHANGE_SORT_VALUES = Object.freeze(['default', ...DENOMS, ...DENOMS_1965]);
 
 const BRANCHES = /** @type {Record<string, {officialId:number, branchCode:string}>} */ (BRANCH_MAPPING.branches);
 const BRANCH_SLUGS = new Set(Object.keys(BRANCHES));
 const UNAVAILABLE_REASONS = new Set(['timeout', 'invalid', 'missing', 'http_error', 'expired']);
 
-/** @typedef {'default'|'USD_100'|'USD_50'|'TWD'} ExchangeSort */
+/** @typedef {'default'|'USD_100'|'USD_50'|'TWD'|'USD_1965'|'TWD_1965'} ExchangeSort */
 /** @typedef {'fetch'|'expire'|'idle'} ExchangeAction */
 /**
  * @typedef {Object} ExchangeScheduleState
@@ -163,10 +165,17 @@ export function nextExchangeAction(now, schedule) {
   return { action: 'fetch', delayMs: Math.max(0, fetchAt - now) };
 }
 
+/** @param {string|{id?:string}} value @returns {'green'|'orange'|null} */
+export function getExchangeBrand(value) {
+  const slug = typeof value === 'string' ? value : value?.id;
+  if (typeof slug !== 'string') return null;
+  if (BRANCH_SLUGS.has(slug)) return 'green';
+  return isExchange1965Location(slug) ? 'orange' : null;
+}
+
 /** @param {string|{id?:string}} value */
 export function isExchangeLocation(value) {
-  const slug = typeof value === 'string' ? value : value?.id;
-  return typeof slug === 'string' && BRANCH_SLUGS.has(slug);
+  return getExchangeBrand(value) !== null;
 }
 
 /**
@@ -176,10 +185,10 @@ export function isExchangeLocation(value) {
  * so a published branch of a brand this build does not carry stays hidden
  * everywhere instead of appearing as an ordinary location. The rule is by
  * mapping membership, never by a per-brand slug blocklist.
- * @param {{id?:string, type?:string}} row
+ * @param {{id?:string, type?:string, catEn?:string}} row
  */
 export function isSupportedLocation(row) {
-  return row?.type !== EXCHANGE_TYPE || isExchangeLocation(row);
+  return (row?.type !== EXCHANGE_TYPE && row?.catEn !== EXCHANGE_TYPE) || isExchangeLocation(row);
 }
 
 /** @param {string} slug @param {'USD_100'|'USD_50'|'TWD'} denom */
@@ -194,6 +203,10 @@ export function isExchangeSort(value) {
 
 /** @param {string} sort */
 export function isExchangeSortAvailable(sort) {
+  if (DENOMS_1965.includes(/** @type {any} */ (sort))) {
+    return state.exchange1965.enabled === true && state.exchange1965.hasUsableSnapshot &&
+      Object.values(state.exchange1965.ratesBySlug).some(branch => Number.isSafeInteger(branch.rates?.[sort]?.rateScaledE6));
+  }
   if (!DENOMS.includes(/** @type {any} */ (sort))) return false;
   return state.exchangeRatesEnabled === true && state.exchangeHasUsableSnapshot &&
     Object.values(state.exchangeRatesBySlug).some(branch => Number.isSafeInteger(branch.rates?.[sort]?.rateScaledE6));
@@ -330,6 +343,7 @@ function cancelRequest() {
 }
 
 export function cancelExchangeScheduling() {
+  cancelExchangeScheduling1965();
   cancelTimer();
   cancelRequest();
 }

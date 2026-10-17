@@ -2,7 +2,7 @@ import { state } from '../core/state.js';
 import { getEffectiveTheme } from '../ui/ui.js';
 import { buildPopupContent, activateCard, isPublicLocation } from '../ui/render.js';
 import { cancelPopupCenter, openLocationPopup } from './popup.js';
-import { isExchangeLocation } from '../features/exchange-rates.js';
+import { isExchangeLocation, getExchangeBrand } from '../features/exchange-rates.js';
 // MarkerClusterer is loaded lazily to avoid CJS/ESM issues in Node.js test env
 /** @type {typeof import('@googlemaps/markerclusterer').MarkerClusterer|null} */
 let _MarkerClusterer = null;
@@ -347,10 +347,10 @@ export function getHereLanguagePreferences(browserLanguages = []) {
 // ═══════════════════════════════════════════════════
 // MARKERS & CLUSTERING
 // ═══════════════════════════════════════════════════
-/** @param {string} icon @param {boolean} [isExchange] @returns {HTMLDivElement} */
-export function makeMarkerContent(icon, isExchange = false) {
+/** @param {string} icon @param {boolean} [isExchange] @param {'green'|'orange'|null} [brand] @returns {HTMLDivElement} */
+export function makeMarkerContent(icon, isExchange = false, brand = null) {
   const el = document.createElement('div');
-  el.className = `marker-dot${isExchange ? ' is-exchange' : ''}`;
+  el.className = `marker-dot${isExchange ? ' is-exchange' : ''}${brand === 'orange' ? ' is-exchange-orange' : ''}`;
   el.textContent = icon || '📍';
   return el;
 }
@@ -369,6 +369,13 @@ export function isExchangeOnlyCluster(markers) {
     markers.every(marker => marker?.__markerContent?.classList?.contains('is-exchange') === true);
 }
 
+/** @param {readonly any[]} markers @returns {'green'|'orange'|null} */
+export function getExchangeClusterBrand(markers) {
+  if (!isExchangeOnlyCluster(markers)) return null;
+  const orange = markers.map(marker => marker.__markerContent.classList.contains('is-exchange-orange'));
+  return orange.every(Boolean) ? 'orange' : orange.every(value => !value) ? 'green' : null;
+}
+
 /**
  * Custom renderer for Google MarkerClusterer.
  * Draws a circle with the cluster count; clusters made up entirely of
@@ -380,7 +387,8 @@ export function isExchangeOnlyCluster(markers) {
 function clusterRenderer({ count, position, markers }) {
   const size = count >= 100 ? 48 : count >= 10 ? 40 : 32;
   const el = document.createElement('div');
-  el.className = `marker-cluster${isExchangeOnlyCluster(markers) ? ' is-exchange' : ''}`;
+  const brand = getExchangeClusterBrand(markers);
+  el.className = `marker-cluster${brand ? ' is-exchange' : ''}${brand === 'orange' ? ' is-exchange-orange' : ''}`;
   el.textContent = String(count);
   el.style.width = `${size}px`;
   el.style.height = `${size}px`;
@@ -411,6 +419,22 @@ export function isExchangeOnlyDataPoints(forEachDataPoint) {
 }
 
 /**
+ * @param {(callback:(dataPoint:{getData:()=>any})=>void)=>void} forEachDataPoint
+ * @returns {'green'|'orange'|null}
+ */
+export function getExchangeDataPointsBrand(forEachDataPoint) {
+  let brand = /** @type {'green'|'orange'|null} */ (null);
+  let mixed = false;
+  forEachDataPoint(point => {
+    const data = point.getData();
+    const current = data?.isExchange === true ? (data.exchangeBrand === 'orange' ? 'orange' : 'green') : null;
+    if (!current || (brand !== null && current !== brand)) mixed = true;
+    if (current) brand = current;
+  });
+  return mixed ? null : brand;
+}
+
+/**
  * Custom theme for HERE Maps clustering.
  * Provides consistent visual style with Google clustering.
  * @returns {any}
@@ -419,10 +443,10 @@ function makeHereClusterTheme() {
   return {
     getClusterPresentation: (/** @type {any} */ cluster) => {
       const weight = cluster.getWeight();
-      const isExchangeCluster = isExchangeOnlyDataPoints(cluster.forEachDataPoint.bind(cluster));
+      const brand = getExchangeDataPointsBrand(cluster.forEachDataPoint.bind(cluster));
       const size = weight >= 100 ? 48 : weight >= 10 ? 40 : 32;
       const el = document.createElement('div');
-      el.className = `marker-cluster${isExchangeCluster ? ' is-exchange' : ''}`;
+      el.className = `marker-cluster${brand ? ' is-exchange' : ''}${brand === 'orange' ? ' is-exchange-orange' : ''}`;
       el.textContent = String(weight);
       el.style.width = `${size}px`;
       el.style.height = `${size}px`;
@@ -437,7 +461,7 @@ function makeHereClusterTheme() {
     },
     getNoisePresentation: (/** @type {any} */ noisePoint) => {
       const data = noisePoint.getData();
-      const el = makeMarkerContent(data?.icon || '📍', data?.isExchange === true);
+      const el = makeMarkerContent(data?.icon || '📍', data?.isExchange === true, data?.exchangeBrand);
       if (data?.index === state.activeIdx) el.classList.add('active');
       const domIcon = new H.map.DomIcon(el);
       const marker = new H.map.DomMarker(noisePoint.getPosition(), {
@@ -483,7 +507,7 @@ export async function buildMarkers(options = {}) {
       const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
       if (!isPublicLocation(row)) return;
       if (!lat || !lng) return;
-      const el = makeMarkerContent(row.icon, isExchangeLocation(row));
+      const el = makeMarkerContent(row.icon, isExchangeLocation(row), getExchangeBrand(row));
       if (state.activeIdx === i) el.classList.add('active');
       // NOTE: do NOT set map here; MarkerClusterer will manage it
       const m = new google.maps.marker.AdvancedMarkerElement({
@@ -524,6 +548,7 @@ export async function buildMarkers(options = {}) {
         index: i,
         icon: row.icon,
         isExchange: isExchangeLocation(row),
+        exchangeBrand: getExchangeBrand(row),
       }));
     });
 
