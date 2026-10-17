@@ -228,9 +228,10 @@ export function renderExchangeRates(row) {
 /** @param {string} slug */
 function renderBranchQuery(slug) {
   const entry = getBranchQueryState(slug);
+  if (entry?.quote) return `<div class="fx-query-scope">${t('fx_query_sort_scope')}</div>`;
   const waiting = (entry?.retryAtMs ?? 0) > Date.now();
-  const disabled = entry?.loading || waiting || !!entry?.quote;
-  const label = entry?.loading ? 'fx_query_loading' : entry?.quote ? 'fx_query_cached' : 'fx_query';
+  const disabled = entry?.loading || waiting;
+  const label = entry?.loading ? 'fx_query_loading' : 'fx_query';
   const message = entry?.reason === 'disabled' ? 'fx_query_disabled' :
     entry?.reason === 'busy' ? 'fx_query_busy' : waiting ? 'fx_query_wait' :
     entry?.reason ? 'fx_query_failed' : 'fx_query_hint';

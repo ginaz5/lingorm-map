@@ -117,8 +117,8 @@ test('committed orange mapping and snapshot match reviewed source evidence (pre-
   const evidence = JSON.parse(readFileSync(new URL('../docs/evidence/superrich1965-branches-2026-09-10.json', import.meta.url), 'utf8'));
   const result = validateSuperrich1965Mapping(input, snapshot, { sourceBranches: evidence.includedBranches });
   assert.equal(result.branchCount, 38);
-  assert.equal(result.publishedCount, 1);
-  assert.equal(result.unpublishedCount, 37);
+  assert.equal(result.publishedCount, 38);
+  assert.equal(result.unpublishedCount, 0);
   assert.equal(input.branches['superrich1965-84'].branchNo, '55');
   assert.equal(input.branches['superrich1965-60'].branchNo, '50');
   assert.equal(input.branches['superrich1965-90'].branchNo, '17');
@@ -127,7 +127,7 @@ test('committed orange mapping and snapshot match reviewed source evidence (pre-
 });
 
 // Future publication uses main's formal Type field, while the current legacy
-// Category records remain supported; the pilot branch may be Published.
+// Category records remain supported alongside the published branches.
 test('orange mapping also accepts the label-based formal schema', () => {
   const data = csv([
     row('superrich1965-56', { Category: '', Type: 'Currency Exchange' }),

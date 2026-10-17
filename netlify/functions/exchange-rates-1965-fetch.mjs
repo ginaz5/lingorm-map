@@ -1,5 +1,5 @@
 import { resolveFetchMode } from './_shared/exchange-rates-1965-contract.mjs';
-import { loadBranchMapping, runExchangeRateFetch } from './_shared/exchange-rates-1965-runner.mjs';
+import { dispatchSlowBatch } from './_shared/exchange-rates-1965-background.mjs';
 import { createRuntimeStore } from './_shared/exchange-rates-1965-storage.mjs';
 
 /**
@@ -14,7 +14,8 @@ export function logExchangeRateFetchResult(result, logger = {}) {
   const isComplete = result.status === 'published' && result.sourceOutcome === 'complete';
   const isDisabled = result.status === 'disabled';
   const isExternalFetcher = result.status === 'skipped' && ['external_fetcher', 'on_demand'].includes(result.reason);
-  if (isComplete || isDisabled || isExternalFetcher) (logger.info ?? console.log)(message);
+  if (isComplete || isDisabled || isExternalFetcher || result.status === 'dispatched' ||
+      (result.status === 'skipped' && ['already_scheduled', 'busy'].includes(result.reason))) (logger.info ?? console.log)(message);
   else (logger.error ?? console.error)(message);
 }
 
@@ -39,9 +40,26 @@ export function resolveScheduledFetchMode({ fetchMode = process.env.EXCHANGE_RAT
   }
 }
 
-/** @param {Request} request @param {{deploy?:{context?:string}}} [context] */
+/** Use a deploy permalink so Preview jobs cannot dispatch to production.
+ * DEPLOY_URL is a build variable, not a guaranteed Functions runtime variable.
+ * @param {Request} request
+ * @param {{deploy?:{context?:string,id?:string},site?:{name?:string,url?:string}}} [context]
+ * @param {Record<string,string|undefined>} [env]
+ */
+export function resolveBackgroundDeployURL(request, context, env = process.env) {
+  const requestURL = new URL(request.url);
+  if (env.NETLIFY_DEV === 'true' && ['localhost', '127.0.0.1'].includes(requestURL.hostname)) return requestURL.origin;
+  const deployId = context?.deploy?.id;
+  const siteName = context?.site?.name ?? env.SITE_NAME;
+  if (deployId && siteName && /^[a-z0-9-]+$/i.test(deployId) && /^[a-z0-9-]+$/i.test(siteName)) {
+    return `https://${deployId}--${siteName}.netlify.app`;
+  }
+  if (context?.deploy?.context === 'production') return context?.site?.url ?? env.URL ?? '';
+  return ''; // Missing Preview identity must fail closed, never target production.
+}
+
+/** @param {Request} request @param {{deploy?:{context?:string,id?:string},site?:{name?:string,url?:string}}} [context] */
 export default async function exchangeRatesFetch(request, context) {
-  const functionStartedAtMs = Date.now();
   const { mode, valid } = resolveScheduledFetchMode();
   if (!valid) return;
   if (mode === 'local' || mode === 'on-demand') {
@@ -56,10 +74,9 @@ export default async function exchangeRatesFetch(request, context) {
     return;
   }
   try {
-    const result = await runExchangeRateFetch({
+    const result = await dispatchSlowBatch({
       store: createRuntimeStore({ context: context?.deploy?.context }),
-      mapping: await loadBranchMapping(),
-      functionStartedAtMs,
+      deployURL: resolveBackgroundDeployURL(request, context),
     });
     logExchangeRateFetchResult(result);
   } catch (error) {

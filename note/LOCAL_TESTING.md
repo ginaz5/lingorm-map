@@ -383,55 +383,44 @@ http://localhost:8888/api/config
 
 ## 橘標整合與維運
 
-2026-10-17：橘標程式接入 main 的「換匯」標籤與現有排序選單，不新增獨立
-換匯開關。後續依使用者指示發布 Silom Plaza（`superrich1965-56`）作為試點，
-其餘 37 家維持 Paused。Notion 只改該筆 Status，再經 exporter 更新 CSV；
-未更動正式環境匯率控制旗標或部署。
+2026-10-17：全部 38 家橘標已依使用者指示在 Notion 改為 Published，
+並經 exporter 更新 CSV。狀態更新不代表匯率服務已在正式環境啟用。
 
-- 橘標卡片手動 POST `/api/exchange-rates-1965-branch`，只傳入已核對的 Slug。
-  前端不再啟動橘標整批輪詢；舊 `/api/exchange-rates-1965` 仍供 collector 快照使用。
-- 單店有效報價共用快取最多 5 分鐘，到期重新開放手動查詢；來源不會自動重試。
-  同一時間只允許一個冷查詢；來源請求結束後間隔至少 1.5 秒，普通失敗冷卻 60 秒。
-  403／429／challenge 沿用共用 breaker 6h→24h→第三次停用。
-- 卡片／popup 固定兩列：USD 100＋50、TWD 1,000–100。報價到期時清除數字與
-  最佳標記，保留綠標報價；再次手動取得新報價後重新顯示。橘標排序只比較有效的已查詢分店。
-- Google 與 HERE 的橘標單店／純橘標群聚為橘色；跨品牌／一般地點混合群聚
-  使用原本樣式。保留 main 的手機 popup 置中與 filter sheet。
-- `EXCHANGE_RATES_1965_ENABLED` 預設未設定／false，既有 runtime control 優先。
-- 採本次手動方案時，部署設定使用 `EXCHANGE_RATES_1965_FETCH_MODE=on-demand`，
-  Scheduled Function 會在開啟 store 前正常略過；只有卡片點擊才可能抓單店。
-  `local` 模式仍供外部 CLI 使用，`netlify` 是舊整批排程；未設定仍相容預設 netlify。
-  此設定不會自動啟用 control；也不會發布 Paused 分店。
-- 正式停用控制最遲會在瀏覽器既有單店報價到期（5 分鐘）時撤下數字；下一次
-  手動查詢會立刻核對控制版本。單店快取不寫入或覆蓋原本 38 店 snapshot。
+- 目前方案為後端每半小時派送 Background Function，逐店查詢全部 38 家，
+  每家完成後隨機等 2～5 秒。頁面只 GET /api/exchange-rates-1965-cache，
+  不顯示批次進度、不從瀏覽器啟動整批或五公里查詢。
+- 有效報價直接顯示；缺少有效報價才顯示單店手動查詢按鈕，POST 一家到
+  /api/exchange-rates-1965-branch。既有快取、lease、breaker 與停用控制共用。
+- 到期規則與綠標相同：下一個整點／半點 + 35 分鐘，實際約 35～65 分鐘。
+  每半小時刷新到更新時間的分店，尚未到更新時間則重用快取；讀取不延長有效期。
+- 失敗、busy、冷卻或停用即停整輪；舊報價不覆寫，保留到原到期時間。
+  403／429／challenge 沿用原本 breaker。服務停用時 API 不提供舊報價。
+- 部署時設定 EXCHANGE_RATES_1965_FETCH_MODE=background；netlify 也走背景
+  派送。local 與 on-demand 跳過排程；EXCHANGE_RATES_1965_ENABLED 預設 false，
+  既有 runtime control 優先。本次未改正式設定、未部署。
+- 排程函式只派送，30 秒內結束；背景工作預算 12 分鐘。私有隨機 token 與
+  ETag 工作認領防止未授權啟動或重複抓取，token 不放到 client、URL 或 log。
+- 列表與兩個 provider 的 popup 共用報價、排序及到期狀態；綠標輪詢維持原樣。
 
-程式驗證（不打真實來源、不寫正式資料）：
+完整契約、操作與驗證邊界見
+[後端更新與單店補查計畫](../docs/superrich1965-on-demand-plan.zh-TW.md)。
 
-```bash
-npm run typecheck
-npm test
-npm run build
-node scripts/validate-location-snapshot.mjs data/locations.csv
-node scripts/validate-favorite-compatibility.mjs
-node scripts/validate-superrich1965-mapping.mjs data/superrich1965-branches.json data/locations.csv
-```
+程式驗證不打真實來源、不寫正式資料：
 
-未來要上線橘標，先在 Notion 核對分店並明確發布，再使用
-`npm run locations:refresh` 匯出與驗證。之後另行驗收 Deploy Preview、確認正式
-control、抓取方式與來源可用性。不要以手改 CSV 或本次 merge 代替發布。
-本機 collector 的 probe、dry-run、publish 都會打真實來源，詳細操作與冷卻規則見
-[本機抓取計畫](../docs/superrich1965-local-fetch-plan.zh-TW.md)。
+    npm run typecheck
+    npm test
+    npm run build
+    netlify functions:build --src netlify/functions
+    node scripts/validate-location-snapshot.mjs data/locations.csv
+    node scripts/validate-favorite-compatibility.mjs
+    node scripts/validate-superrich1965-mapping.mjs data/superrich1965-branches.json data/locations.csv
 
+### 橘標 UI 本機驗收
 
-### 橘標手動查詢本機驗收
+開啟 /tests/fixtures/orange-branch-query.html。第一店應顯示模擬快取報價且沒有
+查詢按鈕，第二店應顯示單店按鈕。點第二店後只有一次 POST，成功後撤下按鈕；
+列表與 popup 共用結果。lang=en 測英文、fail=1 測 429 冷卻、
+delay=1500 測載入與重複點擊。fixture 不碰真實來源、不改 CSV。
 
-完整契約、快取／鎖定與切換條件見
-[單店按需查詢計畫](../docs/superrich1965-on-demand-plan.zh-TW.md)。
-在本機 Vite 開啟 `/tests/fixtures/orange-branch-query.html` 可測中英文卡片與
-popup 的手動查詢；`?lang=en` 測英文、`?fail=1` 測 429 冷卻、`?delay=1500`
-測重複點擊。此頁只在記憶體將一筆分店設為 Published，攔截查詢回傳 mock，
-不呼叫真實來源、不改正式 CSV。320px 下應無水平溢出；請求前為 0，點擊後
-卡片與 popup 同時更新而 Requests 只有 1。
-
-API 真實整合測試需使用 `netlify dev`，且會受橘標 control 與來源封鎖限制。
-不要為了測試而在正式站啟用控制旗標或解除 breaker。
+API 整合使用 netlify dev。本機不會自動觸發排程；正式背景派送與雲端來源
+仍須 Deploy Preview 驗收。不要為了測試啟用正式 control 或清除 breaker。

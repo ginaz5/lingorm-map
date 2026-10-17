@@ -5,7 +5,7 @@ import { state } from '../src/core/state.js';
 import { T } from '../src/core/i18n.js';
 import { parseCSV } from '../src/data/csv-parser.js';
 import { ORANGE_BRANCHES, BRANCH_QUOTE_TTL_MS, parseBranchQueryPayload } from '../src/data/exchange-rates-1965-branch.js';
-import { queryOrangeBranch, getBranchQueryState, initBranchQueries, cancelBranchQueries, BRANCH_QUERY_API } from '../src/features/exchange-rates-1965-branch.js';
+import { queryOrangeBranch, loadCachedBranchQuotes, getBranchQueryState, initBranchQueries, cancelBranchQueries, BRANCH_QUERY_API, BRANCH_CACHE_API } from '../src/features/exchange-rates-1965-branch.js';
 import { getExchangeRateCell1965 } from '../src/features/exchange-rates-1965.js';
 import { isExchangeSortAvailable, syncExchangeControls } from '../src/features/exchange-rates.js';
 import { renderExchangeRates, buildPopupContent, sortVisibleIndexes } from '../src/ui/render.js';
@@ -46,6 +46,7 @@ function harness(t, onChange = () => {}) {
   const previous = Object.fromEntries(Object.keys(globals).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   for (const [key, value] of Object.entries(globals)) Object.defineProperty(globalThis, key, { value, writable: true, configurable: true });
   initBranchQueries(() => { syncExchangeControls(); onChange(); });
+  cancelBranchQueries(); // Unit cases below opt into cache reads explicitly.
   t.after(() => {
     cancelBranchQueries();
     for (const [key, descriptor] of Object.entries(previous)) {
@@ -56,8 +57,11 @@ function harness(t, onChange = () => {}) {
   return { listeners, document };
 }
 
-test('rendering cards, initializing, resume and expiry never trigger a source query', t => {
-  const fetch = t.mock.method(globalThis, 'fetch', async () => { throw new Error('unexpected fetch'); });
+test('rendering, resume and expiry only read shared cache and never POST to the source proxy', async t => {
+  const fetch = t.mock.method(globalThis, 'fetch', async url => {
+    assert.equal(url, BRANCH_CACHE_API);
+    return Response.json({ schemaVersion: 1, checkedAt: new Date(Date.now()).toISOString(), enabled: true, controlVersion: uuid(1), quotes: [] });
+  });
   const { listeners } = harness(t);
   const html = renderExchangeRates(row);
   assert.match(html, /data-orange-query=/);
@@ -66,11 +70,98 @@ test('rendering cards, initializing, resume and expiry never trigger a source qu
   listeners.pageshow.fn();
   listeners.online.fn();
   t.mock.timers.tick(10 * 60_000);
-  assert.equal(fetch.mock.callCount(), 0);
+  await loadCachedBranchQuotes();
+  assert.equal(fetch.mock.callCount(), 1);
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.match(main, /initBranchQueries\(/);
   assert.doesNotMatch(main, /initExchangeRates1965\(/);
 });
+
+function cachePayload(quotes = [payload().quote], overrides = {}) {
+  return { schemaVersion: 1, checkedAt: new Date(Date.now()).toISOString(), enabled: true,
+    controlVersion: uuid(1), quotes, ...overrides };
+}
+
+test('cache reads render rates without progress or a manual button; missing branches retain single-branch buttons', async t => {
+  harness(t);
+  const fetch = t.mock.method(globalThis, 'fetch', async url => {
+    assert.equal(url, BRANCH_CACHE_API);
+    return Response.json(cachePayload());
+  });
+  await loadCachedBranchQuotes();
+  assert.match(renderExchangeRates(row), /32\.77 THB/);
+  assert.doesNotMatch(renderExchangeRates(row), /data-orange-query|附近報價|查詢已暫停/);
+  assert.match(renderExchangeRates({ ...row, id: otherSlug }), /data-orange-query=/);
+  assert.equal(isExchangeSortAvailable('USD_1965'), true);
+  t.mock.timers.tick(60_000);
+  await loadCachedBranchQuotes();
+  assert.equal(fetch.mock.callCount(), 2);
+});
+
+test('cache-read failures retain valid quotes and expiry restores the per-branch fallback button', async t => {
+  harness(t);
+  t.mock.method(globalThis, 'fetch', async () => Response.json(cachePayload()));
+  await loadCachedBranchQuotes();
+  const expires = getBranchQueryState(slug).expiresAtMs;
+  t.mock.method(globalThis, 'fetch', async () => new Response('', { status: 503 }));
+  await loadCachedBranchQuotes();
+  assert.equal(getBranchQueryState(slug).expiresAtMs, expires);
+  assert.ok(getBranchQueryState(slug).quote);
+  t.mock.timers.setTime(expires + 1);
+  assert.equal(getBranchQueryState(slug).quote, null);
+  assert.match(renderExchangeRates(row), /data-orange-query=/);
+});
+
+test('cache disable invalidates orange quotes without touching green quotes', async t => {
+  harness(t);
+  state.exchangeRatesBySlug = { green: { preserved: true } };
+  let body = cachePayload();
+  t.mock.method(globalThis, 'fetch', async () => Response.json(body));
+  await loadCachedBranchQuotes();
+  body = cachePayload([], { enabled: false, controlVersion: uuid(2) });
+  await loadCachedBranchQuotes();
+  assert.equal(getBranchQueryState(slug).quote, null);
+  assert.deepEqual(state.exchangeRatesBySlug.green, { preserved: true });
+});
+
+test('a failed manual request cannot erase a newer quote obtained by a concurrent cache read', async t => {
+  harness(t);
+  let finish;
+  t.mock.method(globalThis, 'fetch', async url => {
+    if (url === BRANCH_CACHE_API) return Response.json(cachePayload());
+    return new Promise(resolve => { finish = resolve; });
+  });
+  const manual = queryOrangeBranch(slug);
+  await Promise.resolve();
+  await loadCachedBranchQuotes();
+  finish(Response.json(payload(slug, { quote: null, reason: 'busy', retryAfterSeconds: 2 }), { status: 202 }));
+  await manual;
+  assert.ok(getBranchQueryState(slug).quote);
+  assert.equal(getBranchQueryState(slug).loading, false);
+  assert.doesNotMatch(renderExchangeRates(row), /data-orange-query/);
+});
+
+for (const newGeneration of [false, true]) {
+  test(`a delayed manual success cannot replace a newer cached quote (${newGeneration ? 'new control' : 'same control'})`, async t => {
+    harness(t);
+    let finish;
+    const fresh = payload().quote;
+    fresh.completedAt = new Date(START + 1000).toISOString();
+    if (newGeneration) fresh.controlVersion = uuid(2);
+    t.mock.method(globalThis, 'fetch', async url => {
+      if (url === BRANCH_CACHE_API) return Response.json(cachePayload([fresh], { controlVersion: fresh.controlVersion }));
+      return new Promise(resolve => { finish = resolve; });
+    });
+    const manual = queryOrangeBranch(slug);
+    await Promise.resolve();
+    t.mock.timers.tick(1000);
+    await loadCachedBranchQuotes();
+    finish(Response.json(payload()));
+    await manual;
+    assert.equal(getBranchQueryState(slug).quote.completedAt, fresh.completedAt);
+    assert.equal(getBranchQueryState(slug).quote.controlVersion, fresh.controlVersion);
+  });
+}
 
 test('duplicate clicks share a request; cards and popups use only that branch’s rates and time', async t => {
   harness(t);

@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { BRANCH_API_SCHEMA_VERSION, BRANCH_QUOTE_TTL_MS, ORANGE_BRANCHES, isValidBranchQuote } from '../../../src/data/exchange-rates-1965-branch.js';
+import { BRANCH_API_SCHEMA_VERSION, ORANGE_BRANCHES, isValidBranchQuote } from '../../../src/data/exchange-rates-1965-branch.js';
 import { EXCHANGE_KEYS, createBreaker, isValidBreaker, isValidSnapshot } from './exchange-rates-1965-contract.mjs';
 import { ensureFetchControl, readEffectiveControl } from './exchange-rates-1965-control.mjs';
 import { breakerBlocks, nextBreakerState } from './exchange-rates-1965-breaker.mjs';
 import { autoDisable } from './exchange-rates-1965-runner.mjs';
 import { conditionalSetJSON, readEntry } from './exchange-rates-1965-storage.mjs';
 import { collectSourceQuotes } from './exchange-rates-1965-source.mjs';
+import { nextUtcHalfHour, quoteExpiryMs } from '../../../src/data/exchange-rate-timing.js';
 
 export const BRANCH_GATE_KEY = 'exchange-rates-1965/on-demand-gate';
 export const BRANCH_LEASE_MS = 15_000;
@@ -39,10 +40,10 @@ export function branchResponse(slug, nowMs, { status = 200, enabled = null, cont
 
 /** A public click can only fetch one whitelisted branch. A persistent CAS lease
  * serializes cold requests across server instances; warm cache hits bypass it.
- * @param {{store:any, slug:string, enabledDefault?:unknown, fetchImpl?:typeof fetch, nowImpl?:()=>number, randomUUIDImpl?:()=>string}} input
+ * @param {{store:any, slug:string, enabledDefault?:unknown, fetchImpl?:typeof fetch, nowImpl?:()=>number, randomUUIDImpl?:()=>string, refreshDue?:boolean, expectedControlVersion?:string}} input
  */
 export async function queryBranchRates({ store, slug, enabledDefault = process.env.EXCHANGE_RATES_1965_ENABLED,
-  fetchImpl = fetch, nowImpl = Date.now, randomUUIDImpl = randomUUID }) {
+  fetchImpl = fetch, nowImpl = Date.now, randomUUIDImpl = randomUUID, refreshDue = false, expectedControlVersion }) {
   if (!Object.hasOwn(ORANGE_BRANCHES, slug)) return branchResponse(slug, nowImpl(), { status: 400, reason: 'invalid_request' });
   /** @type {any|null} */
   let lease = null;
@@ -58,23 +59,25 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
     control = effective.control;
     if (!effective.enabled || !control) return reply('disabled', 503, nowImpl() + BRANCH_FAILURE_DELAY_MS);
     const version = control.controlVersion;
+    if (expectedControlVersion && version !== expectedControlVersion) return reply('stale_control', 503);
     const cached = await readEntry(store, branchCacheKey(slug));
     let quote = cached?.data;
     const usable = (/** @type {any} */ candidate) => isValidBranchQuote(candidate) && candidate.slug === slug &&
       candidate.controlVersion === version && Date.parse(candidate.attemptedAt) >= Date.parse(control.enabledAt) &&
       Date.parse(candidate.expiresAt) > nowImpl();
-    if (!usable(quote)) {
-      // Reuse a recent complete collector quote, but cap it at the same 5 min
-      // TTL. A singleton response never masquerades as an all-branch snapshot.
+    const reusable = (/** @type {any} */ candidate) => usable(candidate) &&
+      (!refreshDue || nowImpl() < nextUtcHalfHour(Date.parse(candidate.attemptedAt)));
+    if (!reusable(quote)) {
+      // Legacy snapshots can seed a branch, without extending their lifetime.
       const full = (await readEntry(store, EXCHANGE_KEYS.snapshot))?.data;
       const branch = full?.branches?.find((/** @type {any} */ b) => b.slug === slug);
       quote = isValidSnapshot(full) && branch?.status === 'ok' ? {
         schemaVersion: BRANCH_API_SCHEMA_VERSION, slug, controlVersion: full.controlVersion,
         attemptedAt: full.attemptedAt, completedAt: full.completedAt,
-        expiresAt: new Date(Math.min(Date.parse(full.expiresAt), Date.parse(full.attemptedAt) + BRANCH_QUOTE_TTL_MS)).toISOString(), branch,
+        expiresAt: new Date(Math.min(Date.parse(full.expiresAt), quoteExpiryMs(Date.parse(full.attemptedAt)))).toISOString(), branch,
       } : null;
     }
-    if (usable(quote)) {
+    if (reusable(quote)) {
       const latest = await readEffectiveControl(store, enabledDefault);
       if (!latest.enabled || latest.control?.controlVersion !== version) {
         control = latest.control;
@@ -107,7 +110,7 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
     if (breakerBlocks(breakerEntry?.data, version, nowImpl())) return reply('cooldown', 429, Date.parse(breakerEntry.data.blockedUntil));
     if (nowImpl() + PROFILE.deadlineMs >= gateValue.leaseUntilMs) return reply('busy', 202, nowImpl() + 2_000);
     const refreshedCache = (await readEntry(store, branchCacheKey(slug)))?.data;
-    if (usable(refreshedCache)) return branchResponse(slug, nowImpl(), { enabled: true, controlVersion: version, quote: refreshedCache });
+    if (reusable(refreshedCache)) return branchResponse(slug, nowImpl(), { enabled: true, controlVersion: version, quote: refreshedCache });
     const attemptedAtMs = nowImpl();
     const collection = await collectSourceQuotes({
       mapping: { schemaVersion: 1, branches: { [slug]: ORANGE_BRANCHES[slug] } },
@@ -143,7 +146,7 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
     const result = collection.quotes[0];
     quote = { schemaVersion: BRANCH_API_SCHEMA_VERSION, slug, controlVersion: version,
       attemptedAt: new Date(attemptedAtMs).toISOString(), completedAt: new Date(nowImpl()).toISOString(),
-      expiresAt: new Date(attemptedAtMs + BRANCH_QUOTE_TTL_MS).toISOString(),
+      expiresAt: new Date(quoteExpiryMs(attemptedAtMs)).toISOString(),
       branch: { slug, ...ORANGE_BRANCHES[slug], status: 'ok', rates: result.quote.rates },
     };
     if (!isValidBranchQuote(quote) || Date.parse(quote.expiresAt) <= nowImpl()) return reply('unavailable', 503);

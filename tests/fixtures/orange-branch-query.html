@@ -18,7 +18,7 @@
 <body>
 <main>
   <h1>Orange branch query — local mock</h1>
-  <p class="fixture-note">Local UI verification only. No real source or Notion requests. Add ?lang=en, ?fail=1 or ?delay=1500.</p>
+  <p class="fixture-note">Local mock only. First branch has a scheduled cache quote; second branch needs a manual query. Add ?lang=en, ?fail=1 or ?delay=1500.</p>
   <div id="request-count">Requests: 0</div>
   <div id="loc-list"></div>
   <section id="mock-popup" aria-label="Mock map popup"></section>
@@ -27,7 +27,8 @@
   import { state } from '/src/core/state.js';
   import { setLang } from '/src/core/i18n.js';
   import { parseCSV } from '/src/data/csv-parser.js';
-  import { ORANGE_BRANCHES, BRANCH_QUOTE_TTL_MS } from '/src/data/exchange-rates-1965-branch.js';
+  import { ORANGE_BRANCHES } from '/src/data/exchange-rates-1965-branch.js';
+  import { quoteExpiryMs } from '/src/data/exchange-rate-timing.js';
   import { initBranchQueries } from '/src/features/exchange-rates-1965-branch.js';
   import { syncExchangeControls } from '/src/features/exchange-rates.js';
   import { renderList, buildPopupContent } from '/src/ui/render.js';
@@ -39,27 +40,36 @@
   else localStorage.setItem('lang', previousLanguage);
   const rows = parseCSV(await (await fetch('/data/locations.csv')).text());
   const slug = Object.keys(ORANGE_BRANCHES)[0];
-  state.data = [{ ...rows.find(row => row.id === slug), status: 'Published' }];
-  state.visIdx = [0]; state.isLoading = false;
+  const slugs = Object.keys(ORANGE_BRANCHES).slice(0, 2);
+  state.data = slugs.map(id => ({ ...rows.find(row => row.id === id), status: 'Published' }));
+  state.visIdx = state.data.map((_row, index) => index); state.isLoading = false;
   let count = 0;
-  const nativeFetch = window.fetch;
-  window.fetch = async (url, options) => {
-    if (url !== '/api/exchange-rates-1965-branch') return nativeFetch(url, options);
-    count++;
-    document.getElementById('request-count').textContent = `Requests: ${count}`;
-    await new Promise(resolve => setTimeout(resolve, Number(query.get('delay') || 400)));
+  const controlVersion = '00000000-0000-4000-8000-000000000001';
+  const quoteFor = target => {
     const now = Date.now();
-    const fail = query.has('fail');
-    const controlVersion = '00000000-0000-4000-8000-000000000001';
-    const quote = { schemaVersion: 1, slug, controlVersion,
+    return { schemaVersion: 1, slug: target, controlVersion,
       attemptedAt: new Date(now).toISOString(), completedAt: new Date(now).toISOString(),
-      expiresAt: new Date(now + BRANCH_QUOTE_TTL_MS).toISOString(),
-      branch: { slug, ...ORANGE_BRANCHES[slug], status: 'ok', rates: {
+      expiresAt: new Date(quoteExpiryMs(now)).toISOString(),
+      branch: { slug: target, ...ORANGE_BRANCHES[target], status: 'ok', rates: {
         USD_1965: { denom: 'USD_1965', rateScaledE6: 32_770_000, displayDecimals: 2, unavailableReason: null },
         TWD_1965: { denom: 'TWD_1965', rateScaledE6: 995_000, displayDecimals: 5, unavailableReason: null },
       } },
     };
-    return Response.json({ schemaVersion: 1, slug, checkedAt: new Date(now).toISOString(), enabled: true,
+  };
+  const quotes = [quoteFor(slug)];
+  const nativeFetch = window.fetch;
+  window.fetch = async (url, options) => {
+    if (url === '/api/exchange-rates-1965-cache') return Response.json({ schemaVersion: 1,
+      checkedAt: new Date().toISOString(), enabled: true, controlVersion, quotes });
+    if (url !== '/api/exchange-rates-1965-branch') return nativeFetch(url, options);
+    const target = JSON.parse(options.body).slug;
+    count++;
+    document.getElementById('request-count').textContent = `Requests: ${count}`;
+    await new Promise(resolve => setTimeout(resolve, Number(query.get('delay') || 400)));
+    const fail = query.has('fail');
+    const quote = quoteFor(target);
+    if (!fail) quotes.push(quote);
+    return Response.json({ schemaVersion: 1, slug: target, checkedAt: new Date().toISOString(), enabled: true,
       controlVersion, quote: fail ? null : quote, reason: fail ? 'cooldown' : null, retryAfterSeconds: fail ? 5 : 0 }, { status: fail ? 429 : 200 });
   };
   const render = () => {

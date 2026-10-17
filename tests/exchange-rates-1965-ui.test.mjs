@@ -236,10 +236,10 @@ test('orange legacy rows use the shared label filter and retain their publicatio
   const rows = parseCSV(readFileSync(new URL('../data/locations.csv', import.meta.url), 'utf8'));
   const orange = rows.filter(row => getExchangeBrand(row) === 'orange');
   assert.equal(orange.length, 38);
-  assert.deepEqual(orange.filter(row => row.status === 'Published').map(row => row.id), ['superrich1965-56']);
-  assert.equal(orange.filter(row => row.status === 'Paused').length, 37);
+  assert.equal(orange.filter(row => row.status === 'Published').length, 38);
+  assert.equal(orange.filter(row => row.status === 'Paused').length, 0);
   for (const row of orange) {
-    assert.equal(row.status, row.id === 'superrich1965-56' ? 'Published' : 'Paused');
+    assert.equal(row.status, 'Published');
     assert.equal(row.type, 'Currency Exchange');
     assert.equal(row.catEn, '');
     assert.equal(isPublicLocation(row), row.status === 'Published');

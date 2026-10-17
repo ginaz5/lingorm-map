@@ -2,8 +2,10 @@
 // all-38-branches snapshot contract used by the legacy collector.
 import MAPPING from '../../data/superrich1965-branches.json' with { type: 'json' };
 import { DENOMS_1965 } from './exchange-rates-1965.js';
+import { HALF_HOUR_MS, SNAPSHOT_GRACE_MS, quoteExpiryMs } from './exchange-rate-timing.js';
 
-export const BRANCH_QUOTE_TTL_MS = 5 * 60_000;
+// Maximum lifetime; actual expiry follows the same half-hour boundary as green.
+export const BRANCH_QUOTE_TTL_MS = HALF_HOUR_MS + SNAPSHOT_GRACE_MS;
 export const BRANCH_API_SCHEMA_VERSION = 1;
 export const ORANGE_BRANCHES = /** @type {Record<string,{officialId:number,branchNo:string,companyCode:string}>} */ (MAPPING.branches);
 export const BRANCH_QUERY_REASONS = Object.freeze([
@@ -27,7 +29,7 @@ export function isValidBranchQuote(value) {
   const expected = ORANGE_BRANCHES[value.slug];
   const branch = value.branch;
   const start = Date.parse(value.attemptedAt), end = Date.parse(value.completedAt), expires = Date.parse(value.expiresAt);
-  if (end < start || expires <= end || expires > start + BRANCH_QUOTE_TTL_MS ||
+  if (end < start || expires <= end || expires > quoteExpiryMs(start) ||
       branch.slug !== value.slug || branch.officialId !== expected.officialId ||
       branch.branchNo !== expected.branchNo || branch.companyCode !== expected.companyCode ||
       branch.status !== 'ok' || !isObject(branch.rates)) return false;
@@ -68,4 +70,25 @@ export function parseBranchQueryPayload(value, slug) {
   return { schemaVersion: BRANCH_API_SCHEMA_VERSION, slug, checkedAt: value.checkedAt,
     enabled: value.enabled, controlVersion: value.controlVersion, quote,
     reason: value.reason, retryAfterSeconds: value.retryAfterSeconds };
+}
+
+/** Read-only cache envelopes may contain any subset of reviewed branches.
+ * @param {unknown} value @returns {any|null}
+ */
+export function parseBranchCachePayload(value) {
+  if (!isObject(value) || value.schemaVersion !== BRANCH_API_SCHEMA_VERSION || !isIso(value.checkedAt) ||
+      typeof value.enabled !== 'boolean' || !(value.controlVersion === null || typeof value.controlVersion === 'string') ||
+      !Array.isArray(value.quotes) || value.quotes.length > Object.keys(ORANGE_BRANCHES).length ||
+      (!value.enabled && value.quotes.length)) return null;
+  const seen = new Set();
+  const quotes = [];
+  for (const quote of value.quotes) {
+    if (!isObject(quote) || seen.has(quote.slug)) return null;
+    const parsed = parseBranchQueryPayload({ ...value, slug: quote.slug, quote, reason: null, retryAfterSeconds: 0 }, quote.slug);
+    if (!parsed) return null;
+    seen.add(quote.slug);
+    quotes.push(parsed.quote);
+  }
+  return { schemaVersion: BRANCH_API_SCHEMA_VERSION, checkedAt: value.checkedAt,
+    enabled: value.enabled, controlVersion: value.controlVersion, quotes };
 }

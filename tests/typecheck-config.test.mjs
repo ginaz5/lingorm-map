@@ -22,6 +22,8 @@ test('configures strict JavaScript type checking', async () => {
     'src/data/exchange-rates-1965-branch.js',
     'src/features/exchange-rates-1965-branch.js',
     'netlify/functions/exchange-rates-1965-branch.mjs',
+    'netlify/functions/exchange-rates-1965-cache.mjs',
+    'netlify/functions/exchange-rates-1965-refresh.mjs',
     'src/features/exchange-rates-1965.js',
     'netlify/functions/exchange-rates-1965-fetch.mjs',
     'netlify/functions/exchange-rates-1965.mjs',

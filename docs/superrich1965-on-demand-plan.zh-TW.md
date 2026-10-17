@@ -1,105 +1,73 @@
-# SuperRich 1965：卡片手動單店匯率查詢
+# SuperRich 1965：後端定時更新與單店補查
 
-日期：2026-10-17。使用者已確認：保留 main 介面，改由卡片按鈕觸發後端
-查詢單店。後續依使用者指示只將 Silom Plaza 改為 Published 並由 Notion 匯出，
-其餘 37 家仍為 Paused；不改正式環境控制旗標或部署。
+更新日期：2026-10-17。依使用者確認，全部 38 家橘標由後端慢速定時更新，
+頁面只讀共用快取；沒有有效報價時，才提供單店手動查詢。五公里佇列與批次
+進度已移除。全部 38 家分店已在 Notion 設為 Published，並由 exporter 更新快照。
 
-## 目標與目前狀態
+## 後端排程
 
-程式與 mock 測試完成；本機 Netlify dev 的真實單店查詢已取得 HTTP 200。
-正式 Netlify 雲端出口能否穩定取得橘標 JSON 仍待部署驗收。
-此方案減少整批抓取，不承諾能消除 Cloudflare challenge。請求仍從後端發出，
-使用者瀏覽器只呼叫本站 API，無需橘標官網允許跨站讀取。
+- exchange-rates-1965-fetch 每半小時派送工作，自己不抓來源。
+- exchange-rates-1965-refresh 為 Background Function，逐家呼叫既有單店查詢。
+  每家完成後隨機等待 2～5 秒，單次來源 timeout 5 秒；整輪預算 12 分鐘，
+  留在 Netlify 背景函式的 15 分鐘上限內。排程函式本身上限仍是 30 秒。
+- FETCH_MODE=background 或 netlify 使用背景更新；local／on-demand 會跳過排程。
+  EXCHANGE_RATES_1965_ENABLED 預設仍為 false，既有 control 優先。
+- 排程將隨機 bearer token 與控制版本寫入私有 background-job blob，然後
+  POST 到同部署的背景函式。Token 只在伺服器 blob 與請求 header，不回傳頁面、
+  不放 URL 或 log。背景工作先比對 token，再用 ETag 原子認領；同半小時的
+  重複排程、背景函式的重送與未授權請求不會重複抓來源。
+- 派送使用執行環境的 deploy ID 與 site name 組成同部署 permalink，Preview
+  不回退到正式站 URL；無法辨識 Preview 部署時停止派送，避免跨部署寫入。
+- 每店成功各自寫入 branches/{slug}，不偽裝成完整 38 店 snapshot。失敗不
+  覆蓋舊報價；遇普通失敗的共用冷卻、busy、challenge、停用或控制版本變更，
+  立即停止，留下已取得的有效快取。下輪排程或單店人工補查再處理缺漏。
+- 原本單店 gate 與 breaker 仍共用；不透過新的背景工作繞過封鎖或停用。
+  舊完整 snapshot API／CLI 契約保留，前端改讀新的逐店快取 API。
 
-| 工作 | 實作結果 |
-| --- | --- |
-| 卡片／popup 手動按鈕、載入／失敗／冷卻文案 | 完成，中英文共用同分店狀態；capture delegation 避免點擊觸發父卡片 |
-| 固定分店、單次來源請求 | 完成，只收 mapping 的 Slug；5 秒 timeout，不重試、不抓 inventory |
-| 跨訪客快取 | 完成，每店獨立 Blobs key，從 attemptedAt 起最多 5 分鐘；僅完整 USD／TWD 入快取 |
-| 重複請求與跨店節流 | 完成，15 秒 ETag lease；已有查詢回 busy，不另發來源請求；完成後至少間隔 1.5 秒 |
-| 冷卻及停用 | 完成，普通失敗等待 60 秒；403／429／challenge 共用原 breaker；控制版本競態不回舊報價 |
-| 到期與排序 | 完成，到期只撤報價、不自動查詢；只比較有有效報價的分店 |
-| 發布分店 | 已依使用者指示發布 Silom Plaza，其餘維持 Paused |
-| 正式部署／雲端來源穩定性 | 未執行 |
+## 有效期與快取
 
-## 請求與回應契約
+綠標與橘標單店快取共用 src/data/exchange-rate-timing.js 的到期公式：
+查詢開始時間之後的下一個 UTC 整點／半點，加 35 分鐘。實際有效期約
+35～65 分鐘，不是固定 30 分鐘。例如 10:10 抓取，下個邊界 10:30，
+到期為 11:05。讀快取不延長 attemptedAt 或 expiresAt。
 
-`POST /api/exchange-rates-1965-branch`
+後端每半小時刷新已到更新邊界的分店，即使舊報價仍在寬限期內也可更新；
+尚未到更新時間的快取直接重用。這區分「應更新」和「已失效」，避免因為
+保留舊報價而跳過下一輪。更新失敗時，舊報價繼續保留到原到期時間。
 
-```json
-{"slug":"superrich1965-56"}
-```
+## 頁面與 API
 
-只接受 `application/json`、一個 Slug 欄位；拒絕未知分店、額外 URL／branchNo、
-超大或無效 body，以及帶跨站 Origin 的請求。後端由 mapping 取得 A04／branchNo。
+GET /api/exchange-rates-1965-cache 是唯讀端點，只讀 control 和逐店快取，
+不初始化控制、不寫 Blobs、不抓來源。前後核對控制版本，只回傳有效且
+身份完整的 USD／TWD 報價，不回傳工作 token 或來源診斷。回應 no-store。
 
-固定回應欄位：`schemaVersion`、`checkedAt`、`slug`、`enabled`、
-`controlVersion`、`quote`、`reason`、`retryAfterSeconds`。`quote` 包含身份、
-`attemptedAt`／`completedAt`／`expiresAt` 與 USD_1965／TWD_1965。
-只回正規化報價，不回來源 HTML、header 診斷、token 或完整原始 JSON。
+頁面初始化與每 60 秒讀此快取；背景／離線時停止新增讀取，恢復時只讀快取。
+不顯示 38 店進度。有報價的卡片顯示數字與更新時間，缺少有效報價的卡片
+保留「查詢此分店匯率」，按鈕只 POST 一家到原有單店 API。到期後恢復按鈕，
+但不自動觸發來源查詢。列表與 Google／HERE popup 共用狀態。
 
-- 200：有效單店報價，來源可為共用快取或單次抓取。
-- 202：已有冷查詢或寫入競爭；不發第二次來源請求，稍後手動重試。
-- 429：共用節流或 breaker 冷卻。
-- 503：服務 disabled、來源失敗、控制版本變動或 storage 不可用。
-- 400／405：輸入或方法不符。
+POST /api/exchange-rates-1965-branch 僅接受一個 mapping Slug，拒絕其他 URL、
+branchNo、額外欄位、跨站 Origin 或過大 body。200 回有效單店報價，202 表示
+其他查詢處理中，429 表示冷卻，503 表示停用、來源或 storage 不可用。
+有效快取優先；本機請求去重，後端保留原本跨訪客快取與 ETag lease。
 
-全部 `no-store`；202／429 與可預期的暫停附 `Retry-After`。
-這是應用層快取，不透過 CDN 快取 POST。
+服務停用不刪除快取，但 API 不再提供報價；頁面觀察到停用／新版本時撤下
+舊數字。暫時的快取讀取錯誤保留已載入報價至原到期時間，不延長有效期。
 
-## 快取、鎖與控制
+## 驗證與部署邊界
 
-- Store 沿用橘標 `exchange-rates-1965`，production 用 site store，其他 context
-  用 deploy store；共用原本 control／breaker，不另開可繞過停用的開關。
-- 單店快取：`exchange-rates-1965/branches/{slug}`。有新鮮的整批 snapshot 時
-  也可取該店，但有效時間同樣不超過 attemptedAt 後 5 分鐘。
-- 全域 gate：`exchange-rates-1965/on-demand-gate`。以 `onlyIfNew`／
-  `onlyIfMatch` 爭取 lease；持有者完成時只用自己的 ETag 釋放。程序中斷後
-  lease 可於 15 秒後重新取得，不刪除其他執行者的鎖。
-- 快取命中先後核對 controlVersion；來源前再核對 control／breaker，來源後
-  和快取寫入後再核對 control。舊控制版本的快取即使保留在 Blobs，也不可服務。
-- 單店成功不重設原整批 breaker 的 blockLevel；失敗用 ETag 更新 shared breaker，
-  第三次 challenge 的自動停用也沿用控制版本保護。
-- Netlify Dev 若缺少既有 ETag，僅在 `NETLIFY_DEV=true` 使用 worker 內序列化
-  與資料重讀比較；這不是跨程序的分散式 CAS。部署環境缺少 ETag 仍不可覆寫。
-- 前端每店去重、校驗完整身份、限制 TTL，並以伺服器 checkedAt 的時間差推算
-  本機到期。網路傳輸只會縮短有效時間，不能延長。更新任一卡片的控制版本時
-  清除其他卡片舊版本報價，較舊的延遲回應不能復活新停用前的資料。
-- 既有瀏覽器報價最多保留到原 TTL（5 分鐘）；不宣稱管理者停用後所有離線
-  瀏覽器立即同步。下一次手動請求核對到 disabled 時，立即撤下其他手動報價。
+Node 測試使用 fake fetch／clock／store；覆蓋 38 店順序、隨機等待、重複派送、
+token 驗證、快取重用、半小時刷新、到期、失敗保留、控制競態與唯讀 API。
 
-## 舊整批管線與切換
+本機 UI fixture：/tests/fixtures/orange-branch-query.html。第一店模擬已有背景
+快取、第二店無報價；後者可單獨手動查詢。lang=en 測英文、fail=1 測冷卻、
+delay=1500 測載入和重複點擊。全部攔截在記憶體，不碰真實來源或正式 Blobs。
 
-前端 main 不再初始化橘標整批輪詢，綠標輪詢不變。舊完整 snapshot API、
-CLI 與資料契約保留，不把單店資料偽裝成完整 38 店快照。
+本次不修改正式環境變數、control 或部署。Deploy Preview 仍須驗證背景函式
+派送、實際雲端來源可用性與跨訪客快取；本機 mock 通過不代表來源封鎖已解除。
+Netlify dev 不自動觸發半小時排程，不能因為開了本機頁面就宣稱排程已運作。
 
-未來部署本方案時設 `EXCHANGE_RATES_1965_FETCH_MODE=on-demand`，讓橘標
-Scheduled Function 在開啟 store 前正常略過。`local` 仍適用外部 CLI，
-`netlify` 仍為未設定時的相容預設。`FETCH_MODE` 不取代公開 control，
-本次不寫正式 control、不修改環境變數、不安裝排程。
-
-先確認功能／來源可用，再由使用者另外決定分店發布和服務啟用。
-保持 Paused 時，正式地圖不會出現橘標卡片，即使程式已支援查詢。
-
-## 驗證方式
-
-Node 測試使用 fake fetch／clock／store，不打真實來源、不寫正式 Blobs。
-覆蓋單店身份／面額、跨訪客快取、過期、並行 lease、跨店冷卻、challenge、
-失敗不重試、控制版本競態、資料隔離與雙 provider popup 更新。
-
-本機 UI mock：`/tests/fixtures/orange-branch-query.html`，可加 `?lang=en`、
-`?fail=1`、`?delay=1500`。只在記憶體模擬一筆 Published，不改快照。
-
-真實驗收待辦：Deploy Preview 中核對預設 disabled、on-demand 排程零來源
-請求，人工啟用測試控制後查一家，確認 API／卡片／第二位訪客快取，再檢查
-5 分鐘到期。遇 challenge 依冷卻停止，不反覆點擊或宣稱來源已修復。
-
-
-本輪結果：`npm run typecheck`、`npm test`（621 pass／0 fail）、
-`npm run build`、`netlify functions:build --src netlify/functions` 通過。
-Snapshot 236 筆、98 個收藏 ID、1 Published／37 Paused 橘標 mapping 驗證通過。
-實際 Netlify dev 真實查詢、獨立請求快取、5 分鐘自然到期、手機 popup 再次
-手動查詢均通過，並修正 Netlify Dev 缺少 ETag 的本機寫入相容性。
-全庫 Notion 檢核另有 38 個既有 Review Needed/status 問題，未更動無關資料。
-詳見[完整本機實測報告](superrich1965-single-branch-test-2026-10-17.zh-TW.md)。
-未啟用正式控制、未 commit／push／部署；雲端來源與 Google SDK 人工驗收仍待辦。
+原本五分鐘單店真實驗收是歷史紀錄，見
+[2026-10-17 單店報告](superrich1965-single-branch-test-2026-10-17.zh-TW.md)。
+Netlify 限制見 [函式設定](https://docs.netlify.com/build/functions/configuration/?fn-language=js)
+與 [背景函式](https://docs.netlify.com/build/functions/background-functions/)。

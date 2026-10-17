@@ -297,11 +297,11 @@ export function isValidLastAttempt(value) {
  * switch: `local` stops the Scheduled Function from calling the source while
  * `/api/exchange-rates-1965` keeps serving a valid snapshot.
  */
-export const FETCH_MODES = Object.freeze(['netlify', 'local', 'on-demand']);
+export const FETCH_MODES = Object.freeze(['netlify', 'local', 'on-demand', 'background']);
 
-/** @param {unknown} value @returns {'netlify'|'local'|'on-demand'} */
+/** @param {unknown} value @returns {'netlify'|'local'|'on-demand'|'background'} */
 export function resolveFetchMode(value) {
   if (value === undefined || value === null || value === '') return 'netlify';
-  if (value === 'netlify' || value === 'local' || value === 'on-demand') return value;
-  throw new Error('EXCHANGE_RATES_1965_FETCH_MODE must be netlify or local or on-demand.');
+  if (value === 'netlify' || value === 'local' || value === 'on-demand' || value === 'background') return value;
+  throw new Error('EXCHANGE_RATES_1965_FETCH_MODE must be netlify or local or on-demand or background.');
 }
