@@ -1,0 +1,158 @@
+{
+  "date": "2026-10-17",
+  "environment": "netlify-dev; local isolated Blobs, real upstream",
+  "slug": "superrich1965-56",
+  "notionPage": "https://app.notion.com/p/3d7c23158ea281978384cf4504796bcc",
+  "publication": {
+    "before": "Paused",
+    "after": "Published",
+    "otherOrangePaused": 37,
+    "csvChanges": "only Verification Status of this row"
+  },
+  "firstQuery": {
+    "httpStatus": 200,
+    "serverDurationMs": 1468,
+    "sourceRequestCount": 1,
+    "quote": {
+      "schemaVersion": 1,
+      "slug": "superrich1965-56",
+      "controlVersion": "7b379819-9d8c-49af-80a6-e312cc6c53a9",
+      "attemptedAt": "2026-10-17T07:45:40.586Z",
+      "completedAt": "2026-10-17T07:45:41.910Z",
+      "expiresAt": "2026-10-17T07:50:40.586Z",
+      "branch": {
+        "slug": "superrich1965-56",
+        "officialId": 56,
+        "branchNo": "00",
+        "companyCode": "A04",
+        "status": "ok",
+        "rates": {
+          "USD_1965": {
+            "denom": "USD_1965",
+            "rateScaledE6": 33330000,
+            "displayDecimals": 2,
+            "unavailableReason": null
+          },
+          "TWD_1965": {
+            "denom": "TWD_1965",
+            "rateScaledE6": 1020000,
+            "displayDecimals": 3,
+            "unavailableReason": null
+          }
+        }
+      }
+    }
+  },
+  "secondIndependentRequest": {
+    "httpStatus": 200,
+    "sameCachedQuote": true,
+    "attemptedAtUnchanged": true
+  },
+  "httpRejections": [
+    {
+      "name": "GET rejected",
+      "status": 405,
+      "reason": "method_not_allowed"
+    },
+    {
+      "name": "Unknown branch rejected",
+      "status": 400,
+      "reason": "invalid_request"
+    },
+    {
+      "name": "Cross-origin rejected",
+      "status": 400,
+      "reason": "invalid_request"
+    }
+  ],
+  "automated": {
+    "typecheck": "pass",
+    "tests": 621,
+    "fail": 0,
+    "viteBuild": "pass",
+    "functionsBuild": "pass",
+    "snapshotRows": 236,
+    "publishedRows": 174,
+    "protectedFavoriteIds": 98
+  },
+  "liveDataValidation": {
+    "schema": "20/20 PASS",
+    "snapshot": "236/236 PASS; no differences",
+    "invariants": "FAIL",
+    "queueStatusIssues": 38,
+    "typeWarnings": 38,
+    "details": "37 other orange Paused rows and baiwago-plus-cafe-kmc have Review Needed=false; all 38 orange rows have legacy empty Type. Unrelated data untouched."
+  },
+  "browser": {
+    "provider": "HERE",
+    "realQuoteOnListAndPopup": true,
+    "bilingual": true,
+    "sortOnlyQueriedBranches": true,
+    "widthsWithoutHorizontalOverflow": [
+      320,
+      390
+    ],
+    "googleSdkManualTest": "not run; Google browser key absent; automated provider regression tests pass",
+    "screenshots": "capture unavailable"
+  },
+  "pending": [
+    "Netlify cloud Deploy Preview and production-source verification",
+    "Google Maps SDK manual verification: no browser key configured",
+    "38 pre-existing Review Needed/status inconsistencies in unrelated rows"
+  ],
+  "productionChanged": false,
+  "committed": false,
+  "pushed": false,
+  "deployed": false,
+  "fiveMinuteExpiry": {
+    "verifiedWithRealTime": true,
+    "oldRatesRemovedFromListAndHerePopup": true,
+    "oldBestBadgeRemoved": true,
+    "sortHidden": true,
+    "buttonReenabled": true,
+    "noAutomaticQuery": true,
+    "expiredAt": "2026-10-17T07:50:40.586Z"
+  },
+  "manualRefresh": {
+    "httpStatus": 200,
+    "serverDurationMs": 3943,
+    "sourceRequestCount": 1,
+    "newAttemptedAt": "2026-10-17T07:52:46.442Z",
+    "quote": {
+      "schemaVersion": 1,
+      "slug": "superrich1965-56",
+      "controlVersion": "7b379819-9d8c-49af-80a6-e312cc6c53a9",
+      "attemptedAt": "2026-10-17T07:52:46.442Z",
+      "completedAt": "2026-10-17T07:52:50.203Z",
+      "expiresAt": "2026-10-17T07:57:46.442Z",
+      "branch": {
+        "slug": "superrich1965-56",
+        "officialId": 56,
+        "branchNo": "00",
+        "companyCode": "A04",
+        "status": "ok",
+        "rates": {
+          "USD_1965": {
+            "denom": "USD_1965",
+            "rateScaledE6": 33330000,
+            "displayDecimals": 2,
+            "unavailableReason": null
+          },
+          "TWD_1965": {
+            "denom": "TWD_1965",
+            "rateScaledE6": 1020000,
+            "displayDecimals": 3,
+            "unavailableReason": null
+          }
+        }
+      }
+    }
+  },
+  "localCompatibilityFix": {
+    "initialRefreshResponse": 202,
+    "sourceRequestCountForFailedLease": 0,
+    "cause": "Netlify Dev existing blobs may have no ETag; old onlyIfNew fallback could not reacquire lease",
+    "fix": "NETLIFY_DEV-only serialized compare-before-write; deployed ETag CAS remains fail closed",
+    "regressionTests": 2
+  }
+}

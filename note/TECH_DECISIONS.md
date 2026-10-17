@@ -368,3 +368,23 @@ mapping validator 同時接受這兩種表示。所有 `Paused` 狀態與收藏 
 橘標服務預設 disabled，`EXCHANGE_RATES_1965_FETCH_MODE=local` 時雲端排程
 不打來源，由既有本機 CLI 明確發布快照；未設定 FETCH_MODE 的相容預設仍為
 `netlify`，但抓取仍受 disabled/control/breaker 限制。本次未更動線上設定。
+
+
+### 2026-10-17：橘標改採單店手動查詢
+
+使用者確認改為卡片按鈕觸發本站後端單店查詢。新增
+`POST /api/exchange-rates-1965-branch`，只接受正式 mapping 的 Slug，由後端
+轉換 branchNo／companyCode；前端不直接跨站抓來源。完整契約見
+[單店按需查詢計畫](../docs/superrich1965-on-demand-plan.zh-TW.md)。
+
+單店報價使用獨立 Blobs key 與最多 5 分鐘 TTL，不放寬原本完整 38 店 snapshot
+驗證。跨 Function 的強一致 ETag lease 控制冷查詢併發；快取命中可直接回傳，
+冷請求期間其他訪客取得 busy 與 Retry-After，避免重複來源請求。
+單店成功不重設整批 breaker 的升級歷史，失敗與 challenge 則更新同一 breaker。
+新的 `FETCH_MODE=on-demand` 可停掉整批排程；既有 local／netlify 相容行為保留。
+
+前端只在使用者點擊後 POST，不因渲染、切換分頁或到期自動抓來源。到期計時
+僅撤下數字並恢復按鈕，查詢狀態與報價在列表及兩種 provider 的 popup 共用。
+排序只比較有效報價，不宣稱為完整分店排名。服務停用後，已載入的有效報價
+可保留到原 5 分鐘 TTL；下一次查詢觀察到新 controlVersion 會一併撤下其他
+卡片的舊版本報價。本次未發布分店、未切換正式環境、未部署。

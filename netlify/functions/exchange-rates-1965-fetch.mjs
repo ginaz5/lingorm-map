@@ -13,7 +13,7 @@ export function logExchangeRateFetchResult(result, logger = {}) {
   const message = JSON.stringify({ event: 'exchange_rates_1965_fetch', ...result });
   const isComplete = result.status === 'published' && result.sourceOutcome === 'complete';
   const isDisabled = result.status === 'disabled';
-  const isExternalFetcher = result.status === 'skipped' && result.reason === 'external_fetcher';
+  const isExternalFetcher = result.status === 'skipped' && ['external_fetcher', 'on_demand'].includes(result.reason);
   if (isComplete || isDisabled || isExternalFetcher) (logger.info ?? console.log)(message);
   else (logger.error ?? console.error)(message);
 }
@@ -44,12 +44,12 @@ export default async function exchangeRatesFetch(request, context) {
   const functionStartedAtMs = Date.now();
   const { mode, valid } = resolveScheduledFetchMode();
   if (!valid) return;
-  if (mode === 'local') {
+  if (mode === 'local' || mode === 'on-demand') {
     // Return before creating the store: no control read, no breaker or
     // snapshot write, and no source request from the cloud.
     logExchangeRateFetchResult({
       status: 'skipped',
-      reason: 'external_fetcher',
+      reason: mode === 'on-demand' ? 'on_demand' : 'external_fetcher',
       fetchMode: mode,
       sourceRequestCount: 0,
     });

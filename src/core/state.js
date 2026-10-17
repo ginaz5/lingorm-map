@@ -41,6 +41,9 @@
  * @property {boolean} exchangeUpdateCheckPending
  * @property {boolean} exchangeRatesLoading
  * @property {{ratesBySlug:Record<string,any>,runId:string|null,controlVersion:string|null,enabled:boolean|null,completedAt:string|null,nextUpdateAtMs:number|null,expiresAtMs:number|null,retryLevel:number,lastAttemptAtMs:number|null,updateCheckPending:boolean,ratesLoading:boolean,hasUsableSnapshot:boolean}} exchange1965
+ * @property {Record<string,import('../features/exchange-rates-1965-branch.js').BranchQueryState>} exchange1965Branches
+ * @property {number} exchange1965BranchObservedAtMs
+ * @property {string|null} exchange1965BranchControlVersion
  * @property {boolean} exchangeHasUsableSnapshot
  */
 
@@ -108,6 +111,9 @@ export const state = {
   exchangeUpdateCheckPending: false,
   exchangeRatesLoading: false,
   exchangeHasUsableSnapshot: false,
+  exchange1965Branches: {},
+  exchange1965BranchControlVersion: null,
+  exchange1965BranchObservedAtMs: 0,
   exchange1965: {
     ratesBySlug: {},
     runId: null,

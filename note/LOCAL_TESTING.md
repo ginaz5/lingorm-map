@@ -384,17 +384,26 @@ http://localhost:8888/api/config
 ## 橘標整合與維運
 
 2026-10-17：橘標程式接入 main 的「換匯」標籤與現有排序選單，不新增獨立
-換匯開關。38 家橘標分店在正式快照中維持 `Paused`，不會出現在公開清單、
-收藏結果、目的地計數或地圖。本次不更動 Notion、CSV 或正式環境控制旗標。
+換匯開關。後續依使用者指示發布 Silom Plaza（`superrich1965-56`）作為試點，
+其餘 37 家維持 Paused。Notion 只改該筆 Status，再經 exporter 更新 CSV；
+未更動正式環境匯率控制旗標或部署。
 
-- 橘標使用 `/api/exchange-rates-1965`，獨立 state、control、breaker 與 snapshot。
+- 橘標卡片手動 POST `/api/exchange-rates-1965-branch`，只傳入已核對的 Slug。
+  前端不再啟動橘標整批輪詢；舊 `/api/exchange-rates-1965` 仍供 collector 快照使用。
+- 單店有效報價共用快取最多 5 分鐘，到期重新開放手動查詢；來源不會自動重試。
+  同一時間只允許一個冷查詢；來源請求結束後間隔至少 1.5 秒，普通失敗冷卻 60 秒。
+  403／429／challenge 沿用共用 breaker 6h→24h→第三次停用。
 - 卡片／popup 固定兩列：USD 100＋50、TWD 1,000–100。報價到期時清除數字與
-  最佳標記，保留綠標報價；恢復新快照後重新顯示。
+  最佳標記，保留綠標報價；再次手動取得新報價後重新顯示。橘標排序只比較有效的已查詢分店。
 - Google 與 HERE 的橘標單店／純橘標群聚為橘色；跨品牌／一般地點混合群聚
   使用原本樣式。保留 main 的手機 popup 置中與 filter sheet。
 - `EXCHANGE_RATES_1965_ENABLED` 預設未設定／false，既有 runtime control 優先。
-- `EXCHANGE_RATES_1965_FETCH_MODE=local` 讓 Scheduled Function 跳過來源抓取，
-  API 照常讀有效快照。未設定時相容預設為 `netlify`；不代表服務已 enabled。
+- 採本次手動方案時，部署設定使用 `EXCHANGE_RATES_1965_FETCH_MODE=on-demand`，
+  Scheduled Function 會在開啟 store 前正常略過；只有卡片點擊才可能抓單店。
+  `local` 模式仍供外部 CLI 使用，`netlify` 是舊整批排程；未設定仍相容預設 netlify。
+  此設定不會自動啟用 control；也不會發布 Paused 分店。
+- 正式停用控制最遲會在瀏覽器既有單店報價到期（5 分鐘）時撤下數字；下一次
+  手動查詢會立刻核對控制版本。單店快取不寫入或覆蓋原本 38 店 snapshot。
 
 程式驗證（不打真實來源、不寫正式資料）：
 
@@ -412,3 +421,17 @@ node scripts/validate-superrich1965-mapping.mjs data/superrich1965-branches.json
 control、抓取方式與來源可用性。不要以手改 CSV 或本次 merge 代替發布。
 本機 collector 的 probe、dry-run、publish 都會打真實來源，詳細操作與冷卻規則見
 [本機抓取計畫](../docs/superrich1965-local-fetch-plan.zh-TW.md)。
+
+
+### 橘標手動查詢本機驗收
+
+完整契約、快取／鎖定與切換條件見
+[單店按需查詢計畫](../docs/superrich1965-on-demand-plan.zh-TW.md)。
+在本機 Vite 開啟 `/tests/fixtures/orange-branch-query.html` 可測中英文卡片與
+popup 的手動查詢；`?lang=en` 測英文、`?fail=1` 測 429 冷卻、`?delay=1500`
+測重複點擊。此頁只在記憶體將一筆分店設為 Published，攔截查詢回傳 mock，
+不呼叫真實來源、不改正式 CSV。320px 下應無水平溢出；請求前為 0，點擊後
+卡片與 popup 同時更新而 Requests 只有 1。
+
+API 真實整合測試需使用 `netlify dev`，且會受橘標 control 與來源封鎖限制。
+不要為了測試而在正式站啟用控制旗標或解除 breaker。

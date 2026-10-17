@@ -8,6 +8,7 @@ import {
   isSupportedLocation,
 } from '../features/exchange-rates.js';
 import { DENOMS } from '../data/exchange-rates.js';
+import { getBranchQueryState } from '../features/exchange-rates-1965-branch.js';
 import { DENOMS_1965 } from '../data/exchange-rates-1965.js';
 import { getExchangeRateCell1965 } from '../features/exchange-rates-1965.js';
 import {
@@ -180,7 +181,11 @@ export function renderExchangeRates(row) {
   const brand = getExchangeBrand(row);
   if (!brand) return '';
   const orange = brand === 'orange';
-  const brandState = orange ? state.exchange1965 : {
+  const queried = orange ? getBranchQueryState(row.id) : undefined;
+  const brandState = orange ? (queried ? {
+    enabled: !!queried.quote, completedAt: queried.quote?.completedAt ?? null,
+    ratesLoading: queried.loading, hasUsableSnapshot: !!queried.quote,
+  } : state.exchange1965) : {
     enabled: state.exchangeRatesEnabled,
     completedAt: state.exchangeCompletedAt,
     ratesLoading: state.exchangeRatesLoading,
@@ -215,8 +220,27 @@ export function renderExchangeRates(row) {
       <span class="fx-disclaimer">${t(orange ? 'fx_disclaimer_1965' : 'fx_disclaimer')}</span>
       <a href="${OFFICIAL_EXCHANGE_URLS[brand]}" target="_blank" rel="noopener" aria-label="${t(orange ? 'fx_source_note_1965' : 'fx_source_note')}" onclick="event.stopPropagation()">${t(orange ? 'fx_source_note_1965' : 'fx_source_note')}</a>
     </div>
+    ${orange ? renderBranchQuery(row.id) : ''}
     <div class="fx-branch-hint">${t('fx_branch_hint', escapeAttribute(row.nameEn))}</div>
   </section>`;
+}
+
+/** @param {string} slug */
+function renderBranchQuery(slug) {
+  const entry = getBranchQueryState(slug);
+  const waiting = (entry?.retryAtMs ?? 0) > Date.now();
+  const disabled = entry?.loading || waiting || !!entry?.quote;
+  const label = entry?.loading ? 'fx_query_loading' : entry?.quote ? 'fx_query_cached' : 'fx_query';
+  const message = entry?.reason === 'disabled' ? 'fx_query_disabled' :
+    entry?.reason === 'busy' ? 'fx_query_busy' : waiting ? 'fx_query_wait' :
+    entry?.reason ? 'fx_query_failed' : 'fx_query_hint';
+  const retryHint = waiting && entry?.retryAtMs
+    ? t('fx_query_retry_at', formatExchangeCheckedAt(new Date(entry.retryAtMs).toISOString())) : '';
+  return `<div class="fx-query">
+    <button type="button" class="fx-query-btn" data-orange-query="${escapeAttribute(slug)}"${disabled ? ' disabled' : ''}>${t(label)}</button>
+    <span class="fx-query-status" role="status">${t(message)}${retryHint ? ` ${retryHint}` : ''}</span>
+    <span class="fx-query-scope">${t('fx_query_sort_scope')}</span>
+  </div>`;
 }
 
 /**

@@ -173,7 +173,7 @@ function unavailableReason(result) {
 
 /** Fetch only the reviewed fixed mapping. No live inventory or automatic identity matching. */
 /**
- * @param {{mapping:any, fetchImpl?:typeof fetch, nowImpl?:()=>number, sleepImpl?:(ms:number)=>Promise<void>, functionStartedAtMs?:number, sourceDeadlineMs?:number, requestTimeoutMs?:number, profile?:SourceProfile|'netlify'|'local'}} input
+ * @param {{mapping:any, fetchImpl?:typeof fetch, nowImpl?:()=>number, sleepImpl?:(ms:number)=>Promise<void>, functionStartedAtMs?:number, sourceDeadlineMs?:number, requestTimeoutMs?:number, profile?:SourceProfile|'netlify'|'local', allowRetry?:boolean}} input
  */
 export async function collectSourceQuotes({
   mapping,
@@ -184,6 +184,7 @@ export async function collectSourceQuotes({
   sourceDeadlineMs,
   requestTimeoutMs,
   profile: requestedProfile = NETLIFY_SOURCE_PROFILE,
+  allowRetry = true,
 }) {
   const profile = resolveSourceProfile(requestedProfile, {
     ...(sourceDeadlineMs === undefined ? {} : { sourceDeadlineMs }),
@@ -216,7 +217,7 @@ export async function collectSourceQuotes({
     };
     await Promise.all(Array.from({ length: Math.min(profile.concurrency, targets.length) }, worker));
 
-    if (!blockedResult && !retryUsed && branchResults.size === targets.length) {
+    if (allowRetry && !blockedResult && !retryUsed && branchResults.size === targets.length) {
       const candidate = targets.find(branch => branchResults.get(branch.officialId)?.kind === 'retryable');
       if (candidate !== undefined) {
         const first = branchResults.get(candidate.officialId);

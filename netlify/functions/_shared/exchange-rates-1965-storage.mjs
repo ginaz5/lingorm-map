@@ -30,8 +30,26 @@ export async function readEntry(store, key) {
   return store.getWithMetadata(key, { type: 'json', consistency: 'strong' });
 }
 
+// Netlify Dev can omit ETags for existing local blobs. Serialize that local
+// fallback within the Function worker and compare the data again before writing.
+// Deployed runtimes never use it: absent ETags must still fail closed there.
+let localWrites = Promise.resolve();
+
 /** @param {any} store @param {string} key @param {unknown} value @param {any|null} previousEntry */
 export async function conditionalSetJSON(store, key, value, previousEntry) {
-  const options = previousEntry?.etag ? { onlyIfMatch: previousEntry.etag } : { onlyIfNew: true };
-  return store.setJSON(key, value, options);
+  if (previousEntry?.etag) return store.setJSON(key, value, { onlyIfMatch: previousEntry.etag });
+  if (previousEntry && process.env.NETLIFY_DEV === 'true') {
+    const write = localWrites.then(async () => {
+      const current = await readEntry(store, key);
+      if (!current || JSON.stringify(current.data) !== JSON.stringify(previousEntry.data)) {
+        return { modified: false, etag: current?.etag };
+      }
+      return current.etag
+        ? store.setJSON(key, value, { onlyIfMatch: current.etag })
+        : store.setJSON(key, value);
+    });
+    localWrites = write.then(() => {}, () => {});
+    return write;
+  }
+  return store.setJSON(key, value, { onlyIfNew: true });
 }

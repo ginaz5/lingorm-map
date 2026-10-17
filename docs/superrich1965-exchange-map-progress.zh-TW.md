@@ -2,8 +2,10 @@
 
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-09-09
-> - 最後更新：2026-09-25
-> - 目前里程碑：**M1、M2 與 M3～M5 本機實作已完成；M4 曾於 9 月 11 日完成發布測試**。目前提交的 CSV 快照已將 38 筆橘標分店改回 `Paused`；M3 部署首輪、重新發布及 Google Maps 驗收待辦
+> - 最後更新：2026-10-17
+> - 手動單店試點：Silom Plaza 已 Published，本機真實查詢成功；其餘 37 家 Paused。
+> - 最新驗證見[單店實測紀錄](superrich1965-single-branch-test-2026-10-17.zh-TW.md)；尚未部署或驗證正式雲端出口。
+> - 目前里程碑：M1～M6 程式完成；10 月 17 日完成單店發布與真實本機循環驗收，雲端部署與 Google SDK 人工驗收待辦。下列里程碑保留歷史驗證。
 > - 規格依據：[SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫](superrich1965-exchange-map-plan.zh-TW.md)
 > - 審閱歷程：[審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)
 
@@ -33,38 +35,16 @@
 
 ## M1 · Phase A0 — POST 可行性驗證
 
-**完成條件**（計畫 §2.1、§6 A0）：本機及 Netlify Deploy Preview 的 `POST /spr/front/exchange-rate/get` 回傳 `200 / SUCCESS`，解析出可用的 USD／TWD，並保存請求與回應紀錄。
+**狀態：完成（2026-09-10）。** 本機與 Netlify Preview 都曾取得 `POST /spr/front/exchange-rate/get` 的 `200 / SUCCESS` 與可解析 USD／TWD。
+完整五筆上游結果、請求設定、Ray ID 與 probe 摘要見 [A0 實測證據](evidence/superrich1965-a0-2026-09-10.json)。
 
-**狀態：已通過並完成本機收尾（2026-09-10）。** 本機與 Netlify 均有成功紀錄；後續 A1 分組核對也已完成（見下節）。正式排程穩定性屬 Phase C 驗收範圍。
-
-**驗證：** 以下為使用者貼出的輸出，時間取自終端機提示（台北），僅作近似時間。請求設定、Ray ID、狀態、解析結果與原樣 probe JSON 見 [A0 實測紀錄](evidence/superrich1965-a0-2026-09-10.json)；來源 body 只有 probe 截取的片段，沒有完整封包存檔。收尾時未重新請求來源。
-
-| # | 時間 | 環境 | 請求 | 結果 |
-| --- | --- | --- | --- | --- |
-| 1 | 09-10 07:23 | Netlify Preview #7 | `POST exchange-rate/get` | 403 HTML，含 `Just a moment...`；舊版未記錄 `cf-mitigated` |
-| 2 | 09-10 08:03 | 使用者本機 | `POST exchange-rate/get` | 200、契約通過，USD 32.77／TWD 0.995 |
-| 3 | 09-10 08:14 | Netlify Preview #7 | `GET branches?page=1&limit=5` | 403，`cf-mitigated: challenge` |
-| 4 | 09-10 08:14 | Netlify Preview #7 | `POST exchange-rate/branch-list` | 200、契約通過，39 筆 |
-| 5 | 09-10 08:14 | Netlify Preview #7 | `POST exchange-rate/get` | 200、契約通過，USD 32.77／TWD 0.995 |
-
-第 3–5 筆是同一矩陣依序執行的請求。新舊 probe 的匯率 URL、method、body 與明訂 headers 相同；矩陣新增了前置請求與間隔。部署版本、實際出口 IP、連線與來源規則未獨立核實，因此這組結果只證明匯率 POST 在 Netlify 有成功案例。不能據此把先前 403 歸因於資料中心 IP、GET／POST 方法、某條端點規則或即時風險評分，也不能估計失敗頻率。
-
-第 3 筆可由 `cf-mitigated: challenge` 確認為 Challenge Page；這個 header 不區分具體挑戰類型。缺少 `Retry-After` 也不能排除限流。參考 [Cloudflare 挑戰辨識](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/challenge-pages/detect-response/) 與 [觸發來源](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/challenge-pages/)。
-
-Ray ID 後綴 `BOS`／`CMH` 是 Cloudflare 資料中心代碼，不能據此確認使用者位置、住宅網路或兩次請求使用相同出口 IP。參考 [Cloudflare Cf-Ray 說明](https://developers.cloudflare.com/fundamentals/reference/http-headers/#cf-ray)。
-
-第 2、5 筆的 `sourceUpdatedAtMs` 都是 `1788951064201`，報價也相同；報價時間、快取時間與批次回應時間仍無法區分。沿用計畫 §2／§7.2：卡片先顯示「本次查詢時間」。
-
-**收尾：**
-
-- 已保存三次執行、共五筆上游請求結果；歷史 probe 實作可從 Git commit `f7239b6` 查閱。
-- 已自工作區移除 `scripts/superrich1965-a0-probe.mjs` 與 `netlify/functions/superrich1965-a0-probe.mjs`，避免暫時診斷端點隨後續正式版本部署。
-- 既有 Preview 尚未撤下；移除本機檔案不會改變已部署版本，需另行部署或清理。
-- 已同步計畫狀態並修正缺乏證據的推論；原有 A1 工具與測試保留。
-
-收尾驗證：`npm run typecheck` 通過；`npm test` 為 453 通過／0 失敗（含工作區原有的 16 項 A1 工具測試）；`npm run build` 通過。`git diff --check`、14 個文件相對連結、紀錄 JSON 與兩支 probe 的移除檢查通過；A1 工具與測試的檔案雜湊未變。正式地點快照未變，本次未執行 Notion 匯出或快照驗證。
-
-**未解問題與交接：** A0 當時尚缺 GET 成功紀錄，A1 建檔已取得 `/branches` 與分組資料（見下節）。Phase C 依計畫 §5 定案挑戰辨識、403／429 退避、整輪停止條件與重試上限。A0 沒有驗證「某店受挑戰後繼續抓其他店」的策略，也未完成長期穩定性或全分店測試。
+Netlify 的同一報價 POST 曾 403、也曾 200；矩陣另有 GET challenge 與
+branch-list POST 成功。這些結果不能證明請求順序、GET／POST、出口 IP 或
+具體 Cloudflare 規則是原因，亦未證明長期穩定。相同 `sourceUpdatedAtMs`
+不能證明報價時間語意，UI 僅顯示查詢時間。
+兩支臨時 probe 已移除，歷史實作見 `f7239b6`；移除本機檔案不會撤下舊
+Preview。本機收尾 typecheck、453 tests、build 通過；正式排程與全店穩定性仍由後續 Phase C 驗收。
+39 筆分組與 GET 資料已在 A1 補齊。
 
 ---
 

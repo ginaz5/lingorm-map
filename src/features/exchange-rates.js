@@ -2,6 +2,7 @@ import BRANCH_MAPPING from '../../data/superrich-branches.json' with { type: 'js
 
 import { state } from '../core/state.js';
 import { DENOMS } from '../data/exchange-rates.js';
+import { getBranchQueryState } from './exchange-rates-1965-branch.js';
 import { DENOMS_1965 } from '../data/exchange-rates-1965.js';
 import { isExchange1965Location, cancelExchangeScheduling1965 } from './exchange-rates-1965.js';
 
@@ -204,8 +205,9 @@ export function isExchangeSort(value) {
 /** @param {string} sort */
 export function isExchangeSortAvailable(sort) {
   if (DENOMS_1965.includes(/** @type {any} */ (sort))) {
-    return state.exchange1965.enabled === true && state.exchange1965.hasUsableSnapshot &&
-      Object.values(state.exchange1965.ratesBySlug).some(branch => Number.isSafeInteger(branch.rates?.[sort]?.rateScaledE6));
+    return Object.keys(state.exchange1965Branches).some(slug => Number.isSafeInteger(getBranchQueryState(slug)?.quote?.branch.rates[sort]?.rateScaledE6)) ||
+      (state.exchange1965.enabled === true && state.exchange1965.hasUsableSnapshot &&
+       Object.keys(state.exchange1965.ratesBySlug).some(slug => !getBranchQueryState(slug) && Number.isSafeInteger(state.exchange1965.ratesBySlug[slug].rates?.[sort]?.rateScaledE6)));
   }
   if (!DENOMS.includes(/** @type {any} */ (sort))) return false;
   return state.exchangeRatesEnabled === true && state.exchangeHasUsableSnapshot &&

@@ -4,6 +4,7 @@
 import BRANCH_MAPPING from '../../data/superrich1965-branches.json' with { type: 'json' };
 
 import { state } from '../core/state.js';
+import { getBranchQueryState, cancelBranchQueries } from './exchange-rates-1965-branch.js';
 import { DENOMS_1965 } from '../data/exchange-rates-1965.js';
 
 export const EXCHANGE_API_1965 = '/api/exchange-rates-1965';
@@ -178,6 +179,8 @@ export function isExchange1965Location(value) {
 
 /** @param {string} slug @param {'USD_1965'|'TWD_1965'} denom */
 export function getExchangeRateCell1965(slug, denom) {
+  const queried = getBranchQueryState(slug);
+  if (queried) return queried.quote?.branch.rates[denom] ?? null;
   return state.exchange1965.ratesBySlug[slug]?.rates?.[denom] ?? null;
 }
 
@@ -381,6 +384,7 @@ export function scheduleExchangeAction1965() {
 }
 
 export function cancelExchangeScheduling1965() {
+  cancelBranchQueries();
   cancelTimer();
   cancelRequest();
 }

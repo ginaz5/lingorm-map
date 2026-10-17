@@ -47,7 +47,7 @@ function snapshotBranches(collection) {
 }
 
 /** @param {any} store @param {any} controlEntry @param {any} control @param {any} breakerEntry @param {number} nowMs @param {()=>string} randomUUIDImpl */
-async function autoDisable(store, controlEntry, control, breakerEntry, nowMs, randomUUIDImpl) {
+export async function autoDisable(store, controlEntry, control, breakerEntry, nowMs, randomUUIDImpl) {
   const disabled = createControl({
     enabled: false,
     nowMs,
