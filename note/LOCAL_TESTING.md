@@ -415,6 +415,35 @@ http://localhost:8888/api/config
     node scripts/validate-favorite-compatibility.mjs
     node scripts/validate-superrich1965-mapping.mjs data/superrich1965-branches.json data/locations.csv
 
+### 橘標來源失敗診斷
+
+單店手動查詢與背景更新會在執行該次查詢的 Function log 記錄
+`event=exchange_rates_1965_branch`。以 `slug` 與 `trigger=manual|background`
+辨識分店及觸發方式；`httpStatus` 是本站回應，`blockedStatus` 與
+`diagnostics[].status` 才是來源 HTTP 狀態。後者附有截短、限定欄位的
+`cfMitigated`、`contentType`、`retryAfter`、`rayId` 與錯誤代碼。
+
+- `sourceRequestCount=1`、`sourceOutcome=blocked`、`cooldownSource=source_blocked`
+  表示本次實際打到來源後被拒絕；`cfMitigated=challenge` 可確認 challenge。
+- `sourceRequestCount=0`、`cooldownSource=breaker` 表示既有封鎖冷卻擋下查詢；
+  `cooldownSource=gate` 則是共用請求間隔，兩者都沒有新來源請求。
+- `retryAt` 是本站允許再試的 UTC 時間，不代表來源保證在此時解封。
+  快取命中同樣為零來源請求，但 `httpStatus=200` 且沒有冷卻原因。
+- 背景結束的 `exchange_rates_1965_background` 紀錄以 `stoppedSlug` 標示
+  因單店查詢結果而停止的分店；`loaded` 是該工作取得成功結果的分店數。
+
+診斷僅寫私有 Function log，不回傳單店或快取 API、不記錄 Cookie、認證 header、
+工作 token、完整來源 HTML／JSON 或任意例外文字。記錄失敗不影響報價及 lease。
+查詢紀錄不會新增來源請求、重試、清除冷卻或改變既有 breaker。
+
+在 Netlify 對應部署查看 `exchange-rates-1965-branch`（手動）或
+`exchange-rates-1965-refresh`（背景）的 log。CLI 可用確切 deploy permalink，
+避免 Preview alias 被誤辨為 branch：
+
+```bash
+netlify logs --url https://<deploy-id>--lingorm-map.netlify.app --function exchange-rates-1965-branch exchange-rates-1965-refresh --since 1h
+```
+
 ### 橘標 UI 本機驗收
 
 開啟 /tests/fixtures/orange-branch-query.html。第一店應顯示模擬快取報價且沒有

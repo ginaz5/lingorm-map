@@ -88,6 +88,7 @@ for (const blockedStatus of [403, 429, 500]) {
     await h.dispatch();
     const result = await h.run({ slugs: [slug, otherSlug, thirdSlug], randomImpl: () => 0 });
     assert.equal(result.status, 'stopped');
+    assert.equal(result.stoppedSlug, otherSlug);
     assert.equal(result.loaded, 1);
     assert.equal(count, 2);
     assert.ok(h.store.entries.get(branchCacheKey(slug)));
@@ -96,6 +97,38 @@ for (const blockedStatus of [403, 429, 500]) {
     assert.equal((await (await serveBranchCache(h.input)).json()).quotes.length, 1);
   });
 }
+
+test('first-branch challenge logs background source diagnostics and identifies the stopped branch', async t => {
+  const messages = [];
+  t.mock.method(console, 'info', text => messages.push(JSON.parse(text)));
+  const h = harness();
+  await h.dispatch();
+  const token = h.store.entries.get(BATCH_JOB_KEY).data.token;
+  let calls = 0;
+  const result = await h.run({ fetchImpl: async () => {
+    calls++;
+    return new Response('PRIVATE_CHALLENGE_BODY', { status: 403, headers: {
+      'cf-mitigated': 'challenge', 'cf-ray': 'test-ray-CMH', 'content-type': 'text/html',
+    } });
+  } });
+  assert.equal(result.status, 'stopped');
+  assert.equal(result.reason, 'cooldown');
+  assert.equal(result.stoppedSlug, slug);
+  assert.equal(result.loaded, 0);
+  assert.equal(calls, 1);
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].trigger, 'background');
+  assert.equal(messages[0].blockedStatus, 403);
+  assert.equal(messages[0].sourceRequestCount, 1);
+  assert.equal(messages[0].diagnostics[0].cfMitigated, 'challenge');
+  assert.equal(messages[0].diagnostics[0].rayId, 'test-ray-CMH');
+  const text = JSON.stringify({ result, messages });
+  assert.equal(text.includes(token), false);
+  assert.equal(text.includes('PRIVATE_CHALLENGE_BODY'), false);
+  const cache = await (await serveBranchCache(h.input)).json();
+  assert.deepEqual(cache.quotes, []);
+  assert.equal(Object.hasOwn(cache, 'diagnostics'), false);
+});
 
 test('refresh at the next half-hour retains still-valid old quotes when a new fetch fails', async () => {
   const h = harness();

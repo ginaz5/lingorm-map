@@ -73,6 +73,8 @@ export async function runSlowBatch({ store, token, enabledDefault = process.env.
   const acquired = await conditionalSetJSON(store, BATCH_JOB_KEY, lease, entry);
   if (!acquired.modified) return { status: 'skipped', loaded: 0 };
   let status = 'complete', reason = null, loaded = 0;
+  /** @type {string|null} */
+  let stoppedSlug = null;
   try {
     for (let index = 0; index < slugs.length; index++) {
       if (nowImpl() + 7_000 >= lease.deadlineAtMs) { status = 'stopped'; reason = 'deadline'; break; }
@@ -89,7 +91,7 @@ export async function runSlowBatch({ store, token, enabledDefault = process.env.
       const response = await queryBranchRates({ store, slug, enabledDefault, nowImpl, fetchImpl, randomUUIDImpl,
         refreshDue: true, expectedControlVersion: job.controlVersion });
       const body = await response.json();
-      if (response.status !== 200 || !body.quote) { status = 'stopped'; reason = body.reason ?? 'unavailable'; break; }
+      if (response.status !== 200 || !body.quote) { status = 'stopped'; reason = body.reason ?? 'unavailable'; stoppedSlug = slug; break; }
       loaded++;
       if (index + 1 < slugs.length) {
         const delay = 2_000 + Math.floor(Math.max(0, Math.min(1, randomImpl())) * 3_000);
@@ -98,5 +100,5 @@ export async function runSlowBatch({ store, token, enabledDefault = process.env.
     }
   } catch { status = 'stopped'; reason = 'storage_unavailable'; }
   await conditionalSetJSON(store, BATCH_JOB_KEY, { ...lease, status }, { data: lease, etag: acquired.etag });
-  return { status, reason, loaded };
+  return { status, reason, loaded, stoppedSlug };
 }

@@ -27,6 +27,92 @@ async function fetchBody(input) {
   return { response, body: await response.json() };
 }
 
+for (const status of [403, 429, 200]) {
+  test(`private diagnostics distinguish upstream ${status} from our cooldown response without exposing source data`, async t => {
+    const messages = [];
+    t.mock.method(console, 'info', text => messages.push(JSON.parse(text)));
+    const h = harness();
+    h.input.fetchImpl = async () => {
+      h.calls.push({});
+      return new Response('PRIVATE_CHALLENGE_BODY', { status, headers: {
+        ...(status === 429 ? {} : { 'cf-mitigated': 'challenge' }),
+        'content-type': 'text/html', 'retry-after': '30000', 'cf-ray': 'r'.repeat(150),
+        'set-cookie': 'PRIVATE_COOKIE', authorization: 'PRIVATE_TOKEN',
+      } });
+    };
+    const first = await fetchBody(h.input);
+    const log = messages[0];
+    assert.equal(first.response.status, 429);
+    assert.equal(log.event, 'exchange_rates_1965_branch');
+    assert.equal(log.trigger, 'manual');
+    assert.equal(log.slug, slug);
+    assert.equal(log.httpStatus, 429);
+    assert.equal(log.blockedStatus, status);
+    assert.equal(log.sourceOutcome, 'blocked');
+    assert.equal(log.sourceRequestCount, 1);
+    assert.equal(log.cooldownSource, 'source_blocked');
+    assert.equal(log.retryAt, h.store.entries.get(EXCHANGE_KEYS.breaker).data.blockedUntil);
+    assert.equal(log.diagnostics[0].status, status);
+    assert.equal(log.diagnostics[0].cfMitigated, status === 429 ? null : 'challenge');
+    assert.equal(log.diagnostics[0].contentType, 'text/html');
+    assert.equal(log.diagnostics[0].retryAfter, '30000');
+    assert.equal(log.diagnostics[0].rayId.length, 100);
+    assert.equal(JSON.stringify(messages).includes('PRIVATE_'), false);
+    for (const key of ['diagnostics', 'blockedStatus', 'cooldownSource', 'sourceRequestCount']) {
+      assert.equal(Object.hasOwn(first.body, key), false);
+    }
+    const second = await fetchBody({ ...h.input, slug: otherSlug });
+    assert.equal(second.body.reason, 'cooldown');
+    assert.equal(h.calls.length, 1);
+    assert.equal(messages[1].cooldownSource, 'breaker');
+    assert.equal(messages[1].sourceRequestCount, 0);
+    assert.equal(messages[1].blockedStatus, null);
+    assert.deepEqual(messages[1].diagnostics, []);
+    assert.equal(messages[1].retryAt, log.retryAt);
+  });
+}
+
+test('private diagnostics distinguish warm cache and gate cooldown from source requests', async t => {
+  const messages = [];
+  t.mock.method(console, 'info', text => messages.push(JSON.parse(text)));
+  const h = harness();
+  await fetchBody(h.input);
+  await fetchBody(h.input);
+  await fetchBody({ ...h.input, slug: otherSlug });
+  assert.equal(messages.length, 3);
+  assert.equal(messages[0].sourceOutcome, 'complete');
+  assert.equal(messages[0].sourceRequestCount, 1);
+  assert.equal(messages[1].httpStatus, 200);
+  assert.equal(messages[1].sourceRequestCount, 0);
+  assert.deepEqual(messages[1].diagnostics, []);
+  assert.equal(messages[2].cooldownSource, 'gate');
+  assert.equal(messages[2].sourceRequestCount, 0);
+  assert.equal(h.calls.length, 1);
+});
+
+test('network failures record only fixed diagnostic reasons, never exception text', async t => {
+  const messages = [];
+  t.mock.method(console, 'info', text => messages.push(JSON.parse(text)));
+  const h = harness();
+  h.input.fetchImpl = async () => { throw new Error('PRIVATE_EXCEPTION_TOKEN'); };
+  assert.equal((await fetchBody(h.input)).response.status, 503);
+  assert.equal(messages[0].sourceOutcome, 'failed');
+  assert.equal(messages[0].sourceRequestCount, 1);
+  assert.equal(messages[0].diagnostics[0].status, null);
+  assert.equal(messages[0].diagnostics[0].reason, 'http_error');
+  assert.equal(JSON.stringify(messages).includes('PRIVATE_EXCEPTION_TOKEN'), false);
+});
+
+test('a logging failure does not change cached quotes or leave the lease held', async t => {
+  t.mock.method(console, 'info', () => { throw new Error('logger unavailable'); });
+  const h = harness();
+  assert.equal((await fetchBody(h.input)).response.status, 200);
+  assert.ok(isValidBranchQuote(h.store.entries.get(branchCacheKey(slug)).data));
+  assert.equal(h.store.entries.get(BRANCH_GATE_KEY).data.leaseId, null);
+  assert.equal((await fetchBody(h.input)).response.status, 200);
+  assert.equal(h.calls.length, 1);
+});
+
 test('one click fetches exactly one mapped branch, caches complete USD/TWD and reuses across visitors', async () => {
   const h = harness();
   const first = await fetchBody(h.input);

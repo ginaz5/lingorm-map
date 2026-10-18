@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { BRANCH_API_SCHEMA_VERSION, ORANGE_BRANCHES, isValidBranchQuote } from '../../../src/data/exchange-rates-1965-branch.js';
-import { EXCHANGE_KEYS, createBreaker, isValidBreaker, isValidSnapshot } from './exchange-rates-1965-contract.mjs';
+import { EXCHANGE_KEYS, createBreaker, isValidBreaker, isValidSnapshot, sanitizeDiagnostics } from './exchange-rates-1965-contract.mjs';
 import { ensureFetchControl, readEffectiveControl } from './exchange-rates-1965-control.mjs';
 import { breakerBlocks, nextBreakerState } from './exchange-rates-1965-breaker.mjs';
 import { autoDisable } from './exchange-rates-1965-runner.mjs';
@@ -50,8 +50,22 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
   let releaseDelay = BRANCH_MIN_GAP_MS;
   /** @type {any} */
   let control = null;
+  // Private Function logs only. Never attach source details to public envelopes.
+  const startedAtMs = nowImpl();
+  /** @type {any} */
+  const diagnostic = { event: 'exchange_rates_1965_branch', trigger: refreshDue ? 'background' : 'manual',
+    slug, attemptedAt: new Date(startedAtMs).toISOString(), httpStatus: null, reason: null,
+    sourceOutcome: null, sourceRequestCount: 0, blockedStatus: null, diagnostics: [],
+    cooldownSource: null, retryAt: null };
+  /** @param {any} options */
+  const respond = options => {
+    diagnostic.httpStatus = options.status ?? 200;
+    diagnostic.reason = options.reason ?? null;
+    diagnostic.retryAt = options.retryAtMs == null ? null : new Date(options.retryAtMs).toISOString();
+    return branchResponse(slug, nowImpl(), options);
+  };
   /** @param {string} reason @param {number} status @param {number|null} [retryAtMs] */
-  const reply = (reason, status, retryAtMs = null) => branchResponse(slug, nowImpl(), {
+  const reply = (reason, status, retryAtMs = null) => respond({
     reason, status, retryAtMs, enabled: control?.enabled ?? null, controlVersion: control?.controlVersion ?? null,
   });
   try {
@@ -84,17 +98,23 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
         return reply(latest.enabled ? 'stale_control' : 'disabled', 503, nowImpl() + BRANCH_FAILURE_DELAY_MS);
       }
       if (!usable(quote)) return reply('unavailable', 503);
-      return branchResponse(slug, nowImpl(), { enabled: true, controlVersion: version, quote });
+      return respond({ enabled: true, controlVersion: version, quote });
     }
 
     let breakerEntry = await readEntry(store, EXCHANGE_KEYS.breaker);
     if (breakerEntry && (!isValidBreaker(breakerEntry.data) || breakerEntry.data.controlVersion !== version)) return reply('invalid_control', 503);
-    if (breakerBlocks(breakerEntry?.data, version, nowImpl())) return reply('cooldown', 429, Date.parse(breakerEntry.data.blockedUntil));
+    if (breakerBlocks(breakerEntry?.data, version, nowImpl())) {
+      diagnostic.cooldownSource = 'breaker';
+      return reply('cooldown', 429, Date.parse(breakerEntry.data.blockedUntil));
+    }
     const gateEntry = await readEntry(store, BRANCH_GATE_KEY);
     if (gateEntry && !validGate(gateEntry.data)) return reply('storage_unavailable', 503);
     const gate = gateEntry?.data;
     if (gate?.leaseUntilMs > nowImpl()) return reply('busy', 202, gate.leaseUntilMs);
-    if (gate?.nextRequestAtMs > nowImpl()) return reply('cooldown', 429, gate.nextRequestAtMs);
+    if (gate?.nextRequestAtMs > nowImpl()) {
+      diagnostic.cooldownSource = 'gate';
+      return reply('cooldown', 429, gate.nextRequestAtMs);
+    }
     const gateValue = { leaseId: randomUUIDImpl(), leaseUntilMs: nowImpl() + BRANCH_LEASE_MS, nextRequestAtMs: nowImpl() + BRANCH_MIN_GAP_MS };
     const acquired = await conditionalSetJSON(store, BRANCH_GATE_KEY, gateValue, gateEntry);
     if (!acquired.modified) return reply('busy', 202, nowImpl() + 2_000);
@@ -107,15 +127,23 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
     if (!before.enabled || control?.controlVersion !== version) return reply('stale_control', 503);
     breakerEntry = await readEntry(store, EXCHANGE_KEYS.breaker);
     if (breakerEntry && (!isValidBreaker(breakerEntry.data) || breakerEntry.data.controlVersion !== version)) return reply('invalid_control', 503);
-    if (breakerBlocks(breakerEntry?.data, version, nowImpl())) return reply('cooldown', 429, Date.parse(breakerEntry.data.blockedUntil));
+    if (breakerBlocks(breakerEntry?.data, version, nowImpl())) {
+      diagnostic.cooldownSource = 'breaker';
+      return reply('cooldown', 429, Date.parse(breakerEntry.data.blockedUntil));
+    }
     if (nowImpl() + PROFILE.deadlineMs >= gateValue.leaseUntilMs) return reply('busy', 202, nowImpl() + 2_000);
     const refreshedCache = (await readEntry(store, branchCacheKey(slug)))?.data;
-    if (reusable(refreshedCache)) return branchResponse(slug, nowImpl(), { enabled: true, controlVersion: version, quote: refreshedCache });
+    if (reusable(refreshedCache)) return respond({ enabled: true, controlVersion: version, quote: refreshedCache });
     const attemptedAtMs = nowImpl();
     const collection = await collectSourceQuotes({
       mapping: { schemaVersion: 1, branches: { [slug]: ORANGE_BRANCHES[slug] } },
       fetchImpl, nowImpl, functionStartedAtMs: attemptedAtMs, profile: PROFILE, allowRetry: false,
     });
+    diagnostic.sourceOutcome = collection.outcome;
+    diagnostic.sourceRequestCount = collection.requestCount;
+    diagnostic.blockedStatus = collection.blockedStatus;
+    diagnostic.diagnostics = sanitizeDiagnostics(collection.diagnostics);
+    if (collection.outcome === 'blocked') diagnostic.cooldownSource = 'source_blocked';
     const latest = await readEffectiveControl(store, enabledDefault);
     control = latest.control;
     if (!latest.enabled || control?.controlVersion !== version || Date.parse(control.enabledAt) > attemptedAtMs) {
@@ -157,7 +185,7 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
     if (!finalControl.enabled || control?.controlVersion !== version) return reply(finalControl.enabled ? 'stale_control' : 'disabled', 503);
     // A single successful branch intentionally does not reset the full-round
     // breaker's escalation history, or consecutive challenge blocks could vanish.
-    return branchResponse(slug, nowImpl(), { enabled: true, controlVersion: version, quote });
+    return respond({ enabled: true, controlVersion: version, quote });
   } catch {
     releaseDelay = BRANCH_FAILURE_DELAY_MS;
     return reply('storage_unavailable', 503, nowImpl() + releaseDelay);
@@ -168,5 +196,8 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
           nextRequestAtMs: nowImpl() + releaseDelay }, lease);
       } catch { /* The original lease expires; never retry a source request. */ }
     }
+    try {
+      console.info(JSON.stringify({ ...diagnostic, completedAt: new Date(nowImpl()).toISOString() }));
+    } catch { /* Logging must not change a quote, lease or breaker result. */ }
   }
 }
