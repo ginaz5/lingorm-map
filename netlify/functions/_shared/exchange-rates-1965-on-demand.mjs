@@ -40,10 +40,10 @@ export function branchResponse(slug, nowMs, { status = 200, enabled = null, cont
 
 /** A public click can only fetch one whitelisted branch. A persistent CAS lease
  * serializes cold requests across server instances; warm cache hits bypass it.
- * @param {{store:any, slug:string, enabledDefault?:unknown, fetchImpl?:typeof fetch, nowImpl?:()=>number, randomUUIDImpl?:()=>string, refreshDue?:boolean, expectedControlVersion?:string}} input
+ * @param {{store:any, slug:string, enabledDefault?:unknown, fetchImpl?:typeof fetch, nowImpl?:()=>number, randomUUIDImpl?:()=>string, refreshDue?:boolean, expectedControlVersion?:string, sourceProfile?:import('./exchange-rates-1965-source.mjs').SourceProfile}} input
  */
 export async function queryBranchRates({ store, slug, enabledDefault = process.env.EXCHANGE_RATES_1965_ENABLED,
-  fetchImpl = fetch, nowImpl = Date.now, randomUUIDImpl = randomUUID, refreshDue = false, expectedControlVersion }) {
+  fetchImpl = fetch, nowImpl = Date.now, randomUUIDImpl = randomUUID, refreshDue = false, expectedControlVersion, sourceProfile = PROFILE }) {
   if (!Object.hasOwn(ORANGE_BRANCHES, slug)) return branchResponse(slug, nowImpl(), { status: 400, reason: 'invalid_request' });
   /** @type {any|null} */
   let lease = null;
@@ -56,7 +56,7 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
   const diagnostic = { event: 'exchange_rates_1965_branch', trigger: refreshDue ? 'background' : 'manual',
     slug, attemptedAt: new Date(startedAtMs).toISOString(), httpStatus: null, reason: null,
     sourceOutcome: null, sourceRequestCount: 0, blockedStatus: null, diagnostics: [],
-    cooldownSource: null, retryAt: null };
+    cooldownSource: null, retryAt: null, sourceProfile: sourceProfile.name };
   /** @param {any} options */
   const respond = options => {
     diagnostic.httpStatus = options.status ?? 200;
@@ -115,7 +115,8 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
       diagnostic.cooldownSource = 'gate';
       return reply('cooldown', 429, gate.nextRequestAtMs);
     }
-    const gateValue = { leaseId: randomUUIDImpl(), leaseUntilMs: nowImpl() + BRANCH_LEASE_MS, nextRequestAtMs: nowImpl() + BRANCH_MIN_GAP_MS };
+    const leaseMs = Math.max(BRANCH_LEASE_MS, sourceProfile.deadlineMs + 9_000);
+    const gateValue = { leaseId: randomUUIDImpl(), leaseUntilMs: nowImpl() + leaseMs, nextRequestAtMs: nowImpl() + BRANCH_MIN_GAP_MS };
     const acquired = await conditionalSetJSON(store, BRANCH_GATE_KEY, gateValue, gateEntry);
     if (!acquired.modified) return reply('busy', 202, nowImpl() + 2_000);
     lease = { data: gateValue, etag: acquired.etag };
@@ -131,13 +132,13 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
       diagnostic.cooldownSource = 'breaker';
       return reply('cooldown', 429, Date.parse(breakerEntry.data.blockedUntil));
     }
-    if (nowImpl() + PROFILE.deadlineMs >= gateValue.leaseUntilMs) return reply('busy', 202, nowImpl() + 2_000);
+    if (nowImpl() + sourceProfile.deadlineMs >= gateValue.leaseUntilMs) return reply('busy', 202, nowImpl() + 2_000);
     const refreshedCache = (await readEntry(store, branchCacheKey(slug)))?.data;
     if (reusable(refreshedCache)) return respond({ enabled: true, controlVersion: version, quote: refreshedCache });
     const attemptedAtMs = nowImpl();
     const collection = await collectSourceQuotes({
       mapping: { schemaVersion: 1, branches: { [slug]: ORANGE_BRANCHES[slug] } },
-      fetchImpl, nowImpl, functionStartedAtMs: attemptedAtMs, profile: PROFILE, allowRetry: false,
+      fetchImpl, nowImpl, functionStartedAtMs: attemptedAtMs, profile: sourceProfile, allowRetry: false,
     });
     diagnostic.sourceOutcome = collection.outcome;
     diagnostic.sourceRequestCount = collection.requestCount;

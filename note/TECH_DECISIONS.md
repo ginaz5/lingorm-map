@@ -400,3 +400,13 @@ mapping validator 同時接受這兩種表示。所有 `Paused` 狀態與收藏 
 補查按鈕。移除五公里前端佇列。橘標單店與綠標共用同一到期計算模組：下一個
 半小時邊界加 35 分鐘；後端仍每半小時刷新到期更新的分店，讀快取不延長時間。
 舊整批 snapshot／CLI 契約保留，綠標到期行為不變。本次未改正式旗標或部署。
+
+### 2026-10-18：橘標增加 Netlify 瀏覽器傳輸驗證模式
+
+使用者要求維持全 Netlify 執行，新增可選的 `SOURCE_TRANSPORT=browser`。
+在現有控制、快取與租約檢查後，於函式內啟動 Chromium、載入官網公開頁面的
+JS/session，再使用 same-origin fetch 查 mapping 中的單店。保留 HTTP 預設，
+兩支來源函式的 browser 在 invocation 完成時關閉；背景輪次重用同一 session。
+不使用本機 Chrome、外部服務、Cookie 匯入、CAPTCHA 解題或 stealth patches。
+Cloudflare challenge 仍停止並沿用冷卻，是否改善雲端可用性必須由 Preview 實測。
+來源的 browser timeout／lease 及前端等待時間同步調整，報價到期與綠標不變。

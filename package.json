@@ -24,9 +24,11 @@
   },
   "dependencies": {
     "@googlemaps/markerclusterer": "^2.6.2",
-    "@netlify/blobs": "^11.0.3"
+    "@netlify/blobs": "^11.0.3",
+    "@sparticuz/chromium": "153.0.0",
+    "playwright-core": "1.63.0"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": "^22.17.0 || >=24.0.0"
   }
 }

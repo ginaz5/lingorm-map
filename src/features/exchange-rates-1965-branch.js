@@ -2,7 +2,9 @@ import { state } from '../core/state.js';
 import { ORANGE_BRANCHES, parseBranchQueryPayload, parseBranchCachePayload } from '../data/exchange-rates-1965-branch.js';
 
 export const BRANCH_QUERY_API = '/api/exchange-rates-1965-branch';
-export const BRANCH_QUERY_TIMEOUT_MS = 12_000;
+// Browser mode can spend up to 23 seconds initializing and querying upstream.
+export const BRANCH_QUERY_TIMEOUT_MS = 32_000;
+export const BRANCH_CACHE_TIMEOUT_MS = 12_000;
 export const BRANCH_CACHE_API = '/api/exchange-rates-1965-cache';
 export const BRANCH_CACHE_POLL_MS = 60_000;
 /** @typedef {{quote:any|null, expiresAtMs:number|null, loading:boolean, reason:string|null, retryAtMs:number|null}} BranchQueryState */
@@ -151,7 +153,7 @@ export function loadCachedBranchQuotes() {
     const controller = new AbortController();
     cacheController = controller;
     const startedAtMs = Date.now();
-    const timeout = setTimeout(() => controller.abort(), BRANCH_QUERY_TIMEOUT_MS);
+    const timeout = setTimeout(() => controller.abort(), BRANCH_CACHE_TIMEOUT_MS);
     try {
       const response = await fetch(BRANCH_CACHE_API, { cache: 'no-store', signal: controller.signal });
       if (!response.ok) return;

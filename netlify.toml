@@ -7,13 +7,21 @@
   node_bundler = "esbuild"
   included_files = ["data/locations.csv", "data/superrich-branches.json", "data/superrich1965-branches.json"]
 
+[functions.exchange-rates-1965-branch]
+  external_node_modules = ["@sparticuz/chromium", "playwright-core"]
+  included_files = ["node_modules/@sparticuz/chromium/bin/**"]
+
+[functions.exchange-rates-1965-refresh]
+  external_node_modules = ["@sparticuz/chromium", "playwright-core"]
+  included_files = ["node_modules/@sparticuz/chromium/bin/**"]
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
 [build.environment]
-  NODE_VERSION = "22.12.0"
+  NODE_VERSION = "22"
   # Set runtime secrets in Netlify Dashboard:
   # Site Settings → Environment Variables → Add variable
   # Required: HERE_API_KEY

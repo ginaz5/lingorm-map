@@ -444,6 +444,31 @@ http://localhost:8888/api/config
 netlify logs --url https://<deploy-id>--lingorm-map.netlify.app --function exchange-rates-1965-branch exchange-rates-1965-refresh --since 1h
 ```
 
+### Netlify 瀏覽器模式驗收
+
+只有兩支橘標來源函式會封裝 Chromium，既有 HTTP 傳輸預設保留。
+瀏覽器 binary 為 Linux/Lambda 版本；macOS 本機只跑 mock 與打包檢查，不能
+用本機 Chrome 成功代替 Netlify 出口驗證。套件要求 Node 22.17+（Node 22）
+或 Node 24+；`netlify.toml` 已設定 Node 22 與兩支函式的 external/binary 包裝。
+
+1. 已知來源冷卻結束後，在 **Deploy Preview context、Functions scope** 設定
+   `EXCHANGE_RATES_1965_SOURCE_TRANSPORT=browser`，搭配既有 enabled control
+   及 `EXCHANGE_RATES_1965_FETCH_MODE=background`。環境設定需重新部署才生效；
+   不修改正式 context，也不要用新 deploy 的空 store 當作解除舊封鎖的理由。
+2. 確認新 Preview 的 commit、CI 與部署成功。先點 Silom Plaza 的單店查詢，
+   首次查詢最多可能等約半分鐘；快取命中不會啟動 Chromium。
+3. 查看 `exchange-rates-1965-branch` 的 `exchange_rates_1965_browser` log。
+   `stage=navigation,result=ready` 表示官網載入成功；`stage=rate` 才是匯率
+   POST 階段。單店摘要應為 `sourceProfile=browser`，有效 JSON 成功後確認
+   USD／TWD 在列表與兩種 map provider 的 popup 同步顯示。
+4. 成功後才人工觸發同一 Preview 的 `exchange-rates-1965-fetch`，查看
+   `exchange-rates-1965-refresh` 的結果、停止分店與逐店快取。背景輪次只啟動
+   一個 browser，沿用 2～5 秒間隔。Preview 不會自行排程。
+5. 若 `stage=launch,result=failed`，查 runtime／binary 包裝；若 navigation
+   或 rate 階段再次 403／challenge，保存診斷並停止，不宣稱修復或反覆重跑。
+   可將 Preview 的 transport 改回 `http` 後重新部署回復原路徑，但不能以此
+   清除未到期冷卻。
+
 ### 橘標 UI 本機驗收
 
 開啟 /tests/fixtures/orange-branch-query.html。第一店應顯示模擬快取報價且沒有

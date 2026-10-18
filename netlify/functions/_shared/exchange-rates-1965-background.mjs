@@ -59,11 +59,11 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 /** No UI progress and no all-or-nothing snapshot: each success retains its own
  * expiry. Errors stop this job and leave all previously cached quotes intact.
- * @param {{store:any,token:string,enabledDefault?:unknown,nowImpl?:()=>number,fetchImpl?:typeof fetch,sleepImpl?:(ms:number)=>Promise<void>,randomImpl?:()=>number,randomUUIDImpl?:()=>string,slugs?:string[]}} input
+ * @param {{store:any,token:string,enabledDefault?:unknown,nowImpl?:()=>number,fetchImpl?:typeof fetch,sleepImpl?:(ms:number)=>Promise<void>,randomImpl?:()=>number,randomUUIDImpl?:()=>string,slugs?:string[],sourceProfile?:import('./exchange-rates-1965-source.mjs').SourceProfile}} input
  */
 export async function runSlowBatch({ store, token, enabledDefault = process.env.EXCHANGE_RATES_1965_ENABLED,
   nowImpl = Date.now, fetchImpl = fetch, sleepImpl = sleep, randomImpl = Math.random, randomUUIDImpl = randomUUID,
-  slugs = Object.keys(ORANGE_BRANCHES) }) {
+  slugs = Object.keys(ORANGE_BRANCHES), sourceProfile }) {
   if (!uuidPattern.test(token)) return { status: 'unauthorized', loaded: 0 };
   const entry = await readEntry(store, BATCH_JOB_KEY);
   const job = entry?.data;
@@ -77,7 +77,7 @@ export async function runSlowBatch({ store, token, enabledDefault = process.env.
   let stoppedSlug = null;
   try {
     for (let index = 0; index < slugs.length; index++) {
-      if (nowImpl() + 7_000 >= lease.deadlineAtMs) { status = 'stopped'; reason = 'deadline'; break; }
+      if (nowImpl() + (sourceProfile?.deadlineMs ?? 6_000) + 1_000 >= lease.deadlineAtMs) { status = 'stopped'; reason = 'deadline'; break; }
       const currentJob = (await readEntry(store, BATCH_JOB_KEY))?.data;
       if (currentJob?.leaseId !== lease.leaseId) { status = 'stopped'; reason = 'lease_lost'; break; }
       const control = await readEffectiveControl(store, enabledDefault);
@@ -89,7 +89,7 @@ export async function runSlowBatch({ store, token, enabledDefault = process.env.
           Date.parse(cached.attemptedAt) >= Date.parse(control.control.enabledAt ?? '') &&
           Date.parse(cached.expiresAt) > nowImpl() && nowImpl() < nextUtcHalfHour(Date.parse(cached.attemptedAt))) continue;
       const response = await queryBranchRates({ store, slug, enabledDefault, nowImpl, fetchImpl, randomUUIDImpl,
-        refreshDue: true, expectedControlVersion: job.controlVersion });
+        refreshDue: true, expectedControlVersion: job.controlVersion, sourceProfile });
       const body = await response.json();
       if (response.status !== 200 || !body.quote) { status = 'stopped'; reason = body.reason ?? 'unavailable'; stoppedSlug = slug; break; }
       loaded++;

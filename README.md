@@ -235,7 +235,7 @@ lingorm_bangkok_map/
 ### Prerequisites
 
 ```bash
-node --version   # 18+
+node --version   # 22.17+ (Node 22), or Node 24+
 npm install
 netlify --version  # install if missing: npm i -g netlify-cli
 netlify login && netlify link

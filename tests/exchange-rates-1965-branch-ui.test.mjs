@@ -82,6 +82,38 @@ function cachePayload(quotes = [payload().quote], overrides = {}) {
     controlVersion: uuid(1), quotes, ...overrides };
 }
 
+test('manual queries allow browser startup time while read-only cache timeouts remain short', async t => {
+  harness(t);
+  let querySignal;
+  let finish;
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.equal(url, BRANCH_QUERY_API);
+    querySignal = options.signal;
+    return new Promise(resolve => { finish = resolve; });
+  });
+  const query = queryOrangeBranch(slug);
+  await Promise.resolve();
+  t.mock.timers.tick(24_000);
+  assert.equal(querySignal.aborted, false);
+  finish(Response.json(payload()));
+  await query;
+  assert.ok(getBranchQueryState(slug).quote);
+
+  let cacheSignal;
+  let finishCache;
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.equal(url, BRANCH_CACHE_API);
+    cacheSignal = options.signal;
+    return new Promise(resolve => { finishCache = resolve; });
+  });
+  const cache = loadCachedBranchQuotes();
+  await Promise.resolve();
+  t.mock.timers.tick(12_000);
+  assert.equal(cacheSignal.aborted, true);
+  finishCache(new Response('', { status: 503 }));
+  await cache;
+});
+
 test('cache reads render rates without progress or a manual button; missing branches retain single-branch buttons', async t => {
   harness(t);
   const fetch = t.mock.method(globalThis, 'fetch', async url => {

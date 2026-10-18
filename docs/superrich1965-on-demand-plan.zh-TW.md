@@ -24,6 +24,41 @@
 - 原本單店 gate 與 breaker 仍共用；不透過新的背景工作繞過封鎖或停用。
   舊完整 snapshot API／CLI 契約保留，前端改讀新的逐店快取 API。
 
+## Netlify 瀏覽器來源模式（2026-10-18）
+
+`EXCHANGE_RATES_1965_SOURCE_TRANSPORT=http|browser` 控制單店 API 與背景工作的
+來源傳輸方式，未設定時保留 `http`。`browser` 使用版本相容的 Chromium 153
+與 Playwright，在 Netlify 函式內載入官網公開匯率頁並執行 JavaScript，然後
+透過同一瀏覽器 session 的 same-origin fetch 查詢固定 mapping 分店。
+不依賴本機電腦、外部瀏覽器服務或使用者的 Chrome profile。
+
+瀏覽器只在既有控制、快取、breaker、gate 與 lease 檢查通過、確實需要來源
+查詢時啟動。頁面的自動預設分店查詢被攔截，不額外打匯率 API；每次只允許
+當前租約指定的分店請求。背景工作重用該輪的瀏覽器與 session，手動查詢則
+在完成後關閉；中止或啟動太晚也必須清理瀏覽器。
+
+瀏覽器來源 timeout 為 23 秒、deadline 為 25 秒，lease 為至少 34 秒，背景
+預算仍為 12 分鐘。手動查詢的前端 timeout 為 32 秒；唯讀快取維持 12 秒。
+這些時間不延長報價有效期，也不增加來源重試。Bootstrap 包含官網頁面、JS
+及初始化請求；`sourceRequestCount` 在此模式表示受 lease 保護的取價流程
+次數，不能當成所有 bootstrap HTTP 請求總數。私有瀏覽器 log 的
+`rateRequestCount` 是該 session 實際放行的匯率 POST 累計次數。
+
+私有 `exchange_rates_1965_browser` log 提供 `stage=launch|navigation|rate`
+與 `result=ready|complete|blocked|failed|timeout`，搭配單店 log 的
+`sourceProfile=browser` 及既有 header 診斷，可區分瀏覽器啟動問題、官網頁面
+challenge 與匯率 API challenge。完整 HTML、Cookie、授權資料不寫入 log，
+server credentials 不傳給 Chromium child process。
+
+這是瀏覽器相容性驗證模式，不是 CAPTCHA 解題器。不偽裝 User-Agent、不做
+stealth patches、不匯入 clearance Cookie、不忽略 TLS 錯誤；遇到明確
+403／429／challenge，仍由原 breaker 停止，不清除已知冷卻。
+
+Chromium 為 Lambda/Linux binary，封裝在兩支會查來源的函式中；不在其他
+函式或前端載入。Node 需 `^22.17.0 || >=24.0.0`，Netlify build 使用 Node 22
+最新 patch。保留 `external_node_modules` 與 binary `included_files`，避免
+esbuild 破壞套件的相對 binary 路徑。依賴與打包通過不代表雲端能通過來源防護。
+
 ## 有效期與快取
 
 綠標與橘標單店快取共用 src/data/exchange-rate-timing.js 的到期公式：
