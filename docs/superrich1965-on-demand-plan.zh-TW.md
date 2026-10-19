@@ -59,6 +59,14 @@ Chromium 為 Lambda/Linux binary，封裝在兩支會查來源的函式中；不
 最新 patch。保留 `external_node_modules` 與 binary `included_files`，避免
 esbuild 破壞套件的相對 binary 路徑。依賴與打包通過不代表雲端能通過來源防護。
 
+## 匿名 token／external-app 介面調查（2026-10-19）
+
+本機已以一次匿名 token GET + 一次 A04／36 取價 POST 取得有效 USD／TWD
+指定面額買入價，現有 parser 可用。尚未在 Netlify 出口驗證、未整合 runtime，
+不得由單店本機成功推論全部分店或雲端可用。沒有修改 Chromium 或既有冷卻。
+端點證據、token／來源時間限制及後續整合邊界見
+[匿名 API 調查紀錄](superrich1965-anonymous-api-investigation.zh-TW.md)。
+
 ## 有效期與快取
 
 綠標與橘標單店快取共用 src/data/exchange-rate-timing.js 的到期公式：
