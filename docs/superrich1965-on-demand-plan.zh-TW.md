@@ -26,7 +26,7 @@
 
 ## Netlify 瀏覽器來源模式（2026-10-18）
 
-`EXCHANGE_RATES_1965_SOURCE_TRANSPORT=http|browser` 控制單店 API 與背景工作的
+`EXCHANGE_RATES_1965_SOURCE_TRANSPORT=http|browser|anonymous-api` 控制單店 API 與背景工作的
 來源傳輸方式，未設定時保留 `http`。`browser` 使用版本相容的 Chromium 153
 與 Playwright，在 Netlify 函式內載入官網公開匯率頁並執行 JavaScript，然後
 透過同一瀏覽器 session 的 same-origin fetch 查詢固定 mapping 分店。
@@ -62,10 +62,24 @@ esbuild 破壞套件的相對 binary 路徑。依賴與打包通過不代表雲�
 ## 匿名 token／external-app 介面調查（2026-10-19）
 
 本機已以一次匿名 token GET + 一次 A04／36 取價 POST 取得有效 USD／TWD
-指定面額買入價，現有 parser 可用。尚未在 Netlify 出口驗證、未整合 runtime，
-不得由單店本機成功推論全部分店或雲端可用。沒有修改 Chromium 或既有冷卻。
+指定面額買入價，現有 parser 可用。後續增加明確選用的 `anonymous-api` 模式，
+未設定時仍保留 `http`；沒有修改 Chromium 或既有冷卻。
+尚未在 Netlify 出口驗證，不得由單店本機成功推論全部分店或雲端可用。
 端點證據、token／來源時間限制及後續整合邊界見
 [匿名 API 調查紀錄](superrich1965-anonymous-api-investigation.zh-TW.md)。
+
+匿名模式在 control／快取／breaker／lease 檢查後才 GET token，再 POST 固定
+external-app 端點；兩階段共用 12 秒來源 timeout、15 秒 deadline，lease 至少
+24 秒。背景工作在 invocation 記憶體中重用已知有效期的 token，使用 JWT exp
+或 expires_in 中較早的期限並預留 30 秒；不知道期限時不跨分店重用。
+JWT exp 只是本機到期提示，不宣稱已驗證簽章；token 到期或 401 不觸發同次取價重試。
+factory 建立與有效快取命中不取 token。任何階段的 403／429／challenge 都
+沿用同一 breaker，沒有 fallback 或自動刷新重試。token 不寫入 Blobs／log／前端。
+
+單店私有 log 的 `sourceProfile=anonymous-api`，`diagnostics[].stage=token|rate`。
+`sourceRequestCount` 在匿名模式是真實 HTTP 嘗試次數：冷 session 成功一家為 2，
+背景沿用有效 token 的下一店為 1；沒有進入來源查詢時為 0。舊 HTTP／browser
+的計數語意不變。原本快取 schema、指定 USD／TWD 面額、到期及背景間隔不變。
 
 ## 有效期與快取
 

@@ -444,6 +444,36 @@ http://localhost:8888/api/config
 netlify logs --url https://<deploy-id>--lingorm-map.netlify.app --function exchange-rates-1965-branch exchange-rates-1965-refresh --since 1h
 ```
 
+### 匿名 API 模式本機驗收
+
+`EXCHANGE_RATES_1965_SOURCE_TRANSPORT=anonymous-api` 使用匿名 callback token 與
+external-app 取價介面，不啟動 Chromium。先確認既有本機、正式與目標 Preview
+沒有有效冷卻；不得透過切模式、新部署或本機空 store 避開尚未結束的封鎖。
+查詢前核對 control，已停用時不為了測試清掉既有控制。
+
+在本機程序選用模式，不需改 `.env` 或 Netlify 設定：
+
+```bash
+EXCHANGE_RATES_1965_SOURCE_TRANSPORT=anonymous-api EXCHANGE_RATES_1965_FETCH_MODE=on-demand EXCHANGE_RATES_1965_ENABLED=true netlify dev
+```
+
+`ENABLED=true` 只在本機沒有 control 時初始化；既有 disabled control 仍優先。
+先查 `/api/exchange-rates-1965-cache`，再以同源 POST 查
+`superrich1965-58`（mapping A04／36）。冷查詢預期來源 GET／POST 各一次，
+私有 log 應為 `sourceProfile=anonymous-api`、`sourceRequestCount=2`，
+診斷 stage 分別是 token、rate。確認 USD `100-50` 與 TWD `1000-100` 買入價，
+再查一次應回相同快取、來源請求 0；唯讀 cache API 應提供該店相同結果。
+不要為了取價而呼叫完整背景輪次。mock 測試另驗兩店共用 token 與原本的間隔。
+
+token 只存該 invocation 記憶體，不放 URL、前端、報價快取或 console。
+任何階段的 403／429／challenge 都停止，保存原冷卻；401／錯誤 JSON／逾時
+不改走其他介面、不自動重試。匿名來源 timeout 12 秒、deadline 15 秒，
+前端既有手動查詢 timeout 32 秒足夠，不需再調整 Chromium 或 UI 時間。
+
+本機成功仍不代表 Netlify 出口可用。後續經授權的 Preview 驗收，先只在
+Deploy Preview 的 Functions scope 設 anonymous-api 並重新部署，確認既有
+冷卻結束後先測一家；單店成功再測 background。正式環境設定不隨本機測試變更。
+
 ### Netlify 瀏覽器模式驗收
 
 只有兩支橘標來源函式會封裝 Chromium，既有 HTTP 傳輸預設保留。

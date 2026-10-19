@@ -1,5 +1,6 @@
 import { branchQuoteFailure1965, DENOMS_1965, parseBranchExchange1965 } from '../../../src/data/exchange-rates-1965.js';
 import { parseRetryAfter } from './exchange-rates-1965-breaker.mjs';
+import { readSourceRequests } from './exchange-rates-1965-source-telemetry.mjs';
 
 export const SOURCE_BASE_URL = 'https://www.superrich1965.com/spr/front/exchange-rate';
 export const SOURCE_TIMEOUT_MS = 5_000;
@@ -80,6 +81,7 @@ function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAt
   const diagnostics = [];
   /** @type {number[]} */
   const requestStartTimes = [];
+  let requestCount = 0;
 
   async function reserveStart() {
     /** @type {()=>void} */
@@ -112,6 +114,15 @@ function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAt
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => timeoutController.abort('timeout'), Math.min(profile.requestTimeoutMs, remaining));
     const signal = AbortSignal.any([master.signal, timeoutController.signal]);
+    let observed = false;
+    /** @param {unknown} value @param {Record<string, string|number|null>} fallback */
+    const observe = (value, fallback) => {
+      const entries = readSourceRequests(value) ?? [fallback];
+      requestCount += entries.length;
+      diagnostics.push(...entries.map(entry => ({ ...entry, officialId: branch.officialId })));
+      observed = true;
+      return entries;
+    };
     try {
       const response = await fetchImpl(`${SOURCE_BASE_URL}/get`, {
         method: 'POST',
@@ -130,7 +141,7 @@ function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAt
       const retryAfterMs = parseRetryAfter(response.headers.get('retry-after'), nowImpl());
       // Diagnostics contain bounded headers only, never the source payload.
       const header = (/** @type {string} */ name) => response.headers.get(name)?.replace(/[^\x20-\x7e]/g, '').slice(0, 100) ?? null;
-      diagnostics.push({ officialId: branch.officialId, status: response.status,
+      observe(response, { status: response.status,
         cfMitigated: header('cf-mitigated'), contentType: header('content-type'),
         retryAfter: header('retry-after'), rayId: header('cf-ray') });
       if (response.status === 403 || response.status === 429 || response.headers.get('cf-mitigated')?.toLowerCase() === 'challenge') {
@@ -146,15 +157,17 @@ function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAt
       let payload;
       try { payload = JSON.parse(body); } catch { return { kind: 'fatal', reason: 'invalid' }; }
       return { kind: 'ok', payload };
-    } catch {
-      diagnostics.push({ officialId: branch.officialId, status: null, reason: timeoutController.signal.aborted ? 'timeout' : 'http_error' });
-      return { kind: 'retryable', reason: timeoutController.signal.aborted ? 'timeout' : 'http_error' };
+    } catch (error) {
+      const reason = timeoutController.signal.aborted ? 'timeout' : 'http_error';
+      const entries = observed ? [] : observe(error, { status: null, reason });
+      if (entries.some(entry => entry.reason === 'invalid')) return { kind: 'fatal', reason: 'invalid' };
+      return { kind: 'retryable', reason };
     } finally {
       clearTimeout(timeoutId);
     }
   }
 
-  return { request, requestStartTimes, deadlineAt, diagnostics };
+  return { request, requestStartTimes, deadlineAt, diagnostics, get requestCount() { return requestCount; } };
 }
 
 /** @param {number} nowMs @param {number} deadlineAt @param {number} waitMs @param {SourceProfile} profile */
@@ -251,7 +264,7 @@ export async function collectSourceQuotes({
     outcome,
     blockedStatus: blockedResult?.status ?? null,
     retryAfterMs: blockedResult?.retryAfterMs ?? null,
-    requestCount: requester.requestStartTimes.length,
+    requestCount: requester.requestCount,
     requestStartTimes: requester.requestStartTimes,
     retryUsed,
     profile,

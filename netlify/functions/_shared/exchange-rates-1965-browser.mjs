@@ -1,5 +1,6 @@
 import { ORANGE_BRANCHES } from '../../../src/data/exchange-rates-1965-branch.js';
 import { SOURCE_BASE_URL } from './exchange-rates-1965-source.mjs';
+import { ANONYMOUS_SOURCE_PROFILE, createAnonymousApiSource } from './exchange-rates-1965-anonymous.mjs';
 
 export const BROWSER_PAGE_URL = 'https://www.superrich1965.com/en/exchange-rate';
 const RATE_URL = `${SOURCE_BASE_URL}/get`;
@@ -8,10 +9,11 @@ export const BROWSER_SOURCE_PROFILE = Object.freeze({
   name: 'browser', concurrency: 1, minStartGapMs: 0, requestTimeoutMs: 23_000, deadlineMs: 25_000,
 });
 
-/** @param {unknown} value @returns {'http'|'browser'} */
+/** @param {unknown} value @returns {'http'|'browser'|'anonymous-api'} */
 export function resolveSourceTransport(value) {
   if (value === undefined || value === null || value === '' || value === 'http') return 'http';
   if (value === 'browser') return value;
+  if (value === 'anonymous-api') return value;
   throw new Error('invalid_source_transport');
 }
 
@@ -146,13 +148,15 @@ export function createBrowserSource({ launchImpl = launchBrowser } = {}) {
   return { fetchImpl, close };
 }
 
-/** HTTP remains the compatibility default. Each worker owns its browser;
- * no browser, cookie or user profile is shared between Function invocations.
- * @param {{transport?:unknown,fetchImpl?:typeof fetch,launchImpl?:()=>Promise<any>}} [input]
+/** HTTP remains the compatibility default. Each worker owns its source session;
+ * no token, browser, cookie or user profile is shared across invocations.
+ * @param {{transport?:unknown,fetchImpl?:typeof fetch,launchImpl?:()=>Promise<any>,nowImpl?:()=>number}} [input]
  */
 export function createSourceSession({ transport = process.env.EXCHANGE_RATES_1965_SOURCE_TRANSPORT,
-  fetchImpl = fetch, launchImpl } = {}) {
-  if (resolveSourceTransport(transport) === 'http') return { fetchImpl, sourceProfile: undefined, close: async () => {} };
+  fetchImpl = fetch, launchImpl, nowImpl = Date.now } = {}) {
+  const selected = resolveSourceTransport(transport);
+  if (selected === 'http') return { fetchImpl, sourceProfile: undefined, close: async () => {} };
+  if (selected === 'anonymous-api') return { ...createAnonymousApiSource({ fetchImpl, nowImpl }), sourceProfile: ANONYMOUS_SOURCE_PROFILE };
   const source = createBrowserSource({ launchImpl });
   return { ...source, sourceProfile: BROWSER_SOURCE_PROFILE };
 }

@@ -410,3 +410,14 @@ JS/session，再使用 same-origin fetch 查 mapping 中的單店。保留 HTTP 
 不使用本機 Chrome、外部服務、Cookie 匯入、CAPTCHA 解題或 stealth patches。
 Cloudflare challenge 仍停止並沿用冷卻，是否改善雲端可用性必須由 Preview 實測。
 來源的 browser timeout／lease 及前端等待時間同步調整，報價到期與綠標不變。
+
+### 2026-10-19：橘標增加選用的匿名 API 傳輸
+
+本機已驗證匿名 callback GET 與 external-app 單店 POST 可回有效 USD／TWD
+指定面額買入價，增加 `SOURCE_TRANSPORT=anonymous-api`，預設仍是 HTTP。
+token 在原有控制、快取、breaker、lease 後 lazy 取得，只留在 invocation
+記憶體；背景工作可重用有明確到期提示的 token。callback 與 rate 都計入來源
+請求數及共用逾時，私有診斷以 stage 區分，不記錄 token 或任意來源文字。
+任一階段的 403／429／challenge 都沿用既有冷卻，不 fallback 或自動重試。
+保留原本 mapping、parser、快取與背景間隔；Chromium 未調整。
+這是新的可選後端路徑，本機成功不代表已驗證 Netlify 出口或 38 家覆蓋。

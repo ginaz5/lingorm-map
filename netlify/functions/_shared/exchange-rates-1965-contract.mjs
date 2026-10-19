@@ -222,6 +222,7 @@ export function sanitizeDiagnostics(value) {
     const clean = {};
     if (!isObject(entry)) return clean;
     if (Number.isSafeInteger(entry.officialId) && entry.officialId > 0) clean.officialId = entry.officialId;
+    if (entry.stage === 'token' || entry.stage === 'rate') clean.stage = entry.stage;
     clean.status = Number.isSafeInteger(entry.status) ? entry.status : null;
     for (const key of DIAGNOSTIC_STRING_KEYS) {
       const raw = entry[key];

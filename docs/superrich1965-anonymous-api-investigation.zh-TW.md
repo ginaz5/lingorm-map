@@ -1,6 +1,6 @@
 # SuperRich 1965：匿名 token 與 external-app API 調查
 
-調查日期：2026-10-19（Asia/Taipei）。本次只做公開程式／官網靜態資源研究、
+調查日期：2026-10-19（Asia/Taipei）。初次調查只做公開程式／官網靜態資源研究、
 控制狀態唯讀檢查，以及一家的本機真實來源測試；未修改 runtime、Chromium、
 環境變數、遠端 control／breaker、報價快取或正式資料，未部署。
 
@@ -79,7 +79,11 @@ token 只留在該次程序記憶體，沒有寫入檔案、console、fixture �
 本次只確認此值不是等於本次抓取時間；仍不足以確認它的業務語意及每店更新規則，
 不應顯示為已驗證的「官網報價時間」，也不改動現有快取有效期。
 
-## 最小後續整合方式（尚未實作）
+## 最小後續整合方式（調查時規劃）
+
+本節保留調查時的整合條件。後續已增加選用的 `anonymous-api` runtime 模式；
+目前操作與驗收方式見 [本機驗收](../note/LOCAL_TESTING.md#匿名-api-模式本機驗收)，
+仍未部署或驗證 Netlify 出口。
 
 1. 增加明確選用的匿名 API transport，保留目前 http／browser 路徑與預設。
    僅在 `queryBranchRates()` 通過 control、快取、breaker、CAS lease，且
@@ -108,7 +112,7 @@ token 只留在該次程序記憶體，沒有寫入檔案、console、fixture �
 且 supported currencies 沒有 TWD。它不是這張地圖所需的已驗證分店買入價。
 本次只讀程式，未呼叫該服務；未確認該網域與官方的關係，不採用推算報價。
 
-## 驗證紀錄
+## 初次調查驗證紀錄
 
 - 公開程式／資料與官網靜態 JavaScript：唯讀研究。
 - 正式與確切 Preview 控制／breaker、本機 state：唯讀確認。
@@ -116,3 +120,33 @@ token 只留在該次程序記憶體，沒有寫入檔案、console、fixture �
 - 現有 parser：以真實單店 payload 驗證 USD／TWD，結果 `ok`。
 - 文件：檢查 diff、路徑及連結。未改 runtime，本次不重跑型別檢查、全套 Node
   測試或 build；Netlify 出口驗證仍待選用 transport 實作與獲授權的 Preview 部署。
+
+## 後續實作與本機 Function 驗證（同日）
+
+已增加 `EXCHANGE_RATES_1965_SOURCE_TRANSPORT=anonymous-api` 選用模式，
+接入原本單店與背景來源 session；預設仍是 `http`，未改 Chromium、公開
+API／快取 schema、報價有效期或遠端設定。匿名 token 及兩階段診斷不進公開回應。
+
+台灣時間 2026-10-19 22:43:53～22:43:56，使用本機 `netlify dev`
+`http://localhost:8890` 呼叫原有 `POST /api/exchange-rates-1965-branch`，
+僅測 `superrich1965-58`，結果如下。來源前再確認本機、正式及既有 Preview
+冷卻，未寫入遠端 control、breaker 或 cache；新報價只寫入 Netlify Dev 的本機 store。
+
+| 驗證 | 結果 |
+| --- | --- |
+| 首次單店 POST | 200，有效 USD／TWD；來源 GET + POST 各一次 |
+| 私有診斷 | `sourceProfile=anonymous-api`、`sourceOutcome=complete`、`sourceRequestCount=2`，兩個 stage 都 200 |
+| 指定面額 | USD `100-50` 買入 33.43；TWD `1000-100` 買入 1.005 |
+| 第二次相同單店 POST | 200，quote 與首次完全相同；來源請求 0、diagnostics 空陣列 |
+| 唯讀 cache GET | 200，提供相同單店 quote；不發來源請求 |
+| 到期規則 | attemptedAt=14:43:53Z，下個半小時 15:00Z，加 35 分鐘，expiresAt=15:35Z |
+
+新增 16 項 transport 單元測試與 9 項查詢／背景整合測試，涵蓋 lazy token、
+正確來源計數、快取及前置控制、token 到期／重用、403／429／challenge、
+401／malformed JSON／abort、不重試、原 cache 到期與 breaker 歷史保留，
+以及 log／公開回應／cache 無 token。背景兩店與到期重取只使用 mock，
+沒有對真實來源執行全部分店或背景輪次。
+
+`npm run typecheck`、`npm test`（688 項、0 失敗）、`npm run build` 與
+`netlify functions:build` 通過，函式打包輸出只放本機暫存目錄。
+本機成功仍不代表已驗證 Netlify 雲端出口；本次沒有 commit、push 或部署。
