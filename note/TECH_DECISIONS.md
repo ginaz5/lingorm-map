@@ -459,3 +459,20 @@ cache／breaker／gate／lease／job 資料保留。匿名 transport、mapping�
 
 兩個退役環境變數已從 Netlify 專案所有 context 移除；CLI 確認需重新部署才會
 套用到部署版本。本次未部署，沒有刪除或改寫遠端 control、breaker、快取及憑證。
+
+
+### 2026-10-20：Actions 實作前調查與計畫補強（尚未實作）
+
+依使用者要求先調查並寫計畫。核對現有逐店／批次核心、SDK 11.0.3、GitHub
+官方限制及 ThaiCash 的固定版本成功輸出；它只證明單店部分幣別曾成功，不能
+代替本專案 GitHub runner 的 TWD、指定面額、38 家及長期穩定驗收。
+
+計畫建議保留 targetStore 的報價／control 隔離，另以固定 site-wide source guard
+保存跨 Preview／production 的來源冷卻與互斥。probe 成功不發布 quote，但必要的
+lease／失敗 breaker 要持久化；須補明確 target、控制管理、job 建立、rerun 冪等、
+取消與完整 coverage。舊本機 full-snapshot CLI 不直接搬入 Actions。
+
+實作與 mock 先完成，再經 workflow main bootstrap 做單店 probe，之後才驗
+Preview 單店／pilot／38 家與正式排程。詳見[計畫](../docs/superrich1965-github-actions-plan.zh-TW.md)
+及[調查證據](../docs/superrich1965-actions-research-2026-10-20.zh-TW.md)。
+本次只改文件，沒有實作、呼叫來源、執行 workflow、設定 Secrets、改遠端或部署。

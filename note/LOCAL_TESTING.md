@@ -474,11 +474,14 @@ POST 都 200，USD `100-50` 與 TWD `1000-100` 指定面額解析成功；不能
 依 [Actions 計畫](../docs/superrich1965-github-actions-plan.zh-TW.md) 先完成
 runner、明確 Preview target、probe 不發布路徑與 mock 測試，再安排手動單店。
 Netlify 的只讀部分已實作；workflow、Secrets、逐店發布與排程尚未啟用。
+2026-10-20 的[實作前調查](../docs/superrich1965-actions-research-2026-10-20.zh-TW.md)
+確認新 Preview store 不共享來源冷卻，計畫需先補固定 site-wide source guard、
+明確 Preview control 管理與不發布 probe。這些保護及管理命令目前都尚未實作。
 workflow 必須先存在預設分支，才能使用 Run workflow；初版不啟用排程。
 既有 CLI 尚未接匿名 transport，只寫 full snapshot，不能直接當逐店發布工具。
 
-首次來源測試仍須等既有冷卻結束，讀指定 store 的 control／breaker、取得
-共享 lease 後只測 A04／36。只有 token／rate 都 200 且指定 USD／TWD 完整，
+首次來源測試仍須先查核舊部署／本機工作已停止、保留既有冷卻並完成 guard bootstrap；
+讀取 target control／breaker 與共同 source guard，取得來源 lease 後只測 A04／36。只有 token／rate 都 200 且指定 USD／TWD 完整，
 才算 runner 來源成功；cache hit 不能代替來源驗證。
 probe 不發布 quote，必要的 lease／失敗冷卻仍須持久化。
 
