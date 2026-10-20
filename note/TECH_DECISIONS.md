@@ -476,3 +476,21 @@ lease／失敗 breaker 要持久化；須補明確 target、控制管理、job �
 Preview 單店／pilot／38 家與正式排程。詳見[計畫](../docs/superrich1965-github-actions-plan.zh-TW.md)
 及[調查證據](../docs/superrich1965-actions-research-2026-10-20.zh-TW.md)。
 本次只改文件，沒有實作、呼叫來源、執行 workflow、設定 Secrets、改遠端或部署。
+
+
+### 2026-10-20：Actions 本機實作與部署界線
+
+使用者同意 probe 成功前正式網站不變、專用有到期日 PAT／Environment，以及日後
+泰國 08:00～22:30 每半小時更新。新增手動 inspect／probe workflow、明確 target
+factory／控制 CLI、source guard、job／operation ledger 與 probe／publish 核心；
+checked-in target 預設空，workflow 沒有發布或排程入口。
+
+共同 guard 的 unresolvedAttempt 在來源前落盤，已知 403 即使取消或 target control
+改變也先持久化冷卻；未知結果不因租約到期解鎖。Probe 成功不寫 quote，失敗仍保留保護。
+Rerun 先讀 terminal ledger、保留原失敗結果；設定／storage 錯誤不當成中性 skip。
+發布前最後一次 await 後重驗期限，資料損壞與 CAS 競態都停止來源或發布。
+
+Netlify 官方支援最終 main commit 的 `[skip netlify]` 避免該次正式部署；PR title
+只處理 Preview，下一個未標記 commit 仍包含所有略過變更。Bootstrap 前後須核對實際
+commit／Netlify 狀態，不能把標記當作持續鎖站。見[維運文件](../docs/superrich1965-actions-runbook.zh-TW.md)。
+本次只做本機程式與 mock；未建立憑證、改遠端、執行來源、發布 workflow、部署或 commit。

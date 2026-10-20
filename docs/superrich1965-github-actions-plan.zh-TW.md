@@ -1,8 +1,10 @@
 # SuperRich 1965：GitHub Actions 抓取與 Netlify 逐店快取計畫
 
 更新日期：2026-10-20（Asia/Taipei）。本次是實作前調查與計畫，基準 commit `5ee520c`。
-**Actions runner、workflow、Secrets、Preview target 管理及排程皆尚未實作。**
-本次不呼叫 SuperRich、不執行 workflow、不改環境設定或 Blobs、不部署、不 commit。
+**P0～P3 本機程式與 mock 已實作；遠端 Secrets／target、workflow bootstrap、真實來源與排程尚未啟用。**
+本次沒有呼叫 SuperRich、執行 workflow、改遠端環境／Blobs、部署或 commit。
+目前可用指令與啟用前步驟見 [Actions 維運文件](superrich1965-actions-runbook.zh-TW.md)。
+以下保留設計與驗收契約；「規劃新增／尚未實作」的介面設計說明，實際落地以維運文件為準。
 已退役的 Netlify 抓價入口不恢復；目前遠端部署是否已套用退役 commit，本次未重新查核。
 
 詳細公開證據、SDK 核對與平台限制見 [本次調查](superrich1965-actions-research-2026-10-20.zh-TW.md)。
@@ -199,6 +201,8 @@ P4 驗收另要求 sourceValidated=true、token／rate 都 200，不能只看 wo
 GitHub 要求 workflow 先存在 default branch；本 repo 本次唯讀確認為 public／main。
 先完成實作審閱與本地測試，再透過正常 PR 合併僅供手動 inspect／probe 的初版；
 新 YAML 只有 feature branch 時，不能用 --ref 省略這一步。
+使用者已決定 probe 成功前不部署正式站：bootstrap 最終 main commit 使用 `[skip netlify]`，
+核對實際 merge／squash commit 與 Netlify 未發布結果；下一個未標記 commit 仍會部署全部略過變更。
 首版以受審閱 main 程式對指定 Preview 資料做測試，與網站目標分支分開；
 不讓 workflow 接受任意 checkout ref 或 pull request 程式。
 [官方 dispatch 條件](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)
@@ -230,7 +234,7 @@ cancel-in-progress=false；不把 ref、target 或 workflow 名稱加進 group �
 其他執行環境的 source lease。現行 GitHub 另支援 queue:max，本案沒有累積百輪的需求。
 [官方 concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
 
-首版完全沒有 schedule。P6 通過後才確定泰國營業時段、每半小時頻率與 cron，
+首版完全沒有 schedule。使用者已同意泰國 08:00～22:30 每半小時更新；P6 通過後才設定 cron，
 避開整點高負載；可明示 UTC 或 Asia/Bangkok，現行官方已支援 timezone。
 排程只執行 default branch，可能延遲／丟棄，公開 repo 長期無活動也會被停用；
 不補跑大量過期輪次、不延長 quote 期限，逾時就允許前端撤價。
@@ -303,8 +307,19 @@ Mock 不碰真實來源／正式 Blobs，至少涵蓋：
 
 - [x] 現有程式、SDK／平台、第三方固定成功紀錄與證據限制調查。
 - [x] 決定明確 target、共同 source guard、probe、rerun／取消及分階段驗收方向。
-- [ ] P0～P3：程式、mock、workflow、target／control 管理與審閱交付。
+- [x] P0～P3：本機程式、mock、僅供手動 inspect／probe 的 workflow、target／control 管理已實作。
 - [ ] 工作停止／冷卻移轉查核、guard bootstrap、workflow main bootstrap、Environment 設定。
 - [ ] P4：本專案 GitHub runner 單店真實來源成功，且不發布報價。
 - [ ] P5～P6：Preview 單店／pilot／38 家、API／UI、跨 run 與部署更換驗收。
 - [ ] P7：正式部署與時段／成本／故障／排程驗收，另行啟用。
+
+
+## 2026-10-20 實作補充
+
+使用者接受：probe 前正式網站不變、專用有到期日 PAT／Environment、日後泰國
+08:00～22:30 每半小時更新。已實作空 target fail-closed、固定 metadata 核對、
+共同 source guard／bootstrap／reconcile、probe 不發布、獨立 publish 核心、
+operation replay、取消／deadline／coverage。Workflow 尚未公開 publish 或 schedule。
+審閱補上晚控制讀取後的同步租約檢查、偽 pending／執行中 ledger 損壞阻擋、
+失敗 replay 不轉綠色 skip，以及 guard 讀取失敗與正常冷卻的 exit code 區分。
+完整操作與遠端待辦見 [維運文件](superrich1965-actions-runbook.zh-TW.md)。

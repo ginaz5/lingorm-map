@@ -31,8 +31,10 @@ USD／TWD 指定面額買入價、橘色 marker／群聚，以及 Google／HERE 
 
 2026-10-19：本機匿名 API 已測通，Netlify Preview 的 token GET 仍被來源
 403 challenge 擋下；[GitHub Actions 抓取計畫](docs/superrich1965-github-actions-plan.zh-TW.md)
-已記錄，runner、逐店發布與排程尚未實作。新版尚未部署；外部抓取器可用前，
-現有報價會依原有效期到期，重新整理不會產生新報價。
+已補上 runner、共用來源保護、逐店發布及只供手動 inspect／probe 的 workflow；
+[操作文件](docs/superrich1965-actions-runbook.zh-TW.md)說明 target／專用憑證及不部署正式站的 bootstrap。
+目前只通過 mock，本專案 GitHub runner 來源、Preview 發布與排程尚未驗收或啟用；
+現有報價仍依原有效期到期，重新整理不會產生新報價。
 
 ---
 

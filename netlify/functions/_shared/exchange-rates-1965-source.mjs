@@ -70,9 +70,9 @@ export function resolveSourceProfile(profile = NETLIFY_SOURCE_PROFILE, overrides
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * @param {{fetchImpl:typeof fetch, nowImpl:()=>number, sleepImpl:(ms:number)=>Promise<void>, functionStartedAtMs:number, profile:SourceProfile}} input
+ * @param {{fetchImpl:typeof fetch, nowImpl:()=>number, sleepImpl:(ms:number)=>Promise<void>, functionStartedAtMs:number, profile:SourceProfile, signal?:AbortSignal}} input
  */
-function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAtMs, profile }) {
+function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAtMs, profile, signal: externalSignal }) {
   const deadlineAt = functionStartedAtMs + profile.deadlineMs;
   const master = new AbortController();
   let gate = Promise.resolve();
@@ -93,10 +93,10 @@ function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAt
     await previous;
     try {
       const waitMs = Math.max(0, lastStartAt + profile.minStartGapMs - nowImpl());
-      if (nowImpl() + waitMs >= deadlineAt) return null;
+      if (externalSignal?.aborted || nowImpl() + waitMs >= deadlineAt) return null;
       if (waitMs > 0) await sleepImpl(waitMs);
       const startedAt = nowImpl();
-      if (startedAt >= deadlineAt || master.signal.aborted) return null;
+      if (startedAt >= deadlineAt || master.signal.aborted || externalSignal?.aborted) return null;
       lastStartAt = startedAt;
       requestStartTimes.push(startedAt);
       return startedAt;
@@ -113,8 +113,9 @@ function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAt
     if (remaining <= 0) return { kind: 'deadline', reason: 'timeout' };
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => timeoutController.abort('timeout'), Math.min(profile.requestTimeoutMs, remaining));
-    const signal = AbortSignal.any([master.signal, timeoutController.signal]);
+    const signal = AbortSignal.any([master.signal, timeoutController.signal, ...(externalSignal ? [externalSignal] : [])]);
     let observed = false;
+    let requestStarted = false;
     /** @param {unknown} value @param {Record<string, string|number|null>} fallback */
     const observe = (value, fallback) => {
       const entries = readSourceRequests(value) ?? [fallback];
@@ -124,6 +125,8 @@ function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAt
       return entries;
     };
     try {
+      signal.throwIfAborted();
+      requestStarted = true;
       const response = await fetchImpl(`${SOURCE_BASE_URL}/get`, {
         method: 'POST',
         redirect: 'error',
@@ -158,8 +161,15 @@ function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAt
       try { payload = JSON.parse(body); } catch { return { kind: 'fatal', reason: 'invalid' }; }
       return { kind: 'ok', payload };
     } catch (error) {
+      if (!requestStarted) return { kind: 'deadline', reason: 'timeout' };
       const reason = timeoutController.signal.aborted ? 'timeout' : 'http_error';
       const entries = observed ? [] : observe(error, { status: null, reason });
+      const challenge = entries.find(entry => entry.status === 403 || entry.status === 429 || entry.cfMitigated === 'challenge');
+      if (challenge) {
+        master.abort('source_blocked');
+        return { kind: 'blocked', status: challenge.status ?? 403,
+          retryAfterMs: parseRetryAfter(challenge.retryAfter, nowImpl()) };
+      }
       if (entries.some(entry => entry.reason === 'invalid')) return { kind: 'fatal', reason: 'invalid' };
       return { kind: 'retryable', reason };
     } finally {
@@ -186,7 +196,7 @@ function unavailableReason(result) {
 
 /** Fetch only the reviewed fixed mapping. No live inventory or automatic identity matching. */
 /**
- * @param {{mapping:any, fetchImpl?:typeof fetch, nowImpl?:()=>number, sleepImpl?:(ms:number)=>Promise<void>, functionStartedAtMs?:number, sourceDeadlineMs?:number, requestTimeoutMs?:number, profile?:SourceProfile|'netlify'|'local', allowRetry?:boolean}} input
+ * @param {{mapping:any, fetchImpl?:typeof fetch, nowImpl?:()=>number, sleepImpl?:(ms:number)=>Promise<void>, functionStartedAtMs?:number, sourceDeadlineMs?:number, requestTimeoutMs?:number, profile?:SourceProfile|'netlify'|'local', allowRetry?:boolean, signal?:AbortSignal}} input
  */
 export async function collectSourceQuotes({
   mapping,
@@ -198,13 +208,14 @@ export async function collectSourceQuotes({
   requestTimeoutMs,
   profile: requestedProfile = NETLIFY_SOURCE_PROFILE,
   allowRetry = true,
+  signal,
 }) {
   const profile = resolveSourceProfile(requestedProfile, {
     ...(sourceDeadlineMs === undefined ? {} : { sourceDeadlineMs }),
     ...(requestTimeoutMs === undefined ? {} : { requestTimeoutMs }),
   });
   const mapped = Object.entries(mapping.branches).map(([slug, branch]) => ({ slug, ...branch }));
-  const requester = createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAtMs, profile });
+  const requester = createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAtMs, profile, signal });
   let retryUsed = false;
   // These IDs describe the requested inventory, not an upstream identity claim.
   const sourceBranchIds = mapped.map(branch => branch.officialId);
@@ -230,7 +241,7 @@ export async function collectSourceQuotes({
     };
     await Promise.all(Array.from({ length: Math.min(profile.concurrency, targets.length) }, worker));
 
-    if (allowRetry && !blockedResult && !retryUsed && branchResults.size === targets.length) {
+    if (allowRetry && !signal?.aborted && !blockedResult && !retryUsed && branchResults.size === targets.length) {
       const candidate = targets.find(branch => branchResults.get(branch.officialId)?.kind === 'retryable');
       if (candidate !== undefined) {
         const first = branchResults.get(candidate.officialId);

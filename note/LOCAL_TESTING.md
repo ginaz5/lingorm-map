@@ -385,7 +385,7 @@ http://localhost:8888/api/config
 
 2026-10-17：全部 38 家橘標已在 Notion 改為 Published 並經 exporter 更新 CSV。
 分店發布不代表匯率服務已啟用。2026-10-20：本分支退役 Netlify 的橘標來源
-抓取，保留只讀 API；尚未部署。GitHub Actions runner、逐店發布與排程仍未實作。
+抓取，保留只讀 API；尚未部署。Actions runner／逐店發布已完成 mock，遠端來源／發布與排程尚未驗收。
 完整契約見 [Netlify 只讀快取與外部抓取](../docs/superrich1965-on-demand-plan.zh-TW.md)。
 
 - 頁面每 60 秒 GET `/api/exchange-rates-1965-cache`，只讀有效逐店報價。
@@ -469,24 +469,26 @@ POST 都 200，USD `100-50` 與 TWD `1000-100` 指定面額解析成功；不能
 仍遵守共享 breaker；不 fallback、不自動重試。新的真實來源驗收須依 Actions
 計畫完成受控入口，不能呼叫已刪除的 Netlify Function。
 
-### GitHub Actions 後續驗收（尚未實作）
+### GitHub Actions 本機實作與後續驗收
 
-依 [Actions 計畫](../docs/superrich1965-github-actions-plan.zh-TW.md) 先完成
-runner、明確 Preview target、probe 不發布路徑與 mock 測試，再安排手動單店。
-Netlify 的只讀部分已實作；workflow、Secrets、逐店發布與排程尚未啟用。
-2026-10-20 的[實作前調查](../docs/superrich1965-actions-research-2026-10-20.zh-TW.md)
-確認新 Preview store 不共享來源冷卻，計畫需先補固定 site-wide source guard、
-明確 Preview control 管理與不發布 probe。這些保護及管理命令目前都尚未實作。
-workflow 必須先存在預設分支，才能使用 Run workflow；初版不啟用排程。
-既有 CLI 尚未接匿名 transport，只寫 full snapshot，不能直接當逐店發布工具。
+已完成 runner、明確 target／control 管理、固定 site-wide source guard、probe 不發布、
+job／rerun／取消與逐店發布核心。新 workflow 只允許手動 inspect／probe，無 publish 或 schedule。
+`config/exchange-rates-1965-actions-targets.json` 的 targets 預設空；未設定即 fail closed，
+不會默用正式 target 或 `.env` 的日常 token。實際指令見 [Actions 維運文件](../docs/superrich1965-actions-runbook.zh-TW.md)。
 
-首次來源測試仍須先查核舊部署／本機工作已停止、保留既有冷卻並完成 guard bootstrap；
-讀取 target control／breaker 與共同 source guard，取得來源 lease 後只測 A04／36。只有 token／rate 都 200 且指定 USD／TWD 完整，
-才算 runner 來源成功；cache hit 不能代替來源驗證。
-probe 不發布 quote，必要的 lease／失敗冷卻仍須持久化。
+使用者已同意先保持正式網站不變，bootstrap 要核對最終 main commit 的 `[skip netlify]`；
+專用、有到期日的 PAT 放 GitHub Environment，main-only branch 規則需另行設定。
+日後採泰國 08:00～22:30 每半小時，但目前不開排程。
 
-單店通過後才驗指定 Preview 的逐店 cache、三個公開 API、列表與兩種 map
-provider，再驗小批次／38 家與排程。本次沒有設定 Secrets 或執行 workflow。
+程式測試涵蓋單店兩階段成功且零報價發布、38 家串行／token 重用、跨 target 403 冷卻、
+未結案來源／hard kill、取消、晚讀控制跨租約、損壞 ledger、CAS 衝突及失敗 rerun 不轉綠。
+另檢查 workflow YAML、Bash 語法、固定 SHA、手動模式與憑證只在最後 step 注入。
+
+首次真實來源仍須先查核舊部署／本機來源已停止、保留既有冷卻並完成 paused guard bootstrap，
+再核對新 Preview target control。只有新的單店 run 取得 token／rate 都 200、USD／TWD 完整、
+sourceValidated=true 且 published=0 才通過 probe；cache hit／歷史 replay 不算來源成功。
+之後才驗 Preview 單店發布、pilot／38 家、列表與 Google／HERE，再安排正式排程。
+本次沒有設定 Secrets、執行 workflow、觸發來源或改正式部署。
 
 ### Netlify 瀏覽器模式驗收
 
