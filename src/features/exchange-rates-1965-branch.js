@@ -2,8 +2,8 @@ import { state } from '../core/state.js';
 import { ORANGE_BRANCHES, parseBranchQueryPayload, parseBranchCachePayload } from '../data/exchange-rates-1965-branch.js';
 
 export const BRANCH_QUERY_API = '/api/exchange-rates-1965-branch';
-// Browser mode can spend up to 23 seconds initializing and querying upstream.
-export const BRANCH_QUERY_TIMEOUT_MS = 32_000;
+// Both endpoints only read cached quotes; no upstream browser startup is needed.
+export const BRANCH_QUERY_TIMEOUT_MS = 12_000;
 export const BRANCH_CACHE_TIMEOUT_MS = 12_000;
 export const BRANCH_CACHE_API = '/api/exchange-rates-1965-cache';
 export const BRANCH_CACHE_POLL_MS = 60_000;
@@ -74,7 +74,8 @@ function scheduleExpiry() {
   timer = deadlines.length ? setTimeout(expireBranchQueries, Math.max(0, Math.min(.../** @type {number[]} */ (deadlines)) - Date.now())) : null;
 }
 
-/** Explicit user action only. No request is triggered by rendering or timers.
+/** Read one cached branch on explicit user action. This endpoint never fetches
+ * official rates; rendering and timers only use the shared cache endpoint.
  * @param {string} slug @returns {Promise<void>}
  */
 export function queryOrangeBranch(slug) {

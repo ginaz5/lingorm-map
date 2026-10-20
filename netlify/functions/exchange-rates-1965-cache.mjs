@@ -1,6 +1,6 @@
 import { BRANCH_API_SCHEMA_VERSION, ORANGE_BRANCHES, isValidBranchQuote, parseBranchQueryPayload } from '../../src/data/exchange-rates-1965-branch.js';
 import { readEffectiveControl } from './_shared/exchange-rates-1965-control.mjs';
-import { branchCacheKey } from './_shared/exchange-rates-1965-on-demand.mjs';
+import { branchCacheKey } from './_shared/exchange-rates-1965-branch-cache.mjs';
 import { createRuntimeStore, readEntry } from './_shared/exchange-rates-1965-storage.mjs';
 
 /** @param {any} body @param {number} [status] */

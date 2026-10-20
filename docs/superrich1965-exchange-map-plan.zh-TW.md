@@ -1,8 +1,10 @@
 # SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫
 
-> **2026-10-17 更新：** 使用者已確認採卡片手動觸發後端單店查詢，現行前端行為與
-> 單店 API 契約以[按需查詢計畫](superrich1965-on-demand-plan.zh-TW.md)為準。
-> 本文的完整 38 店快照／本機 collector 保留為相容工具，不能視為已驗收上線。
+> **2026-10-20 更新：** 本文保留早期設計。橘標 Netlify 排程、背景取價、
+> Chromium 與 FETCH_MODE／SOURCE_TRANSPORT 開關已退役；三個公開 API 只讀快取。
+> 現行契約以 [Netlify 只讀快取與外部抓取](superrich1965-on-demand-plan.zh-TW.md)
+> 為準；[Actions 接線](superrich1965-github-actions-plan.zh-TW.md) 尚未實作。
+> 本文舊環境切換／回復及來源函式驗收步驟已失效；本機完整快照 CLI 保留相容。
 
 建立日期：2026-09-09；更新日期：2026-09-25。狀態：**M1～M5 本機實作與 38 筆正式建檔已完成；9 月 11 日的資料發布測試為歷史紀錄**。目前提交的 CSV 快照中，38 筆橘標分店均為 `Paused`。Phase C 尚待 Deploy Preview 人工觸發首輪匯率快照，Google Maps 驗收待辦。進度與驗證見 [進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)。
 

@@ -145,6 +145,21 @@ test('exchange-rate sort menu exposes both brands without a separate toggle', as
   }
 });
 
+test('orange rate refresh explains unavailable quotes without promising a source query', () => {
+  assert.equal(T.zh.fx_query, '重新整理匯率');
+  assert.equal(T.en.fx_query, 'Refresh rates');
+  assert.equal(T.zh.fx_query_loading, '重新整理中…');
+  assert.equal(T.en.fx_query_loading, 'Refreshing…');
+  assert.match(T.zh.fx_query_hint, /尚無有效報價.*稍後查看/);
+  assert.match(T.en.fx_query_hint, /No valid quote yet.*Check back later/);
+  assert.match(T.zh.fx_query_failed, /稍後查看或前往官網/);
+  assert.match(T.en.fx_query_failed, /Check back later or visit the official website/);
+  for (const lang of ['zh', 'en']) {
+    assert.doesNotMatch(T[lang].fx_query_hint, /手動查詢|manually|cache/i);
+    assert.doesNotMatch(T[lang].fx_query_sort_scope, /queried/);
+  }
+});
+
 test('unrestricted filters show their category and label prompts', () => {
   assert.equal(T.zh.all_cat, '所有類別');
   assert.equal(T.en.all_cat, 'All categories');

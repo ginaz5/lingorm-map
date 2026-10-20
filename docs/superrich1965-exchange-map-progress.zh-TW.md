@@ -2,10 +2,10 @@
 
 > - 專案：Lingorm Bangkok Map
 > - 建立日期：2026-09-09
-> - 最後更新：2026-10-17
+> - 最後更新：2026-10-20
 > - 手動單店試點：Silom Plaza 本機真實查詢成功；後續依使用者指示將全部 38 家改為 Published，供本機手動測試。
-> - 最新驗證見[單店實測紀錄](superrich1965-single-branch-test-2026-10-17.zh-TW.md)；尚未部署或驗證正式雲端出口。
-> - 目前里程碑：M1～M6 程式完成；10 月 17 日完成單店發布與真實本機循環驗收，雲端部署與 Google SDK 人工驗收待辦。下列里程碑保留歷史驗證。
+> - 現況：已退役 Netlify 抓價入口、Chromium 與兩個來源開關，公開 API 只讀快取，尚未部署；見[現行契約](superrich1965-on-demand-plan.zh-TW.md)與[待實作 Actions 計畫](superrich1965-github-actions-plan.zh-TW.md)。
+> - 下列里程碑保留歷史：M1～M6 曾完成；10 月 17 日本機循環驗收見[單店實測紀錄](superrich1965-single-branch-test-2026-10-17.zh-TW.md)。舊 FETCH_MODE 切換與來源函式驗收步驟已退役。
 > - 規格依據：[SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫](superrich1965-exchange-map-plan.zh-TW.md)
 > - 審閱歷程：[審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)
 

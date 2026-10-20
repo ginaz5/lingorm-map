@@ -7,13 +7,12 @@ import { pathToFileURL } from 'node:url';
 
 import {
   createLastAttempt, EXCHANGE_KEYS, isValidLastAttempt, isValidSnapshot,
-  MAX_ATTEMPT_DIAGNOSTICS, resolveFetchMode, sanitizeDiagnostics,
+  MAX_ATTEMPT_DIAGNOSTICS, sanitizeDiagnostics,
 } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { writeLastAttempt } from '../netlify/functions/_shared/exchange-rates-1965-runner.mjs';
 import {
   LOCAL_SOURCE_PROFILE, NETLIFY_SOURCE_PROFILE, resolveSourceProfile,
 } from '../netlify/functions/_shared/exchange-rates-1965-source.mjs';
-import { logExchangeRateFetchResult, resolveScheduledFetchMode } from '../netlify/functions/exchange-rates-1965-fetch.mjs';
 import {
   acquireLock, LOCAL_BACKOFF_MS, nextLocalCooldown, parseArgs, readLocalState, runFetchCommand, writeLocalState,
 } from '../scripts/exchange-rates-1965-fetch.mjs';
@@ -493,57 +492,6 @@ test('run summaries stay bounded and never carry a raw response', () => {
   assert.throws(() => createLastAttempt({
     mode: 'publish', result: 'published', attemptedAtMs: START, completedAtMs: START, reason: 'Not A Code',
   }), /Invalid attempt reason/);
-});
-
-test('fetch mode gates the scheduled function without touching the public switch', async () => {
-  assert.equal(resolveFetchMode(undefined), 'netlify');
-  assert.equal(resolveFetchMode(''), 'netlify');
-  assert.equal(resolveFetchMode('netlify'), 'netlify');
-  assert.equal(resolveFetchMode('local'), 'local');
-  assert.throws(() => resolveFetchMode('true'), /must be netlify or local/);
-
-  const errors = [];
-  const logger = { error: message => errors.push(JSON.parse(message)) };
-  assert.deepEqual(resolveScheduledFetchMode({ fetchMode: 'local' }, logger), { mode: 'local', valid: true });
-  assert.deepEqual(resolveScheduledFetchMode({ fetchMode: 'sheet' }, logger), { mode: null, valid: false });
-  assert.equal(errors.length, 1);
-  assert.equal(errors[0].reason, 'invalid_fetch_mode');
-  assert.equal(errors[0].sourceRequestCount, 0);
-
-  const info = [];
-  const skipLogger = { info: message => info.push(JSON.parse(message)), error: () => assert.fail('expected INFO') };
-  logExchangeRateFetchResult({ status: 'skipped', reason: 'external_fetcher', sourceRequestCount: 0 }, skipLogger);
-  assert.equal(info[0].reason, 'external_fetcher');
-  // Any other skip is still an error: only the configured hand-off is routine.
-  const mixed = { info: [], error: [] };
-  logExchangeRateFetchResult({ status: 'skipped', reason: 'stale_control' }, {
-    info: message => mixed.info.push(JSON.parse(message)),
-    error: message => mixed.error.push(JSON.parse(message)),
-  });
-  assert.equal(mixed.info.length, 0);
-  assert.equal(mixed.error.length, 1);
-});
-
-test('the local mode scheduled function returns before creating a store', async () => {
-  const { default: exchangeRatesFetch } = await import('../netlify/functions/exchange-rates-1965-fetch.mjs');
-  const previous = process.env.EXCHANGE_RATES_1965_FETCH_MODE;
-  const logged = [];
-  const originalLog = console.log;
-  console.log = message => logged.push(JSON.parse(message));
-  process.env.EXCHANGE_RATES_1965_FETCH_MODE = 'local';
-  try {
-    // No Netlify Blobs configuration is available here: reaching the store
-    // would throw, so returning cleanly proves the early exit.
-    await exchangeRatesFetch(new Request('https://example.invalid/'), { deploy: { context: 'production' } });
-  } finally {
-    console.log = originalLog;
-    if (previous === undefined) delete process.env.EXCHANGE_RATES_1965_FETCH_MODE;
-    else process.env.EXCHANGE_RATES_1965_FETCH_MODE = previous;
-  }
-  assert.equal(logged.length, 1);
-  assert.equal(logged[0].status, 'skipped');
-  assert.equal(logged[0].reason, 'external_fetcher');
-  assert.equal(logged[0].sourceRequestCount, 0);
 });
 
 // --- Regressions for the four reproduced defects (2026-09-11 review) ---

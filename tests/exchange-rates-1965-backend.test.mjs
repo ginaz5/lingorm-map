@@ -10,7 +10,6 @@ import {
 } from '../netlify/functions/_shared/exchange-rates-1965-source.mjs';
 import { createRuntimeStore } from '../netlify/functions/_shared/exchange-rates-1965-storage.mjs';
 import { changeControl } from '../netlify/functions/_shared/exchange-rates-1965-control.mjs';
-import { logExchangeRateFetchResult } from '../netlify/functions/exchange-rates-1965-fetch.mjs';
 import { serveExchangeRates } from '../netlify/functions/exchange-rates-1965.mjs';
 import { FakeBlobStore, jsonResponse, uuid } from './helpers/exchange-rates-store.mjs';
 
@@ -35,25 +34,6 @@ test('orange control retry preserves a cooldown recorded during the breaker writ
 
   assert.equal(raced, true);
   assert.deepEqual(store.entries.get(EXCHANGE_KEYS.breaker).data, createBreaker(uuid(2), latestBlockedUntil));
-});
-
-test('fetch logging reports unavailable-rate outcomes as errors', () => {
-  const info = [];
-  const error = [];
-  const logger = { info: message => info.push(JSON.parse(message)), error: message => error.push(JSON.parse(message)) };
-
-  logExchangeRateFetchResult({ status: 'disabled', sourceRequestCount: 0 }, logger);
-  logExchangeRateFetchResult({ status: 'published', sourceOutcome: 'complete' }, logger);
-  logExchangeRateFetchResult({ status: 'published', sourceOutcome: 'partial' }, logger);
-  logExchangeRateFetchResult({ status: 'published', sourceOutcome: 'failed' }, logger);
-  logExchangeRateFetchResult({ status: 'published', sourceOutcome: 'blocked' }, logger);
-  logExchangeRateFetchResult({ status: 'blocked', sourceRequestCount: 0 }, logger);
-
-  assert.deepEqual(info.map(entry => entry.status), ['disabled', 'published']);
-  assert.deepEqual(error.map(entry => entry.sourceOutcome ?? entry.status), [
-    'partial', 'failed', 'blocked', 'blocked',
-  ]);
-  assert.ok([...info, ...error].every(entry => entry.event === 'exchange_rates_1965_fetch'));
 });
 
 function mapping() {

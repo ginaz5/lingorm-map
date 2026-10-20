@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import FIXTURE from './fixtures/superrich1965/exchange-rate-00.json' with { type: 'json' };
-import { createSourceSession } from '../netlify/functions/_shared/exchange-rates-1965-browser.mjs';
+import { createAnonymousApiSource, ANONYMOUS_SOURCE_PROFILE } from '../netlify/functions/_shared/exchange-rates-1965-anonymous.mjs';
 import { queryBranchRates, branchCacheKey, BRANCH_GATE_KEY, BRANCH_LEASE_MS } from '../netlify/functions/_shared/exchange-rates-1965-on-demand.mjs';
-import { dispatchSlowBatch, runSlowBatch, BATCH_JOB_KEY } from '../netlify/functions/_shared/exchange-rates-1965-background.mjs';
+import { runSlowBatch, BATCH_JOB_KEY, BATCH_BUDGET_MS } from '../netlify/functions/_shared/exchange-rates-1965-background.mjs';
 import { EXCHANGE_KEYS, createBreaker, createControl } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { serveBranchCache } from '../netlify/functions/exchange-rates-1965-cache.mjs';
 import { ORANGE_BRANCHES, isValidBranchQuote } from '../src/data/exchange-rates-1965-branch.js';
@@ -38,21 +38,21 @@ function harness() {
     },
     rateResponse: () => Response.json(FIXTURE),
   };
-  const source = createSourceSession({ transport: 'anonymous-api', nowImpl: h.nowImpl,
+  const source = { sourceProfile: ANONYMOUS_SOURCE_PROFILE, ...createAnonymousApiSource({ nowImpl: h.nowImpl,
     fetchImpl: async (url, options) => {
       calls.push({ url: String(url), options, at: now });
       if (String(url) === TOKEN_URL) return h.tokenResponse();
       assert.equal(String(url), RATE_URL);
       return h.rateResponse();
-    } });
+    } }) };
   h.source = source;
   h.input = { store, ...source, nowImpl: h.nowImpl, randomUUIDImpl: h.randomUUIDImpl };
   h.query = async (target = slug) => {
     const response = await queryBranchRates({ ...h.input, slug: target });
     return { response, body: await response.json() };
   };
-  h.dispatch = () => dispatchSlowBatch({ store, deployURL: 'https://deploy.example', nowImpl: h.nowImpl,
-    randomUUIDImpl: h.randomUUIDImpl, fetchImpl: async () => new Response(null, { status: 202 }) });
+  h.seedJob = () => store.seed(BATCH_JOB_KEY, { token: h.randomUUIDImpl(), controlVersion: uuid(1),
+    scheduledAtMs: now, deadlineAtMs: now + BATCH_BUDGET_MS, status: 'pending', leaseId: null });
   h.run = options => runSlowBatch({ ...h.input, token: store.entries.get(BATCH_JOB_KEY).data.token,
     randomImpl: () => 0, slugs: [slug, otherSlug],
     sleepImpl: async ms => { delays.push(ms); now += ms; }, ...options });
@@ -209,7 +209,7 @@ for (const expiredBetweenBranches of [false, true]) {
     t.after(h.source.close);
     h.store.seed(EXCHANGE_KEYS.breaker, { ...createBreaker(uuid(1)), blockLevel: 1 });
     if (expiredBetweenBranches) h.tokenExpiry = () => h.nowImpl() + 61_000;
-    assert.equal((await h.dispatch()).status, 'dispatched');
+    h.seedJob();
     assert.equal(h.calls.length, 0);
     const result = await h.run(expiredBetweenBranches ? { sleepImpl: async ms => {
       h.delays.push(ms);

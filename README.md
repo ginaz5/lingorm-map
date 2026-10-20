@@ -21,14 +21,18 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
 - SuperRich Thailand currency-exchange overlay: 26 branches shown like any other location, with USD 100 / USD 50 / TWD buying rates updated every 30 minutes from 08:00 to 22:30 Thailand time and best-rate sorting when quotes are available (rate fetching is gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
 
-SuperRich 1965（橘標）程式已整合：沿用同一個「換匯」標籤、卡片與排序選單，
-後端每半小時派送背景工作，逐店查詢 USD／TWD 報價、隨機間隔 2～5 秒。
-頁面只讀共用快取，缺少有效報價才提供單店手動查詢；有效期與綠標相同。
-橘色 marker／
-群聚、獨立 API 與既有本機抓取工具保留。橘標排序只比較已有有效報價的分店。
-目前正式快照的 38 家橘標分店均為 `Published`，供本機畫面手動測試；
-分店狀態由 Notion 管理；本機驗收不代表正式站已部署或啟用匯率服務。
+SuperRich 1965（橘標）沿用同一個「換匯」標籤、卡片與排序選單，提供
+USD／TWD 指定面額買入價、橘色 marker／群聚，以及 Google／HERE popup。
+本分支已退役橘標的 Netlify 排程、背景取價、Chromium 與兩個來源環境開關；
+頁面及單店「重新整理匯率」按鈕只讀快取，不會向官網取價。有效期與綠標相同，
+排序只比較已有有效報價的分店；既有本機完整快照 CLI 保留。
+38 家橘標分店的 Published 狀態由 Notion 管理，不代表報價服務已部署或啟用。
 操作方式見 [橘標整合與維運](note/LOCAL_TESTING.md#橘標整合與維運)。
+
+2026-10-19：本機匿名 API 已測通，Netlify Preview 的 token GET 仍被來源
+403 challenge 擋下；[GitHub Actions 抓取計畫](docs/superrich1965-github-actions-plan.zh-TW.md)
+已記錄，runner、逐店發布與排程尚未實作。新版尚未部署；外部抓取器可用前，
+現有報價會依原有效期到期，重新整理不會產生新報價。
 
 ---
 

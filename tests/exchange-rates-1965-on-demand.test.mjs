@@ -313,24 +313,6 @@ test('storage errors and lost cache CAS fail closed and never report a fresh quo
   assert.equal(h.calls.length, 1);
 });
 
-test('on-demand mode skips the bulk scheduled function before storage or source access', async t => {
-  const { default: scheduled, logExchangeRateFetchResult } = await import('../netlify/functions/exchange-rates-1965-fetch.mjs');
-  const previous = process.env.EXCHANGE_RATES_1965_FETCH_MODE;
-  process.env.EXCHANGE_RATES_1965_FETCH_MODE = 'on-demand';
-  t.after(() => {
-    if (previous === undefined) delete process.env.EXCHANGE_RATES_1965_FETCH_MODE;
-    else process.env.EXCHANGE_RATES_1965_FETCH_MODE = previous;
-  });
-  const messages = [];
-  t.mock.method(console, 'log', text => messages.push(JSON.parse(text)));
-  const fetch = t.mock.method(globalThis, 'fetch', () => { throw new Error('unexpected fetch'); });
-  await scheduled(new Request('https://map.example/'), { deploy: { context: 'production' } });
-  assert.equal(fetch.mock.callCount(), 0);
-  assert.equal(messages[0].reason, 'on_demand');
-  assert.equal(messages[0].sourceRequestCount, 0);
-  logExchangeRateFetchResult({ status: 'skipped', reason: 'on_demand' }, { info() {}, error() { assert.fail('expected INFO'); } });
-});
-
 test('cache write conflicts do not return an uncommitted quote or erase the other writer', async () => {
   const h = harness();
   let winner;

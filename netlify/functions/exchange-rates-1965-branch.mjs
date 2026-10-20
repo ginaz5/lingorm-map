@@ -1,7 +1,6 @@
 import { ORANGE_BRANCHES } from '../../src/data/exchange-rates-1965-branch.js';
-import { branchResponse, queryBranchRates } from './_shared/exchange-rates-1965-on-demand.mjs';
+import { branchResponse, readBranchRates } from './_shared/exchange-rates-1965-branch-cache.mjs';
 import { createRuntimeStore } from './_shared/exchange-rates-1965-storage.mjs';
-import { createSourceSession } from './_shared/exchange-rates-1965-browser.mjs';
 
 /** @param {Request} request @param {{deploy?:{context?:string}}} [context] */
 export default async function exchangeRatesBranch(request, context) {
@@ -22,15 +21,10 @@ export default async function exchangeRatesBranch(request, context) {
       typeof body.slug !== 'string' || !Object.hasOwn(ORANGE_BRANCHES, body.slug)) {
     return branchResponse('', Date.now(), { status: 400, reason: 'invalid_request' });
   }
-  let source;
   try {
-    source = createSourceSession();
-    return await queryBranchRates({ slug: body.slug, store: createRuntimeStore({ context: context?.deploy?.context }),
-      fetchImpl: source.fetchImpl, sourceProfile: source.sourceProfile });
+    return await readBranchRates({ slug: body.slug, store: createRuntimeStore({ context: context?.deploy?.context }) });
   } catch {
     return branchResponse(body.slug, Date.now(), { status: 503, reason: 'storage_unavailable' });
-  } finally {
-    await source?.close();
   }
 }
 

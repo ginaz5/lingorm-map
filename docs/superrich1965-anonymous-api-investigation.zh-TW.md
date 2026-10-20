@@ -8,10 +8,18 @@
 
 匿名 token GET + external-app 匯率 POST 在本機成功，兩者皆回 200，
 USD 與 TWD 的指定面額買入價可直接通過現有 `parseBranchExchange1965()`。
-這是值得準備 Netlify 驗證的路徑，不能由 Chromium 被擋就推論全 Netlify 不可行。
+後續 Netlify Preview 實測在 token GET 收到 403 challenge，尚未送匯率 POST；
+詳見本文末的雲端紀錄。下一步改評估
+[GitHub Actions 抓取計畫](superrich1965-github-actions-plan.zh-TW.md)，尚未實作或執行。
 
-本次沒有在 Netlify 出口測這兩個端點，沒有遍歷 38 家，沒有驗證長期穩定性；
-本機成功不能作為雲端成功或完整分店覆蓋的證明。
+目前本機程式已退役 Netlify 直接抓價入口與 browser dependencies，三個公開 API
+均只讀快取；這批變更尚未部署。匿名來源核心保留供未來外部 runner 使用，
+本文的本機 Function 成功與 Preview 403／429 是退役前的歷史證據，不能用舊環境
+變數重新啟用目前程式的來源抓取。退役範圍見本文末節。
+
+初次調查未測 Netlify 出口；後續已確認該次 token 請求被擋。
+目前仍沒有遍歷 38 家或驗證長期穩定性，本機／第三方成功不能作為本專案
+GitHub runner 成功或完整分店覆蓋的證明。
 
 ## 來源研究
 
@@ -81,9 +89,10 @@ token 只留在該次程序記憶體，沒有寫入檔案、console、fixture �
 
 ## 最小後續整合方式（調查時規劃）
 
-本節保留調查時的整合條件。後續已增加選用的 `anonymous-api` runtime 模式；
-目前操作與驗收方式見 [本機驗收](../note/LOCAL_TESTING.md#匿名-api-模式本機驗收)，
-仍未部署或驗證 Netlify 出口。
+本節保留初次調查時的整合條件。後續曾增加選用的 `anonymous-api` runtime 模式，
+再於本次本機變更退役 Netlify 模式選擇與抓價入口；以下不是現行啟用步驟。
+目前維運方式見 [本機測試文件](../note/LOCAL_TESTING.md)，
+本機與後續 Netlify Preview 結果分別記錄於本文後段。
 
 1. 增加明確選用的匿名 API transport，保留目前 http／browser 路徑與預設。
    僅在 `queryBranchRates()` 通過 control、快取、breaker、CAS lease，且
@@ -121,11 +130,12 @@ token 只留在該次程序記憶體，沒有寫入檔案、console、fixture �
 - 文件：檢查 diff、路徑及連結。未改 runtime，本次不重跑型別檢查、全套 Node
   測試或 build；Netlify 出口驗證仍待選用 transport 實作與獲授權的 Preview 部署。
 
-## 後續實作與本機 Function 驗證（同日）
+## 退役前的實作與本機 Function 驗證（同日）
 
-已增加 `EXCHANGE_RATES_1965_SOURCE_TRANSPORT=anonymous-api` 選用模式，
-接入原本單店與背景來源 session；預設仍是 `http`，未改 Chromium、公開
+當時增加 `EXCHANGE_RATES_1965_SOURCE_TRANSPORT=anonymous-api` 選用模式，
+接入原本單店與背景來源 session；當時預設仍是 `http`，未改 Chromium、公開
 API／快取 schema、報價有效期或遠端設定。匿名 token 及兩階段診斷不進公開回應。
+此環境變數與 Netlify 來源入口已在本次本機程式退役，保留此段僅供核對實測歷史。
 
 台灣時間 2026-10-19 22:43:53～22:43:56，使用本機 `netlify dev`
 `http://localhost:8890` 呼叫原有 `POST /api/exchange-rates-1965-branch`，
@@ -149,4 +159,62 @@ API／快取 schema、報價有效期或遠端設定。匿名 token 及兩階段
 
 `npm run typecheck`、`npm test`（688 項、0 失敗）、`npm run build` 與
 `netlify functions:build` 通過，函式打包輸出只放本機暫存目錄。
-本機成功仍不代表已驗證 Netlify 雲端出口；本次沒有 commit、push 或部署。
+該次本機驗證沒有發布正式資料；後續雲端實測結果如下。
+
+## Netlify Preview 匿名 token 被擋（2026-10-19）
+
+使用者將 `41fcb8f` 部署至 Preview `6ad62ddf1a2369d43e1e364e` 後，
+台灣時間 22:50 查詢 `superrich1965-62`。私有 Function log 已確認：
+
+| 欄位 | 實際結果 |
+| --- | --- |
+| sourceProfile | `anonymous-api`，模式已生效 |
+| diagnostics stage／status | `token`／403 |
+| cfMitigated | `challenge` |
+| sourceRequestCount | 1，只有匿名 token GET |
+| sourceOutcome／cooldownSource | `blocked`／`source_blocked`，本次新來源封鎖 |
+| 本站 httpStatus | 429，啟動既有冷卻後的回應 |
+| retryAt | `2026-10-19T20:50:01.138Z`，台灣 10 月 20 日 04:50:01 |
+
+[Function log](https://app.netlify.com/projects/lingorm-map/functions/exchange-rates-1965-branch?scope=deploypreview%3A8)
+對應 `attemptedAt=2026-10-19T14:50:00.655Z`。
+來源匯率 POST 沒有發出，不能宣稱新取價 POST 在 Netlify 也已失敗。
+403／challenge 是來源結果；429 是本站保護機制，與既有冷卻擋下的零來源請求不同。
+這次診斷沒有重試來源、修改設定或清除冷卻。
+
+## GitHub Actions 的後續方向
+
+目前有本機成功與 ThaiCash 的 Actions 公開成功紀錄，足以支持分階段驗證，
+不足以保證本專案的 GitHub runner 可用。runner 網路與 HTTP 特徵都可能不同。
+現有本機 CLI 未接匿名模式且發布舊 full snapshot，必須補上逐店 cache 接線，
+也需實作明確 Preview target。Netlify 只讀報價已在本機程式完成，尚未部署；
+後續須驗收部署切換並核對既有工作，避免外部 runner 與舊部署同時抓來源。
+
+完整階段、target／Secrets、既有冷卻與驗收條件見
+[GitHub Actions 抓取與 Netlify 逐店快取計畫](superrich1965-github-actions-plan.zh-TW.md)。
+Actions runner、workflow、Secrets、Preview target 支援與排程尚未實作或啟用。
+
+## 程式與環境變數退役紀錄（2026-10-20，尚未部署）
+
+- 刪除 `exchange-rates-1965-fetch.mjs` 與 `exchange-rates-1965-refresh.mjs`
+  兩個 Netlify Functions，移除 HTTP dispatch；保留 shared `runSlowBatch()`、
+  工作 token／job claim 與 12 分鐘預算，供未來 Actions runner 接入。
+- 刪除 browser helper、Chromium／Playwright dependencies 與專用打包設定。
+  `EXCHANGE_RATES_1965_FETCH_MODE`、`EXCHANGE_RATES_1965_SOURCE_TRANSPORT`
+  從現行程式及設定範本退役，不再提供 Netlify 抓價模式選擇。
+- 保留 `GET /api/exchange-rates-1965` 的完整 snapshot API、
+  `GET /api/exchange-rates-1965-cache` 與相容的
+  `POST /api/exchange-rates-1965-branch`。三者均只讀已存報價，不取 token、不打來源、
+  不寫 cache，也不初始化 control 或取得抓價 lease。branch POST 缺少有效報價時回
+  `503 unavailable`，建議 60 秒後重讀。
+- 保留 `EXCHANGE_RATES_1965_ENABLED`、control、lease、breaker、逐店 cache、
+  anonymous source 與既有本機 full-snapshot CLI。有效期、控制版本與既有冷卻
+  契約保留；公開讀取不延長到期、不清除 breaker 或改寫報價。
+- 未來 runner 直接使用 `createAnonymousApiSource()` 與
+  `ANONYMOUS_SOURCE_PROFILE`；已刪除的來源 session factory 不再是可用入口。
+  本機 CLI 仍使用舊取價路徑及完整 snapshot 發布方式，尚不能當成匿名 Actions runner。
+
+兩個退役環境變數已從 Netlify 專案所有 context 移除，CLI 確認需重新部署才會套用。
+程式尚未部署，未設定 GitHub Secrets、清除冷卻或刪除遠端 Blobs；先前 Preview
+的 403／429 與 control／breaker 歷史全部保留。
+Actions 的工作建立、probe、逐店發布及 Preview target 接線仍依計畫待實作。

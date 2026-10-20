@@ -2,7 +2,7 @@
 // SUPERRICH 1965 (ORANGE) EXCHANGE — SOURCE CONTRACT (Phase A1)
 // Pure data parsing for the SuperRich 1965 public endpoints.
 // No network, no DOM, no storage: this module is imported by both the
-// scheduled Netlify Function and the browser bundle.
+// external collectors and the browser bundle.
 //
 // Contract reference: docs/superrich1965-exchange-map-plan.zh-TW.md §2, §2.3, §3.3.
 //

@@ -4,12 +4,10 @@ import FIXTURE from './fixtures/superrich1965/exchange-rate-00.json' with { type
 import { ORANGE_BRANCHES, isValidBranchQuote, parseBranchCachePayload } from '../src/data/exchange-rates-1965-branch.js';
 import { quoteExpiryMs, nextUtcHalfHour } from '../src/data/exchange-rate-timing.js';
 import { buildSnapshot as greenSnapshot } from '../netlify/functions/_shared/exchange-rates-contract.mjs';
-import { dispatchSlowBatch, runSlowBatch, BATCH_JOB_KEY, BACKGROUND_FUNCTION_PATH } from '../netlify/functions/_shared/exchange-rates-1965-background.mjs';
+import { runSlowBatch, BATCH_JOB_KEY, BATCH_BUDGET_MS } from '../netlify/functions/_shared/exchange-rates-1965-background.mjs';
 import { branchCacheKey, queryBranchRates } from '../netlify/functions/_shared/exchange-rates-1965-on-demand.mjs';
 import { EXCHANGE_KEYS, createControl } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { serveBranchCache } from '../netlify/functions/exchange-rates-1965-cache.mjs';
-import refresh, { config } from '../netlify/functions/exchange-rates-1965-refresh.mjs';
-import { resolveBackgroundDeployURL } from '../netlify/functions/exchange-rates-1965-fetch.mjs';
 import { FakeBlobStore, uuid } from './helpers/exchange-rates-store.mjs';
 
 const START = Date.parse('2026-10-17T01:00:00.000Z');
@@ -18,25 +16,22 @@ function harness() {
   const store = new FakeBlobStore();
   store.seed(EXCHANGE_KEYS.control, createControl({ enabled: true, nowMs: START - 1000, controlVersion: uuid(1), updatedBy: 'manual' }));
   let now = START, sequence = 10;
-  const source = [], dispatches = [], delays = [];
+  const source = [], delays = [];
   const input = { store, nowImpl: () => now, randomUUIDImpl: () => uuid(sequence++), fetchImpl: async (url, options) => {
-    if (new URL(url).pathname === BACKGROUND_FUNCTION_PATH) { dispatches.push({ url, options }); return new Response(null, { status: 202 }); }
     source.push({ url, options, at: now });
     now += 500;
     return Response.json(FIXTURE);
   }, sleepImpl: async ms => { delays.push(ms); now += ms; } };
-  const dispatch = () => dispatchSlowBatch({ ...input, deployURL: 'https://deploy.map.example' });
+  const seedJob = () => store.seed(BATCH_JOB_KEY, { token: uuid(sequence++), controlVersion: uuid(1),
+    scheduledAtMs: now, deadlineAtMs: now + BATCH_BUDGET_MS, status: 'pending', leaseId: null });
   const run = (options = {}) => runSlowBatch({ ...input, token: store.entries.get(BATCH_JOB_KEY)?.data.token, ...options });
-  return { store, input, source, dispatches, delays, dispatch, run, advance: ms => { now += ms; } };
+  return { store, input, source, delays, seedJob, run, advance: ms => { now += ms; } };
 }
 
-test('schedule only dispatches; one authenticated worker fetches 38 branches sequentially with random 2–5 second gaps', async () => {
+test('one claimed batch fetches 38 branches sequentially with random 2–5 second gaps', async () => {
   const h = harness();
-  assert.deepEqual(config, { background: true });
-  assert.equal((await h.dispatch()).status, 'dispatched');
+  h.seedJob();
   assert.equal(h.source.length, 0);
-  assert.equal(h.dispatches.length, 1);
-  assert.equal(h.dispatches[0].options.headers.authorization, `Bearer ${h.store.entries.get(BATCH_JOB_KEY).data.token}`);
   const random = [0, .5, 1]; let index = 0;
   const result = await h.run({ randomImpl: () => random[index++ % random.length] });
   assert.equal(result.status, 'complete');
@@ -53,14 +48,12 @@ test('schedule only dispatches; one authenticated worker fetches 38 branches seq
   assert.equal(JSON.stringify(publicCache).includes(h.store.entries.get(BATCH_JOB_KEY).data.token), false);
 });
 
-test('duplicate schedule, duplicate worker and invalid tokens never request rates twice', async () => {
+test('duplicate worker and invalid tokens never request rates twice', async () => {
   const h = harness();
-  await h.dispatch();
-  assert.equal((await h.dispatch()).reason, 'already_scheduled');
+  h.seedJob();
   assert.equal((await h.run({ token: uuid(999) })).status, 'unauthorized');
   await h.run({ slugs: [slug] });
   assert.equal((await h.run()).status, 'unauthorized');
-  assert.equal(h.dispatches.length, 1);
   assert.equal(h.source.length, 1);
 });
 
@@ -69,7 +62,7 @@ test('warm branch caches are reused without source requests or artificial waits'
   await queryBranchRates({ ...h.input, slug }); h.advance(2000);
   await queryBranchRates({ ...h.input, slug: otherSlug });
   h.source.length = 0;
-  await h.dispatch();
+  h.seedJob();
   assert.equal((await h.run({ slugs: [slug, otherSlug] })).loaded, 0);
   assert.equal(h.source.length, 0);
   assert.equal(h.delays.length, 0);
@@ -81,11 +74,10 @@ for (const blockedStatus of [403, 429, 500]) {
     const original = h.input.fetchImpl;
     let count = 0;
     h.input.fetchImpl = async (...args) => {
-      if (new URL(args[0]).pathname === BACKGROUND_FUNCTION_PATH) return original(...args);
       if (++count === 2) return new Response('', { status: blockedStatus });
       return original(...args);
     };
-    await h.dispatch();
+    h.seedJob();
     const result = await h.run({ slugs: [slug, otherSlug, thirdSlug], randomImpl: () => 0 });
     assert.equal(result.status, 'stopped');
     assert.equal(result.stoppedSlug, otherSlug);
@@ -102,7 +94,7 @@ test('first-branch challenge logs background source diagnostics and identifies t
   const messages = [];
   t.mock.method(console, 'info', text => messages.push(JSON.parse(text)));
   const h = harness();
-  await h.dispatch();
+  h.seedJob();
   const token = h.store.entries.get(BATCH_JOB_KEY).data.token;
   let calls = 0;
   const result = await h.run({ fetchImpl: async () => {
@@ -135,7 +127,7 @@ test('refresh at the next half-hour retains still-valid old quotes when a new fe
   await queryBranchRates({ ...h.input, slug });
   const old = structuredClone(h.store.entries.get(branchCacheKey(slug)).data);
   h.advance(30 * 60_000);
-  await h.dispatch();
+  h.seedJob();
   const result = await h.run({ slugs: [slug], fetchImpl: async () => new Response('', { status: 500 }) });
   assert.equal(result.status, 'stopped');
   assert.deepEqual(h.store.entries.get(branchCacheKey(slug)).data, old);
@@ -143,7 +135,7 @@ test('refresh at the next half-hour retains still-valid old quotes when a new fe
   assert.deepEqual(body.quotes, [old]);
 });
 
-test('scheduled refresh renews due quotes even while their grace-period cache is valid', async () => {
+test('batch refresh renews due quotes even while their grace-period cache is valid', async () => {
   const h = harness();
   await queryBranchRates({ ...h.input, slug });
   const old = h.store.entries.get(branchCacheKey(slug)).data;
@@ -151,7 +143,7 @@ test('scheduled refresh renews due quotes even while their grace-period cache is
   // Ordinary manual reads still reuse the valid quote.
   assert.equal((await queryBranchRates({ ...h.input, slug })).status, 200);
   assert.equal(h.source.length, 1);
-  await h.dispatch();
+  h.seedJob();
   assert.equal((await h.run({ slugs: [slug] })).loaded, 1);
   assert.equal(h.source.length, 2);
   assert.notEqual(h.store.entries.get(branchCacheKey(slug)).data.attemptedAt, old.attemptedAt);
@@ -175,7 +167,7 @@ test('green snapshots and orange quotes share the exact boundary-based expiry, n
 test('disabled control, changed generation and a job deadline stop without any upstream request', async () => {
   for (const mode of ['disabled', 'generation', 'deadline']) {
     const h = harness();
-    await h.dispatch();
+    h.seedJob();
     if (mode === 'deadline') h.advance(12 * 60_000 - 6000);
     else h.store.seed(EXCHANGE_KEYS.control, createControl({ enabled: mode === 'generation', nowMs: START,
       controlVersion: uuid(2), updatedBy: 'manual', disabledReason: mode === 'disabled' ? 'manual' : null }));
@@ -212,15 +204,9 @@ test('cache reads recheck controls and never serve quotes after a concurrent dis
   assert.deepEqual(body.quotes, []);
 });
 
-test('public background endpoint rejects unsigned invocation before opening a runtime store', async t => {
-  const fetch = t.mock.method(globalThis, 'fetch', () => { throw new Error('unexpected fetch'); });
-  await refresh(new Request('https://map.example' + BACKGROUND_FUNCTION_PATH, { method: 'POST' }));
-  assert.equal(fetch.mock.callCount(), 0);
-});
-
 test('competing worker acquisition and an older worker cannot overwrite a newer job', async () => {
   const h = harness();
-  await h.dispatch();
+  h.seedJob();
   let raced = false;
   h.store.beforeSet = ({ key, data, store }) => {
     if (key === BATCH_JOB_KEY && data.status === 'running' && !raced) {
@@ -233,15 +219,6 @@ test('competing worker acquisition and an older worker cannot overwrite a newer 
   assert.equal(h.store.entries.get(BATCH_JOB_KEY).data.leaseId, uuid(998));
 });
 
-test('dispatch failures are recorded without requesting rates or disclosing the job token', async () => {
-  const h = harness();
-  const result = await dispatchSlowBatch({ ...h.input, deployURL: 'https://deploy.map.example', fetchImpl: async () => new Response('', { status: 500 }) });
-  assert.equal(result.reason, 'dispatch_failed');
-  assert.equal(h.store.entries.get(BATCH_JOB_KEY).data.status, 'dispatch_failed');
-  assert.equal(h.source.length, 0);
-  assert.equal(JSON.stringify(result).includes(h.store.entries.get(BATCH_JOB_KEY).data.token), false);
-});
-
 test('cache parser rejects duplicate branches, swapped versions and disabled quotes', async () => {
   const h = harness();
   await queryBranchRates({ ...h.input, slug });
@@ -249,14 +226,4 @@ test('cache parser rejects duplicate branches, swapped versions and disabled quo
   assert.equal(parseBranchCachePayload({ ...body, quotes: [body.quotes[0], body.quotes[0]] }), null);
   assert.equal(parseBranchCachePayload({ ...body, controlVersion: uuid(3) }), null);
   assert.equal(parseBranchCachePayload({ ...body, enabled: false }), null);
-});
-
-test('background dispatch stays in the invoking deploy even when only the production URL exists in runtime env', () => {
-  const request = new Request('https://primary.example/.netlify/functions/exchange-rates-1965-fetch');
-  const env = { SITE_NAME: 'lingorm-map', URL: 'https://lingorm-map.netlify.app' };
-  assert.equal(resolveBackgroundDeployURL(request, { deploy: { context: 'deploy-preview', id: 'preview123' } }, env),
-    'https://preview123--lingorm-map.netlify.app');
-  assert.equal(resolveBackgroundDeployURL(request, { deploy: { context: 'deploy-preview' } }, env), '');
-  assert.equal(resolveBackgroundDeployURL(request, { deploy: { context: 'production' } }, env), env.URL);
-  assert.equal(resolveBackgroundDeployURL(new Request('http://localhost:8888/'), undefined, { NETLIFY_DEV: 'true' }), 'http://localhost:8888');
 });

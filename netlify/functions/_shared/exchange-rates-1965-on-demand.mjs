@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { branchCacheKey, branchResponse } from './exchange-rates-1965-branch-cache.mjs';
+export { branchCacheKey, branchResponse } from './exchange-rates-1965-branch-cache.mjs';
 import { BRANCH_API_SCHEMA_VERSION, ORANGE_BRANCHES, isValidBranchQuote } from '../../../src/data/exchange-rates-1965-branch.js';
 import { EXCHANGE_KEYS, createBreaker, isValidBreaker, isValidSnapshot, sanitizeDiagnostics } from './exchange-rates-1965-contract.mjs';
 import { ensureFetchControl, readEffectiveControl } from './exchange-rates-1965-control.mjs';
@@ -12,8 +14,6 @@ export const BRANCH_GATE_KEY = 'exchange-rates-1965/on-demand-gate';
 export const BRANCH_LEASE_MS = 15_000;
 export const BRANCH_MIN_GAP_MS = 1_500;
 export const BRANCH_FAILURE_DELAY_MS = 60_000;
-/** @param {string} slug */
-export const branchCacheKey = slug => `exchange-rates-1965/branches/${slug}`;
 const PROFILE = Object.freeze({ name: 'on-demand', concurrency: 1, minStartGapMs: 0, requestTimeoutMs: 5_000, deadlineMs: 6_000 });
 
 /** @param {any} gate */
@@ -23,22 +23,7 @@ function validGate(gate) {
     Number.isSafeInteger(gate.nextRequestAtMs) && gate.nextRequestAtMs >= 0;
 }
 
-/** One JSON envelope for success and failure; no source diagnostics are exposed.
- * @param {string} slug @param {number} nowMs @param {any} [options]
- */
-export function branchResponse(slug, nowMs, { status = 200, enabled = null, controlVersion = null, quote = null, reason = null, retryAtMs = null } = {}) {
-  const retryAfterSeconds = retryAtMs === null ? 0 : Math.min(7 * 24 * 60 * 60, Math.max(1, Math.ceil((retryAtMs - nowMs) / 1000)));
-  return new Response(JSON.stringify({ schemaVersion: BRANCH_API_SCHEMA_VERSION, checkedAt: new Date(nowMs).toISOString(),
-    enabled, controlVersion, slug, quote, reason, retryAfterSeconds }), {
-    status, headers: { 'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'no-store', 'netlify-cdn-cache-control': 'no-store',
-      ...(retryAfterSeconds ? { 'retry-after': String(retryAfterSeconds) } : {}),
-      ...(status === 405 ? { allow: 'POST' } : {}),
-    },
-  });
-}
-
-/** A public click can only fetch one whitelisted branch. A persistent CAS lease
+/** An authorized collector can fetch one whitelisted branch. A persistent CAS lease
  * serializes cold requests across server instances; warm cache hits bypass it.
  * @param {{store:any, slug:string, enabledDefault?:unknown, fetchImpl?:typeof fetch, nowImpl?:()=>number, randomUUIDImpl?:()=>string, refreshDue?:boolean, expectedControlVersion?:string, sourceProfile?:import('./exchange-rates-1965-source.mjs').SourceProfile}} input
  */

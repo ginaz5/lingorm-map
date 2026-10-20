@@ -372,7 +372,7 @@ mapping validator 同時接受這兩種表示。所有 `Paused` 狀態與收藏 
 
 ### 2026-10-17：橘標改採單店手動查詢
 
-以下記錄最初單店方案；現行後端定時更新見本節末的後續決定。
+以下保留單店與定時更新方案的歷史；現行只讀行為見本節末的退役決定。
 
 使用者確認改為卡片按鈕觸發本站後端單店查詢。新增
 `POST /api/exchange-rates-1965-branch`，只接受正式 mapping 的 Slug，由後端
@@ -421,3 +421,41 @@ token 在原有控制、快取、breaker、lease 後 lazy 取得，只留在 inv
 任一階段的 403／429／challenge 都沿用既有冷卻，不 fallback 或自動重試。
 保留原本 mapping、parser、快取與背景間隔；Chromium 未調整。
 這是新的可選後端路徑，本機成功不代表已驗證 Netlify 出口或 38 家覆蓋。
+
+### 2026-10-19：先規劃 GitHub Actions 抓取與 Netlify 逐店快取
+
+同日後續 Preview 已確認匿名 token GET 被 403 challenge 擋下，匯率 POST
+沒有發出。ThaiCash 的 Actions 有公開單店成功紀錄，使用者同意先修改文件，
+規劃將來源請求移至 Actions、Netlify 保留 cache／API／前端。
+先做手動單店 probe，再發布至明確 Preview 逐店 cache，最後驗 38 家與排程。
+沿用匿名 transport、parser、mapping、共享 control／lease／breaker 與 2～5 秒間隔，
+不以換 runner 或新 store 清除已知冷卻，也不將報價 commit 來觸發網站部署。
+現有 CLI 的匿名接線／逐店發布、Preview target、probe 不發布與 Netlify 單店
+只讀行為皆待實作；`FETCH_MODE=local` 現在只停排程，不能當成單店只讀開關。
+首次 workflow_dispatch 仍需 workflow 存在預設分支。實作與驗收條件見
+[Actions 計畫](../docs/superrich1965-github-actions-plan.zh-TW.md)。
+本次沒有新增 workflow、設定 Secrets、抓來源或更動 runtime／遠端狀態。
+
+
+### 2026-10-20：退役橘標 Netlify 來源入口與環境開關
+
+使用者要求同步退役不再需要的 functions 與 env。刪除橘標 fetch 排程、refresh
+Background Function、Netlify dispatch，以及 Chromium helper、專用測試、套件和
+binary 打包設定。移除 `EXCHANGE_RATES_1965_FETCH_MODE` 與
+`EXCHANGE_RATES_1965_SOURCE_TRANSPORT` 的程式讀取及範例宣告；上方這兩個
+開關與 browser／背景取價的說明均為歷史，不再是本分支的啟用方式。
+
+保留三個公開 API 的路徑與資料契約，單店 POST 改為只讀快取／有效 snapshot
+fallback，無資料回 503 unavailable 與 60 秒 Retry-After。公開入口不載入
+collector、不初始化 control、不讀 breaker 或取得 lease，也不寫 Blobs。
+前端改為「重新整理匯率／Refresh rates」，兩種 cache 請求 timeout 均為 12 秒。
+讀取不延長報價有效期；外部抓取器尚未就緒時，舊報價依原時間到期。
+
+`EXCHANGE_RATES_1965_ENABLED`、管理工具的 Netlify credentials 與既有 control／
+cache／breaker／gate／lease／job 資料保留。匿名 transport、mapping、parser、
+逐店 collector、慢速批次核心和原本完整 snapshot CLI 留給後續整合；
+新 Actions runner、Preview target、probe、Secrets 和排程仍待實作。
+本次程式變更尚未部署，不以退役清除來源冷卻，綠標流程維持原樣。
+
+兩個退役環境變數已從 Netlify 專案所有 context 移除；CLI 確認需重新部署才會
+套用到部署版本。本次未部署，沒有刪除或改寫遠端 control、breaker、快取及憑證。

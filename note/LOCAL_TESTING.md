@@ -383,128 +383,121 @@ http://localhost:8888/api/config
 
 ## 橘標整合與維運
 
-2026-10-17：全部 38 家橘標已依使用者指示在 Notion 改為 Published，
-並經 exporter 更新 CSV。狀態更新不代表匯率服務已在正式環境啟用。
+2026-10-17：全部 38 家橘標已在 Notion 改為 Published 並經 exporter 更新 CSV。
+分店發布不代表匯率服務已啟用。2026-10-20：本分支退役 Netlify 的橘標來源
+抓取，保留只讀 API；尚未部署。GitHub Actions runner、逐店發布與排程仍未實作。
+完整契約見 [Netlify 只讀快取與外部抓取](../docs/superrich1965-on-demand-plan.zh-TW.md)。
 
-- 目前方案為後端每半小時派送 Background Function，逐店查詢全部 38 家，
-  每家完成後隨機等 2～5 秒。頁面只 GET /api/exchange-rates-1965-cache，
-  不顯示批次進度、不從瀏覽器啟動整批或五公里查詢。
-- 有效報價直接顯示；缺少有效報價才顯示單店手動查詢按鈕，POST 一家到
-  /api/exchange-rates-1965-branch。既有快取、lease、breaker 與停用控制共用。
-- 到期規則與綠標相同：下一個整點／半點 + 35 分鐘，實際約 35～65 分鐘。
-  每半小時刷新到更新時間的分店，尚未到更新時間則重用快取；讀取不延長有效期。
-- 失敗、busy、冷卻或停用即停整輪；舊報價不覆寫，保留到原到期時間。
-  403／429／challenge 沿用原本 breaker。服務停用時 API 不提供舊報價。
-- 部署時設定 EXCHANGE_RATES_1965_FETCH_MODE=background；netlify 也走背景
-  派送。local 與 on-demand 跳過排程；EXCHANGE_RATES_1965_ENABLED 預設 false，
-  既有 runtime control 優先。本次未改正式設定、未部署。
-- 排程函式只派送，30 秒內結束；背景工作預算 12 分鐘。私有隨機 token 與
-  ETag 工作認領防止未授權啟動或重複抓取，token 不放到 client、URL 或 log。
-- 列表與兩個 provider 的 popup 共用報價、排序及到期狀態；綠標輪詢維持原樣。
+- 頁面每 60 秒 GET `/api/exchange-rates-1965-cache`，只讀有效逐店報價。
+  缺少報價的卡片顯示「重新整理匯率／Refresh rates」，POST 到
+  `/api/exchange-rates-1965-branch` 也只讀快取，不會再向來源取價。
+- 保留 `/api/exchange-rates-1965` 完整 snapshot API 與既有本機 CLI 契約。
+  單店 API 可讀有效 snapshot fallback，但不播種逐店快取或延長到期時間。
+- 報價到期為下一個整點／半點加 35 分鐘，實際約 35～65 分鐘。
+  來源抓取器可用前，現有報價到期後不會因重新整理而產生新報價。
+- 刪除 `exchange-rates-1965-fetch`、`exchange-rates-1965-refresh` 兩個 Function、
+  Netlify dispatch、Chromium helper／套件／打包設定。
+- `EXCHANGE_RATES_1965_FETCH_MODE`、`EXCHANGE_RATES_1965_SOURCE_TRANSPORT`
+  已無程式讀取，也已從 Netlify 專案所有 context 移除，需重新部署才會套用。
+  `EXCHANGE_RATES_1965_ENABLED` 保留，
+  預設 false，既有 runtime control 優先；只讀端點不初始化 control。
+- 保留控制、cache、lease、breaker、gate 與 job 資料，不清除已知冷卻。
+  `NETLIFY_SITE_ID`、`NETLIFY_AUTH_TOKEN` 仍供控制工具／既有 CLI 使用。
+- 列表與 Google／HERE popup 共用報價、排序及到期狀態；綠標維持原流程。
 
-完整契約、操作與驗證邊界見
-[後端更新與單店補查計畫](../docs/superrich1965-on-demand-plan.zh-TW.md)。
+### 只讀 API 本機驗收
 
-程式驗證不打真實來源、不寫正式資料：
+使用 `netlify dev`，先確認本機控制及 store；不要為了測試改正式 control。
+例如 localhost:8888 的同源請求：
 
-    npm run typecheck
-    npm test
-    npm run build
-    netlify functions:build --src netlify/functions
-    node scripts/validate-location-snapshot.mjs data/locations.csv
-    node scripts/validate-favorite-compatibility.mjs
-    node scripts/validate-superrich1965-mapping.mjs data/superrich1965-branches.json data/locations.csv
+```bash
+curl -sS http://localhost:8888/api/exchange-rates-1965-cache
+curl -sS -X POST http://localhost:8888/api/exchange-rates-1965-branch \
+  -H 'Content-Type: application/json' \
+  -H 'Origin: http://localhost:8888' \
+  --data '{"slug":"superrich1965-58"}'
+```
+
+單店有有效報價時回 200；無有效報價回 `503 unavailable`、Retry-After 60 秒。
+停用時為 `503 disabled`；沒有有效 control 時不會自行建立。報價必須符合
+slug、controlVersion、enabledAt 與原有效期；不會建立 lease、讀 breaker、
+寫 Blobs 或發出來源請求。前端兩種讀取 timeout 均為 12 秒。
+本機已有報價只能證明快取可讀，不能當作 GitHub runner 來源驗收。
+
+程式驗證使用 mock，不打真實來源、不寫正式資料：
+
+```bash
+npm run typecheck
+npm test
+npm run build
+netlify functions:build --src netlify/functions --functions /private/tmp/lingorm-functions-build
+```
+
+新只讀測試覆蓋零來源、零寫入、缺 control、控制切換、到期、snapshot fallback；
+退役測試確認公開 API 不載入 collector，且兩個來源入口不存在。
+這次沒有改位置資料；若另有 snapshot 變更，再跑位置／收藏／mapping validators。
 
 ### 橘標來源失敗診斷
 
-單店手動查詢與背景更新會在執行該次查詢的 Function log 記錄
-`event=exchange_rates_1965_branch`。以 `slug` 與 `trigger=manual|background`
-辨識分店及觸發方式；`httpStatus` 是本站回應，`blockedStatus` 與
-`diagnostics[].status` 才是來源 HTTP 狀態。後者附有截短、限定欄位的
-`cfMitigated`、`contentType`、`retryAfter`、`rayId` 與錯誤代碼。
+以下用來解讀**退役前部署**及保留的 collector 診斷。新版 Netlify 公開 API
+不抓來源，不會再產生來源查詢 log。舊部署仍須以確切 commit／deploy ID 辨識。
+
+歷史 `exchange_rates_1965_branch` 紀錄中的 `httpStatus` 是本站狀態，
+`blockedStatus` 與 `diagnostics[].status` 才是來源 HTTP 狀態：
 
 - `sourceRequestCount=1`、`sourceOutcome=blocked`、`cooldownSource=source_blocked`
-  表示本次實際打到來源後被拒絕；`cfMitigated=challenge` 可確認 challenge。
-- `sourceRequestCount=0`、`cooldownSource=breaker` 表示既有封鎖冷卻擋下查詢；
-  `cooldownSource=gate` 則是共用請求間隔，兩者都沒有新來源請求。
-- `retryAt` 是本站允許再試的 UTC 時間，不代表來源保證在此時解封。
-  快取命中同樣為零來源請求，但 `httpStatus=200` 且沒有冷卻原因。
-- 背景結束的 `exchange_rates_1965_background` 紀錄以 `stoppedSlug` 標示
-  因單店查詢結果而停止的分店；`loaded` 是該工作取得成功結果的分店數。
+  表示來源請求被拒絕；`cfMitigated=challenge` 可辨識 challenge。
+- `sourceRequestCount=0`、`cooldownSource=breaker|gate` 表示被既有冷卻擋下，
+  沒有新來源請求。快取命中同樣為零來源，但回 200。
+- `retryAt` 是本站允許再試的 UTC 時間，不保證來源已解封。
+  背景紀錄的 `stoppedSlug` 是停止分店，`loaded` 是成功店數。
 
-診斷僅寫私有 Function log，不回傳單店或快取 API、不記錄 Cookie、認證 header、
-工作 token、完整來源 HTML／JSON 或任意例外文字。記錄失敗不影響報價及 lease。
-查詢紀錄不會新增來源請求、重試、清除冷卻或改變既有 breaker。
-
-在 Netlify 對應部署查看 `exchange-rates-1965-branch`（手動）或
-`exchange-rates-1965-refresh`（背景）的 log。CLI 可用確切 deploy permalink，
-避免 Preview alias 被誤辨為 branch：
-
-```bash
-netlify logs --url https://<deploy-id>--lingorm-map.netlify.app --function exchange-rates-1965-branch exchange-rates-1965-refresh --since 1h
-```
+2026-10-19 Preview 的匿名 token GET 回 403 challenge，未發出匯率 POST，
+本站回 429 是保護機制。不要以新部署、store 或 runner 規避未結束的冷卻。
+詳見 [匿名 API 調查紀錄](../docs/superrich1965-anonymous-api-investigation.zh-TW.md)。
+診斷不得記錄 token、Cookie、完整來源回應或任意例外文字。
 
 ### 匿名 API 模式本機驗收
 
-`EXCHANGE_RATES_1965_SOURCE_TRANSPORT=anonymous-api` 使用匿名 callback token 與
-external-app 取價介面，不啟動 Chromium。先確認既有本機、正式與目標 Preview
-沒有有效冷卻；不得透過切模式、新部署或本機空 store 避開尚未結束的封鎖。
-查詢前核對 control，已停用時不為了測試清掉既有控制。
+原先以 `SOURCE_TRANSPORT=anonymous-api` 啟動 Netlify 單店取價的步驟已退役，
+不再使用舊環境開關。已完成的本機驗證是歷史證據：A04／36 token GET／rate
+POST 都 200，USD `100-50` 與 TWD `1000-100` 指定面額解析成功；不能據此
+宣稱 Netlify 或 GitHub runner 可用。
 
-在本機程序選用模式，不需改 `.env` 或 Netlify 設定：
+匿名模組與其 mock／整合測試保留，供後續外部 runner 使用。token 只留在
+程序記憶體；同輪可重用具明確到期提示的 token。任何階段遇 403／429／challenge
+仍遵守共享 breaker；不 fallback、不自動重試。新的真實來源驗收須依 Actions
+計畫完成受控入口，不能呼叫已刪除的 Netlify Function。
 
-```bash
-EXCHANGE_RATES_1965_SOURCE_TRANSPORT=anonymous-api EXCHANGE_RATES_1965_FETCH_MODE=on-demand EXCHANGE_RATES_1965_ENABLED=true netlify dev
-```
+### GitHub Actions 後續驗收（尚未實作）
 
-`ENABLED=true` 只在本機沒有 control 時初始化；既有 disabled control 仍優先。
-先查 `/api/exchange-rates-1965-cache`，再以同源 POST 查
-`superrich1965-58`（mapping A04／36）。冷查詢預期來源 GET／POST 各一次，
-私有 log 應為 `sourceProfile=anonymous-api`、`sourceRequestCount=2`，
-診斷 stage 分別是 token、rate。確認 USD `100-50` 與 TWD `1000-100` 買入價，
-再查一次應回相同快取、來源請求 0；唯讀 cache API 應提供該店相同結果。
-不要為了取價而呼叫完整背景輪次。mock 測試另驗兩店共用 token 與原本的間隔。
+依 [Actions 計畫](../docs/superrich1965-github-actions-plan.zh-TW.md) 先完成
+runner、明確 Preview target、probe 不發布路徑與 mock 測試，再安排手動單店。
+Netlify 的只讀部分已實作；workflow、Secrets、逐店發布與排程尚未啟用。
+workflow 必須先存在預設分支，才能使用 Run workflow；初版不啟用排程。
+既有 CLI 尚未接匿名 transport，只寫 full snapshot，不能直接當逐店發布工具。
 
-token 只存該 invocation 記憶體，不放 URL、前端、報價快取或 console。
-任何階段的 403／429／challenge 都停止，保存原冷卻；401／錯誤 JSON／逾時
-不改走其他介面、不自動重試。匿名來源 timeout 12 秒、deadline 15 秒，
-前端既有手動查詢 timeout 32 秒足夠，不需再調整 Chromium 或 UI 時間。
+首次來源測試仍須等既有冷卻結束，讀指定 store 的 control／breaker、取得
+共享 lease 後只測 A04／36。只有 token／rate 都 200 且指定 USD／TWD 完整，
+才算 runner 來源成功；cache hit 不能代替來源驗證。
+probe 不發布 quote，必要的 lease／失敗冷卻仍須持久化。
 
-本機成功仍不代表 Netlify 出口可用。後續經授權的 Preview 驗收，先只在
-Deploy Preview 的 Functions scope 設 anonymous-api 並重新部署，確認既有
-冷卻結束後先測一家；單店成功再測 background。正式環境設定不隨本機測試變更。
+單店通過後才驗指定 Preview 的逐店 cache、三個公開 API、列表與兩種 map
+provider，再驗小批次／38 家與排程。本次沒有設定 Secrets 或執行 workflow。
 
 ### Netlify 瀏覽器模式驗收
 
-只有兩支橘標來源函式會封裝 Chromium，既有 HTTP 傳輸預設保留。
-瀏覽器 binary 為 Linux/Lambda 版本；macOS 本機只跑 mock 與打包檢查，不能
-用本機 Chrome 成功代替 Netlify 出口驗證。套件要求 Node 22.17+（Node 22）
-或 Node 24+；`netlify.toml` 已設定 Node 22 與兩支函式的 external/binary 包裝。
-
-1. 已知來源冷卻結束後，在 **Deploy Preview context、Functions scope** 設定
-   `EXCHANGE_RATES_1965_SOURCE_TRANSPORT=browser`，搭配既有 enabled control
-   及 `EXCHANGE_RATES_1965_FETCH_MODE=background`。環境設定需重新部署才生效；
-   不修改正式 context，也不要用新 deploy 的空 store 當作解除舊封鎖的理由。
-2. 確認新 Preview 的 commit、CI 與部署成功。先點 Silom Plaza 的單店查詢，
-   首次查詢最多可能等約半分鐘；快取命中不會啟動 Chromium。
-3. 查看 `exchange-rates-1965-branch` 的 `exchange_rates_1965_browser` log。
-   `stage=navigation,result=ready` 表示官網載入成功；`stage=rate` 才是匯率
-   POST 階段。單店摘要應為 `sourceProfile=browser`，有效 JSON 成功後確認
-   USD／TWD 在列表與兩種 map provider 的 popup 同步顯示。
-4. 成功後才人工觸發同一 Preview 的 `exchange-rates-1965-fetch`，查看
-   `exchange-rates-1965-refresh` 的結果、停止分店與逐店快取。背景輪次只啟動
-   一個 browser，沿用 2～5 秒間隔。Preview 不會自行排程。
-5. 若 `stage=launch,result=failed`，查 runtime／binary 包裝；若 navigation
-   或 rate 階段再次 403／challenge，保存診斷並停止，不宣稱修復或反覆重跑。
-   可將 Preview 的 transport 改回 `http` 後重新部署回復原路徑，但不能以此
-   清除未到期冷卻。
+瀏覽器模式與專用套件已退役，不再設定 browser transport、封裝 Chromium 或
+人工觸發 fetch／refresh。歷史驗證已確認瀏覽器啟動成功，但官網 navigation
+仍回 403 challenge；不再調整 Chromium 來延長這條路徑。
 
 ### 橘標 UI 本機驗收
 
-開啟 /tests/fixtures/orange-branch-query.html。第一店應顯示模擬快取報價且沒有
-查詢按鈕，第二店應顯示單店按鈕。點第二店後只有一次 POST，成功後撤下按鈕；
-列表與 popup 共用結果。lang=en 測英文、fail=1 測 429 冷卻、
-delay=1500 測載入與重複點擊。fixture 不碰真實來源、不改 CSV。
+開啟 `/tests/fixtures/orange-branch-query.html`。第一店顯示模擬快取、沒有按鈕；
+第二店顯示「重新整理匯率」，點擊只有一次 POST，成功後撤下按鈕。
+列表與 popup 共用結果。`lang=en` 測英文、`delay=1500` 測載入及重複點擊；
+`fail=1` 模擬舊 429 的前端相容處理，不代表新版 cache API 會建立冷卻。
+fixture 在記憶體攔截請求，不碰來源、正式 Blobs 或 CSV。
 
-API 整合使用 netlify dev。本機不會自動觸發排程；正式背景派送與雲端來源
-仍須 Deploy Preview 驗收。不要為了測試啟用正式 control 或清除 breaker。
+新版部署後確認只剩三個橘標只讀 API、兩個取價入口及舊環境開關已退役。
+本機測試與打包不能代替部署驗收；不要為了驗收啟用正式 control 或清除 breaker。

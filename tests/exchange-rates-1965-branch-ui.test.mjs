@@ -65,7 +65,7 @@ test('rendering, resume and expiry only read shared cache and never POST to the 
   const { listeners } = harness(t);
   const html = renderExchangeRates(row);
   assert.match(html, /data-orange-query=/);
-  assert.match(html, /查詢此分店匯率/);
+  assert.match(html, /重新整理匯率/);
   listeners.visibilitychange.fn();
   listeners.pageshow.fn();
   listeners.online.fn();
@@ -82,35 +82,33 @@ function cachePayload(quotes = [payload().quote], overrides = {}) {
     controlVersion: uuid(1), quotes, ...overrides };
 }
 
-test('manual queries allow browser startup time while read-only cache timeouts remain short', async t => {
+test('single-branch and shared-cache reads both abort after twelve seconds', async t => {
   harness(t);
   let querySignal;
-  let finish;
   t.mock.method(globalThis, 'fetch', async (url, options) => {
     assert.equal(url, BRANCH_QUERY_API);
     querySignal = options.signal;
-    return new Promise(resolve => { finish = resolve; });
+    return new Promise((_, reject) => options.signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true }));
   });
   const query = queryOrangeBranch(slug);
   await Promise.resolve();
-  t.mock.timers.tick(24_000);
+  t.mock.timers.tick(11_999);
   assert.equal(querySignal.aborted, false);
-  finish(Response.json(payload()));
+  t.mock.timers.tick(1);
+  assert.equal(querySignal.aborted, true);
   await query;
-  assert.ok(getBranchQueryState(slug).quote);
+  assert.equal(getBranchQueryState(slug).quote, null);
 
   let cacheSignal;
-  let finishCache;
   t.mock.method(globalThis, 'fetch', async (url, options) => {
     assert.equal(url, BRANCH_CACHE_API);
     cacheSignal = options.signal;
-    return new Promise(resolve => { finishCache = resolve; });
+    return new Promise((_, reject) => options.signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true }));
   });
   const cache = loadCachedBranchQuotes();
   await Promise.resolve();
   t.mock.timers.tick(12_000);
   assert.equal(cacheSignal.aborted, true);
-  finishCache(new Response('', { status: 503 }));
   await cache;
 });
 

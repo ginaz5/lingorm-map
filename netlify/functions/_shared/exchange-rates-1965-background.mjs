@@ -1,13 +1,12 @@
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { ORANGE_BRANCHES, isValidBranchQuote } from '../../../src/data/exchange-rates-1965-branch.js';
-import { HALF_HOUR_MS, nextUtcHalfHour } from '../../../src/data/exchange-rate-timing.js';
-import { ensureFetchControl, readEffectiveControl } from './exchange-rates-1965-control.mjs';
+import { nextUtcHalfHour } from '../../../src/data/exchange-rate-timing.js';
+import { readEffectiveControl } from './exchange-rates-1965-control.mjs';
 import { branchCacheKey, queryBranchRates } from './exchange-rates-1965-on-demand.mjs';
 import { conditionalSetJSON, readEntry } from './exchange-rates-1965-storage.mjs';
 
 export const BATCH_JOB_KEY = 'exchange-rates-1965/background-job';
 export const BATCH_BUDGET_MS = 12 * 60_000;
-export const BACKGROUND_FUNCTION_PATH = '/.netlify/functions/exchange-rates-1965-refresh';
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** @param {any} value */
@@ -16,42 +15,6 @@ function validJob(value) {
     ['pending', 'running', 'complete', 'stopped', 'dispatch_failed'].includes(value.status) &&
     Number.isSafeInteger(value.scheduledAtMs) && Number.isSafeInteger(value.deadlineAtMs) &&
     (value.leaseId === null || uuidPattern.test(value.leaseId));
-}
-
-/** The random bearer token lives only in server blobs and the dispatch header.
- * Repeated schedules in the same half-hour and duplicate workers are no-ops.
- * @param {{store:any,deployURL:string,enabledDefault?:unknown,nowImpl?:()=>number,fetchImpl?:typeof fetch,randomUUIDImpl?:()=>string}} input
- */
-export async function dispatchSlowBatch({ store, deployURL, enabledDefault = process.env.EXCHANGE_RATES_1965_ENABLED,
-  nowImpl = Date.now, fetchImpl = fetch, randomUUIDImpl = randomUUID }) {
-  const current = await ensureFetchControl(store, { enabledDefault, nowMs: nowImpl(), randomUUIDImpl });
-  if (!current.enabled || !current.control) return { status: 'disabled' };
-  const scheduledAtMs = Math.floor(nowImpl() / HALF_HOUR_MS) * HALF_HOUR_MS;
-  const previous = await readEntry(store, BATCH_JOB_KEY);
-  if (previous && !validJob(previous.data)) return { status: 'stopped', reason: 'invalid_job' };
-  if (previous?.data.controlVersion === current.control.controlVersion && previous.data.scheduledAtMs >= scheduledAtMs) {
-    return { status: 'skipped', reason: 'already_scheduled' };
-  }
-  if (previous?.data.status === 'running' && previous.data.deadlineAtMs > nowImpl()) return { status: 'skipped', reason: 'busy' };
-  const origin = new URL(deployURL);
-  if (origin.protocol !== 'https:' && !(process.env.NETLIFY_DEV === 'true' && ['localhost', '127.0.0.1'].includes(origin.hostname))) {
-    throw new Error('invalid_deploy_url');
-  }
-  const job = { token: randomUUIDImpl(), controlVersion: current.control.controlVersion, scheduledAtMs,
-    deadlineAtMs: nowImpl() + BATCH_BUDGET_MS, status: 'pending', leaseId: null };
-  const write = await conditionalSetJSON(store, BATCH_JOB_KEY, job, previous);
-  if (!write.modified) return { status: 'skipped', reason: 'dispatch_conflict' };
-  try {
-    const response = await fetchImpl(new URL(BACKGROUND_FUNCTION_PATH, origin), {
-      method: 'POST', redirect: 'error', headers: { authorization: `Bearer ${job.token}` },
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (response.status !== 202) throw new Error('dispatch_failed');
-    return { status: 'dispatched' };
-  } catch {
-    await conditionalSetJSON(store, BATCH_JOB_KEY, { ...job, status: 'dispatch_failed' }, { data: job, etag: write.etag });
-    return { status: 'stopped', reason: 'dispatch_failed' };
-  }
 }
 
 /** @param {number} ms */
