@@ -27,6 +27,7 @@ test('configures strict JavaScript type checking', async () => {
     'netlify/functions/exchange-rates.mjs',
     'scripts/exchange-rates-control.mjs',
     'scripts/exchange-rates-1965-actions.mjs',
+    'scripts/exchange-rates-1965-python.mjs',
     'scripts/exchange-rates-1965-actions-control.mjs',
     'src/features/changelog-data.js',
     'src/features/collection-info.js',

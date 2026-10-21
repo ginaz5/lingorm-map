@@ -14,6 +14,7 @@ on:
         options:
           - inspect
           - probe
+          - probe-python
 
 permissions:
   contents: read
@@ -44,6 +45,12 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Verify Python stdlib transport offline
+        if: inputs.action == 'probe-python'
+        run: |
+          python3 --version
+          python3 -I -B tests/exchange-rates-1965-python-http.test.py
+
       - name: Inspect or probe the reviewed Preview target
         shell: bash
         env:
@@ -53,7 +60,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$ACTION_MODE" in
-            inspect|probe) ;;
+            inspect|probe|probe-python) ;;
             *) exit 2 ;;
           esac
           result=0

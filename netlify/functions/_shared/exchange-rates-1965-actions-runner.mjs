@@ -53,8 +53,9 @@ function identityFor(input) {
   const { repository, runId, mode, scope, commit, controlVersion, target } = input;
   if (typeof repository !== 'string' || !/^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/.test(repository) ||
       typeof runId !== 'string' || !/^[1-9][0-9]{0,19}$/.test(runId) || !SHA.test(commit ?? '') ||
-      !UUID.test(controlVersion ?? '') || !['probe', 'publish'].includes(mode) ||
-      !['single', 'pilot', 'all'].includes(scope) || (mode === 'probe' && scope !== 'single') || !isObject(target) ||
+      !UUID.test(controlVersion ?? '') || !['probe', 'probe-python', 'publish'].includes(mode) ||
+      !['single', 'pilot', 'all'].includes(scope) || (mode !== 'publish' && scope !== 'single') || !isObject(target) ||
+      (mode === 'probe-python' && target.alias !== 'preview-reviewed') ||
       !['preview-reviewed', 'production'].includes(target.alias) || !UUID.test(target.siteID ?? '') ||
       typeof target.branch !== 'string' || !/^[A-Za-z0-9_./-]{1,255}$/.test(target.branch) ||
       !SHA.test(target.commit ?? '') || !['deploy-preview', 'branch-deploy', 'production'].includes(target.context) ||
@@ -88,7 +89,7 @@ function branchResult(value, slug, mode) {
   if ((success && !value.sourceSucceeded) || (value.sourceSucceeded && !success && value.status !== 'source_unknown') ||
       (['cache_hit', 'not_attempted'].includes(value.status) && value.sourceRequestCount !== 0) ||
       (value.sourceSucceeded && value.sourceRequestCount === 0) ||
-      (value.status === 'published' && mode !== 'publish') || (value.status === 'probe_succeeded' && mode !== 'probe')) return invalid;
+      (value.status === 'published' && mode !== 'publish') || (value.status === 'probe_succeeded' && !['probe', 'probe-python'].includes(mode))) return invalid;
   return { slug, status: value.status, sourceSucceeded: value.sourceSucceeded, sourceRequestCount: value.sourceRequestCount,
     reason: value.reason === null || value.reason === undefined ? null : safeReason(value.reason),
     retryAt: isoOrNull(value.retryAt), diagnostics: safeDiagnostics(value.diagnostics) };
@@ -165,7 +166,7 @@ function validJob(value, nowMs) {
 
 /** Durable invocation ledger and bounded serial collector. The caller supplies a reviewed
  * branch collector and its target/source stores; this module never opens a network client.
- * @param {{store:any,repository:string,runId:string,commit:string,controlVersion:string,target:any,mode:'probe'|'publish',scope:'single'|'pilot'|'all',
+ * @param {{store:any,repository:string,runId:string,commit:string,controlVersion:string,target:any,mode:'probe'|'probe-python'|'publish',scope:'single'|'pilot'|'all',
  * collectorImpl:(input:any)=>Promise<any>,signal?:AbortSignal,nowImpl?:()=>number,randomUUIDImpl?:()=>string,
  * randomImpl?:()=>number,sleepImpl?:(ms:number,signal:AbortSignal)=>Promise<void>}} input
  */
