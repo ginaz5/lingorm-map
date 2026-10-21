@@ -1,0 +1,65 @@
+name: SuperRich 1965 manual verification
+
+# This file must first be reviewed and bootstrapped on main. It never deploys
+# the site or publishes rates. Remote Environment rules must separately allow
+# only main and hold the PAT; they are not created by this YAML.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Inspect state or verify the single reviewed branch without publishing rates
+        type: choice
+        required: true
+        default: inspect
+        options:
+          - inspect
+          - probe
+
+permissions:
+  contents: read
+
+# Shared by every workflow that might contact this source, independent of ref
+# or target. Remote source protection still supplies the cross-runner lock.
+concurrency:
+  group: exchange-rates-1965-source
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.repository == 'ginaz5/lingorm-map' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: superrich1965-preview
+    steps:
+      - name: Checkout reviewed workflow commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Inspect or probe the reviewed Preview target
+        shell: bash
+        env:
+          ACTION_MODE: ${{ inputs.action }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
+        run: |
+          set -euo pipefail
+          case "$ACTION_MODE" in
+            inspect|probe) ;;
+            *) exit 2 ;;
+          esac
+          result=0
+          npm run fx:1965:actions -- "$ACTION_MODE" --target preview-reviewed || result=$?
+          if [ "$result" -eq 3 ]; then
+            echo 'This attempt was skipped without a new source request; review the state and reason above.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          exit "$result"

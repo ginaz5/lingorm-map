@@ -25,6 +25,10 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 
 ## Architecture
 
+SuperRich 1965 的獨立 [Actions bootstrap](docs/superrich1965-actions-bootstrap.zh-TW.md)
+提供 main-only 手動 inspect／probe，用於驗證既有 PR #8 Preview 的來源取價。
+此階段不接入目前頁面或公開 API；runner／PAT 權限與來源驗收步驟見該文件。
+
 The app is a static site with two Netlify Functions acting as a thin backend proxy. All state lives in the browser.
 
 ### Boot sequence
