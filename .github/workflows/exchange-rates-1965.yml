@@ -1,13 +1,13 @@
 name: SuperRich 1965 manual verification
 
-# This file must first be reviewed and bootstrapped on main. It never deploys
-# the site or publishes rates. Remote Environment rules must separately allow
+# Reviewed main can publish only the single fixed Preview branch. This workflow
+# never deploys the site. Remote Environment rules must separately allow
 # only main and hold the PAT; they are not created by this YAML.
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: Inspect state or verify the single reviewed branch without publishing rates
+        description: Inspect, probe, or publish the single reviewed Preview branch using Python
         type: choice
         required: true
         default: inspect
@@ -15,6 +15,7 @@ on:
           - inspect
           - probe
           - probe-python
+          - publish-python
 
 permissions:
   contents: read
@@ -46,12 +47,12 @@ jobs:
         run: npm ci
 
       - name: Verify Python stdlib transport offline
-        if: inputs.action == 'probe-python'
+        if: inputs.action == 'probe-python' || inputs.action == 'publish-python'
         run: |
           python3 --version
           python3 -I -B tests/exchange-rates-1965-python-http.test.py
 
-      - name: Inspect or probe the reviewed Preview target
+      - name: Run the reviewed Preview operation
         shell: bash
         env:
           ACTION_MODE: ${{ inputs.action }}
@@ -60,7 +61,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$ACTION_MODE" in
-            inspect|probe|probe-python) ;;
+            inspect|probe|probe-python|publish-python) ;;
             *) exit 2 ;;
           esac
           result=0

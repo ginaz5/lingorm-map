@@ -22,7 +22,7 @@ const SETTINGS_ERRORS = new Set(['invalid_actions_arguments', 'invalid_actions_i
  */
 export function parseActionsArgs(argv) {
   const [mode, ...rest] = argv;
-  if (!['inspect', 'probe', 'probe-python', 'publish'].includes(mode) || rest.length % 2) throw new Error('invalid_actions_arguments');
+  if (!['inspect', 'probe', 'probe-python', 'publish', 'publish-python'].includes(mode) || rest.length % 2) throw new Error('invalid_actions_arguments');
   /** @type {Record<string,string>} */
   const options = {};
   for (let i = 0; i < rest.length; i += 2) {
@@ -32,7 +32,8 @@ export function parseActionsArgs(argv) {
   }
   if (!['preview-reviewed', 'production'].includes(options['--target']) ||
       (mode.startsWith('probe') && (options['--scope'] !== undefined || (options['--slug'] !== undefined && options['--slug'] !== SINGLE_SLUG))) ||
-      (mode === 'probe-python' && options['--target'] !== 'preview-reviewed') ||
+      (mode.endsWith('-python') && options['--target'] !== 'preview-reviewed') ||
+      (mode === 'publish-python' && (options['--scope'] !== undefined || options['--slug'] !== undefined)) ||
       (mode === 'inspect' && (options['--scope'] !== undefined || options['--slug'] !== undefined)) ||
       (mode === 'publish' && (options['--slug'] !== undefined || !['single', 'pilot', 'all'].includes(options['--scope'])))) {
     throw new Error('invalid_actions_arguments');
@@ -53,7 +54,8 @@ function executionIdentity(env) {
 /** @param {any} guard */
 function guardSummary(guard) {
   const state = guard.state;
-  return { ready: guard.ok, reason: guard.reason ?? null, retryAt: guard.retryAtMs == null ? null : new Date(guard.retryAtMs).toISOString(),
+  return { ready: guard.ok, reason: guard.reason ?? null, retryAt: state?.paused || state?.unresolvedAttempt || guard.retryAtMs == null
+    ? null : new Date(guard.retryAtMs).toISOString(),
     sourceEpoch: state?.sourceEpoch ?? null, paused: state?.paused ?? null,
     blockLevel: state?.breaker?.blockLevel ?? null, blockedUntil: state?.breaker?.blockedUntil ?? null,
     unresolved: Boolean(state?.unresolvedAttempt) };
@@ -106,13 +108,14 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
         sourceValidated: false, reason: guardError ? guard.reason : signal?.aborted ? 'cancelled' : !effective.control ? 'missing_control' : !effective.enabled ? 'disabled' : guard.reason,
         sourceGuard: guardSummary(guard) } };
     }
-    source = createAnonymousApiSource({ fetchImpl: mode === 'probe-python' ? pythonFetchImpl ?? createPythonSafariFetch() : fetchImpl, nowImpl });
+    const pythonMode = mode.endsWith('-python');
+    source = createAnonymousApiSource({ fetchImpl: pythonMode ? pythonFetchImpl ?? createPythonSafariFetch() : fetchImpl, nowImpl });
     const sourceFetch = source.fetchImpl;
     const result = await runCollectorImpl({ ...runnerBase,
       controlVersion: effective.control.controlVersion,
       collectorImpl: async (/** @type {any} */ options) => queryImpl({ ...options, store, sourceGuardStore,
         requireExistingControl: true, enabledDefault: 'false', expectedControlVersion: effective.control.controlVersion,
-        refreshDue: true, nowImpl, fetchImpl: sourceFetch, sourceProfile: mode === 'probe-python'
+        refreshDue: true, nowImpl, fetchImpl: sourceFetch, sourceProfile: pythonMode
           ? { ...ANONYMOUS_SOURCE_PROFILE, name: 'anonymous-python-safari' } : ANONYMOUS_SOURCE_PROFILE,
         onResult: result => { observedSourceRequests += result.sourceRequestCount; options.onResult?.(result); },
         ...(randomUUIDImpl ? { randomUUIDImpl } : {}) }),
