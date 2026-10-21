@@ -7,6 +7,7 @@ This helper does not own retries, source authorization, tokens, or publication.
 """
 
 import json
+from pathlib import Path
 import re
 import sys
 import urllib.error
@@ -28,12 +29,9 @@ TOKEN_BODY_LIMIT = 65_536
 RATE_BODY_LIMIT = 1_048_576
 REQUEST_TIMEOUT_SECONDS = 12
 HEADER_NAMES = ("content-type", "cf-mitigated", "cf-ray", "retry-after")
-RATE_BODY = {
-    "filters": [
-        {"field": "company_code", "value": "A04"},
-        {"field": "branch_no", "value": "36"},
-    ]
-}
+MAPPING_PATH = Path(__file__).resolve().parent.parent / "data" / "superrich1965-branches.json"
+MAPPING_LIMIT = 65_536
+EXPECTED_BRANCH_COUNT = 38
 
 
 class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
@@ -56,6 +54,72 @@ def _parse_json(text):
     return json.loads(text, object_pairs_hook=_unique_object)
 
 
+def _load_allowed_branches():
+    """Read only the checked-in mapping, failing closed before either request."""
+    with MAPPING_PATH.open("rb") as source:
+        raw = source.read(MAPPING_LIMIT + 1)
+    if len(raw) > MAPPING_LIMIT:
+        raise ValueError("invalid_mapping")
+    mapping = _parse_json(raw.decode("utf-8"))
+    if (
+        not isinstance(mapping, dict)
+        or set(mapping) != {"schemaVersion", "branches"}
+        or type(mapping["schemaVersion"]) is not int
+        or mapping["schemaVersion"] != 1
+        or not isinstance(mapping["branches"], dict)
+        or len(mapping["branches"]) != EXPECTED_BRANCH_COUNT
+    ):
+        raise ValueError("invalid_mapping")
+    official_ids = set()
+    allowed = set()
+    for slug, branch in mapping["branches"].items():
+        if not isinstance(branch, dict) or set(branch) != {"officialId", "branchNo", "companyCode"}:
+            raise ValueError("invalid_mapping")
+        official_id = branch["officialId"]
+        branch_no = branch["branchNo"]
+        company_code = branch["companyCode"]
+        if (
+            type(official_id) is not int
+            or not 1 <= official_id <= 9_007_199_254_740_991
+            or slug != "superrich1965-" + str(official_id)
+            or official_id in official_ids
+            or company_code != "A04"
+            or not isinstance(branch_no, str)
+            or re.fullmatch(r"[0-9]{2}", branch_no) is None
+            or (company_code, branch_no) in allowed
+        ):
+            raise ValueError("invalid_mapping")
+        official_ids.add(official_id)
+        allowed.add((company_code, branch_no))
+    return allowed
+
+
+def _validated_rate_body(text, allowed):
+    if not isinstance(text, str) or len(text.encode("utf-8")) > 4_096:
+        raise ValueError("invalid_input")
+    body = _parse_json(text)
+    if (
+        not isinstance(body, dict)
+        or set(body) != {"filters"}
+        or not isinstance(body["filters"], list)
+        or len(body["filters"]) != 2
+    ):
+        raise ValueError("invalid_input")
+    values = []
+    for entry, field in zip(body["filters"], ("company_code", "branch_no")):
+        if (
+            not isinstance(entry, dict)
+            or set(entry) != {"field", "value"}
+            or entry["field"] != field
+            or not isinstance(entry["value"], str)
+        ):
+            raise ValueError("invalid_input")
+        values.append(entry["value"])
+    if tuple(values) not in allowed:
+        raise ValueError("invalid_input")
+    return body
+
+
 def prepare_request(raw):
     """Validate everything before constructing an opener or opening a socket."""
     if not isinstance(raw, bytes) or len(raw) > INPUT_LIMIT:
@@ -63,6 +127,7 @@ def prepare_request(raw):
     message = _parse_json(raw.decode("utf-8"))
     if not isinstance(message, dict):
         raise ValueError("invalid_input")
+    allowed = _load_allowed_branches()
     if message == {"stage": "token"}:
         return urllib.request.Request(
             TOKEN_URL, method="GET", headers={"User-Agent": SAFARI_USER_AGENT}
@@ -70,18 +135,15 @@ def prepare_request(raw):
     if set(message) != {"stage", "token", "body"} or message["stage"] != "rate":
         raise ValueError("invalid_input")
     token = message["token"]
-    body = message["body"]
     if (
         not isinstance(token, str)
         or not 1 <= len(token) <= 16_384
         or re.fullmatch(r"[A-Za-z0-9._~+/\-]+={0,2}", token) is None
-        or not isinstance(body, str)
-        or len(body.encode("utf-8")) > 4_096
-        or _parse_json(body) != RATE_BODY
     ):
         raise ValueError("invalid_input")
+    body = _validated_rate_body(message["body"], allowed)
     # Re-serialize with Python's normal spacing, matching the reviewed client.
-    data = json.dumps(RATE_BODY).encode("utf-8")
+    data = json.dumps(body).encode("utf-8")
     return urllib.request.Request(
         RATE_URL,
         method="POST",

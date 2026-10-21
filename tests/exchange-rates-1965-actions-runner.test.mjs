@@ -158,6 +158,9 @@ test('a skip after a successful branch remains a partially failed run', async ()
 test('invalid modes, scopes, identity or targets fail before any storage or source access', async () => {
   for (const options of [{ scope: 'unknown' }, { mode: 'probe', scope: 'all' },
     { mode: 'publish-python', scope: 'pilot' }, { mode: 'publish-python', scope: 'all' },
+    { mode: 'publish-five-python', scope: 'all' }, { mode: 'publish-all-python', scope: 'five' },
+    { mode: 'publish-five-python', scope: 'single' }, { mode: 'publish', scope: 'five' },
+    { mode: 'publish-all-python', target: { ...TARGET, alias: 'production', deployID: null, context: 'production' } },
     { mode: 'publish-python', target: { ...TARGET, alias: 'production', deployID: null, context: 'production' } },
     { commit: 'main' }, { runId: '../1' },
     { repository: 'not-a-repository' }, { controlVersion: 'unknown' }, { mode: 'shell' },

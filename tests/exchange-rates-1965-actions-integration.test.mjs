@@ -3,6 +3,7 @@ import test from 'node:test';
 import FIXTURE from './fixtures/superrich1965/exchange-rate-00.json' with { type: 'json' };
 import { parseActionsArgs, renderActionsSummary, runActionsCommand } from '../scripts/exchange-rates-1965-actions.mjs';
 import { PROJECT_SITE_ID } from '../netlify/functions/_shared/exchange-rates-1965-actions-target.mjs';
+import { ACTIONS_FIVE_SLUGS, actionsScopeSlugs } from '../netlify/functions/_shared/exchange-rates-1965-actions-runner.mjs';
 import { SOURCE_GUARD_KEY, bootstrapSourceGuard, setSourceGuardPaused } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
 import { EXCHANGE_KEYS, createControl } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { branchCacheKey, queryBranchRates } from '../netlify/functions/_shared/exchange-rates-1965-on-demand.mjs';
@@ -12,6 +13,7 @@ import { FakeBlobStore, uuid } from './helpers/exchange-rates-store.mjs';
 
 const START = Date.parse('2026-10-20T01:00:00Z');
 const SLUG = 'superrich1965-58';
+const FIVE_SLUGS = ['superrich1965-58', 'superrich1965-56', 'superrich1965-57', 'superrich1965-59', 'superrich1965-60'];
 const env = { GITHUB_ACTIONS: 'true', GITHUB_REPOSITORY: 'ginaz5/lingorm-map', GITHUB_RUN_ID: '1234',
   GITHUB_SHA: 'a'.repeat(40), GITHUB_REF: 'refs/heads/main', GITHUB_EVENT_NAME: 'workflow_dispatch' };
 
@@ -59,12 +61,207 @@ test('Python publication arguments select only the reviewed Preview and fixed si
   assert.deepEqual(parseActionsArgs(['publish-python', '--target', 'preview-reviewed']),
     { mode: 'publish-python', alias: 'preview-reviewed', scope: 'single' });
   for (const args of [[], ['--target', 'production'], ['--target', 'arbitrary'],
-    ...['single', 'pilot', 'all'].map(scope => ['--target', 'preview-reviewed', '--scope', scope]),
+    ...['single', 'pilot', 'five', 'all'].map(scope => ['--target', 'preview-reviewed', '--scope', scope]),
     ...[SLUG, 'superrich1965-56'].map(slug => ['--target', 'preview-reviewed', '--slug', slug]),
     ['--target', 'preview-reviewed', '--transport', 'node'],
     ['--target', 'preview-reviewed', '--url', 'https://example.invalid']]) {
     assert.throws(() => parseActionsArgs(['publish-python', ...args]));
   }
+});
+
+for (const [mode, scope] of [['publish-five-python', 'five'], ['publish-all-python', 'all']]) {
+  test(`${mode} accepts only its fixed reviewed Preview scope`, () => {
+    assert.deepEqual(parseActionsArgs([mode, '--target', 'preview-reviewed']),
+      { mode, alias: 'preview-reviewed', scope });
+    for (const args of [[], ['--target', 'production'], ['--target', 'arbitrary'],
+      ...['single', 'pilot', 'five', 'all'].map(value => ['--target', 'preview-reviewed', '--scope', value]),
+      ...[SLUG, 'superrich1965-56'].map(slug => ['--target', 'preview-reviewed', '--slug', slug]),
+      ['--target', 'preview-reviewed', '--transport', 'node'],
+      ['--target', 'preview-reviewed', '--url', 'https://example.invalid'],
+      ['--target', 'preview-reviewed', '--force', 'true']]) {
+      assert.throws(() => parseActionsArgs([mode, ...args]));
+    }
+  });
+}
+
+test('the five-branch Python scope fixes the reviewed order and is a subset of the exact 38-branch inventory', () => {
+  assert.deepEqual(ACTIONS_FIVE_SLUGS, FIVE_SLUGS);
+  assert.deepEqual(actionsScopeSlugs('five'), FIVE_SLUGS);
+  const all = actionsScopeSlugs('all');
+  assert.deepEqual(all, Object.keys(ORANGE_BRANCHES));
+  assert.equal(all.length, 38);
+  assert.equal(new Set(all).size, 38);
+  assert.ok(FIVE_SLUGS.every(slug => all.includes(slug)));
+});
+
+for (const [mode, scope, slugs] of [
+  ['publish-five-python', 'five', FIVE_SLUGS],
+  ['publish-all-python', 'all', Object.keys(ORANGE_BRANCHES)],
+]) {
+  test(`${mode} publishes each mapped branch with one token, paced requests and a durable zero-HTTP replay`, async t => {
+    const h = await harness(t);
+    const before = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+    before.breaker.blockLevel = 2;
+    h.sourceGuardStore.seed(SOURCE_GUARD_KEY, before);
+    h.input.pythonFetchImpl = h.input.fetchImpl;
+    h.input.fetchImpl = async () => { throw new Error('node_source_must_not_run'); };
+    const result = await h.run(mode);
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.summary.mode, mode);
+    assert.equal(result.summary.scope, scope);
+    assert.equal(result.summary.requested, slugs.length);
+    assert.equal(result.summary.sourceSucceeded, slugs.length);
+    assert.equal(result.summary.published, slugs.length);
+    assert.equal(result.summary.cacheHit, 0);
+    assert.equal(result.summary.notAttempted, 0);
+    assert.equal(result.summary.failed, 0);
+    assert.equal(result.summary.sourceValidated, true);
+    assert.equal(result.summary.sourceRequestCount, 1 + slugs.length);
+    assert.deepEqual(result.summary.results.map(entry => [entry.slug, entry.status]), slugs.map(slug => [slug, 'published']));
+    assert.equal(h.calls.filter(call => call.url.includes('oauth2/callback')).length, 1);
+    const posts = h.calls.filter(call => !call.url.includes('oauth2/callback'));
+    assert.equal(posts.length, slugs.length);
+    for (let index = 0; index < slugs.length; index++) {
+      const branch = ORANGE_BRANCHES[slugs[index]];
+      assert.deepEqual(JSON.parse(posts[index].options.body), { filters: [
+        { field: 'company_code', value: branch.companyCode }, { field: 'branch_no', value: branch.branchNo },
+      ] });
+      if (index > 0) assert.equal(posts[index].at - posts[index - 1].at, 2000);
+      const quote = h.store.entries.get(branchCacheKey(slugs[index])).data;
+      assert.equal(isValidBranchQuote(quote), true);
+      assert.equal(quote.controlVersion, uuid(1));
+      assert.equal(quote.slug, slugs[index]);
+      assert.equal(quote.branch.officialId, branch.officialId);
+      assert.equal(quote.branch.companyCode, branch.companyCode);
+      assert.equal(quote.branch.branchNo, branch.branchNo);
+      assert.doesNotMatch(JSON.stringify(quote), /PRIVATE_SOURCE_TOKEN|authorization|diagnostics/i);
+    }
+    assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
+    const after = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+    assert.equal(after.sourceEpoch, before.sourceEpoch);
+    assert.equal(after.breaker.blockLevel, 2);
+    assert.equal(after.paused, false);
+    assert.equal(after.leaseId, null);
+    assert.equal(after.unresolvedAttempt, null);
+
+    const savedQuotes = slugs.map(slug => structuredClone(h.store.entries.get(branchCacheKey(slug))));
+    const guardBeforeReplay = structuredClone([...h.sourceGuardStore.entries]);
+    const replay = await h.run(mode);
+    assert.equal(replay.exitCode, 0);
+    assert.equal(replay.summary.replayed, true);
+    assert.equal(replay.summary.sourceRequestCount, 0);
+    assert.equal(replay.summary.historicalSourceRequestCount, 1 + slugs.length);
+    assert.equal(replay.summary.sourceValidated, false);
+    assert.equal(h.calls.length, 1 + slugs.length);
+    assert.deepEqual([...h.sourceGuardStore.entries], guardBeforeReplay);
+    assert.deepEqual(slugs.map(slug => h.store.entries.get(branchCacheKey(slug))), savedQuotes);
+
+    for (const [otherMode, extra] of [
+      [mode === 'publish-five-python' ? 'publish-all-python' : 'publish-five-python', []],
+      ['publish-python', []], ['publish', ['--scope', 'pilot']],
+    ]) {
+      const conflict = await h.run(otherMode, extra);
+      assert.equal(conflict.exitCode, 2);
+      assert.equal(conflict.summary.reason, 'operation_conflict');
+      assert.equal(conflict.summary.sourceRequestCount, 0);
+    }
+    assert.equal(h.calls.length, 1 + slugs.length);
+    assert.deepEqual([...h.sourceGuardStore.entries], guardBeforeReplay);
+  });
+}
+
+test('a challenge on the third Python branch preserves two published quotes, stops the batch and pauses the shared guard', async t => {
+  const h = await harness(t);
+  const before = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+  before.breaker.blockLevel = 2;
+  h.sourceGuardStore.seed(SOURCE_GUARD_KEY, before);
+  h.input.pythonFetchImpl = h.input.fetchImpl;
+  h.input.fetchImpl = async () => { throw new Error('node_source_must_not_run'); };
+  let postCount = 0;
+  h.rateResponse = () => ++postCount === 3
+    ? new Response('PRIVATE_CHALLENGE', { status: 403, headers: { 'cf-mitigated': 'challenge' } })
+    : Response.json(FIXTURE);
+  const result = await h.run('publish-five-python');
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.summary.reason, 'paused');
+  assert.equal(result.summary.retryAt, null);
+  assert.equal(result.summary.requested, 5);
+  assert.equal(result.summary.sourceSucceeded, 2);
+  assert.equal(result.summary.published, 2);
+  assert.equal(result.summary.failed, 1);
+  assert.equal(result.summary.notAttempted, 2);
+  assert.equal(result.summary.sourceValidated, false);
+  assert.equal(result.summary.sourceRequestCount, 4);
+  assert.deepEqual(result.summary.results.map(entry => [entry.slug, entry.status]), FIVE_SLUGS.map((slug, index) => [
+    slug, index < 2 ? 'published' : index === 2 ? 'source_failed' : 'not_attempted',
+  ]));
+  assert.equal(result.summary.results[2].diagnostics.at(-1).stage, 'rate');
+  assert.equal(result.summary.results[2].diagnostics.at(-1).status, 403);
+  assert.equal(result.summary.results[2].diagnostics.at(-1).challenge, true);
+  assert.equal(h.calls.length, 4);
+  for (const [index, slug] of FIVE_SLUGS.entries()) {
+    assert.equal(h.store.entries.has(branchCacheKey(slug)), index < 2);
+  }
+  const savedQuotes = FIVE_SLUGS.slice(0, 2).map(slug => structuredClone(h.store.entries.get(branchCacheKey(slug))));
+  const after = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+  assert.equal(after.sourceEpoch, before.sourceEpoch);
+  assert.equal(after.paused, true);
+  assert.equal(after.breaker.blockLevel, 3);
+  assert.equal(after.leaseId, null);
+  assert.equal(after.unresolvedAttempt, null);
+  assert.doesNotMatch(JSON.stringify(result), /PRIVATE_/);
+  const replay = await h.run('publish-five-python');
+  assert.equal(replay.exitCode, 1);
+  assert.equal(replay.summary.replayed, true);
+  assert.equal(replay.summary.sourceRequestCount, 0);
+  assert.equal(replay.summary.historicalSourceRequestCount, 4);
+  h.input.env.GITHUB_RUN_ID = '1235';
+  const blocked = await h.run('publish-all-python');
+  assert.equal(blocked.exitCode, 3);
+  assert.equal(blocked.summary.reason, 'paused');
+  assert.equal(blocked.summary.sourceRequestCount, 0);
+  assert.equal(h.calls.length, 4);
+  assert.equal(h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data.breaker.blockLevel, 3);
+  assert.deepEqual(FIVE_SLUGS.slice(0, 2).map(slug => h.store.entries.get(branchCacheKey(slug))), savedQuotes);
+});
+
+test('all Python branches reuse five fresh quotes, fetch the remaining 33 and leave a complete 38-quote cache', async t => {
+  const h = await harness(t);
+  h.input.pythonFetchImpl = h.input.fetchImpl;
+  h.input.fetchImpl = async () => { throw new Error('node_source_must_not_run'); };
+  const first = await h.run('publish-five-python');
+  assert.equal(first.exitCode, 0);
+  assert.equal(first.summary.published, 5);
+  assert.equal(h.calls.length, 6);
+  const firstQuotes = FIVE_SLUGS.map(slug => structuredClone(h.store.entries.get(branchCacheKey(slug))));
+  h.advance(2000);
+  h.input.env.GITHUB_RUN_ID = '1235';
+  const second = await h.run('publish-all-python');
+  assert.equal(second.exitCode, 0);
+  assert.equal(second.summary.requested, 38);
+  assert.equal(second.summary.cacheHit, 5);
+  assert.equal(second.summary.sourceSucceeded, 33);
+  assert.equal(second.summary.published, 33);
+  assert.equal(second.summary.failed, 0);
+  assert.equal(second.summary.notAttempted, 0);
+  assert.equal(second.summary.sourceRequestCount, 34);
+  assert.equal(second.summary.sourceValidated, false);
+  assert.equal(h.calls.length, 40);
+  const secondCalls = h.calls.slice(6);
+  assert.equal(secondCalls.filter(call => call.url.includes('oauth2/callback')).length, 1);
+  assert.equal(secondCalls.filter(call => !call.url.includes('oauth2/callback')).length, 33);
+  assert.deepEqual(second.summary.results.filter(entry => entry.status === 'cache_hit').map(entry => entry.slug).sort(), [...FIVE_SLUGS].sort());
+  assert.deepEqual(FIVE_SLUGS.map(slug => h.store.entries.get(branchCacheKey(slug))), firstQuotes);
+  for (const slug of Object.keys(ORANGE_BRANCHES)) {
+    assert.equal(isValidBranchQuote(h.store.entries.get(branchCacheKey(slug)).data), true);
+  }
+  assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
+  const replay = await h.run('publish-all-python');
+  assert.equal(replay.exitCode, 0);
+  assert.equal(replay.summary.replayed, true);
+  assert.equal(replay.summary.sourceRequestCount, 0);
+  assert.equal(replay.summary.historicalSourceRequestCount, 34);
+  assert.equal(h.calls.length, 40);
 });
 
 test('Python publication writes one valid quote; paused cache reads, cache hits and terminal replay add no source HTTP', async t => {

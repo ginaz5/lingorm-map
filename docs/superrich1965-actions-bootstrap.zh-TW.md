@@ -13,9 +13,10 @@ package scripts／checkJs 設定。執行程式沿用 PR #8 的 `74b9013` 版本
 
 現有前端入口、公開 Netlify Functions、CSV、Netlify 設定、套件版本及綠標排程維持 main
 版本。新增的三個 `src/data` 模組僅供 collector 使用，本分支的頁面沒有載入它們。
-Workflow 提供手動 inspect／probe／probe-python，以及固定 Preview 單店的 publish-python；
-不提供批次發布、排程或 push／PR 自動取價。Python probe 成功與單店發布的後續驗收見
-[Python 單店發布文件](superrich1965-python-single-publish.zh-TW.md)。
+Workflow 提供手動 inspect／probe／probe-python，以及固定 Preview 的單店、五店與全店
+Python 發布；不提供 production 發布、排程或 push／PR 自動取價。後續驗收見
+[Python 單店發布文件](superrich1965-python-single-publish.zh-TW.md) 與
+[多店文件](superrich1965-python-batches.zh-TW.md)。
 
 | 測試身分 | 固定值 |
 | --- | --- |
