@@ -387,8 +387,10 @@ http://localhost:8888/api/config
 分店發布不代表匯率服務已啟用。2026-10-20 起退役 Netlify 的橘標來源
 抓取，保留只讀 API。2026-10-21 已在 GitHub runner 完成 Python／Safari 匿名
 流程、Preview 單店與五店發布，再以 33 店新發布＋5 店有效快取完成 38 店覆蓋。
-2026-10-22 正在準備正式接線；正式部署、人工驗收與排程尚未完成，不能以 Preview
-的成功紀錄當作正式站已上線。
+2026-10-22 PR #8 已合併並部署正式站，專用 PAT 的 production inspect 與正式單店
+新取價／發布、五店 4 新取＋1 cache、全店 38 新取及正式 Google 地圖／排序驗收
+通過；真正定時更新另行記錄，最新狀態見
+[正式上線紀錄](../docs/superrich1965-production-release.zh-TW.md)。
 完整契約見 [Netlify 只讀快取與外部抓取](../docs/superrich1965-on-demand-plan.zh-TW.md)。
 
 - 頁面每 60 秒 GET `/api/exchange-rates-1965-cache`，只讀有效逐店報價。
@@ -401,7 +403,7 @@ http://localhost:8888/api/config
 - 刪除 `exchange-rates-1965-fetch`、`exchange-rates-1965-refresh` 兩個 Function、
   Netlify dispatch、Chromium helper／套件／打包設定。
 - `EXCHANGE_RATES_1965_FETCH_MODE`、`EXCHANGE_RATES_1965_SOURCE_TRANSPORT`
-  已無程式讀取，也已從 Netlify 專案所有 context 移除，需重新部署才會套用。
+  已無程式讀取，也已從 Netlify 專案所有 context 移除；本次正式部署已採用退役後程式。
   `EXCHANGE_RATES_1965_ENABLED` 保留，
   預設 false，既有 runtime control 優先；只讀端點不初始化 control。
 - 保留控制、cache、lease、breaker、gate 與 job 資料，不清除已知冷卻。
@@ -467,10 +469,10 @@ netlify functions:build --src netlify/functions --functions /private/tmp/lingorm
 POST 都 200，USD `100-50` 與 TWD `1000-100` 指定面額解析成功；不能據此
 宣稱 Netlify 或 GitHub runner 可用。
 
-匿名模組與其 mock／整合測試保留，供後續外部 runner 使用。token 只留在
+匿名模組與其 mock／整合測試由 Actions runner 共用。token 只留在
 程序記憶體；同輪可重用具明確到期提示的 token。任何階段遇 403／429／challenge
-仍遵守共享 breaker；不 fallback、不自動重試。新的真實來源驗收須依 Actions
-計畫完成受控入口，不能呼叫已刪除的 Netlify Function。
+仍遵守共享 breaker；不 fallback、不自動重試。新的真實來源驗收使用已審閱的
+Actions 入口，不能呼叫已刪除的 Netlify Function。
 
 ### GitHub Actions 驗收與正式接線
 
@@ -490,7 +492,7 @@ PR #8 的固定 Preview `6ad779f97644e6fb5b04b05c` 已完成 Python probe、單�
 五店全新發布及 38 店覆蓋。五店 run `39617098664`；全店 run `39618515018` 新取
 33 店、cache hit 5 店，`sourceValidated=false` 如實反映混合結果。兩個只讀 API
 與逐店快取一致，中英文、列表、HERE popup、USD／TWD 排序已實測；該 Preview
-沒有 Google 設定，Google popup／到期已有離線回歸，正式站仍須實際驗收。
+沒有 Google 設定，不能作為正式 Google 現場驗收的證據。
 這些歷史 quote 已按原期限到期，不以測試成功暗示目前仍有有效報價。
 
 正式接線使用明確 `production` target、production context 與 main 正式發布，
@@ -499,9 +501,9 @@ PR #8 的固定 Preview `6ad779f97644e6fb5b04b05c` 已完成 Python probe、單�
 未設定、格式錯誤或 metadata 不符都停止，不從目前 main 或 Preview 推導。
 往後網站更新後，必須核對新正式發布並更新綁定，才能繼續正式取價。
 
-合併前重跑完整測試、checkJs、Vite／Functions build、snapshot／收藏／mapping 驗證及
-新版 Preview；正式部署後先查只讀 API，再以獨立 production control 做人工單店→
-五店→全店驗收。後續階段可能沿用先前有效快取，必須分別列出新來源與 cache hit，
+PR #8 合併前完成 848 項 Node、14 項 Python 測試、checkJs、Vite／Functions build、
+snapshot／收藏／mapping 驗證及新版 Preview。正式部署後先查只讀 API，再以獨立
+production control 做人工單店→五店→全店驗收。後續階段可能沿用先前有效快取，必須分別列出新來源與 cache hit，
 不清快取或重標時間製造全新覆蓋。Preview quote／control 不搬到正式 store。
 
 排程採 UTC `0,30 1-15 * * *`，即泰國 08:00～22:30，每天 30 輪。
@@ -509,6 +511,16 @@ Repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 必須明確為 `true
 workflow 與 CLI 才接受 schedule；預設關閉，人工驗收前 source guard 亦保持 paused。
 Schedule 固定 production／`publish-all-python`，保留與手動相同的 concurrency group。
 人工驗收通過才啟用，再核對至少兩輪實際定時結果，不把全 cache 或歷史 replay 當新來源成功。
+台灣時間 2026-10-22 07:41 已核對開關為 true、guard 為 resumed，lease 及未結案來源
+均為空，原 control／epoch／blockLevel=2 不變。排程已開啟；首兩輪預定台灣時間
+09:00／09:30（泰國 08:00／08:30），截至本次紀錄尚待真正 schedule 結果。
+
+正式全店 run `39694052646` 已於台灣時間 07:39 驗收：跨過半小時刷新邊界後
+38 店全部新取並發布、cache hit 0、failed 0、source HTTP 39、sourceValidated=true。
+Cache GET 與 38 個單店 POST 均回 200，內容與逐店 Blobs 一致，純讀前後保護狀態未變。
+正式 Google SDK／圖磚／popup、中英文及橘標 USD／TWD 最佳排序已實測；
+新 Preview 的 HERE 正確顯示無自身報價，驗證 store 隔離，實際正式 quote 的 API、
+列表及 Google／HERE 到期撤價另由三項模擬時鐘測試確認，並非等候現場到期。
 
 目前共同 sourceEpoch 與 blockLevel=2 的歷史保留，成功不清升級紀錄。既有 10 個
 退役前部署的來源 control 已停用，正式接手不啟用未整合共同 guard 的本機舊 CLI。
@@ -534,5 +546,6 @@ Schedule 固定 production／`publish-all-python`，保留與手動相同的 con
 `fail=1` 模擬舊 429 的前端相容處理，不代表新版 cache API 會建立冷卻。
 fixture 在記憶體攔截請求，不碰來源、正式 Blobs 或 CSV。
 
-新版部署後確認只剩三個橘標只讀 API、兩個取價入口及舊環境開關已退役。
-本機測試與打包不能代替部署驗收；不要為了驗收啟用正式 control 或清除 breaker。
+新版部署確認三個橘標 API 只讀、兩個取價入口及舊環境開關已退役。
+本機測試與打包不能代替部署驗收；本機 UI 測試不改正式 control 或清除 breaker，
+正式 control 只在正式維運與人工發布流程中明確操作。

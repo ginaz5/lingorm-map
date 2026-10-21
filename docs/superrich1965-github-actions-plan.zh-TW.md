@@ -2,11 +2,14 @@
 
 更新日期：2026-10-22（Asia/Taipei）。以下保留原 2026-10-20 計畫背景，基準 `5ee520c`。
 **Python／Safari 已完成 GitHub runner 的 Preview 單店、五店全新與 38 店覆蓋驗收；
-全店輪次為 33 新取加 5 cache。正式 target、SHA 綁定與預設關閉排程正在準備，正式部署及定時結果另驗。**
+全店輪次為 33 新取加 5 cache。PR #8 已正式部署，正式 target／SHA 綁定、專用 PAT
+inspect、單店、五店（4 新取＋1 cache）及全店（刷新邊界後 38 店全新）已通過。
+正式 Google、中英文及排序已實測，排程與來源 guard 已啟用；真正定時更新另驗。**
 下方「尚未實作／本次沒有操作」屬原調查時點，不是目前狀態。
 目前可用指令與啟用前步驟見 [Actions 維運文件](superrich1965-actions-runbook.zh-TW.md)。
 以下保留設計與驗收契約；「規劃新增／尚未實作」的介面設計說明，實際落地以維運文件為準。
-已退役的 Netlify 抓價入口不恢復；目前遠端部署是否已套用退役 commit，本次未重新查核。
+已退役的 Netlify 抓價入口不恢復；本次正式部署已採用退役後程式。
+實際發布身分與逐階段結果見[正式上線紀錄](superrich1965-production-release.zh-TW.md)。
 
 詳細公開證據、SDK 核對與平台限制見 [本次調查](superrich1965-actions-research-2026-10-20.zh-TW.md)。
 本機成功與 Netlify 403／本站 429 的歷史見 [匿名 API 紀錄](superrich1965-anonymous-api-investigation.zh-TW.md)。
@@ -304,15 +307,18 @@ Mock 不碰真實來源／正式 Blobs，至少涵蓋：
 不偽裝成新來源失敗，也不以 GitHub 綠燈代替資料驗收。異常時可暫停來源工作，
 保留快取到原到期，地點／收藏／官網連結仍可使用；不重啟已退役的 Netlify 抓價入口。
 
-## 尚未完成的交付清單
+## 交付清單（2026-10-22 現況）
 
 - [x] 現有程式、SDK／平台、第三方固定成功紀錄與證據限制調查。
 - [x] 決定明確 target、共同 source guard、probe、rerun／取消及分階段驗收方向。
 - [x] P0～P3：本機程式、mock、僅供手動 inspect／probe 的 workflow、target／control 管理已實作。
-- [ ] 工作停止／冷卻移轉查核、guard bootstrap、workflow main bootstrap、Environment 設定。
-- [ ] P4：本專案 GitHub runner 單店真實來源成功，且不發布報價。
-- [ ] P5～P6：Preview 單店／pilot／38 家、API／UI、跨 run 與部署更換驗收。
-- [ ] P7：正式部署與時段／成本／故障／排程驗收，另行啟用。
+- [x] 工作停止／冷卻移轉查核、guard bootstrap、workflow main bootstrap、Environment 設定。
+- [x] P4：本專案 GitHub runner Python 單店真實來源成功，且不發布報價。
+- [x] P5～P6：Preview 單店／五店／38 家與 API／HERE UI；Google／到期另有離線回歸。
+- [x] P7 正式接線：PR #8 合併、正常正式部署、production SHA 綁定、專用 PAT inspect、獨立 control 及正式單店發布。
+- [x] P7 正式多店及 API；Google 現場、中英文及排序；HERE 新 Preview 隔離、實際 quote 離線到期回歸，證據範圍分列。
+- [x] P7 啟用既定時段排程；台灣時間 07:41 核對開關 true／guard resumed，歷史保留。
+- [ ] P7 核對至少兩輪真正定時更新、耗時與故障控制；首兩輪預定台灣時間 10 月 22 日 09:00／09:30。
 
 
 ## 2026-10-20 實作補充

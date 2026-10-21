@@ -32,9 +32,12 @@ USD／TWD 指定面額買入價、橘色 marker／群聚，以及 Google／HERE 
 2026-10-22：GitHub Actions 使用 Python 標準函式庫及 Safari User-Agent，匿名取得
 token 後逐店查詢並發布至 Netlify Blobs。Preview 已完成單店、五店及 38 店驗收；
 五店全數新取並發布，後續全店輪次新取 33 店、沿用 5 店有效快取，合計覆蓋 38 店。
-正式上線準備納入明確 production target、已發布 commit 綁定，以及預設關閉的
-泰國時間 08:00～22:30 半小時排程；正式人工驗收通過後才啟用。
-目前這些 Preview 證據不代表正式站已部署或有有效報價。
+PR #8 已合併並部署正式站，production target 與已發布 commit 綁定已通過專用 PAT
+的 inspect，正式單店、五店及全店發布驗收通過；正式全店輪次跨過刷新邊界，
+38 店均新取且發布。正式 Google Maps、中英文及 USD／TWD 排序亦已實測。
+泰國時間 08:00～22:30 的半小時排程已啟用，來源 guard 已恢復；
+首兩輪預定為台灣時間 10 月 22 日 09:00／09:30，真正定時更新結果仍待驗收。
+各階段的實際來源／快取數量與正式發布身分見[正式上線紀錄](docs/superrich1965-production-release.zh-TW.md)。
 [Actions 維運文件](docs/superrich1965-actions-runbook.zh-TW.md)記錄操作、驗收與故障處理；
 來源 guard 與冷卻跨 Preview／正式共用，讀取或重新整理頁面都不會發動取價。
 
@@ -42,11 +45,13 @@ token 後逐店查詢並發布至 Netlify Blobs。Preview 已完成單店、五�
 
 ## Architecture
 
-SuperRich 1965 的獨立 [Actions bootstrap](docs/superrich1965-actions-bootstrap.zh-TW.md)
-提供 main-only 手動 inspect／probe，用於驗證既有 PR #8 Preview 的來源取價。
-此階段不接入目前頁面或公開 API；runner／PAT 權限與來源驗收步驟見該文件。
-
-The app is a static site with two Netlify Functions acting as a thin backend proxy. All state lives in the browser.
+The app is a static site with Netlify Functions for map configuration, the location
+snapshot, and cached exchange rates. Browser state holds filters and displayed
+quotes; Netlify Blobs persist rate controls and quotes. SuperRich Thailand uses its
+Netlify collector, while SuperRich 1965 uses a main-only GitHub Actions collector.
+Public orange-rate APIs only read cached data; they never dispatch source work.
+The independent [Actions bootstrap](docs/superrich1965-actions-bootstrap.zh-TW.md)
+documents the earlier Preview-only rollout.
 
 ### Boot sequence
 
