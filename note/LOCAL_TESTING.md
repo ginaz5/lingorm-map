@@ -384,8 +384,11 @@ http://localhost:8888/api/config
 ## 橘標整合與維運
 
 2026-10-17：全部 38 家橘標已在 Notion 改為 Published 並經 exporter 更新 CSV。
-分店發布不代表匯率服務已啟用。2026-10-20：本分支退役 Netlify 的橘標來源
-抓取，保留只讀 API；尚未部署。Actions runner／逐店發布已完成 mock，遠端來源／發布與排程尚未驗收。
+分店發布不代表匯率服務已啟用。2026-10-20 起退役 Netlify 的橘標來源
+抓取，保留只讀 API。2026-10-21 已在 GitHub runner 完成 Python／Safari 匿名
+流程、Preview 單店與五店發布，再以 33 店新發布＋5 店有效快取完成 38 店覆蓋。
+2026-10-22 正在準備正式接線；正式部署、人工驗收與排程尚未完成，不能以 Preview
+的成功紀錄當作正式站已上線。
 完整契約見 [Netlify 只讀快取與外部抓取](../docs/superrich1965-on-demand-plan.zh-TW.md)。
 
 - 頁面每 60 秒 GET `/api/exchange-rates-1965-cache`，只讀有效逐店報價。
@@ -394,7 +397,7 @@ http://localhost:8888/api/config
 - 保留 `/api/exchange-rates-1965` 完整 snapshot API 與既有本機 CLI 契約。
   單店 API 可讀有效 snapshot fallback，但不播種逐店快取或延長到期時間。
 - 報價到期為下一個整點／半點加 35 分鐘，實際約 35～65 分鐘。
-  來源抓取器可用前，現有報價到期後不會因重新整理而產生新報價。
+  重新整理只讀快取，報價到期後仍須等待外部抓取器成功發布。
 - 刪除 `exchange-rates-1965-fetch`、`exchange-rates-1965-refresh` 兩個 Function、
   Netlify dispatch、Chromium helper／套件／打包設定。
 - `EXCHANGE_RATES_1965_FETCH_MODE`、`EXCHANGE_RATES_1965_SOURCE_TRANSPORT`
@@ -469,33 +472,53 @@ POST 都 200，USD `100-50` 與 TWD `1000-100` 指定面額解析成功；不能
 仍遵守共享 breaker；不 fallback、不自動重試。新的真實來源驗收須依 Actions
 計畫完成受控入口，不能呼叫已刪除的 Netlify Function。
 
-### GitHub Actions 本機實作與後續驗收
+### GitHub Actions 驗收與正式接線
 
-已完成 runner、明確 target／control 管理、固定 site-wide source guard、probe 不發布、
-job／rerun／取消與逐店發布核心。新 workflow 只允許手動 inspect／probe，無 publish 或 schedule。
-`config/exchange-rates-1965-actions-targets.json` 只接受經核對的明確 target；未設定即 fail closed，
-不會默用正式 target 或 `.env` 的日常 token。實際指令見 [Actions 維運文件](../docs/superrich1965-actions-runbook.zh-TW.md)。
+現行 runner 保留明確 target／control、固定 site-wide source guard、job／operation
+ledger、取消與逐店發布。Python helper 只負責固定匿名 token GET／rate POST，JS
+仍負責 token 生命週期、正式 38 店 mapping、parser、節奏及發布保護，沒有來源 fallback。
+`probe-python` 不發布；`publish-python` 固定單店 58，`publish-five-python` 固定
+58／56／57／59／60，`publish-all-python` 使用全部 38 店。
+實際指令及最新遠端證據見 [Actions 維運文件](../docs/superrich1965-actions-runbook.zh-TW.md)。
 
-使用者已同意先保持正式網站不變，bootstrap 要核對最終 main commit 的 `[skip netlify]`；
-專用、有到期日的 PAT 放 GitHub Environment，main-only branch 規則需另行設定。
-日後採泰國 08:00～22:30 每半小時，但目前不開排程。
+PR #9～#12 已以獨立 bootstrap 進 main，使用最終 `[skip netlify]` 訊息維持正式站
+原部署；GitHub Environment 的專用 PAT 已通過真實 inspect／發布。Environment
+沿用 `superrich1965-preview` 名稱、僅允許 main，正式接線仍使用該專用 Secret，
+不換成本機 `.env` 管理 token。名稱不代表 PAT 本身僅有 Preview／單一 store 權限。
 
-程式測試涵蓋單店兩階段成功且零報價發布、38 家串行／token 重用、跨 target 403 冷卻、
-未結案來源／hard kill、取消、晚讀控制跨租約、損壞 ledger、CAS 衝突及失敗 rerun 不轉綠。
-另檢查 workflow YAML、Bash 語法、固定 SHA、手動模式與憑證只在最後 step 注入。
+PR #8 的固定 Preview `6ad779f97644e6fb5b04b05c` 已完成 Python probe、單店發布、
+五店全新發布及 38 店覆蓋。五店 run `39617098664`；全店 run `39618515018` 新取
+33 店、cache hit 5 店，`sourceValidated=false` 如實反映混合結果。兩個只讀 API
+與逐店快取一致，中英文、列表、HERE popup、USD／TWD 排序已實測；該 Preview
+沒有 Google 設定，Google popup／到期已有離線回歸，正式站仍須實際驗收。
+這些歷史 quote 已按原期限到期，不以測試成功暗示目前仍有有效報價。
 
-首次真實來源仍須先查核舊部署／本機來源已停止、保留既有冷卻並完成 paused guard bootstrap，
-再核對新 Preview target control。只有新的單店 run 取得 token／rate 都 200、USD／TWD 完整、
-sourceValidated=true 且 published=0 才通過 probe；cache hit／歷史 replay 不算來源成功。
-之後才驗 Preview 單店發布、pilot／38 家、列表與 Google／HERE，再安排正式排程。
-本次沒有設定 Secrets、執行 workflow、觸發來源或改正式部署。
+正式接線使用明確 `production` target、production context 與 main 正式發布，
+`commitPolicy: environment-reviewed` 以 Environment variable
+`EXCHANGE_RATES_1965_PRODUCTION_COMMIT` 綁定已審閱且實際發布的 40 字元 commit。
+未設定、格式錯誤或 metadata 不符都停止，不從目前 main 或 Preview 推導。
+往後網站更新後，必須核對新正式發布並更新綁定，才能繼續正式取價。
 
-2026-10-21：已綁定 PR #8 的只讀 Preview `6ad779f97644e6fb5b04b05c`，
-建立只允許 main 的專用 Environment／site ID 及 paused source guard，並停用全部
-10 個退役前測試部署的來源 control，保留原 breaker／gate／job。Preview 快取 GET
-200、單店無報價 POST 503 符合只讀契約；794 項測試、typecheck、build 通過。
-專用 PAT Secret 已確認存在，權限尚未驗證；main bootstrap 及真實 probe 尚未完成，
-詳見上述維運文件的本次準備紀錄。
+合併前重跑完整測試、checkJs、Vite／Functions build、snapshot／收藏／mapping 驗證及
+新版 Preview；正式部署後先查只讀 API，再以獨立 production control 做人工單店→
+五店→全店驗收。後續階段可能沿用先前有效快取，必須分別列出新來源與 cache hit，
+不清快取或重標時間製造全新覆蓋。Preview quote／control 不搬到正式 store。
+
+排程採 UTC `0,30 1-15 * * *`，即泰國 08:00～22:30，每天 30 輪。
+Repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 必須明確為 `true`，
+workflow 與 CLI 才接受 schedule；預設關閉，人工驗收前 source guard 亦保持 paused。
+Schedule 固定 production／`publish-all-python`，保留與手動相同的 concurrency group。
+人工驗收通過才啟用，再核對至少兩輪實際定時結果，不把全 cache 或歷史 replay 當新來源成功。
+
+目前共同 sourceEpoch 與 blockLevel=2 的歷史保留，成功不清升級紀錄。既有 10 個
+退役前部署的來源 control 已停用，正式接手不啟用未整合共同 guard 的本機舊 CLI。
+遇 403／429／challenge 即停止，跨 target 保留共同冷卻；不因部署或重綁重新 bootstrap。
+回滾網站前先 source-pause，因為網站回滾不會停止 Actions 或還原 Blobs。
+
+測試涵蓋來源成功／零發布、串行與 token 重用、冷卻／unknown outcome、取消、
+租約／CAS、損壞 ledger、失敗 rerun、公開 API 零來源零寫入，以及背景／離線到期。
+另檢查 YAML／Bash、固定 action SHA、main-only 與 Secret 只在最後 CLI step 注入；
+這些本機檢查不代替遠端正式驗收。
 
 ### Netlify 瀏覽器模式驗收
 

@@ -40,6 +40,9 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
   /** @type {any|null} */
   let sourceLease = null;
   let sourceSettled = false, collectionStarted = false, sourceSucceeded = false, quotePublished = false, sourceUnknown = false;
+  let sourcePaused = false;
+  /** @type {number|null} */
+  let sourceRetryAtMs = null;
   // Private Function logs only. Never attach source details to public envelopes.
   const startedAtMs = nowImpl();
   /** @type {any} */
@@ -56,7 +59,8 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
   };
   /** @param {string} reason @param {number} status @param {number|null} [retryAtMs] */
   const reply = (reason, status, retryAtMs = null) => respond({
-    reason, status, retryAtMs, enabled: control?.enabled ?? null, controlVersion: control?.controlVersion ?? null,
+    reason, status, retryAtMs: ['paused', 'unknown_outcome'].includes(reason) ? null : retryAtMs,
+    enabled: control?.enabled ?? null, controlVersion: control?.controlVersion ?? null,
   });
   try {
     if (signal?.aborted) return reply('cancelled', 503);
@@ -164,6 +168,8 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
       const finished = await finishSourceAttempt({ store: sourceGuardStore, lease: sourceLease,
         outcome: guardOutcome,
         nowMs: nowImpl(), retryAfterMs: collection.retryAfterMs });
+      sourcePaused = finished.state?.paused === true;
+      sourceRetryAtMs = finished.retryAtMs ?? null;
       sourceSettled = finished.ok;
       if (!finished.ok || signal?.aborted) {
         sourceUnknown = !finished.ok || guardOutcome === 'unknown';
@@ -193,8 +199,12 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
           await autoDisable(store, latest.entry, control, { data: transition.breaker, etag: write.etag }, nowImpl(), randomUUIDImpl);
           control = (await readEffectiveControl(store, enabledDefault)).control;
         }
-        return reply(collection.outcome === 'blocked' ? 'cooldown' : 'unavailable', collection.outcome === 'blocked' ? 429 : 503,
-          Math.max(nowImpl() + releaseDelay, Date.parse(transition.breaker.blockedUntil ?? '') || 0));
+        // A target can be at its first block while the shared source is already
+        // at its second. Report the actual longer restriction, or an explicit
+        // pause with no automatic retry time when global protection trips.
+        return reply(sourcePaused ? 'paused' : collection.outcome === 'blocked' ? 'cooldown' : 'unavailable',
+          sourcePaused ? 503 : collection.outcome === 'blocked' ? 429 : 503,
+          sourcePaused ? null : Math.max(nowImpl() + releaseDelay, Date.parse(transition.breaker.blockedUntil ?? '') || 0, sourceRetryAtMs ?? 0));
       }
       return reply('storage_unavailable', 503, nowImpl() + releaseDelay);
     }

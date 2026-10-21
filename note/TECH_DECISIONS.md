@@ -494,3 +494,34 @@ Netlify 官方支援最終 main commit 的 `[skip netlify]` 避免該次正式�
 只處理 Preview，下一個未標記 commit 仍包含所有略過變更。Bootstrap 前後須核對實際
 commit／Netlify 狀態，不能把標記當作持續鎖站。見[維運文件](../docs/superrich1965-actions-runbook.zh-TW.md)。
 本次只做本機程式與 mock；未建立憑證、改遠端、執行來源、發布 workflow、部署或 commit。
+以下為 bootstrap 階段歷史：當時正式版只支援 SuperRich Thailand（綠標）。正式快照仍可能包含其他換匯品牌的
+資料列（例如已暫停的 SuperRich 1965），因此顯示規則改以「此版本支援的換匯點」
+判斷：`Type = Currency Exchange` 的地點必須在綠標 mapping 中才會顯示；
+換匯點的 `Category` 留空，以標籤作為單一換匯篩選入口。
+由 `isSupportedLocation()` 併入 `isPublicLocation()`，清單、搜尋、收藏、篩選
+計數、目的地選項與 Google／HERE marker 共用同一個判斷。刻意不用品牌 Slug 黑名單；
+收藏中既有的其他品牌 ID 也不清除，日後支援該品牌時仍可對應。
+
+### 2026-10-21：獨立橘標 Actions bootstrap
+
+使用者要求 PR #8 保持開啟，先獨立準備手動 workflow、collector 依賴與固定 Preview
+target，讓 runner 驗收可在前端功能合併前進行。沿用 main-only Environment／執行身分、
+共用來源 guard、control／lease／breaker 與既有 probe，不新增來源的公開 Function。
+現有前端、CSV、公開入口與綠標排程維持 main 版本。本機準備及 mock 驗證沒有取價或部署；
+後續 main bootstrap 須核對最終 `[skip netlify]` 與正式發布基準。詳見
+[bootstrap 操作與驗收](../docs/superrich1965-actions-bootstrap.zh-TW.md)。
+
+### 2026-10-22：橘標正式上線接線
+
+使用者選擇完整準備後合併 PR #8。保留 main 的 Python／Safari、五店／全店與來源
+保護，正式 target 用 Environment 的 `EXCHANGE_RATES_1965_PRODUCTION_COMMIT` 綁定
+經核對的實際 production SHA；網站換版未重新核准便停止。沿用既有 main-only
+Environment 專用 PAT，Preview／正式 quote store 隔離，共用 guard 的 epoch、
+blockLevel=2 與冷卻歷史不變。每店開始及發布前重新核對正式部署，失配停止。
+
+排程固定泰國 08:00～22:30 每半小時；repository variable 明確 true 才通過 job 與
+CLI 兩層 gate，只能全店 production。正式人工取價、API、地圖與排序通過才啟用，
+再驗真正定時更新。網站回滾不會回復 Blobs 或停 Actions，須另操作 guard／control。
+
+Preview 已驗五店全新及後續 33 新加 5 cache 的 38 店覆蓋；正式部署與排程仍須另驗，
+操作與後續證據見 [Actions 維運文件](../docs/superrich1965-actions-runbook.zh-TW.md) 與 PR #8。

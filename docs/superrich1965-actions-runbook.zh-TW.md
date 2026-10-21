@@ -1,11 +1,84 @@
-# SuperRich 1965：Actions 手動驗證與維運
+# SuperRich 1965：Actions 抓取與 Netlify 快取維運
 
-更新：2026-10-21。本機程式與 mock 已實作；已核對並綁定 PR #8 的只讀 Preview，
-建立 main-only GitHub Environment 與 paused source guard。使用者已加入專用 PAT Secret，
-目前只確認 Secret 存在，尚未驗證憑證權限；main workflow bootstrap 尚未完成，
-未執行 workflow 或來源請求。正式網站保持原部署。
-計畫與證據見 [實作計畫](superrich1965-github-actions-plan.zh-TW.md)及
-[實作前調查](superrich1965-actions-research-2026-10-20.zh-TW.md)。
+更新：2026-10-22。Netlify 橘標 API 只讀快取，GitHub Actions 以 Python／Safari
+匿名取價，JS 管理 token、parser、mapping、lease、source guard 與發布。
+Chromium、Netlify 橘標背景來源入口與兩個 FETCH_MODE／SOURCE_TRANSPORT 開關已退役。
+
+## 現行入口與驗收證據
+
+Preview 五店 [39617098664](https://github.com/ginaz5/lingorm-map/actions/runs/39617098664)
+全新取價／發布，6 次來源 HTTP；後續全店
+[39618515018](https://github.com/ginaz5/lingorm-map/actions/runs/39618515018) 新取／發布 33 店、
+cacheHit 5 店，34 次來源 HTTP，總覆蓋 38 店有效 USD／TWD。全部 HTTP 200、無 replay，
+兩個 API 與快取一致；中英文、列表、HERE popup、USD／TWD 排序通過。
+舊 quote 已按原期限到期。正式接線程式正在準備，正式部署與定時更新另須驗收。
+
+沿用 main-only Environment `superrich1965-preview` 與既有專用 PAT Secret、site ID
+variable。名稱沿用，實際可供兩個明確 target；不代表 PAT 只限單一 store。
+不以本機日常 `.env` 管理 token 取代 workflow 專用 Secret，不輸出任何 token。
+
+`preview-reviewed` 仍綁定 immutable Preview；新 PR deploy 不繼承舊快取。
+`production` 固定 site／main／production，`commitPolicy: environment-reviewed` 由該
+Environment 的 `EXCHANGE_RATES_1965_PRODUCTION_COMMIT` 綁定已核對、實際發布的完整
+小寫 40 字元 SHA。缺少或不符便停止；網站換版後須核對並更新綁定。正式每店開始及
+發布前重新核對部署。Workflow commit 與網站 target commit 分別記錄，不能自動推導。
+
+| action | 固定範圍 | 發布 |
+| --- | --- | --- |
+| inspect | 身分／control／guard | 否，零來源零寫入 |
+| probe-python | superrich1965-58（A04／36） | 否 |
+| publish-python | 同上單店 | 是 |
+| publish-five-python | 58、56、57、59、60 | 是 |
+| publish-all-python | mapping 全部 38 店 | 是 |
+
+Workflow 的 `target` 明確選 `preview-reviewed` 或 `production`，預設仍是 Preview。
+正式只接受 Python 取價；禁止任意 URL、slug、scope、force 或 checkout ref。
+例如以下指令必須逐輪驗收後才執行下一個，不能直接整組連跑：
+
+```bash
+gh workflow run exchange-rates-1965.yml --repo ginaz5/lingorm-map --ref main -f action=inspect -f target=production
+gh workflow run exchange-rates-1965.yml --repo ginaz5/lingorm-map --ref main -f action=publish-python -f target=production
+gh workflow run exchange-rates-1965.yml --repo ginaz5/lingorm-map --ref main -f action=publish-five-python -f target=production
+gh workflow run exchange-rates-1965.yml --repo ginaz5/lingorm-map --ref main -f action=publish-all-python -f target=production
+```
+
+## 正式切換與排程
+
+1. 整合 main，重跑測試、checkJs、Vite／Functions、CSV／收藏／mapping 與新版 Preview。
+2. 正式上線合併不加 `[skip netlify]`，核對 ready／main／production／實際 SHA 及只讀 API。
+3. 綁定正式 SHA，使用專用 PAT 跑 production inspect；排程開關仍為 false／未設定。
+4. 備份正式 control／breaker／gate／job／cache 與共用 guard，建立獨立正式 control。
+   不搬 Preview quote／control，不重標時間，不重新 bootstrap source guard。
+5. 冷卻已到期、無來源工作／lease／unresolved 才 source-resume。人工單店→五店→全店，
+   每輪結束先 source-pause。如實記錄新來源／發布／cacheHit，不清快取強迫重抓。
+6. 驗 38 slug、指定面額、版本、有效期、cache GET 與 38 branch POST；讀取前後狀態一致。
+   驗中英文、列表、Google／HERE popup、排序及到期撤價，不能只以 green workflow 驗收。
+7. 人工驗收通過才開排程並恢復 guard，再核對至少兩輪實際 schedule 的來源／發布／coverage。
+
+Repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 必須明確為 `true`；job 與 CLI
+兩層檢查，預設不執行。Schedule 固定 production／`publish-all-python`，核對 repo、main
+及 UTC cron `0,30 1-15 * * *`（泰國 08:00～22:30，每天 30 輪）。預定觸發可能延遲。
+手動 dispatch、純 cache hit 或歷史 replay 不能代替真實定時取價驗收。
+
+管理命令使用 `node --env-file-if-exists=.env scripts/exchange-rates-1965-actions-control.mjs`
+加上 `status|enable|source-status|source-resume|source-pause --target production`；正式 target
+另須先設定已核對的公開 SHA 環境變數。停用為 `disable --target production --reason manual`。
+
+串行來源間隨機等 2～5 秒、token 僅存記憶體，保留 12 分鐘應用／20 分鐘 job、共用
+concurrency、lease、CAS、取消與 ledger。每店成功獨立發布，失敗停止，舊 quote 保留到期。
+共同 sourceEpoch、blockLevel=2 與冷卻歷史保留，成功不清升級；403／429／challenge
+可能升第 3 級暫停。Unknown 不因租約到期解鎖，不重試或換 runner／介面來繞過保護。
+
+緊急先關排程並 source-pause；報價內容有疑慮時 disable production control 撤價。
+網站回滾不會停 Actions 或還原 site-wide Blobs，須另操作上述控制。保留冷卻與 ledger，
+不恢復退役的 Netlify 來源入口。Bootstrap 的 `[skip netlify]` 只略過該次部署。
+
+參考：[GitHub schedule](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)、
+[Netlify deploy](https://docs.netlify.com/deploy/manage-deploys/manage-deploys-overview/)。
+
+## 原 2026-10-21 準備歷史
+
+以下僅保留 bootstrap 前的準備紀錄；「尚未驗收／無 publish」等當時描述已由上方現況取代。
 
 ## 已完成與目前預設
 

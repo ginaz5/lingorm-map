@@ -8,6 +8,12 @@
       "branch": "codex/superrich1965-on-demand",
       "commit": "74b9013494b94201bd0841ee8090f583c7994288",
       "context": "deploy-preview"
+    },
+    "production": {
+      "kind": "production",
+      "branch": "main",
+      "commitPolicy": "environment-reviewed",
+      "context": "production"
     }
   }
 }

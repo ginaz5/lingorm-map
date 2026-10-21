@@ -23,22 +23,28 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 
 SuperRich 1965（橘標）沿用同一個「換匯」標籤、卡片與排序選單，提供
 USD／TWD 指定面額買入價、橘色 marker／群聚，以及 Google／HERE popup。
-本分支已退役橘標的 Netlify 排程、背景取價、Chromium 與兩個來源環境開關；
+橘標已退役 Netlify 排程、背景取價、Chromium 與兩個來源環境開關；
 頁面及單店「重新整理匯率」按鈕只讀快取，不會向官網取價。有效期與綠標相同，
 排序只比較已有有效報價的分店；既有本機完整快照 CLI 保留。
 38 家橘標分店的 Published 狀態由 Notion 管理，不代表報價服務已部署或啟用。
 操作方式見 [橘標整合與維運](note/LOCAL_TESTING.md#橘標整合與維運)。
 
-2026-10-19：本機匿名 API 已測通，Netlify Preview 的 token GET 仍被來源
-403 challenge 擋下；[GitHub Actions 抓取計畫](docs/superrich1965-github-actions-plan.zh-TW.md)
-已補上 runner、共用來源保護、逐店發布及只供手動 inspect／probe 的 workflow；
-[操作文件](docs/superrich1965-actions-runbook.zh-TW.md)說明 target／專用憑證及不部署正式站的 bootstrap。
-目前只通過 mock，本專案 GitHub runner 來源、Preview 發布與排程尚未驗收或啟用；
-現有報價仍依原有效期到期，重新整理不會產生新報價。
+2026-10-22：GitHub Actions 使用 Python 標準函式庫及 Safari User-Agent，匿名取得
+token 後逐店查詢並發布至 Netlify Blobs。Preview 已完成單店、五店及 38 店驗收；
+五店全數新取並發布，後續全店輪次新取 33 店、沿用 5 店有效快取，合計覆蓋 38 店。
+正式上線準備納入明確 production target、已發布 commit 綁定，以及預設關閉的
+泰國時間 08:00～22:30 半小時排程；正式人工驗收通過後才啟用。
+目前這些 Preview 證據不代表正式站已部署或有有效報價。
+[Actions 維運文件](docs/superrich1965-actions-runbook.zh-TW.md)記錄操作、驗收與故障處理；
+來源 guard 與冷卻跨 Preview／正式共用，讀取或重新整理頁面都不會發動取價。
 
 ---
 
 ## Architecture
+
+SuperRich 1965 的獨立 [Actions bootstrap](docs/superrich1965-actions-bootstrap.zh-TW.md)
+提供 main-only 手動 inspect／probe，用於驗證既有 PR #8 Preview 的來源取價。
+此階段不接入目前頁面或公開 API；runner／PAT 權限與來源驗收步驟見該文件。
 
 The app is a static site with two Netlify Functions acting as a thin backend proxy. All state lives in the browser.
 

@@ -1,8 +1,9 @@
 # SuperRich 1965：GitHub Actions 抓取與 Netlify 逐店快取計畫
 
-更新日期：2026-10-20（Asia/Taipei）。本次是實作前調查與計畫，基準 commit `5ee520c`。
-**P0～P3 本機程式與 mock 已實作；遠端 Secrets／target、workflow bootstrap、真實來源與排程尚未啟用。**
-本次沒有呼叫 SuperRich、執行 workflow、改遠端環境／Blobs、部署或 commit。
+更新日期：2026-10-22（Asia/Taipei）。以下保留原 2026-10-20 計畫背景，基準 `5ee520c`。
+**Python／Safari 已完成 GitHub runner 的 Preview 單店、五店全新與 38 店覆蓋驗收；
+全店輪次為 33 新取加 5 cache。正式 target、SHA 綁定與預設關閉排程正在準備，正式部署及定時結果另驗。**
+下方「尚未實作／本次沒有操作」屬原調查時點，不是目前狀態。
 目前可用指令與啟用前步驟見 [Actions 維運文件](superrich1965-actions-runbook.zh-TW.md)。
 以下保留設計與驗收契約；「規劃新增／尚未實作」的介面設計說明，實際落地以維運文件為準。
 已退役的 Netlify 抓價入口不恢復；目前遠端部署是否已套用退役 commit，本次未重新查核。

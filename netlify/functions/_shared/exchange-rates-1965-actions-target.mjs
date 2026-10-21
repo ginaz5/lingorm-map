@@ -5,6 +5,7 @@ import { EXCHANGE_STORE_NAME } from './exchange-rates-1965-contract.mjs';
 
 export const PROJECT_SITE_ID = 'b5ac142c-7e21-4910-90f7-1719a9d90d5d';
 export const SOURCE_GUARD_STORE_NAME = 'exchange-rates-1965-source-guard';
+export const PRODUCTION_COMMIT_ENV = 'EXCHANGE_RATES_1965_PRODUCTION_COMMIT';
 export const LEGACY_PREVIEW_DEPLOY_IDS = Object.freeze(['6ad48de20cfce14e8ddd926f', '6ad62ddf1a2369d43e1e364e']);
 export const TARGET_CONFIG_URL = new URL('../../../config/exchange-rates-1965-actions-targets.json', import.meta.url);
 const DEPLOY_ID = /^[a-f0-9]{24}$/;
@@ -19,10 +20,11 @@ const object = value => value !== null && typeof value === 'object' && !Array.is
 /** @param {Record<string,any>} value @param {string[]} keys */
 const exactKeys = (value, keys) => Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 
-/** Resolve only reviewed aliases. No environment, Netlify link, URL or alias lookup can select a deployment.
- * @param {string} alias @param {unknown} input @returns {ActionsTarget}
+/** Resolve only reviewed aliases. The fixed production policy requires an explicitly
+ * approved commit; it never accepts a URL, deploy ID or moving branch as a binding.
+ * @param {string} alias @param {unknown} input @param {Record<string,string|undefined>} [env] @returns {ActionsTarget}
  */
-export function resolveActionsTarget(alias, input) {
+export function resolveActionsTarget(alias, input, env = process.env) {
   if (!ALIAS.test(alias) || !object(input) || !exactKeys(input, ['schemaVersion', 'siteID', 'targets']) ||
       input.schemaVersion !== 1 || input.siteID !== PROJECT_SITE_ID || !object(input.targets)) {
     throw new Error('invalid_target_configuration');
@@ -30,10 +32,12 @@ export function resolveActionsTarget(alias, input) {
   for (const [name, value] of Object.entries(input.targets)) {
     if (!ALIAS.test(name) || !object(value)) throw new Error('invalid_target_configuration');
     const preview = value.kind === 'preview';
-    const keys = preview ? ['kind', 'deployID', 'branch', 'commit', 'context'] : ['kind', 'branch', 'commit', 'context'];
+    const reviewedPolicy = !preview && Object.hasOwn(value, 'commitPolicy');
+    const keys = preview ? ['kind', 'deployID', 'branch', 'commit', 'context']
+      : ['kind', 'branch', reviewedPolicy ? 'commitPolicy' : 'commit', 'context'];
     if (!exactKeys(value, keys) || !['preview', 'production'].includes(value.kind) ||
         typeof value.branch !== 'string' || !value.branch || value.branch.length > 200 || /[\x00-\x1f\x7f]/.test(value.branch) ||
-        typeof value.commit !== 'string' || !COMMIT.test(value.commit) ||
+        (reviewedPolicy ? value.commitPolicy !== 'environment-reviewed' : typeof value.commit !== 'string' || !COMMIT.test(value.commit)) ||
         (preview ? typeof value.deployID !== 'string' || !DEPLOY_ID.test(value.deployID) ||
           LEGACY_PREVIEW_DEPLOY_IDS.includes(value.deployID) || value.context !== 'deploy-preview'
           : value.branch !== 'main' || value.context !== 'production')) {
@@ -42,6 +46,11 @@ export function resolveActionsTarget(alias, input) {
   }
   if (!Object.hasOwn(input.targets, alias)) throw new Error('target_not_configured');
   const selected = input.targets[alias];
+  if (selected.kind === 'production' && Object.hasOwn(selected, 'commitPolicy')) {
+    const commit = env[PRODUCTION_COMMIT_ENV];
+    if (typeof commit !== 'string' || !COMMIT.test(commit)) throw new Error('invalid_target_configuration');
+    return Object.freeze({ alias, siteID: PROJECT_SITE_ID, kind: 'production', branch: 'main', commit, context: 'production' });
+  }
   return Object.freeze({ alias, siteID: PROJECT_SITE_ID, ...selected });
 }
 
@@ -98,7 +107,8 @@ export async function verifyActionsTarget(target, { token, fetchImpl = fetch }) 
 }
 
 /** A reviewed target must pass credentials and metadata checks before either store can be opened.
- * The checked-in configuration contains only explicitly reviewed deployments.
+ * Production requires the reviewed Environment commit to match the currently
+ * published deployment before the site-wide quote store can be opened.
  * @param {{alias:string,targetsInput?:unknown,env?:Record<string,string|undefined>,fetchImpl?:typeof fetch,getStoreImpl?:typeof getStore,getDeployStoreImpl?:typeof getDeployStore}} input
  */
 export async function openActionsTarget({ alias, targetsInput, env = process.env, fetchImpl = fetch,
@@ -108,7 +118,7 @@ export async function openActionsTarget({ alias, targetsInput, env = process.env
     try { config = JSON.parse(await readFile(TARGET_CONFIG_URL, 'utf8')); }
     catch { throw new Error('target_configuration_unavailable'); }
   }
-  const target = resolveActionsTarget(alias, config);
+  const target = resolveActionsTarget(alias, config, env);
   const credentials = readActionsCredentials(env);
   const metadata = await verifyActionsTarget(target, { token: credentials.token, fetchImpl });
   // This fixed recovery set is deliberately unrelated to the selected quote
@@ -132,6 +142,12 @@ export async function openActionsTarget({ alias, targetsInput, env = process.env
     const store = target.kind === 'production' ? getStoreImpl(options)
       : getDeployStoreImpl({ ...options, deployID: target.deployID });
     const sourceGuardStore = getStoreImpl({ ...options, name: SOURCE_GUARD_STORE_NAME });
-    return { target, metadata, store, sourceGuardStore, openLegacyStores };
+    const verifyCurrent = async () => {
+      try {
+        const current = await verifyActionsTarget(target, { token: credentials.token, fetchImpl });
+        return current.id === metadata.id;
+      } catch { return false; }
+    };
+    return { target, metadata, store, sourceGuardStore, openLegacyStores, verifyCurrent };
   } catch { throw new Error('target_store_unavailable'); }
 }
