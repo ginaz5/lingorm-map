@@ -1,0 +1,157 @@
+import { appendFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
+
+import { openActionsTarget } from '../netlify/functions/_shared/exchange-rates-1965-actions-target.mjs';
+import { actionsOperationKey, runActionsCollector } from '../netlify/functions/_shared/exchange-rates-1965-actions-runner.mjs';
+import { createAnonymousApiSource, ANONYMOUS_SOURCE_PROFILE } from '../netlify/functions/_shared/exchange-rates-1965-anonymous.mjs';
+import { readEffectiveControl } from '../netlify/functions/_shared/exchange-rates-1965-control.mjs';
+import { EXCHANGE_KEYS, isValidBreaker } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
+import { queryBranchRates } from '../netlify/functions/_shared/exchange-rates-1965-on-demand.mjs';
+import { readSourceGuard } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
+import { readEntry } from '../netlify/functions/_shared/exchange-rates-1965-storage.mjs';
+
+const REPOSITORY = 'ginaz5/lingorm-map';
+const SINGLE_SLUG = 'superrich1965-58';
+const SETTINGS_ERRORS = new Set(['invalid_actions_arguments', 'invalid_actions_identity', 'invalid_target_configuration',
+  'target_not_configured', 'target_configuration_unavailable', 'missing_credentials', 'invalid_credentials',
+  'invalid_actions_environment', 'target_metadata_mismatch', 'target_metadata_unavailable', 'target_store_unavailable']);
+
+/** A closed interface: no caller URL, arbitrary inventory, force flag or checkout ref.
+ * @param {string[]} argv
+ */
+export function parseActionsArgs(argv) {
+  const [mode, ...rest] = argv;
+  if (!['inspect', 'probe', 'publish'].includes(mode) || rest.length % 2) throw new Error('invalid_actions_arguments');
+  /** @type {Record<string,string>} */
+  const options = {};
+  for (let i = 0; i < rest.length; i += 2) {
+    const key = rest[i];
+    if (!['--target', '--slug', '--scope'].includes(key) || Object.hasOwn(options, key)) throw new Error('invalid_actions_arguments');
+    options[key] = rest[i + 1];
+  }
+  if (!['preview-reviewed', 'production'].includes(options['--target']) ||
+      (mode === 'probe' && (options['--scope'] !== undefined || (options['--slug'] !== undefined && options['--slug'] !== SINGLE_SLUG))) ||
+      (mode === 'inspect' && (options['--scope'] !== undefined || options['--slug'] !== undefined)) ||
+      (mode === 'publish' && (options['--slug'] !== undefined || !['single', 'pilot', 'all'].includes(options['--scope'])))) {
+    throw new Error('invalid_actions_arguments');
+  }
+  return { mode, alias: options['--target'], scope: mode === 'publish' ? options['--scope'] : 'single' };
+}
+
+/** @param {Record<string,string|undefined>} env */
+function executionIdentity(env) {
+  if (env.GITHUB_ACTIONS !== 'true' || env.GITHUB_REPOSITORY !== REPOSITORY ||
+      !/^[1-9][0-9]{0,19}$/.test(env.GITHUB_RUN_ID ?? '') || !/^[a-f0-9]{40}$/.test(env.GITHUB_SHA ?? '') ||
+      env.GITHUB_REF !== 'refs/heads/main' || env.GITHUB_EVENT_NAME !== 'workflow_dispatch') {
+    throw new Error('invalid_actions_identity');
+  }
+  return { repository: REPOSITORY, runId: /** @type {string} */ (env.GITHUB_RUN_ID), commit: /** @type {string} */ (env.GITHUB_SHA) };
+}
+
+/** @param {any} guard */
+function guardSummary(guard) {
+  const state = guard.state;
+  return { ready: guard.ok, reason: guard.reason ?? null, retryAt: guard.retryAtMs == null ? null : new Date(guard.retryAtMs).toISOString(),
+    sourceEpoch: state?.sourceEpoch ?? null, paused: state?.paused ?? null,
+    blockLevel: state?.breaker?.blockLevel ?? null, blockedUntil: state?.breaker?.blockedUntil ?? null,
+    unresolved: Boolean(state?.unresolvedAttempt) };
+}
+
+/** No source work is dispatched before target metadata, existing control and common guard pass.
+ * Inspect remains read-only and needs no GitHub run identity.
+ * @param {string[]} argv
+ * @param {{env?:Record<string,string|undefined>,openTargetImpl?:(input:any)=>Promise<any>,targetsInput?:unknown,
+ * fetchImpl?:typeof fetch,nowImpl?:()=>number,signal?:AbortSignal,runCollectorImpl?:(input:any)=>Promise<any>,
+ * queryImpl?:typeof queryBranchRates,randomUUIDImpl?:()=>string,sleepImpl?:(ms:number)=>Promise<void>,randomImpl?:()=>number}} [input]
+ */
+export async function runActionsCommand(argv, { env = process.env, openTargetImpl = openActionsTarget, targetsInput,
+  fetchImpl = fetch, nowImpl = Date.now, signal, runCollectorImpl = runActionsCollector, queryImpl = queryBranchRates,
+  randomUUIDImpl, sleepImpl, randomImpl } = {}) {
+  /** @type {ReturnType<typeof createAnonymousApiSource>|undefined} */
+  let source;
+  let observedSourceRequests = 0;
+  try {
+    const { mode, alias, scope } = parseActionsArgs(argv);
+    const identity = mode === 'inspect' ? null : executionIdentity(env);
+    const opened = await openTargetImpl({ alias, targetsInput, env, fetchImpl });
+    const { target, metadata, store, sourceGuardStore } = opened;
+    const runnerBase = { store, ...identity, mode, scope, target: { ...target, deployID: target.deployID ?? null }, signal, nowImpl,
+      ...(randomUUIDImpl ? { randomUUIDImpl } : {}), ...(sleepImpl ? { sleepImpl } : {}), ...(randomImpl ? { randomImpl } : {}) };
+    if (identity) {
+      const previous = await readEntry(store, actionsOperationKey(identity.repository, identity.runId));
+      if (previous && ['complete', 'stopped', 'abandoned'].includes(previous.data?.status)) {
+        // Replay the original terminal result before a later cooldown or control
+        // change can turn a failed operation into a green, skipped attempt.
+        const replay = await runCollectorImpl({ ...runnerBase, controlVersion: previous.data.identity?.controlVersion,
+          collectorImpl: async () => { throw new Error('terminal_operation_must_not_collect'); } });
+        return { exitCode: replay.exitCode, summary: replay };
+      }
+    }
+    const effective = await readEffectiveControl(store, 'false');
+    const guard = await readSourceGuard({ store: sourceGuardStore, nowMs: nowImpl() });
+    if (mode === 'inspect') {
+      const breaker = (await readEntry(store, EXCHANGE_KEYS.breaker))?.data;
+      if (breaker && !isValidBreaker(breaker)) throw new Error('invalid_control');
+      return { exitCode: 0, summary: { mode, target, metadata, sourceRequestCount: 0, published: 0,
+        enabled: effective.enabled, controlVersion: effective.control?.controlVersion ?? null,
+        breaker: breaker ? { blockLevel: breaker.blockLevel, blockedUntil: breaker.blockedUntil } : null,
+        sourceGuard: guardSummary(guard), sourceValidated: false, outcome: 'inspected' } };
+    }
+    if (signal?.aborted || !effective.enabled || !effective.control || !guard.ok) {
+      const guardError = !guard.ok && !['paused', 'cooldown', 'busy', 'unknown_outcome'].includes(guard.reason ?? '');
+      const protectedSkip = !guardError;
+      return { exitCode: protectedSkip ? 3 : 1, summary: { mode, target, outcome: protectedSkip ? 'skipped' : 'failed', sourceRequestCount: 0, published: 0,
+        sourceValidated: false, reason: guardError ? guard.reason : signal?.aborted ? 'cancelled' : !effective.control ? 'missing_control' : !effective.enabled ? 'disabled' : guard.reason,
+        sourceGuard: guardSummary(guard) } };
+    }
+    source = createAnonymousApiSource({ fetchImpl, nowImpl });
+    const sourceFetch = source.fetchImpl;
+    const result = await runCollectorImpl({ ...runnerBase,
+      controlVersion: effective.control.controlVersion,
+      collectorImpl: async (/** @type {any} */ options) => queryImpl({ ...options, store, sourceGuardStore,
+        requireExistingControl: true, enabledDefault: 'false', expectedControlVersion: effective.control.controlVersion,
+        refreshDue: true, nowImpl, fetchImpl: sourceFetch, sourceProfile: ANONYMOUS_SOURCE_PROFILE,
+        onResult: result => { observedSourceRequests += result.sourceRequestCount; options.onResult?.(result); },
+        ...(randomUUIDImpl ? { randomUUIDImpl } : {}) }),
+    });
+    return { exitCode: result.exitCode, summary: result };
+  } catch (error) {
+    const code = error instanceof Error && SETTINGS_ERRORS.has(error.message) ? error.message : 'actions_unavailable';
+    return { exitCode: SETTINGS_ERRORS.has(code) ? 2 : 1,
+      summary: { outcome: 'failed', reason: code, sourceRequestCount: observedSourceRequests, sourceValidated: false } };
+  } finally { await source?.close(); }
+}
+
+/** All interpolated identifiers are fixed or validated; upstream text is never rendered here.
+ * @param {any} summary
+ */
+export function renderActionsSummary(summary) {
+  const count = (/** @type {unknown} */ value) => Number.isSafeInteger(value) && Number(value) >= 0 ? String(value) : '0';
+  const text = (/** @type {unknown} */ value) => typeof value === 'string' && /^[a-z0-9_\-]{1,64}$/.test(value) ? value : 'unavailable';
+  return `## SuperRich 1965\n\nOutcome: ${text(summary.outcome ?? summary.status)}\n\n` +
+    `| Metric | Count |\n| --- | ---: |\n| Requested | ${count(summary.requested)} |\n| Cache hit | ${count(summary.cacheHit)} |\n` +
+    `| Source succeeded | ${count(summary.sourceSucceeded)} |\n| Published | ${count(summary.published)} |\n| Source HTTP requests | ${count(summary.sourceRequestCount)} |\n\n` +
+    `Source validated this run: ${summary.sourceValidated === true && !summary.replayed ? 'yes' : 'no'}\n\n` +
+    `Reason: ${text(summary.reason ?? 'none')}\n`;
+}
+
+async function main() {
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  process.once('SIGTERM', cancel);
+  process.once('SIGINT', cancel);
+  try {
+    const result = await runActionsCommand(process.argv.slice(2), { signal: controller.signal });
+    console.log(JSON.stringify(result.summary));
+    if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, renderActionsSummary(result.summary));
+    process.exitCode = result.exitCode;
+  } catch {
+    console.error('actions_summary_unavailable');
+    process.exitCode = 1;
+  } finally {
+    process.off('SIGTERM', cancel);
+    process.off('SIGINT', cancel);
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();

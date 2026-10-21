@@ -359,3 +359,12 @@ null`，前端顯示「暫無報價」而不是隱藏整張卡片。
 由 `isSupportedLocation()` 併入 `isPublicLocation()`，清單、搜尋、收藏、篩選
 計數、目的地選項與 Google／HERE marker 共用同一個判斷。刻意不用品牌 Slug 黑名單；
 收藏中既有的其他品牌 ID 也不清除，日後支援該品牌時仍可對應。
+
+### 2026-10-21：獨立橘標 Actions bootstrap
+
+使用者要求 PR #8 保持開啟，先獨立準備手動 workflow、collector 依賴與固定 Preview
+target，讓 runner 驗收可在前端功能合併前進行。沿用 main-only Environment／執行身分、
+共用來源 guard、control／lease／breaker 與既有 probe，不新增來源的公開 Function。
+現有前端、CSV、公開入口與綠標排程維持 main 版本。本機準備及 mock 驗證沒有取價或部署；
+後續 main bootstrap 須核對最終 `[skip netlify]` 與正式發布基準。詳見
+[bootstrap 操作與驗收](../docs/superrich1965-actions-bootstrap.zh-TW.md)。
