@@ -6,7 +6,8 @@ import { PROJECT_SITE_ID } from '../netlify/functions/_shared/exchange-rates-196
 import { SOURCE_GUARD_KEY, bootstrapSourceGuard, setSourceGuardPaused } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
 import { EXCHANGE_KEYS, createControl } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { branchCacheKey, queryBranchRates } from '../netlify/functions/_shared/exchange-rates-1965-on-demand.mjs';
-import { ORANGE_BRANCHES } from '../src/data/exchange-rates-1965-branch.js';
+import { readBranchRates } from '../netlify/functions/_shared/exchange-rates-1965-branch-cache.mjs';
+import { ORANGE_BRANCHES, isValidBranchQuote } from '../src/data/exchange-rates-1965-branch.js';
 import { FakeBlobStore, uuid } from './helpers/exchange-rates-store.mjs';
 
 const START = Date.parse('2026-10-20T01:00:00Z');
@@ -51,6 +52,147 @@ for (const extra of [['--scope','all'], ['--slug','superrich1965-56'], ['--trans
   test(`Python probe arguments remain a fixed Preview single branch: ${extra.join(' ')}`, () => {
     const base = extra[0] === '--target' ? ['probe-python'] : ['probe-python','--target','preview-reviewed'];
     assert.throws(() => parseActionsArgs([...base, ...extra]));
+  });
+}
+
+test('Python publication arguments select only the reviewed Preview and fixed single branch', () => {
+  assert.deepEqual(parseActionsArgs(['publish-python', '--target', 'preview-reviewed']),
+    { mode: 'publish-python', alias: 'preview-reviewed', scope: 'single' });
+  for (const args of [[], ['--target', 'production'], ['--target', 'arbitrary'],
+    ...['single', 'pilot', 'all'].map(scope => ['--target', 'preview-reviewed', '--scope', scope]),
+    ...[SLUG, 'superrich1965-56'].map(slug => ['--target', 'preview-reviewed', '--slug', slug]),
+    ['--target', 'preview-reviewed', '--transport', 'node'],
+    ['--target', 'preview-reviewed', '--url', 'https://example.invalid']]) {
+    assert.throws(() => parseActionsArgs(['publish-python', ...args]));
+  }
+});
+
+test('Python publication writes one valid quote; paused cache reads, cache hits and terminal replay add no source HTTP', async t => {
+  const h = await harness(t);
+  h.input.pythonFetchImpl = h.input.fetchImpl;
+  h.input.fetchImpl = async () => { throw new Error('node_source_must_not_run'); };
+  const first = await h.run('publish-python');
+  assert.equal(first.exitCode, 0);
+  assert.equal(first.summary.mode, 'publish-python');
+  assert.equal(first.summary.requested, 1);
+  assert.equal(first.summary.published, 1);
+  assert.equal(first.summary.sourceValidated, true);
+  assert.equal(first.summary.sourceRequestCount, 2);
+  assert.equal(first.summary.results[0].status, 'published');
+  assert.equal(h.calls.length, 2);
+  assert.deepEqual(JSON.parse(h.calls[1].options.body), { filters: [
+    { field: 'company_code', value: 'A04' }, { field: 'branch_no', value: '36' },
+  ] });
+  const quote = h.store.entries.get(branchCacheKey(SLUG)).data;
+  assert.equal(isValidBranchQuote(quote), true);
+  assert.equal(quote.controlVersion, uuid(1));
+  assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
+  assert.doesNotMatch(JSON.stringify(quote), /PRIVATE_SOURCE_TOKEN|authorization|diagnostics/i);
+
+  h.advance(2000);
+  h.input.env.GITHUB_RUN_ID = '1235';
+  const cached = await h.run('publish-python');
+  assert.equal(cached.exitCode, 0);
+  assert.equal(cached.summary.cacheHit, 1);
+  assert.equal(cached.summary.sourceRequestCount, 0);
+  assert.equal(cached.summary.published, 0);
+  await setSourceGuardPaused({ store: h.sourceGuardStore, paused: true, nowMs: START + 2000 });
+  const storedBeforeReads = structuredClone([...h.store.entries]);
+  const guardBeforeReads = structuredClone([...h.sourceGuardStore.entries]);
+  for (let i = 0; i < 2; i++) {
+    const response = await readBranchRates({ store: h.store, slug: SLUG, enabledDefault: 'false', nowImpl: () => START + 2000 });
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.deepEqual(payload.quote, quote);
+    assert.equal(payload.reason, null);
+  }
+  assert.deepEqual([...h.store.entries], storedBeforeReads);
+  assert.deepEqual([...h.sourceGuardStore.entries], guardBeforeReads);
+  assert.equal(h.calls.length, 2);
+
+  h.input.env.GITHUB_RUN_ID = '1234';
+  const replay = await h.run('publish-python');
+  assert.equal(replay.exitCode, 0);
+  assert.equal(replay.summary.replayed, true);
+  assert.equal(replay.summary.sourceRequestCount, 0);
+  assert.equal(replay.summary.sourceValidated, false);
+  for (const [mode, extra] of [['probe-python', []], ['publish', ['--scope', 'single']]]) {
+    const conflict = await h.run(mode, extra);
+    assert.equal(conflict.exitCode, 2);
+    assert.equal(conflict.summary.reason, 'operation_conflict');
+  }
+  assert.equal(h.calls.length, 2);
+  const expired = await readBranchRates({ store: h.store, slug: SLUG, enabledDefault: 'false', nowImpl: () => Date.parse(quote.expiresAt) });
+  assert.equal(expired.status, 503);
+  assert.equal((await expired.json()).quote, null);
+  assert.deepEqual([...h.store.entries], storedBeforeReads);
+  assert.equal(h.calls.length, 2);
+});
+
+test('Python publication reports the longer common cooldown after a token challenge', async t => {
+  const h = await harness(t);
+  const guard = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+  guard.breaker.blockLevel = 1;
+  h.sourceGuardStore.seed(SOURCE_GUARD_KEY, guard);
+  h.input.pythonFetchImpl = h.input.fetchImpl;
+  h.input.fetchImpl = async () => { throw new Error('node_source_must_not_run'); };
+  h.tokenResponse = () => new Response('', { status: 403, headers: { 'cf-mitigated': 'challenge' } });
+  const result = await h.run('publish-python');
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.summary.published, 0);
+  assert.equal(result.summary.sourceRequestCount, 1);
+  assert.equal(h.calls.length, 1);
+  const blockedUntil = new Date(START + 24 * 60 * 60_000).toISOString();
+  assert.equal(h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data.breaker.blockedUntil, blockedUntil);
+  assert.equal(h.store.entries.get(EXCHANGE_KEYS.breaker).data.blockedUntil, new Date(START + 6 * 60 * 60_000).toISOString());
+  assert.equal(result.summary.retryAt, blockedUntil);
+  assert.equal(result.summary.results[0].retryAt, blockedUntil);
+  assert.equal(h.store.entries.has(branchCacheKey(SLUG)), false);
+});
+
+for (const protection of ['paused', 'cooldown']) {
+  test(`Python publication respects existing ${protection} before starting the transport`, async t => {
+    const h = await harness(t);
+    let pythonCalls = 0;
+    h.input.pythonFetchImpl = async () => { pythonCalls++; throw new Error('must_not_run'); };
+    const guard = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+    if (protection === 'paused') guard.paused = true;
+    else guard.breaker.blockedUntil = new Date(START + 24 * 60 * 60_000).toISOString();
+    h.sourceGuardStore.seed(SOURCE_GUARD_KEY, guard);
+    const result = await h.run('publish-python');
+    assert.equal(result.exitCode, 3);
+    assert.equal(result.summary.sourceRequestCount, 0);
+    assert.equal(pythonCalls, 0);
+    assert.equal(h.calls.length, 0);
+    assert.equal(h.store.entries.has(branchCacheKey(SLUG)), false);
+  });
+}
+
+for (const interruption of ['cancelled', 'control_changed', 'quote_cas_failed']) {
+  test(`Python source success cannot publish after ${interruption}`, async t => {
+    const h = await harness(t);
+    h.input.pythonFetchImpl = h.input.fetchImpl;
+    h.input.fetchImpl = async () => { throw new Error('node_source_must_not_run'); };
+    const controller = new AbortController();
+    h.input.signal = controller.signal;
+    if (interruption === 'quote_cas_failed') {
+      const write = h.store.setJSON.bind(h.store);
+      h.store.setJSON = (key, data, options) => key === branchCacheKey(SLUG)
+        ? Promise.resolve({ modified: false, etag: null }) : write(key, data, options);
+    } else {
+      h.rateResponse = () => {
+        if (interruption === 'cancelled') controller.abort();
+        else h.store.seed(EXCHANGE_KEYS.control, createControl({ enabled: true, controlVersion: uuid(3), nowMs: START, updatedBy: 'manual' }));
+        return Response.json(FIXTURE);
+      };
+    }
+    const result = await h.run('publish-python');
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.summary.sourceRequestCount, 2);
+    assert.equal(result.summary.published, 0);
+    assert.equal(h.calls.length, 2);
+    assert.equal(h.store.entries.has(branchCacheKey(SLUG)), false);
+    assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
   });
 }
 
@@ -123,6 +265,57 @@ test('Python token 403 stops before POST, retains escalation and never falls bac
   assert.equal(after.breaker.blockLevel, 2);
   assert.equal(Date.parse(after.breaker.blockedUntil), START + 24 * 60 * 60_000);
   assert.equal(h.store.entries.has(branchCacheKey(SLUG)), false);
+});
+
+test('third shared challenge reports a manual pause without an automatic retry time', async t => {
+  const h = await harness(t);
+  const guard = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+  guard.breaker.blockLevel = 2;
+  h.sourceGuardStore.seed(SOURCE_GUARD_KEY, guard);
+  h.input.pythonFetchImpl = async () => new Response('', { status: 403, headers: { 'cf-mitigated': 'challenge' } });
+  const result = await h.run('publish-python');
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.summary.reason, 'paused');
+  assert.equal(result.summary.retryAt, null);
+  assert.equal(result.summary.results[0].retryAt, null);
+  assert.equal(result.summary.sourceRequestCount, 1);
+  assert.equal(result.summary.published, 0);
+  const after = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+  assert.equal(after.paused, true);
+  assert.equal(after.breaker.blockLevel, 3);
+  assert.equal(after.unresolvedAttempt, null);
+  assert.equal(h.calls.length, 0);
+});
+
+test('inspect makes paused protection explicit without suggesting a timed automatic recovery', async t => {
+  const h = await harness(t);
+  const guard = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+  guard.paused = true;
+  guard.breaker.blockedUntil = new Date(START + 24 * 60 * 60_000).toISOString();
+  h.sourceGuardStore.seed(SOURCE_GUARD_KEY, guard);
+  const result = await h.run('inspect');
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.summary.sourceGuard.paused, true);
+  assert.equal(result.summary.sourceGuard.retryAt, null);
+  assert.equal(result.summary.sourceGuard.blockedUntil, guard.breaker.blockedUntil);
+  assert.equal(h.calls.length, 0);
+});
+
+test('a pause between preflight and source lease acquisition has no automatic retry time', async t => {
+  const h = await harness(t);
+  h.input.pythonFetchImpl = async () => { throw new Error('must_not_run'); };
+  h.input.queryImpl = options => queryBranchRates({ ...options, beforeSource: async () => {
+    const guard = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+    h.sourceGuardStore.seed(SOURCE_GUARD_KEY, { ...guard, paused: true, nextRequestAtMs: START + 60_000 });
+    return options.beforeSource();
+  } });
+  const result = await h.run('publish-python');
+  assert.equal(result.exitCode, 3);
+  assert.equal(result.summary.reason, 'paused');
+  assert.equal(result.summary.retryAt, null);
+  assert.equal(result.summary.sourceRequestCount, 0);
+  assert.equal(result.summary.published, 0);
+  assert.equal(h.calls.length, 0);
 });
 
 test('an unconfigured target cannot accidentally contact any network', async t => {
