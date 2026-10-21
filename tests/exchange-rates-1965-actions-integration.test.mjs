@@ -47,6 +47,84 @@ for (const args of [[], ['probe'], ['publish','--target','preview-reviewed'],
   test(`Actions arguments fail closed: ${args.join(' ') || '(empty)'}`, () => assert.throws(() => parseActionsArgs(args)));
 }
 
+for (const extra of [['--scope','all'], ['--slug','superrich1965-56'], ['--transport','python'], ['--target','production']]) {
+  test(`Python probe arguments remain a fixed Preview single branch: ${extra.join(' ')}`, () => {
+    const base = extra[0] === '--target' ? ['probe-python'] : ['probe-python','--target','preview-reviewed'];
+    assert.throws(() => parseActionsArgs([...base, ...extra]));
+  });
+}
+
+test('Python probe uses its transport, validates USD/TWD, publishes nothing and fixes the mode in replay identity', async t => {
+  const h = await harness(t);
+  h.input.pythonFetchImpl = h.input.fetchImpl;
+  h.input.fetchImpl = async () => { throw new Error('node_source_must_not_run'); };
+  const first = await h.run('probe-python');
+  assert.equal(first.exitCode, 0);
+  assert.equal(first.summary.mode, 'probe-python');
+  assert.equal(first.summary.sourceValidated, true);
+  assert.equal(first.summary.sourceRequestCount, 2);
+  assert.equal(first.summary.published, 0);
+  assert.equal(h.calls.length, 2);
+  assert.equal(h.store.entries.has(branchCacheKey(SLUG)), false);
+  assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
+  const replay = await h.run('probe-python');
+  assert.equal(replay.summary.replayed, true);
+  assert.equal(replay.summary.sourceRequestCount, 0);
+  const differentClient = await h.run('probe');
+  assert.equal(differentClient.exitCode, 2);
+  assert.equal(differentClient.summary.reason, 'operation_conflict');
+  assert.equal(h.calls.length, 2);
+});
+
+test('paused, cooling and unresolved common protection never starts Python', async t => {
+  for (const state of ['paused', 'cooldown', 'unknown']) {
+    const h = await harness(t);
+    let pythonCalls = 0;
+    h.input.pythonFetchImpl = async () => { pythonCalls++; throw new Error('must_not_run'); };
+    if (state === 'paused') await setSourceGuardPaused({ store: h.sourceGuardStore, paused: true, nowMs: START });
+    else {
+      const guard = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+      if (state === 'cooldown') {
+        guard.breaker.blockLevel = 2;
+        guard.breaker.blockedUntil = new Date(START + 24 * 60 * 60_000).toISOString();
+      } else {
+        guard.unresolvedAttempt = { operationId: 'ginaz5/lingorm-map/1233', ownerId: uuid(9), slug: SLUG, startedAtMs: START - 1 };
+        guard.leaseId = uuid(8);
+        guard.leaseUntilMs = START + 24_000;
+        guard.paused = true;
+      }
+      h.sourceGuardStore.seed(SOURCE_GUARD_KEY, guard);
+    }
+    const result = await h.run('probe-python');
+    assert.equal(result.exitCode, 3);
+    assert.equal(result.summary.sourceRequestCount, 0);
+    assert.equal(pythonCalls, 0);
+    assert.equal(h.calls.length, 0);
+  }
+});
+
+test('Python token 403 stops before POST, retains escalation and never falls back to Node', async t => {
+  const h = await harness(t);
+  const guard = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+  guard.breaker.blockLevel = 1;
+  h.sourceGuardStore.seed(SOURCE_GUARD_KEY, guard);
+  let pythonCalls = 0;
+  h.input.pythonFetchImpl = async () => {
+    pythonCalls++;
+    return new Response('', { status: 403, headers: { 'cf-mitigated': 'challenge' } });
+  };
+  const result = await h.run('probe-python');
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.summary.sourceRequestCount, 1);
+  assert.equal(result.summary.results[0].diagnostics[0].stage, 'token');
+  assert.equal(pythonCalls, 1);
+  assert.equal(h.calls.length, 0);
+  const after = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+  assert.equal(after.breaker.blockLevel, 2);
+  assert.equal(Date.parse(after.breaker.blockedUntil), START + 24 * 60 * 60_000);
+  assert.equal(h.store.entries.has(branchCacheKey(SLUG)), false);
+});
+
 test('an unconfigured target cannot accidentally contact any network', async t => {
   let calls = 0;
   const result = await runActionsCommand(['probe','--target','preview-reviewed'], { env,

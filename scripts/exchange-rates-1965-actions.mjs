@@ -1,5 +1,6 @@
 import { appendFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { createPythonSafariFetch } from './exchange-rates-1965-python.mjs';
 
 import { openActionsTarget } from '../netlify/functions/_shared/exchange-rates-1965-actions-target.mjs';
 import { actionsOperationKey, runActionsCollector } from '../netlify/functions/_shared/exchange-rates-1965-actions-runner.mjs';
@@ -21,7 +22,7 @@ const SETTINGS_ERRORS = new Set(['invalid_actions_arguments', 'invalid_actions_i
  */
 export function parseActionsArgs(argv) {
   const [mode, ...rest] = argv;
-  if (!['inspect', 'probe', 'publish'].includes(mode) || rest.length % 2) throw new Error('invalid_actions_arguments');
+  if (!['inspect', 'probe', 'probe-python', 'publish'].includes(mode) || rest.length % 2) throw new Error('invalid_actions_arguments');
   /** @type {Record<string,string>} */
   const options = {};
   for (let i = 0; i < rest.length; i += 2) {
@@ -30,7 +31,8 @@ export function parseActionsArgs(argv) {
     options[key] = rest[i + 1];
   }
   if (!['preview-reviewed', 'production'].includes(options['--target']) ||
-      (mode === 'probe' && (options['--scope'] !== undefined || (options['--slug'] !== undefined && options['--slug'] !== SINGLE_SLUG))) ||
+      (mode.startsWith('probe') && (options['--scope'] !== undefined || (options['--slug'] !== undefined && options['--slug'] !== SINGLE_SLUG))) ||
+      (mode === 'probe-python' && options['--target'] !== 'preview-reviewed') ||
       (mode === 'inspect' && (options['--scope'] !== undefined || options['--slug'] !== undefined)) ||
       (mode === 'publish' && (options['--slug'] !== undefined || !['single', 'pilot', 'all'].includes(options['--scope'])))) {
     throw new Error('invalid_actions_arguments');
@@ -61,11 +63,11 @@ function guardSummary(guard) {
  * Inspect remains read-only and needs no GitHub run identity.
  * @param {string[]} argv
  * @param {{env?:Record<string,string|undefined>,openTargetImpl?:(input:any)=>Promise<any>,targetsInput?:unknown,
- * fetchImpl?:typeof fetch,nowImpl?:()=>number,signal?:AbortSignal,runCollectorImpl?:(input:any)=>Promise<any>,
+ * fetchImpl?:typeof fetch,pythonFetchImpl?:typeof fetch,nowImpl?:()=>number,signal?:AbortSignal,runCollectorImpl?:(input:any)=>Promise<any>,
  * queryImpl?:typeof queryBranchRates,randomUUIDImpl?:()=>string,sleepImpl?:(ms:number)=>Promise<void>,randomImpl?:()=>number}} [input]
  */
 export async function runActionsCommand(argv, { env = process.env, openTargetImpl = openActionsTarget, targetsInput,
-  fetchImpl = fetch, nowImpl = Date.now, signal, runCollectorImpl = runActionsCollector, queryImpl = queryBranchRates,
+  fetchImpl = fetch, pythonFetchImpl, nowImpl = Date.now, signal, runCollectorImpl = runActionsCollector, queryImpl = queryBranchRates,
   randomUUIDImpl, sleepImpl, randomImpl } = {}) {
   /** @type {ReturnType<typeof createAnonymousApiSource>|undefined} */
   let source;
@@ -104,13 +106,14 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
         sourceValidated: false, reason: guardError ? guard.reason : signal?.aborted ? 'cancelled' : !effective.control ? 'missing_control' : !effective.enabled ? 'disabled' : guard.reason,
         sourceGuard: guardSummary(guard) } };
     }
-    source = createAnonymousApiSource({ fetchImpl, nowImpl });
+    source = createAnonymousApiSource({ fetchImpl: mode === 'probe-python' ? pythonFetchImpl ?? createPythonSafariFetch() : fetchImpl, nowImpl });
     const sourceFetch = source.fetchImpl;
     const result = await runCollectorImpl({ ...runnerBase,
       controlVersion: effective.control.controlVersion,
       collectorImpl: async (/** @type {any} */ options) => queryImpl({ ...options, store, sourceGuardStore,
         requireExistingControl: true, enabledDefault: 'false', expectedControlVersion: effective.control.controlVersion,
-        refreshDue: true, nowImpl, fetchImpl: sourceFetch, sourceProfile: ANONYMOUS_SOURCE_PROFILE,
+        refreshDue: true, nowImpl, fetchImpl: sourceFetch, sourceProfile: mode === 'probe-python'
+          ? { ...ANONYMOUS_SOURCE_PROFILE, name: 'anonymous-python-safari' } : ANONYMOUS_SOURCE_PROFILE,
         onResult: result => { observedSourceRequests += result.sourceRequestCount; options.onResult?.(result); },
         ...(randomUUIDImpl ? { randomUUIDImpl } : {}) }),
     });
@@ -132,7 +135,7 @@ export function renderActionsSummary(summary) {
     `| Metric | Count |\n| --- | ---: |\n| Requested | ${count(summary.requested)} |\n| Cache hit | ${count(summary.cacheHit)} |\n` +
     `| Source succeeded | ${count(summary.sourceSucceeded)} |\n| Published | ${count(summary.published)} |\n| Source HTTP requests | ${count(summary.sourceRequestCount)} |\n\n` +
     `Source validated this run: ${summary.sourceValidated === true && !summary.replayed ? 'yes' : 'no'}\n\n` +
-    `Reason: ${text(summary.reason ?? 'none')}\n`;
+    `Mode: ${text(summary.mode)}\n\nReason: ${text(summary.reason ?? 'none')}\n`;
 }
 
 async function main() {

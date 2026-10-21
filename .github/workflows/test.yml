@@ -28,3 +28,6 @@ jobs:
 
     - name: Run Tests
       run: npm run test
+
+    - name: Test Python HTTP transport offline
+      run: python3 -I -B tests/exchange-rates-1965-python-http.test.py

@@ -13,7 +13,7 @@ package scripts／checkJs 設定。執行程式沿用 PR #8 的 `74b9013` 版本
 
 現有前端入口、公開 Netlify Functions、CSV、Netlify 設定、套件版本及綠標排程維持 main
 版本。新增的三個 `src/data` 模組僅供 collector 使用，本分支的頁面沒有載入它們。
-Workflow 只提供手動 inspect／probe，不提供 publish、排程或 push／PR 自動取價。
+Workflow 只提供手動 inspect／probe／probe-python，不提供 publish、排程或 push／PR 自動取價。
 
 | 測試身分 | 固定值 |
 | --- | --- |
@@ -29,7 +29,7 @@ Workflow 只提供手動 inspect／probe，不提供 publish、排程或 push／
 之後 PR alias 即使移往新部署，Actions 仍使用上述固定 deploy；重新綁定須另核對 metadata。
 執行紀錄的 collector commit 是 bootstrap main 的實際 `GITHUB_SHA`，與 Preview commit 分開。
 
-## 已完成的遠端準備
+## Bootstrap 前的遠端準備紀錄
 
 - `superrich1965-preview` Environment 已建立，只允許 main branch。
 - Environment Variable `NETLIFY_SITE_ID` 已設定；Secret `NETLIFY_AUTH_TOKEN` 已確認存在。
@@ -48,6 +48,68 @@ sourceRequestCount=0、published=0。這次沒有使用 GitHub Environment 的�
 本次成功取代該 PAT 驗收。這次本機檢查時專用 Secret 只確認存在，遠端只有 CI Test；
 GitHub 專用 PAT 由 main bootstrap 後的 workflow 另行驗證。inspect 本身僅驗讀取，
 不能單獨證明寫入權限或 token 到期日。
+
+## 2026-10-21 遠端驗證結果與目前限制
+
+Bootstrap 已由 [PR #9](https://github.com/ginaz5/lingorm-map/pull/9) 合併至 main
+`01c546af5b13cd88dd4b15e82f3da426f99d51c4`，最終訊息包含 `[skip netlify]`。
+[Inspect run](https://github.com/ginaz5/lingorm-map/actions/runs/39587382696) 通過，
+確認 GitHub Environment 專用 PAT 能讀取 Preview metadata 與 Blobs。
+
+[Node probe run](https://github.com/ginaz5/lingorm-map/actions/runs/39588494049)
+在匿名 token GET 收到 HTTP 403、`cf-mitigated: challenge`；只有 1 個來源請求，
+沒有取得 token、沒有 rate POST、沒有發布報價。實際寫入 job／operation／guard／gate
+已驗證，quote CAS 發布權限與 PAT 到期日仍未驗證。正式站 published deploy 未變。
+
+共用 guard 保留原 sourceEpoch，blockLevel 由 1 升為 2，blockedUntil 為
+`2026-10-22T10:58:50.276Z`（台灣時間 **10/22 18:58:50**）；probe 後已 paused，
+lease 與 unresolvedAttempt 均已結清。固定 Preview control 已啟用。執行前仍須只讀
+查最新狀態，不以這份紀錄代替即時 preflight。
+
+已知舊版 branch／run 摘要可能只顯示 target 的 6 小時 retryAt，共用 guard 實際是
+24 小時；目前以 `source-status` 的 blockedUntil／paused 為準，不依較短摘要重試。
+
+## Python＋Safari 單店驗證
+
+`probe-python` 使用 Python 標準函式庫 `urllib.request` 和
+[ThaiCash 固定版本的 Safari 17 UA 與 headers](https://github.com/mrfartman77/thaicash-data/blob/cafce7f3bbd20d77306a82364e61f349a4e2e45e/scrapers/booth_rates.py#L27)。
+Token GET 只設 UA；rate POST 設 UA、Bearer、JSON、Referer，不額外送 Accept。
+POST body 以 Python `json.dumps` 序列化，固定 A04／36。這是 HTTP client 實驗，
+不代表實際啟動 Safari，也不能由一次結果推定 Cloudflare 的封鎖原因。
+
+JS 沿用既有 token 驗證、USD 100-50／TWD 1000-100 解析、control、lease、common guard、
+breaker 與操作 ledger；Python 只負責單次 HTTP。新模式只能對固定 Preview 做 single
+probe，不發布、不批次、不自動回退 Node；模式也固定於操作身分，同一 run 不能換 client 重跑。
+Python 子程序不繼承 PAT／proxy 環境，token 只經 stdin，沒有額外套件；沿用 12 秒
+請求 timeout／15 秒來源 deadline。與 ThaiCash 預設不同，本專案仍明確禁止 redirect、
+proxy、cookies 與 retry，保留 TLS 驗證。403／429／challenge 立即保留診斷並停止，不讀 HTML。
+
+先執行完全離線測試：
+
+```bash
+python3 -I -B tests/exchange-rates-1965-python-http.test.py
+node --test tests/exchange-rates-1965-python.test.mjs tests/exchange-rates-1965-actions-integration.test.mjs
+npm run typecheck
+npm test
+npm run build
+```
+
+Workflow 使用 runner 的 `python3`，會先記錄 Python 版本並跑上述 Python mock 測試，
+該步驟不載入 Netlify Secret。CI 也執行 Python 離線測試。
+
+真實測試須待此變更經審閱進 main，並且既有冷卻到期、人工確認 guard 可以恢復後，
+才在 workflow 選 `probe-python`。先選 inspect 核對固定 Preview 與最新 common guard，
+不偽造本機 GitHub 身分、不清除冷卻或升級歷史。成功標準與原 probe 相同：兩階段 200、
+sourceValidated=true、replayed=false、sourceRequestCount=2、published=0。遇 challenge
+立即停止並檢查共用 guard；blockLevel=2 再遇封鎖會升至下一階段的停用保護。
+
+以下 Python 驗證結果只涵蓋本機與 mock，真實來源 probe 的結果須另行記錄。
+本次驗證：636 項 Node 測試、12 項 Python 測試、strict checkJs、Vite build、Functions
+build、兩份 workflow 的 YAML／Bash 語法皆通過。前端輸出與 bootstrap 基準逐檔相同，
+4 個公開 Function 封包皆沒有橘標 collector 或 Python 檔案。以既有本機管理憑證再次
+執行新版 CLI 的只讀 inspect，固定 Preview metadata 符合設定、來源請求數為 0，
+共用 guard 仍 paused、blockLevel=2、unresolved=false，冷卻期限未變。這不是專用 PAT
+的再次驗證，也不代表來源已恢復可用。
 
 ## 本機驗證
 

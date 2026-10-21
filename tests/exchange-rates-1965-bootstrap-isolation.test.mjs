@@ -6,7 +6,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
-const COLLECTOR = /^(?:netlify\/functions\/_shared\/exchange-rates-1965-(?:actions-runner|actions-target|anonymous|background|on-demand|runner|source|source-guard)\.mjs|scripts\/exchange-rates-1965-actions(?:-control)?\.mjs)$/;
+const COLLECTOR = /^(?:netlify\/functions\/_shared\/exchange-rates-1965-(?:actions-runner|actions-target|anonymous|background|on-demand|runner|source|source-guard)\.mjs|scripts\/exchange-rates-1965-(?:actions(?:-control)?|python)\.mjs)$/;
 
 function localImports(code) {
   const declared = /\b(?:import\s+(?:[^;"'`]*?\s+from\s*)?|export\s+[^;"'`]*?\s+from\s*)["']([^"']+)["']/g;
