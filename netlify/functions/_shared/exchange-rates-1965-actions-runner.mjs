@@ -23,7 +23,7 @@ const SAFE_REASONS = new Set(['busy', 'cooldown', 'disabled', 'stale_control', '
   'guard_invalid', 'guard_unavailable', 'guard_busy', 'guard_paused', 'guard_cooldown', 'operation_conflict',
   'operation_abandoned', 'invalid_operation', 'publication_failed', 'http_error', 'timeout', 'invalid', 'cancelled',
   'source_guard_missing', 'source_guard_invalid', 'source_guard_unavailable', 'source_epoch_mismatch',
-  'source_guard_conflict', 'lease_expired', 'invalid_guard_input']);
+  'source_guard_conflict', 'lease_expired', 'invalid_guard_input', 'stale_target']);
 const SKIP_REASONS = new Set(['busy', 'cooldown', 'disabled', 'stale_control', 'paused']);
 /** @param {unknown} value @returns {value is Record<string,any>} */
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -62,7 +62,6 @@ function identityFor(input) {
       !UUID.test(controlVersion ?? '') || !['probe', 'probe-python', 'publish', ...Object.keys(ACTIONS_PYTHON_PUBLISH_SCOPES)].includes(mode) ||
       !['single', 'pilot', 'five', 'all'].includes(scope) ||
       (mode === 'publish' ? scope === 'five' : scope !== (ACTIONS_PYTHON_PUBLISH_SCOPES[mode] ?? 'single')) || !isObject(target) ||
-      (mode.endsWith('-python') && target.alias !== 'preview-reviewed') ||
       !['preview-reviewed', 'production'].includes(target.alias) || !UUID.test(target.siteID ?? '') ||
       typeof target.branch !== 'string' || !/^[A-Za-z0-9_./-]{1,255}$/.test(target.branch) ||
       !SHA.test(target.commit ?? '') || !['deploy-preview', 'branch-deploy', 'production'].includes(target.context) ||

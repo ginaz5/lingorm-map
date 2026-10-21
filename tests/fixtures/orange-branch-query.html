@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orange branch query — local mock</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body{display:block;height:auto;overflow:auto;padding:12px}
+    main{width:min(100%,390px);margin:auto}
+    h1{font:600 16px/1.4 sans-serif;margin-bottom:8px}
+    .fixture-note{font:12px/1.5 sans-serif;margin-bottom:12px}
+    .loc-card{margin:0}
+    #mock-popup{margin-top:16px;padding:12px;border:1px solid var(--hairline);border-radius:8px}
+    #request-count{font:12px/1.5 monospace;margin:8px 0}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Orange branch query — local mock</h1>
+  <p class="fixture-note">Local mock only. First branch has a scheduled cache quote; second branch needs a manual query. Add ?lang=en, ?fail=1 or ?delay=1500.</p>
+  <div id="request-count">Requests: 0</div>
+  <div id="loc-list"></div>
+  <section id="mock-popup" aria-label="Mock map popup"></section>
+</main>
+<script type="module">
+  import { state } from '/src/core/state.js';
+  import { setLang } from '/src/core/i18n.js';
+  import { parseCSV } from '/src/data/csv-parser.js';
+  import { ORANGE_BRANCHES } from '/src/data/exchange-rates-1965-branch.js';
+  import { quoteExpiryMs } from '/src/data/exchange-rate-timing.js';
+  import { initBranchQueries } from '/src/features/exchange-rates-1965-branch.js';
+  import { syncExchangeControls } from '/src/features/exchange-rates.js';
+  import { renderList, buildPopupContent } from '/src/ui/render.js';
+
+  const query = new URLSearchParams(location.search);
+  const previousLanguage = localStorage.getItem('lang');
+  setLang(query.get('lang') === 'en' ? 'en' : 'zh');
+  if (previousLanguage === null) localStorage.removeItem('lang');
+  else localStorage.setItem('lang', previousLanguage);
+  const rows = parseCSV(await (await fetch('/data/locations.csv')).text());
+  const slug = Object.keys(ORANGE_BRANCHES)[0];
+  const slugs = Object.keys(ORANGE_BRANCHES).slice(0, 2);
+  state.data = slugs.map(id => ({ ...rows.find(row => row.id === id), status: 'Published' }));
+  state.visIdx = state.data.map((_row, index) => index); state.isLoading = false;
+  let count = 0;
+  const controlVersion = '00000000-0000-4000-8000-000000000001';
+  const quoteFor = target => {
+    const now = Date.now();
+    return { schemaVersion: 1, slug: target, controlVersion,
+      attemptedAt: new Date(now).toISOString(), completedAt: new Date(now).toISOString(),
+      expiresAt: new Date(quoteExpiryMs(now)).toISOString(),
+      branch: { slug: target, ...ORANGE_BRANCHES[target], status: 'ok', rates: {
+        USD_1965: { denom: 'USD_1965', rateScaledE6: 32_770_000, displayDecimals: 2, unavailableReason: null },
+        TWD_1965: { denom: 'TWD_1965', rateScaledE6: 995_000, displayDecimals: 5, unavailableReason: null },
+      } },
+    };
+  };
+  const quotes = [quoteFor(slug)];
+  const nativeFetch = window.fetch;
+  window.fetch = async (url, options) => {
+    if (url === '/api/exchange-rates-1965-cache') return Response.json({ schemaVersion: 1,
+      checkedAt: new Date().toISOString(), enabled: true, controlVersion, quotes });
+    if (url !== '/api/exchange-rates-1965-branch') return nativeFetch(url, options);
+    const target = JSON.parse(options.body).slug;
+    count++;
+    document.getElementById('request-count').textContent = `Requests: ${count}`;
+    await new Promise(resolve => setTimeout(resolve, Number(query.get('delay') || 400)));
+    const fail = query.has('fail');
+    const quote = quoteFor(target);
+    if (!fail) quotes.push(quote);
+    return Response.json({ schemaVersion: 1, slug: target, checkedAt: new Date().toISOString(), enabled: true,
+      controlVersion, quote: fail ? null : quote, reason: fail ? 'cooldown' : null, retryAfterSeconds: fail ? 5 : 0 }, { status: fail ? 429 : 200 });
+  };
+  const render = () => {
+    syncExchangeControls();
+    renderList();
+    document.getElementById('mock-popup').innerHTML = buildPopupContent(0);
+  };
+  initBranchQueries(render);
+  render();
+  // Existing card actions are intentionally inert in this fixture.
+  window.activateCard = () => {};
+  window.toggleFavorite = event => event?.stopPropagation?.();
+</script>
+</body>
+</html>

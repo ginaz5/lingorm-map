@@ -12,10 +12,12 @@
     "location:verify": "node --env-file-if-exists=.env scripts/location-verification-runner.mjs",
     "location:verify:ui": "node --env-file-if-exists=.env scripts/location-verification-ui-server.mjs",
     "fx:control": "node --env-file-if-exists=.env scripts/exchange-rates-control.mjs",
-    "fx:1965:actions": "node scripts/exchange-rates-1965-actions.mjs",
-    "fx:1965:actions:control": "node scripts/exchange-rates-1965-actions-control.mjs",
     "test:location-verification": "node --test tests/formal-location-current-schema.test.mjs tests/location-verification-core.test.mjs tests/location-verification-runner.test.mjs tests/location-verification-ui-server.test.mjs tests/location-verification-ui-workflow.test.mjs tests/location-verification-validator.test.mjs",
-    "typecheck": "tsc --noEmit -p jsconfig.json"
+    "typecheck": "tsc --noEmit -p jsconfig.json",
+    "fx:1965:control": "node --env-file-if-exists=.env scripts/exchange-rates-1965-control.mjs",
+    "fx:1965:fetch": "node --env-file-if-exists=.env scripts/exchange-rates-1965-fetch.mjs",
+    "fx:1965:actions": "node scripts/exchange-rates-1965-actions.mjs",
+    "fx:1965:actions:control": "node scripts/exchange-rates-1965-actions-control.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
@@ -27,6 +29,6 @@
     "@netlify/blobs": "^11.0.3"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": "^22.17.0 || >=24.0.0"
   }
 }

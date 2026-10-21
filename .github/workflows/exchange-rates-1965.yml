@@ -1,13 +1,12 @@
-name: SuperRich 1965 manual verification
+name: SuperRich 1965 rates
 
-# Reviewed main can publish only fixed scopes to the reviewed Preview. This workflow
-# never deploys the site. Remote Environment rules must separately allow
-# only main and hold the PAT; they are not created by this YAML.
+# This workflow publishes quotes, never website deployments. The existing
+# Environment name is retained; its dedicated site PAT remains main-only.
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: Inspect, probe, or publish a fixed single/five/all scope to the reviewed Preview
+        description: Inspect, probe, or publish a fixed single/five/all scope
         type: choice
         required: true
         default: inspect
@@ -18,6 +17,16 @@ on:
           - publish-python
           - publish-five-python
           - publish-all-python
+      target:
+        description: Explicit reviewed quote target
+        type: choice
+        required: true
+        default: preview-reviewed
+        options:
+          - preview-reviewed
+          - production
+  schedule:
+    - cron: '0,30 1-15 * * *'
 
 permissions:
   contents: read
@@ -30,7 +39,7 @@ concurrency:
 
 jobs:
   verify:
-    if: github.repository == 'ginaz5/lingorm-map' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    if: github.repository == 'ginaz5/lingorm-map' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.EXCHANGE_RATES_1965_SCHEDULE_ENABLED == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: superrich1965-preview
@@ -49,7 +58,7 @@ jobs:
         run: npm ci
 
       - name: Verify Python stdlib transport offline
-        if: endsWith(inputs.action, '-python')
+        if: github.event_name == 'schedule' || endsWith(inputs.action, '-python')
         run: |
           python3 --version
           python3 -I -B tests/exchange-rates-1965-python-http.test.py
@@ -57,7 +66,11 @@ jobs:
       - name: Run the reviewed Preview operation
         shell: bash
         env:
-          ACTION_MODE: ${{ inputs.action }}
+          ACTION_MODE: ${{ github.event_name == 'schedule' && 'publish-all-python' || inputs.action }}
+          ACTION_TARGET: ${{ github.event_name == 'schedule' && 'production' || inputs.target }}
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
+          EXCHANGE_RATES_1965_SCHEDULE_ENABLED: ${{ vars.EXCHANGE_RATES_1965_SCHEDULE_ENABLED }}
+          EXCHANGE_RATES_1965_PRODUCTION_COMMIT: ${{ vars.EXCHANGE_RATES_1965_PRODUCTION_COMMIT }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
         run: |
@@ -66,8 +79,12 @@ jobs:
             inspect|probe|probe-python|publish-python|publish-five-python|publish-all-python) ;;
             *) exit 2 ;;
           esac
+          case "$ACTION_TARGET" in
+            preview-reviewed|production) ;;
+            *) exit 2 ;;
+          esac
           result=0
-          npm run fx:1965:actions -- "$ACTION_MODE" --target preview-reviewed || result=$?
+          npm run fx:1965:actions -- "$ACTION_MODE" --target "$ACTION_TARGET" || result=$?
           if [ "$result" -eq 3 ]; then
             echo 'This attempt was skipped without a new source request; review the state and reason above.' >> "$GITHUB_STEP_SUMMARY"
             exit 0

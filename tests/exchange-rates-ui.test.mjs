@@ -564,7 +564,7 @@ test('published exchange rows outside the shipped rate mapping stay hidden every
   // A future snapshot may publish a branch of a brand this build does not
   // carry. It must not leak in as a regular location either.
   const unsupported = {
-    ...supported, id: 'superrich1965-56', destinationKey: 'pattaya',
+    ...supported, id: 'unmapped-exchange-branch', destinationKey: 'pattaya',
     nameZh: '未支援換匯點', nameEn: 'Unsupported exchange',
   };
   const cafe = {

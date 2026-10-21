@@ -1,6 +1,8 @@
 // Shared, source-string-free contracts for SuperRich snapshots and controls.
 
 import { DENOMS } from '../../../src/data/exchange-rates.js';
+import { HALF_HOUR_MS, SNAPSHOT_GRACE_MS, nextUtcHalfHour } from '../../../src/data/exchange-rate-timing.js';
+export { HALF_HOUR_MS, SNAPSHOT_GRACE_MS, nextUtcHalfHour };
 
 export const EXCHANGE_STORE_NAME = 'exchange-rates';
 export const EXCHANGE_KEYS = Object.freeze({
@@ -10,10 +12,6 @@ export const EXCHANGE_KEYS = Object.freeze({
 });
 export const SNAPSHOT_SCHEMA_VERSION = 1;
 export const PUBLIC_SCHEMA_VERSION = 1;
-export const HALF_HOUR_MS = 30 * 60 * 1000;
-// One missed cycle's worth of slack so a single late/failed run doesn't blank
-// the UI before the following run has a chance to publish.
-export const SNAPSHOT_GRACE_MS = 35 * 60 * 1000;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REASON_PATTERN = /^[a-z0-9_]{1,64}$/;
@@ -34,13 +32,6 @@ const isIso = value => {
 };
 /** @param {unknown} value */
 const isUuid = value => typeof value === 'string' && UUID_PATTERN.test(value);
-
-/** Return the next UTC :00 or :30 boundary strictly after `attemptedAtMs`. */
-/** @param {number} attemptedAtMs */
-export function nextUtcHalfHour(attemptedAtMs) {
-  if (!Number.isFinite(attemptedAtMs)) throw new Error('attemptedAtMs must be finite.');
-  return Math.floor(attemptedAtMs / HALF_HOUR_MS) * HALF_HOUR_MS + HALF_HOUR_MS;
-}
 
 /**
  * @param {{enabled:boolean, nowMs:number, controlVersion:string, updatedBy:ControlActor, previous?:ExchangeControl|null, disabledReason?:string|null}} input

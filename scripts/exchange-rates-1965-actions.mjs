@@ -13,6 +13,7 @@ import { readEntry } from '../netlify/functions/_shared/exchange-rates-1965-stor
 
 const REPOSITORY = 'ginaz5/lingorm-map';
 const SINGLE_SLUG = 'superrich1965-58';
+export const ACTIONS_SCHEDULE = '0,30 1-15 * * *';
 const SETTINGS_ERRORS = new Set(['invalid_actions_arguments', 'invalid_actions_identity', 'invalid_target_configuration',
   'target_not_configured', 'target_configuration_unavailable', 'missing_credentials', 'invalid_credentials',
   'invalid_actions_environment', 'target_metadata_mismatch', 'target_metadata_unavailable', 'target_store_unavailable']);
@@ -32,7 +33,7 @@ export function parseActionsArgs(argv) {
   }
   if (!['preview-reviewed', 'production'].includes(options['--target']) ||
       (mode.startsWith('probe') && (options['--scope'] !== undefined || (options['--slug'] !== undefined && options['--slug'] !== SINGLE_SLUG))) ||
-      (mode.endsWith('-python') && options['--target'] !== 'preview-reviewed') ||
+      (options['--target'] === 'production' && mode !== 'inspect' && !mode.endsWith('-python')) ||
       (Object.hasOwn(ACTIONS_PYTHON_PUBLISH_SCOPES, mode) && (options['--scope'] !== undefined || options['--slug'] !== undefined)) ||
       (mode === 'inspect' && (options['--scope'] !== undefined || options['--slug'] !== undefined)) ||
       (mode === 'publish' && (options['--slug'] !== undefined || !['single', 'pilot', 'all'].includes(options['--scope'])))) {
@@ -41,11 +42,13 @@ export function parseActionsArgs(argv) {
   return { mode, alias: options['--target'], scope: mode === 'publish' ? options['--scope'] : ACTIONS_PYTHON_PUBLISH_SCOPES[mode] ?? 'single' };
 }
 
-/** @param {Record<string,string|undefined>} env */
-function executionIdentity(env) {
+/** @param {Record<string,string|undefined>} env @param {string} mode @param {string} alias */
+function executionIdentity(env, mode, alias) {
   if (env.GITHUB_ACTIONS !== 'true' || env.GITHUB_REPOSITORY !== REPOSITORY ||
       !/^[1-9][0-9]{0,19}$/.test(env.GITHUB_RUN_ID ?? '') || !/^[a-f0-9]{40}$/.test(env.GITHUB_SHA ?? '') ||
-      env.GITHUB_REF !== 'refs/heads/main' || env.GITHUB_EVENT_NAME !== 'workflow_dispatch') {
+      env.GITHUB_REF !== 'refs/heads/main' || !['workflow_dispatch', 'schedule'].includes(env.GITHUB_EVENT_NAME ?? '') ||
+      (env.GITHUB_EVENT_NAME === 'schedule' && (mode !== 'publish-all-python' || alias !== 'production' ||
+        env.GITHUB_EVENT_SCHEDULE !== ACTIONS_SCHEDULE))) {
     throw new Error('invalid_actions_identity');
   }
   return { repository: REPOSITORY, runId: /** @type {string} */ (env.GITHUB_RUN_ID), commit: /** @type {string} */ (env.GITHUB_SHA) };
@@ -76,9 +79,14 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
   let observedSourceRequests = 0;
   try {
     const { mode, alias, scope } = parseActionsArgs(argv);
-    const identity = mode === 'inspect' ? null : executionIdentity(env);
+    const identity = mode === 'inspect' && env.GITHUB_EVENT_NAME !== 'schedule' ? null : executionIdentity(env, mode, alias);
+    if (env.GITHUB_EVENT_NAME === 'schedule' && env.EXCHANGE_RATES_1965_SCHEDULE_ENABLED !== 'true') {
+      return { exitCode: 3, summary: { mode, outcome: 'skipped', reason: 'schedule_disabled',
+        sourceRequestCount: 0, published: 0, sourceValidated: false } };
+    }
     const opened = await openTargetImpl({ alias, targetsInput, env, fetchImpl });
-    const { target, metadata, store, sourceGuardStore } = opened;
+    const { target, metadata, store, sourceGuardStore, verifyCurrent } = opened;
+    if (target.kind === 'production' && typeof verifyCurrent !== 'function') throw new Error('invalid_target_configuration');
     const runnerBase = { store, ...identity, mode, scope, target: { ...target, deployID: target.deployID ?? null }, signal, nowImpl,
       ...(randomUUIDImpl ? { randomUUIDImpl } : {}), ...(sleepImpl ? { sleepImpl } : {}), ...(randomImpl ? { randomImpl } : {}) };
     if (identity) {
@@ -113,12 +121,21 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
     const sourceFetch = source.fetchImpl;
     const result = await runCollectorImpl({ ...runnerBase,
       controlVersion: effective.control.controlVersion,
-      collectorImpl: async (/** @type {any} */ options) => queryImpl({ ...options, store, sourceGuardStore,
+      collectorImpl: async (/** @type {any} */ options) => {
+        if (target.kind === 'production' && !await verifyCurrent()) {
+          const stopped = { status: 'not_attempted', sourceSucceeded: false, sourceRequestCount: 0, reason: 'stale_target' };
+          options.onResult?.(stopped);
+          return stopped;
+        }
+        return queryImpl({ ...options, store, sourceGuardStore,
         requireExistingControl: true, enabledDefault: 'false', expectedControlVersion: effective.control.controlVersion,
         refreshDue: true, nowImpl, fetchImpl: sourceFetch, sourceProfile: pythonMode
           ? { ...ANONYMOUS_SOURCE_PROFILE, name: 'anonymous-python-safari' } : ANONYMOUS_SOURCE_PROFILE,
         onResult: result => { observedSourceRequests += result.sourceRequestCount; options.onResult?.(result); },
-        ...(randomUUIDImpl ? { randomUUIDImpl } : {}) }),
+        beforePublish: async () => (target.kind !== 'production' || await verifyCurrent()) &&
+          (!options.beforePublish || await options.beforePublish()),
+        ...(randomUUIDImpl ? { randomUUIDImpl } : {}) });
+      },
     });
     return { exitCode: result.exitCode, summary: result };
   } catch (error) {

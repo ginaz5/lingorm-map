@@ -407,7 +407,14 @@ header {
   color: var(--primary);
 }
 .b-exchange{background:rgba(22,131,91,.1);color:#11724f;border-color:rgba(22,131,91,.28)}
+.b-exchange.is-exchange-orange{background:rgba(235,121,35,.12);color:#a94700;border-color:rgba(235,121,35,.35)}
+.fx-panel.is-exchange-orange{border-color:rgba(235,121,35,.3);background:rgba(235,121,35,.06)}
 .fx-panel{margin-top:10px;padding:10px;border:1px solid rgba(22,131,91,.22);border-radius:9px;background:rgba(22,131,91,.045);color:var(--primary);overflow-wrap:anywhere}
+.fx-query{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}
+.fx-query-btn{max-width:100%;white-space:normal;overflow-wrap:anywhere;border:1px solid rgba(235,121,35,.4);border-radius:6px;padding:7px 10px;background:var(--surface);color:var(--primary);font:inherit;cursor:pointer}
+.fx-query-btn:disabled{opacity:.6;cursor:default}
+.fx-query-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.fx-query-status,.fx-query-scope{font-size:10px;line-height:1.4;color:var(--muted)}
 .fx-brand{margin-bottom:7px;font-size:10px;line-height:1.35;font-weight:700;color:var(--primary)}
 .fx-rates{display:flex;flex-direction:column;gap:6px}
 .fx-rates.is-loading{opacity:.48}
@@ -496,6 +503,8 @@ button.gm-ui-hover-effect span{background-color:var(--text-muted)!important}
   cursor:pointer;transition:transform .15s ease}
 .marker-cluster:hover{transform:scale(1.12)}
 .marker-cluster.is-exchange{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7}
+
+.marker-dot.is-exchange-orange,.marker-cluster.is-exchange-orange{--marker-bg:#eb7923;--marker-fg:#fff;--marker-ring:#ffd8b8}
 
 /* HERE Maps InfoBubble overrides */
 .H_ib_body{background:var(--canvas)!important;border:1px solid var(--hairline)!important;

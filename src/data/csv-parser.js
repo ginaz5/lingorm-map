@@ -67,6 +67,9 @@ export const CATEGORY_ALIASES = {
  * @returns {LocationRow}
  */
 export function normalizeCategoryRow(row) {
+  if (row.catEn === "Currency Exchange") {
+    return { ...row, catEn: "", catZh: "", type: "Currency Exchange" };
+  }
   const alias = CATEGORY_ALIASES[row.catEn] || CATEGORY_ALIASES[row.catZh];
   if (alias) return { ...row, catEn: alias.en, catZh: alias.zh };
   return row;

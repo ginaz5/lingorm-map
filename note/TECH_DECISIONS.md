@@ -352,7 +352,149 @@ null`，前端顯示「暫無報價」而不是隱藏整張卡片。
 安排查詢。自動停用後的 breaker 清理沿用該輪寫入的 ETag，遇到較新的
 手動控制變更就放棄清理，避免覆蓋重新啟用後的版本。
 
-這一版只支援 SuperRich Thailand（綠標）。正式快照仍可能包含其他換匯品牌的
+**2026-10-17 橘標整合：** 沿用 main 的標籤篩選、filter sheet、popup 置中與粉絲資源
+分析事件，新增 SuperRich 1965 的獨立報價 state／輪詢、API、來源抓取及管理工具。
+兩品牌共用「換匯」標籤與排序選單；綠標維持三列，橘標顯示 USD 100＋50、
+TWD 1,000–100 兩列。單一品牌停用、失敗或到期不會清除另一品牌報價。
+單品牌群聚使用該品牌顏色，混合群聚維持預設樣式，Google／HERE 行為一致。
+
+`isSupportedLocation()` 接受兩份已驗證 mapping；未知換匯點仍不公開。
+舊橘標快照使用 `Category = Currency Exchange`，CSV parser 在 runtime 將它
+轉為空 Category 與 `Type = Currency Exchange`，以沿用 main 的唯一標籤入口。
+不修改正式 CSV；未來由 Notion exporter 產生的新資料可直接使用 Type 欄位，
+mapping validator 同時接受這兩種表示。所有 `Paused` 狀態與收藏 Slug 保持不變。
+
+目前 38 家橘標仍為 Paused；整合程式不代表發布分店或啟用報價服務。
+橘標服務預設 disabled，`EXCHANGE_RATES_1965_FETCH_MODE=local` 時雲端排程
+不打來源，由既有本機 CLI 明確發布快照；未設定 FETCH_MODE 的相容預設仍為
+`netlify`，但抓取仍受 disabled/control/breaker 限制。本次未更動線上設定。
+
+
+### 2026-10-17：橘標改採單店手動查詢
+
+以下保留單店與定時更新方案的歷史；現行只讀行為見本節末的退役決定。
+
+使用者確認改為卡片按鈕觸發本站後端單店查詢。新增
+`POST /api/exchange-rates-1965-branch`，只接受正式 mapping 的 Slug，由後端
+轉換 branchNo／companyCode；前端不直接跨站抓來源。完整契約見
+[單店按需查詢計畫](../docs/superrich1965-on-demand-plan.zh-TW.md)。
+
+單店報價使用獨立 Blobs key 與最多 5 分鐘 TTL，不放寬原本完整 38 店 snapshot
+驗證。跨 Function 的強一致 ETag lease 控制冷查詢併發；快取命中可直接回傳，
+冷請求期間其他訪客取得 busy 與 Retry-After，避免重複來源請求。
+單店成功不重設整批 breaker 的升級歷史，失敗與 challenge 則更新同一 breaker。
+新的 `FETCH_MODE=on-demand` 可停掉整批排程；既有 local／netlify 相容行為保留。
+
+前端只在使用者點擊後 POST，不因渲染、切換分頁或到期自動抓來源。到期計時
+僅撤下數字並恢復按鈕，查詢狀態與報價在列表及兩種 provider 的 popup 共用。
+排序只比較有效報價，不宣稱為完整分店排名。服務停用後，已載入的有效報價
+可保留到原 5 分鐘 TTL；下一次查詢觀察到新 controlVersion 會一併撤下其他
+卡片的舊版本報價。本次未發布分店、未切換正式環境、未部署。
+
+後續決定：改為後端每半小時派送 Background Function，逐家查詢全部 38 家，
+每家完成後隨機等 2～5 秒。排程不在 30 秒內跑整輪，背景工作預算 12 分鐘。
+私有 token 與 ETag 認領避免未授權／重複抓取，每店獨立保留成功結果；遇到
+失敗冷卻、封鎖、停用或控制版本變更即停止，舊快取不覆寫。
+
+頁面每 60 秒只讀逐店快取，不顯示批次進度；沒有有效報價的卡片才提供單店
+補查按鈕。移除五公里前端佇列。橘標單店與綠標共用同一到期計算模組：下一個
+半小時邊界加 35 分鐘；後端仍每半小時刷新到期更新的分店，讀快取不延長時間。
+舊整批 snapshot／CLI 契約保留，綠標到期行為不變。本次未改正式旗標或部署。
+
+### 2026-10-18：橘標增加 Netlify 瀏覽器傳輸驗證模式
+
+使用者要求維持全 Netlify 執行，新增可選的 `SOURCE_TRANSPORT=browser`。
+在現有控制、快取與租約檢查後，於函式內啟動 Chromium、載入官網公開頁面的
+JS/session，再使用 same-origin fetch 查 mapping 中的單店。保留 HTTP 預設，
+兩支來源函式的 browser 在 invocation 完成時關閉；背景輪次重用同一 session。
+不使用本機 Chrome、外部服務、Cookie 匯入、CAPTCHA 解題或 stealth patches。
+Cloudflare challenge 仍停止並沿用冷卻，是否改善雲端可用性必須由 Preview 實測。
+來源的 browser timeout／lease 及前端等待時間同步調整，報價到期與綠標不變。
+
+### 2026-10-19：橘標增加選用的匿名 API 傳輸
+
+本機已驗證匿名 callback GET 與 external-app 單店 POST 可回有效 USD／TWD
+指定面額買入價，增加 `SOURCE_TRANSPORT=anonymous-api`，預設仍是 HTTP。
+token 在原有控制、快取、breaker、lease 後 lazy 取得，只留在 invocation
+記憶體；背景工作可重用有明確到期提示的 token。callback 與 rate 都計入來源
+請求數及共用逾時，私有診斷以 stage 區分，不記錄 token 或任意來源文字。
+任一階段的 403／429／challenge 都沿用既有冷卻，不 fallback 或自動重試。
+保留原本 mapping、parser、快取與背景間隔；Chromium 未調整。
+這是新的可選後端路徑，本機成功不代表已驗證 Netlify 出口或 38 家覆蓋。
+
+### 2026-10-19：先規劃 GitHub Actions 抓取與 Netlify 逐店快取
+
+同日後續 Preview 已確認匿名 token GET 被 403 challenge 擋下，匯率 POST
+沒有發出。ThaiCash 的 Actions 有公開單店成功紀錄，使用者同意先修改文件，
+規劃將來源請求移至 Actions、Netlify 保留 cache／API／前端。
+先做手動單店 probe，再發布至明確 Preview 逐店 cache，最後驗 38 家與排程。
+沿用匿名 transport、parser、mapping、共享 control／lease／breaker 與 2～5 秒間隔，
+不以換 runner 或新 store 清除已知冷卻，也不將報價 commit 來觸發網站部署。
+現有 CLI 的匿名接線／逐店發布、Preview target、probe 不發布與 Netlify 單店
+只讀行為皆待實作；`FETCH_MODE=local` 現在只停排程，不能當成單店只讀開關。
+首次 workflow_dispatch 仍需 workflow 存在預設分支。實作與驗收條件見
+[Actions 計畫](../docs/superrich1965-github-actions-plan.zh-TW.md)。
+本次沒有新增 workflow、設定 Secrets、抓來源或更動 runtime／遠端狀態。
+
+
+### 2026-10-20：退役橘標 Netlify 來源入口與環境開關
+
+使用者要求同步退役不再需要的 functions 與 env。刪除橘標 fetch 排程、refresh
+Background Function、Netlify dispatch，以及 Chromium helper、專用測試、套件和
+binary 打包設定。移除 `EXCHANGE_RATES_1965_FETCH_MODE` 與
+`EXCHANGE_RATES_1965_SOURCE_TRANSPORT` 的程式讀取及範例宣告；上方這兩個
+開關與 browser／背景取價的說明均為歷史，不再是本分支的啟用方式。
+
+保留三個公開 API 的路徑與資料契約，單店 POST 改為只讀快取／有效 snapshot
+fallback，無資料回 503 unavailable 與 60 秒 Retry-After。公開入口不載入
+collector、不初始化 control、不讀 breaker 或取得 lease，也不寫 Blobs。
+前端改為「重新整理匯率／Refresh rates」，兩種 cache 請求 timeout 均為 12 秒。
+讀取不延長報價有效期；外部抓取器尚未就緒時，舊報價依原時間到期。
+
+`EXCHANGE_RATES_1965_ENABLED`、管理工具的 Netlify credentials 與既有 control／
+cache／breaker／gate／lease／job 資料保留。匿名 transport、mapping、parser、
+逐店 collector、慢速批次核心和原本完整 snapshot CLI 留給後續整合；
+新 Actions runner、Preview target、probe、Secrets 和排程仍待實作。
+本次程式變更尚未部署，不以退役清除來源冷卻，綠標流程維持原樣。
+
+兩個退役環境變數已從 Netlify 專案所有 context 移除；CLI 確認需重新部署才會
+套用到部署版本。本次未部署，沒有刪除或改寫遠端 control、breaker、快取及憑證。
+
+
+### 2026-10-20：Actions 實作前調查與計畫補強（尚未實作）
+
+依使用者要求先調查並寫計畫。核對現有逐店／批次核心、SDK 11.0.3、GitHub
+官方限制及 ThaiCash 的固定版本成功輸出；它只證明單店部分幣別曾成功，不能
+代替本專案 GitHub runner 的 TWD、指定面額、38 家及長期穩定驗收。
+
+計畫建議保留 targetStore 的報價／control 隔離，另以固定 site-wide source guard
+保存跨 Preview／production 的來源冷卻與互斥。probe 成功不發布 quote，但必要的
+lease／失敗 breaker 要持久化；須補明確 target、控制管理、job 建立、rerun 冪等、
+取消與完整 coverage。舊本機 full-snapshot CLI 不直接搬入 Actions。
+
+實作與 mock 先完成，再經 workflow main bootstrap 做單店 probe，之後才驗
+Preview 單店／pilot／38 家與正式排程。詳見[計畫](../docs/superrich1965-github-actions-plan.zh-TW.md)
+及[調查證據](../docs/superrich1965-actions-research-2026-10-20.zh-TW.md)。
+本次只改文件，沒有實作、呼叫來源、執行 workflow、設定 Secrets、改遠端或部署。
+
+
+### 2026-10-20：Actions 本機實作與部署界線
+
+使用者同意 probe 成功前正式網站不變、專用有到期日 PAT／Environment，以及日後
+泰國 08:00～22:30 每半小時更新。新增手動 inspect／probe workflow、明確 target
+factory／控制 CLI、source guard、job／operation ledger 與 probe／publish 核心；
+checked-in target 預設空，workflow 沒有發布或排程入口。
+
+共同 guard 的 unresolvedAttempt 在來源前落盤，已知 403 即使取消或 target control
+改變也先持久化冷卻；未知結果不因租約到期解鎖。Probe 成功不寫 quote，失敗仍保留保護。
+Rerun 先讀 terminal ledger、保留原失敗結果；設定／storage 錯誤不當成中性 skip。
+發布前最後一次 await 後重驗期限，資料損壞與 CAS 競態都停止來源或發布。
+
+Netlify 官方支援最終 main commit 的 `[skip netlify]` 避免該次正式部署；PR title
+只處理 Preview，下一個未標記 commit 仍包含所有略過變更。Bootstrap 前後須核對實際
+commit／Netlify 狀態，不能把標記當作持續鎖站。見[維運文件](../docs/superrich1965-actions-runbook.zh-TW.md)。
+本次只做本機程式與 mock；未建立憑證、改遠端、執行來源、發布 workflow、部署或 commit。
+以下為 bootstrap 階段歷史：當時正式版只支援 SuperRich Thailand（綠標）。正式快照仍可能包含其他換匯品牌的
 資料列（例如已暫停的 SuperRich 1965），因此顯示規則改以「此版本支援的換匯點」
 判斷：`Type = Currency Exchange` 的地點必須在綠標 mapping 中才會顯示；
 換匯點的 `Category` 留空，以標籤作為單一換匯篩選入口。
@@ -368,3 +510,18 @@ target，讓 runner 驗收可在前端功能合併前進行。沿用 main-only E
 現有前端、CSV、公開入口與綠標排程維持 main 版本。本機準備及 mock 驗證沒有取價或部署；
 後續 main bootstrap 須核對最終 `[skip netlify]` 與正式發布基準。詳見
 [bootstrap 操作與驗收](../docs/superrich1965-actions-bootstrap.zh-TW.md)。
+
+### 2026-10-22：橘標正式上線接線
+
+使用者選擇完整準備後合併 PR #8。保留 main 的 Python／Safari、五店／全店與來源
+保護，正式 target 用 Environment 的 `EXCHANGE_RATES_1965_PRODUCTION_COMMIT` 綁定
+經核對的實際 production SHA；網站換版未重新核准便停止。沿用既有 main-only
+Environment 專用 PAT，Preview／正式 quote store 隔離，共用 guard 的 epoch、
+blockLevel=2 與冷卻歷史不變。每店開始及發布前重新核對正式部署，失配停止。
+
+排程固定泰國 08:00～22:30 每半小時；repository variable 明確 true 才通過 job 與
+CLI 兩層 gate，只能全店 production。正式人工取價、API、地圖與排序通過才啟用，
+再驗真正定時更新。網站回滾不會回復 Blobs 或停 Actions，須另操作 guard／control。
+
+Preview 已驗五店全新及後續 33 新加 5 cache 的 38 店覆蓋；正式部署與排程仍須另驗，
+操作與後續證據見 [Actions 維運文件](../docs/superrich1965-actions-runbook.zh-TW.md) 與 PR #8。

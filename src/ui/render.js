@@ -2,11 +2,15 @@ import { lang, t } from '../core/i18n.js';
 import { state } from '../core/state.js';
 import {
   getExchangeRateCell,
+  getExchangeBrand,
   isExchangeSortAvailable,
   isExchangeLocation,
   isSupportedLocation,
 } from '../features/exchange-rates.js';
 import { DENOMS } from '../data/exchange-rates.js';
+import { getBranchQueryState } from '../features/exchange-rates-1965-branch.js';
+import { DENOMS_1965 } from '../data/exchange-rates-1965.js';
+import { getExchangeRateCell1965 } from '../features/exchange-rates-1965.js';
 import {
   LOCATION_TYPES,
   locationTypeLabel,
@@ -124,7 +128,10 @@ export function renderSources(row) {
   return `<div class="src-tags">${tags.join('')}</div>`;
 }
 
-const OFFICIAL_EXCHANGE_URL = 'https://www.superrichthailand.com/exchange-rate';
+const OFFICIAL_EXCHANGE_URLS = Object.freeze({
+  green: 'https://www.superrichthailand.com/exchange-rate',
+  orange: 'https://www.superrich1965.com/en/exchange-rate',
+});
 
 /** @param {string} value */
 function escapeAttribute(value) {
@@ -143,13 +150,27 @@ export function formatExchangeCheckedAt(iso) {
   return `${datePart} ${parts.hour}:${parts.minute}`;
 }
 
-/** @param {'USD_100'|'USD_50'|'TWD'} denom */
-function bestVisibleRate(denom) {
+/** @param {string} sort @returns {'green'|'orange'|null} */
+function brandForSort(sort) {
+  if (DENOMS.includes(/** @type {any} */ (sort))) return 'green';
+  if (DENOMS_1965.includes(/** @type {any} */ (sort))) return 'orange';
+  return null;
+}
+
+/** @param {string} slug @param {string} denom @param {'green'|'orange'} brand */
+function exchangeRateCell(slug, denom, brand) {
+  return brand === 'green'
+    ? getExchangeRateCell(slug, /** @type {'USD_100'|'USD_50'|'TWD'} */ (denom))
+    : getExchangeRateCell1965(slug, /** @type {'USD_1965'|'TWD_1965'} */ (denom));
+}
+
+/** @param {string} denom @param {'green'|'orange'} brand */
+function bestVisibleRate(denom, brand) {
   let best = null;
   for (const index of state.visIdx) {
     const row = state.data[index];
-    if (!isExchangeLocation(row)) continue;
-    const value = getExchangeRateCell(row.id, denom)?.rateScaledE6;
+    if (getExchangeBrand(row) !== brand) continue;
+    const value = exchangeRateCell(row.id, denom, brand)?.rateScaledE6;
     if (Number.isSafeInteger(value) && (best === null || value > best)) best = value;
   }
   return best;
@@ -157,54 +178,95 @@ function bestVisibleRate(denom) {
 
 /** @param {LocationRow} row */
 export function renderExchangeRates(row) {
-  if (!isExchangeLocation(row)) return '';
-  const checked = formatExchangeCheckedAt(state.exchangeCompletedAt);
-  const activeSort = state.exchangeRatesEnabled === true && state.exchangeSort !== 'default'
+  const brand = getExchangeBrand(row);
+  if (!brand) return '';
+  const orange = brand === 'orange';
+  const queried = orange ? getBranchQueryState(row.id) : undefined;
+  const brandState = orange ? (queried ? {
+    enabled: !!queried.quote, completedAt: queried.quote?.completedAt ?? null,
+    ratesLoading: queried.loading, hasUsableSnapshot: !!queried.quote,
+  } : state.exchange1965) : {
+    enabled: state.exchangeRatesEnabled,
+    completedAt: state.exchangeCompletedAt,
+    ratesLoading: state.exchangeRatesLoading,
+    hasUsableSnapshot: state.exchangeHasUsableSnapshot,
+  };
+  const denoms = orange ? DENOMS_1965 : DENOMS;
+  const checked = formatExchangeCheckedAt(brandState.completedAt);
+  const activeSort = brandState.enabled === true && brandForSort(state.exchangeSort) === brand
     ? state.exchangeSort : null;
-  const best = activeSort ? bestVisibleRate(activeSort) : null;
-  const rows = DENOMS.map(denom => {
-    const cell = state.exchangeHasUsableSnapshot ? getExchangeRateCell(row.id, denom) : null;
+  const best = activeSort ? bestVisibleRate(activeSort, brand) : null;
+  const rows = denoms.map(denom => {
+    const cell = brandState.hasUsableSnapshot ? exchangeRateCell(row.id, denom, brand) : null;
     const valid = Number.isSafeInteger(cell?.rateScaledE6) && Number.isInteger(cell?.displayDecimals);
     const value = valid
       ? (cell.rateScaledE6 / 1_000_000).toFixed(cell.displayDecimals)
       : t('fx_unavailable');
-    const currency = denom === 'TWD' ? 'TWD' : 'USD';
+    const currency = denom === 'TWD' || denom === 'TWD_1965' ? 'TWD' : 'USD';
     const isBest = activeSort === denom && valid && best !== null && cell.rateScaledE6 === best;
     return `<div class="fx-rate-row">
       <span class="fx-denom">${t(`fx_denom_${denom.toLowerCase()}`)}</span>
       <span class="fx-value${valid ? '' : ' is-unavailable'}">${isBest ? `<span class="fx-best">${t('fx_best')}</span> ` : ''}${valid ? t('fx_rate_value', currency, value) : value}</span>
     </div>`;
   }).join('');
-  const loading = state.exchangeRatesLoading && !state.exchangeHasUsableSnapshot
+  const loading = brandState.ratesLoading && !brandState.hasUsableSnapshot
     ? `<div class="fx-loading">${t('fx_loading')}</div>` : '';
-  return `<section class="fx-panel" aria-label="${t('fx_panel_label')}">
-    <div class="fx-brand">${t('fx_brand_green')}</div>
+  return `<section class="fx-panel${orange ? ' is-exchange-orange' : ''}" aria-label="${t('fx_panel_label')}">
+    <div class="fx-brand">${t(orange ? 'fx_brand_orange' : 'fx_brand_green')}</div>
     ${loading}
     <div class="fx-rates${loading ? ' is-loading' : ''}">${rows}</div>
     <div class="fx-meta">
-      ${checked && state.exchangeHasUsableSnapshot ? `<time class="fx-checked" datetime="${escapeAttribute(state.exchangeCompletedAt || '')}">${t('fx_checked', checked)}</time>` : ''}
-      <span class="fx-disclaimer">${t('fx_disclaimer')}</span>
-      <a href="${OFFICIAL_EXCHANGE_URL}" target="_blank" rel="noopener" aria-label="${t('fx_source_note')}" onclick="event.stopPropagation()">${t('fx_source_note')}</a>
+      ${checked && brandState.hasUsableSnapshot ? `<time class="fx-checked" datetime="${escapeAttribute(brandState.completedAt || '')}">${t('fx_checked', checked)}</time>` : ''}
+      <span class="fx-disclaimer">${t(orange ? 'fx_disclaimer_1965' : 'fx_disclaimer')}</span>
+      <a href="${OFFICIAL_EXCHANGE_URLS[brand]}" target="_blank" rel="noopener" aria-label="${t(orange ? 'fx_source_note_1965' : 'fx_source_note')}" onclick="event.stopPropagation()">${t(orange ? 'fx_source_note_1965' : 'fx_source_note')}</a>
     </div>
+    ${orange ? renderBranchQuery(row.id) : ''}
     <div class="fx-branch-hint">${t('fx_branch_hint', escapeAttribute(row.nameEn))}</div>
   </section>`;
 }
 
+/** @param {string} slug */
+function renderBranchQuery(slug) {
+  const entry = getBranchQueryState(slug);
+  if (entry?.quote) return `<div class="fx-query-scope">${t('fx_query_sort_scope')}</div>`;
+  const waiting = (entry?.retryAtMs ?? 0) > Date.now();
+  const disabled = entry?.loading || waiting;
+  const label = entry?.loading ? 'fx_query_loading' : 'fx_query';
+  const message = entry?.reason === 'disabled' ? 'fx_query_disabled' :
+    entry?.reason === 'busy' ? 'fx_query_busy' : waiting ? 'fx_query_wait' :
+    entry?.reason ? 'fx_query_failed' : 'fx_query_hint';
+  const retryHint = waiting && entry?.retryAtMs
+    ? t('fx_query_retry_at', formatExchangeCheckedAt(new Date(entry.retryAtMs).toISOString())) : '';
+  return `<div class="fx-query">
+    <button type="button" class="fx-query-btn" data-orange-query="${escapeAttribute(slug)}"${disabled ? ' disabled' : ''}>${t(label)}</button>
+    <span class="fx-query-status" role="status">${t(message)}${retryHint ? ` ${retryHint}` : ''}</span>
+    <span class="fx-query-scope">${t('fx_query_sort_scope')}</span>
+  </div>`;
+}
+
 /**
  * @param {number[]} indexes
- * @param {'default'|'USD_100'|'USD_50'|'TWD'} sort
+ * @param {'default'|'USD_100'|'USD_50'|'TWD'|'USD_1965'|'TWD_1965'} sort
  */
 export function sortVisibleIndexes(indexes, sort) {
   if (sort === 'default') return [...indexes];
+  const targetBrand = brandForSort(sort);
+  if (!targetBrand) return [...indexes];
   return [...indexes].sort((leftIndex, rightIndex) => {
     const left = state.data[leftIndex];
     const right = state.data[rightIndex];
-    const leftExchange = isExchangeLocation(left);
-    const rightExchange = isExchangeLocation(right);
-    if (leftExchange !== rightExchange) return leftExchange ? -1 : 1;
-    if (!leftExchange) return leftIndex - rightIndex;
-    const leftRate = getExchangeRateCell(left.id, sort)?.rateScaledE6;
-    const rightRate = getExchangeRateCell(right.id, sort)?.rateScaledE6;
+    const leftBrand = getExchangeBrand(left);
+    const rightBrand = getExchangeBrand(right);
+    const leftTarget = leftBrand === targetBrand;
+    const rightTarget = rightBrand === targetBrand;
+    if (leftTarget !== rightTarget) return leftTarget ? -1 : 1;
+    if (!leftTarget) {
+      if ((leftBrand !== null) !== (rightBrand !== null)) return leftBrand !== null ? -1 : 1;
+      if (leftBrand !== null && rightBrand !== null) return left.id.localeCompare(right.id);
+      return leftIndex - rightIndex;
+    }
+    const leftRate = exchangeRateCell(left.id, sort, targetBrand)?.rateScaledE6;
+    const rightRate = exchangeRateCell(right.id, sort, targetBrand)?.rateScaledE6;
     const leftValid = Number.isSafeInteger(leftRate);
     const rightValid = Number.isSafeInteger(rightRate);
     if (leftValid !== rightValid) return leftValid ? -1 : 1;
@@ -255,7 +317,7 @@ export function buildPopupContent(i) {
     ${row.alt ? `<div class="popup-alt">${row.alt}</div>` : ''}
     <div class="badges popup-badges">
       ${cat ? `<span class="badge b-cat">${cat}</span>` : ''}
-      ${type ? `<span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-label'}">${type}</span>` : ''}
+      ${type ? `<span class="badge ${isExchangeLocation(row) ? `b-exchange${getExchangeBrand(row) === 'orange' ? ' is-exchange-orange' : ''}` : 'b-label'}">${type}</span>` : ''}
     </div>
     <div class="popup-notes">${notes}</div>
     ${renderExchangeRates(row)}
@@ -307,7 +369,7 @@ export function renderList() {
       </div>
       <div class="badges">
         ${cat ? `<span class="badge b-cat">${cat}</span>` : ''}
-        ${type ? `<span class="badge ${isExchangeLocation(row) ? 'b-exchange' : 'b-label'}">${type}</span>` : ''}
+        ${type ? `<span class="badge ${isExchangeLocation(row) ? `b-exchange${getExchangeBrand(row) === 'orange' ? ' is-exchange-orange' : ''}` : 'b-label'}">${type}</span>` : ''}
       </div>
       <div class="card-notes">${compactCardNotes(notes)}</div>
       ${renderExchangeRates(row)}

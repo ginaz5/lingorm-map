@@ -50,7 +50,7 @@ for (const args of [[], ['probe'], ['publish','--target','preview-reviewed'],
   test(`Actions arguments fail closed: ${args.join(' ') || '(empty)'}`, () => assert.throws(() => parseActionsArgs(args)));
 }
 
-for (const extra of [['--scope','all'], ['--slug','superrich1965-56'], ['--transport','python'], ['--target','production']]) {
+for (const extra of [['--scope','all'], ['--slug','superrich1965-56'], ['--transport','python']]) {
   test(`Python probe arguments remain a fixed Preview single branch: ${extra.join(' ')}`, () => {
     const base = extra[0] === '--target' ? ['probe-python'] : ['probe-python','--target','preview-reviewed'];
     assert.throws(() => parseActionsArgs([...base, ...extra]));
@@ -60,7 +60,7 @@ for (const extra of [['--scope','all'], ['--slug','superrich1965-56'], ['--trans
 test('Python publication arguments select only the reviewed Preview and fixed single branch', () => {
   assert.deepEqual(parseActionsArgs(['publish-python', '--target', 'preview-reviewed']),
     { mode: 'publish-python', alias: 'preview-reviewed', scope: 'single' });
-  for (const args of [[], ['--target', 'production'], ['--target', 'arbitrary'],
+  for (const args of [[], ['--target', 'arbitrary'],
     ...['single', 'pilot', 'five', 'all'].map(scope => ['--target', 'preview-reviewed', '--scope', scope]),
     ...[SLUG, 'superrich1965-56'].map(slug => ['--target', 'preview-reviewed', '--slug', slug]),
     ['--target', 'preview-reviewed', '--transport', 'node'],
@@ -73,7 +73,7 @@ for (const [mode, scope] of [['publish-five-python', 'five'], ['publish-all-pyth
   test(`${mode} accepts only its fixed reviewed Preview scope`, () => {
     assert.deepEqual(parseActionsArgs([mode, '--target', 'preview-reviewed']),
       { mode, alias: 'preview-reviewed', scope });
-    for (const args of [[], ['--target', 'production'], ['--target', 'arbitrary'],
+    for (const args of [[], ['--target', 'arbitrary'],
       ...['single', 'pilot', 'five', 'all'].map(value => ['--target', 'preview-reviewed', '--scope', value]),
       ...[SLUG, 'superrich1965-56'].map(slug => ['--target', 'preview-reviewed', '--slug', slug]),
       ['--target', 'preview-reviewed', '--transport', 'node'],

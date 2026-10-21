@@ -129,16 +129,35 @@ test('currency exchange rate panel notices are bilingual', () => {
   assert.equal(T.en.fx_branch_hint('Airport'), 'Official branch · Airport');
 });
 
-test('exchange-rate sort menu exposes only green-brand choices', async () => {
+test('exchange-rate sort menu exposes both brands without a separate toggle', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const select = html.match(/<select class="filter-sel exchange-sort"[\s\S]*?<\/select>/)?.[0];
 
   assert.ok(select, 'exchange-rate sort select should exist');
   assert.deepEqual(
     [...select.matchAll(/<option value="([^"]+)"/g)].map(match => match[1]),
-    ['default', 'USD_100', 'USD_50', 'TWD'],
+    ['default', 'USD_100', 'USD_50', 'TWD', 'USD_1965', 'TWD_1965'],
   );
-  assert.doesNotMatch(select, /1965|fx_sort_usd_1965|fx_sort_twd_1965/);
+  assert.doesNotMatch(html, /id="exchange-toggle"/);
+  for (const key of ['fx_brand_orange', 'fx_denom_usd_1965', 'fx_denom_twd_1965', 'fx_sort_usd_1965', 'fx_sort_twd_1965', 'fx_disclaimer_1965', 'fx_source_note_1965']) {
+    assert.equal(typeof T.zh[key], 'string');
+    assert.equal(typeof T.en[key], 'string');
+  }
+});
+
+test('orange rate refresh explains unavailable quotes without promising a source query', () => {
+  assert.equal(T.zh.fx_query, '重新整理匯率');
+  assert.equal(T.en.fx_query, 'Refresh rates');
+  assert.equal(T.zh.fx_query_loading, '重新整理中…');
+  assert.equal(T.en.fx_query_loading, 'Refreshing…');
+  assert.match(T.zh.fx_query_hint, /尚無有效報價.*稍後查看/);
+  assert.match(T.en.fx_query_hint, /No valid quote yet.*Check back later/);
+  assert.match(T.zh.fx_query_failed, /稍後查看或前往官網/);
+  assert.match(T.en.fx_query_failed, /Check back later or visit the official website/);
+  for (const lang of ['zh', 'en']) {
+    assert.doesNotMatch(T[lang].fx_query_hint, /手動查詢|manually|cache/i);
+    assert.doesNotMatch(T[lang].fx_query_sort_scope, /queried/);
+  }
 });
 
 test('unrestricted filters show their category and label prompts', () => {
