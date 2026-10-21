@@ -5,6 +5,7 @@ import { PassThrough } from 'node:stream';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createPythonSafariFetch } from '../scripts/exchange-rates-1965-python.mjs';
+import { ORANGE_BRANCHES } from '../src/data/exchange-rates-1965-branch.js';
 
 const TOKEN_URL = 'https://api.superrich1965.com/front/exchange-rate/oauth2/callback';
 const RATE_URL = 'https://www.superrich1965.com/api/exchange-rate-service/v1/external-app-exchange-rate/get';
@@ -106,7 +107,7 @@ test('successful token protocol uses a fixed isolated command, minimal environme
   assert.deepEqual(fake.children[0].kills, []);
 });
 
-test('rate protocol carries only the reviewed branch body and token through stdin', async () => {
+test('rate protocol carries only a reviewed branch body and token through stdin', async () => {
   const fake = fakeSpawner();
   const fetchImpl = createPythonSafariFetch({ spawnImpl: fake.spawnImpl });
   const pending = rateRequest(fetchImpl);
@@ -119,6 +120,24 @@ test('rate protocol carries only the reviewed branch body and token through stdi
   assert.deepEqual(await (await pending).json(), { data: { datas: [] } });
 });
 
+test('every checked-in branch mapping passes through stdin without caller URL/header forwarding', async () => {
+  const fake = fakeSpawner();
+  const fetchImpl = createPythonSafariFetch({ spawnImpl: fake.spawnImpl });
+  assert.equal(Object.keys(ORANGE_BRANCHES).length, 38);
+  for (const branch of Object.values(ORANGE_BRANCHES)) {
+    const body = JSON.stringify({ filters: [
+      { field: 'company_code', value: branch.companyCode }, { field: 'branch_no', value: branch.branchNo },
+    ] });
+    const pending = rateRequest(fetchImpl, { body });
+    const child = fake.children.at(-1);
+    assert.deepEqual(JSON.parse(child.input), { stage: 'rate', token: PRIVATE, body });
+    success(child);
+    assert.equal((await pending).status, 200);
+  }
+  assert.equal(fake.calls.length, 38);
+  assert.equal(fake.calls.some(call => JSON.stringify(call).includes(PRIVATE)), false);
+});
+
 test('unreviewed URL, method, branch, payload and token are rejected before a child starts', async () => {
   const fake = fakeSpawner();
   const fetchImpl = createPythonSafariFetch({ spawnImpl: fake.spawnImpl });
@@ -129,7 +148,7 @@ test('unreviewed URL, method, branch, payload and token are rejected before a ch
     [TOKEN_URL, { method: 'GET', body: 'unexpected' }],
     [RATE_URL.replace('www.', 'other.'), validOptions],
     [RATE_URL, { ...validOptions, method: 'GET' }],
-    [RATE_URL, { ...validOptions, body: BODY.replace('"36"', '"56"') }],
+    [RATE_URL, { ...validOptions, body: BODY.replace('"36"', '"99"') }],
     [RATE_URL, { ...validOptions, body: BODY.replace('"A04"', '"A05"') }],
     [RATE_URL, { ...validOptions, body: JSON.stringify({ filters: JSON.parse(BODY).filters, extra: true }) }],
     [RATE_URL, { ...validOptions, body: '{' }],

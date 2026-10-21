@@ -4,6 +4,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 import urllib.error
@@ -14,6 +15,13 @@ SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "exchange-rates-19
 SPEC = importlib.util.spec_from_file_location("exchange_rates_1965_python_http", SCRIPT)
 HTTP = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(HTTP)
+MAPPING = json.loads(HTTP.MAPPING_PATH.read_text(encoding="utf-8"))
+DEFAULT_RATE_BODY = {
+    "filters": [
+        {"field": "company_code", "value": "A04"},
+        {"field": "branch_no", "value": "36"},
+    ]
+}
 
 
 class Response:
@@ -62,7 +70,7 @@ def rate_message(**overrides):
     return {
         "stage": "rate",
         "token": "offline.example_token-123=",
-        "body": json.dumps(HTTP.RATE_BODY, separators=(",", ":")),
+        "body": json.dumps(DEFAULT_RATE_BODY, separators=(",", ":")),
         **overrides,
     }
 
@@ -99,7 +107,7 @@ class PythonHttpTests(unittest.TestCase):
         request, timeout = opener.requests[0]
         self.assertEqual(request.full_url, HTTP.RATE_URL)
         self.assertEqual(request.get_method(), "POST")
-        self.assertEqual(request.data, json.dumps(HTTP.RATE_BODY).encode("utf-8"))
+        self.assertEqual(request.data, json.dumps(DEFAULT_RATE_BODY).encode("utf-8"))
         self.assertEqual(dict(request.header_items()), {
             "User-agent": HTTP.SAFARI_USER_AGENT,
             "Authorization": "Bearer offline.example_token-123=",
@@ -107,6 +115,76 @@ class PythonHttpTests(unittest.TestCase):
             "Referer": "https://www.superrich1965.com/",
         })
         self.assertEqual(timeout, HTTP.REQUEST_TIMEOUT_SECONDS)
+
+    def test_every_checked_in_branch_is_accepted_with_its_own_body(self):
+        self.assertEqual(len(MAPPING["branches"]), 38)
+        observed = set()
+        for slug, branch in MAPPING["branches"].items():
+            with self.subTest(slug=slug):
+                body = {"filters": [
+                    {"field": "company_code", "value": branch["companyCode"]},
+                    {"field": "branch_no", "value": branch["branchNo"]},
+                ]}
+                opener = Opener()
+                status, _ = self.run_main(raw_message(rate_message(body=json.dumps(body))), opener)
+                self.assertEqual(status, 0)
+                request, _ = opener.requests[0]
+                self.assertEqual(request.full_url, HTTP.RATE_URL)
+                self.assertEqual(request.data, json.dumps(body).encode("utf-8"))
+                observed.add((branch["companyCode"], branch["branchNo"]))
+        self.assertEqual(len(observed), 38)
+
+    def test_missing_or_malformed_mapping_prevents_token_and_rate_openers(self):
+        malformed = []
+
+        def variant(mutator):
+            mapping = json.loads(json.dumps(MAPPING))
+            mutator(mapping)
+            return json.dumps(mapping).encode("utf-8")
+
+        malformed.extend([
+            b"{}", b"[]", b"null", b"not json", b"\xff",
+            b" " * (HTTP.MAPPING_LIMIT + 1),
+            variant(lambda mapping: mapping.update(schemaVersion=True)),
+            variant(lambda mapping: mapping.update(schemaVersion=2)),
+            variant(lambda mapping: mapping.update(extra=True)),
+            variant(lambda mapping: mapping["branches"].pop("superrich1965-56")),
+            variant(lambda mapping: mapping["branches"].update({
+                "superrich1965-999": {"officialId": 999, "branchNo": "99", "companyCode": "A04"}
+            })),
+            variant(lambda mapping: mapping["branches"].update({"superrich1965-56": []})),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(officialId=True)),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(officialId=0)),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(officialId=9_007_199_254_740_992)),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(officialId=56.0)),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(officialId=57)),
+            variant(lambda mapping: mapping["branches"].update({
+                "superrich1965-056": mapping["branches"].pop("superrich1965-56")
+            })),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(branchNo="35")),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(branchNo=0)),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(branchNo="000")),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(branchNo="0\n")),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(branchNo="００")),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(companyCode="A03")),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(companyCode="A04\n")),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(companyCode=True)),
+            variant(lambda mapping: mapping["branches"]["superrich1965-56"].update(extra=True)),
+            json.dumps(MAPPING).replace('"schemaVersion": 1', '"schemaVersion": 1, "schemaVersion": 1').encode(),
+            json.dumps(MAPPING).replace('"officialId": 56', '"officialId": 56, "officialId": 56').encode(),
+        ])
+        for index, raw in enumerate([None, *malformed]):
+            with self.subTest(mapping=index), tempfile.TemporaryDirectory() as directory:
+                mapping_path = Path(directory) / "branches.json"
+                if raw is not None:
+                    mapping_path.write_bytes(raw)
+                with patch.object(HTTP, "MAPPING_PATH", mapping_path):
+                    for message in ({"stage": "token"}, rate_message()):
+                        opener_factory = unittest.mock.Mock(side_effect=AssertionError("must not construct opener"))
+                        output = io.StringIO()
+                        self.assertEqual(HTTP.main(io.BytesIO(raw_message(message)), output, opener_factory), 1)
+                        self.assertEqual(output.getvalue(), '{"event":"error"}\n')
+                        opener_factory.assert_not_called()
 
     def test_headers_are_flushed_before_success_body_read(self):
         output = io.StringIO()
@@ -202,8 +280,32 @@ class PythonHttpTests(unittest.TestCase):
             raw_message(rate_message(body="[]")),
             raw_message(rate_message(body=json.dumps({"filters": [
                 {"field": "company_code", "value": "A04"},
-                {"field": "branch_no", "value": "56"},
+                {"field": "branch_no", "value": "99"},
             ]}))),
+            raw_message(rate_message(body=json.dumps({"filters": [
+                {"field": "company_code", "value": "A03"},
+                {"field": "branch_no", "value": "36"},
+            ]}))),
+            raw_message(rate_message(body=json.dumps({"filters": [
+                {"field": "branch_no", "value": "36"},
+                {"field": "company_code", "value": "A04"},
+            ]}))),
+            raw_message(rate_message(body=json.dumps({"filters": [
+                {"field": "company_code", "value": "A04"},
+                {"field": "company_code", "value": "A04"},
+            ]}))),
+            raw_message(rate_message(body=json.dumps({"filters": [
+                {"field": "company_code", "value": "A04"},
+                {"field": "branch_no", "value": "36", "extra": True},
+            ]}))),
+            raw_message(rate_message(body=json.dumps({"filters": [
+                {"field": "company_code", "value": "A04"},
+                {"field": "branch_no", "value": 36},
+            ]}))),
+            raw_message(rate_message(body=json.dumps({"filters": [
+                {"field": "company_code", "value": "A04"},
+                {"field": "branch_no", "value": "36"},
+            ], "url": "https://outside.invalid/"}))),
             raw_message(rate_message(body='{"filters":[],"filters":[]}')),
             raw_message(rate_message(body=" " * 4_097)),
             b" " * (HTTP.INPUT_LIMIT + 1),

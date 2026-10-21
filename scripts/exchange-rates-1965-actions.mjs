@@ -3,7 +3,7 @@ import { pathToFileURL } from 'node:url';
 import { createPythonSafariFetch } from './exchange-rates-1965-python.mjs';
 
 import { openActionsTarget } from '../netlify/functions/_shared/exchange-rates-1965-actions-target.mjs';
-import { actionsOperationKey, runActionsCollector } from '../netlify/functions/_shared/exchange-rates-1965-actions-runner.mjs';
+import { actionsOperationKey, runActionsCollector, ACTIONS_PYTHON_PUBLISH_SCOPES } from '../netlify/functions/_shared/exchange-rates-1965-actions-runner.mjs';
 import { createAnonymousApiSource, ANONYMOUS_SOURCE_PROFILE } from '../netlify/functions/_shared/exchange-rates-1965-anonymous.mjs';
 import { readEffectiveControl } from '../netlify/functions/_shared/exchange-rates-1965-control.mjs';
 import { EXCHANGE_KEYS, isValidBreaker } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
@@ -22,7 +22,7 @@ const SETTINGS_ERRORS = new Set(['invalid_actions_arguments', 'invalid_actions_i
  */
 export function parseActionsArgs(argv) {
   const [mode, ...rest] = argv;
-  if (!['inspect', 'probe', 'probe-python', 'publish', 'publish-python'].includes(mode) || rest.length % 2) throw new Error('invalid_actions_arguments');
+  if (!['inspect', 'probe', 'probe-python', 'publish', ...Object.keys(ACTIONS_PYTHON_PUBLISH_SCOPES)].includes(mode) || rest.length % 2) throw new Error('invalid_actions_arguments');
   /** @type {Record<string,string>} */
   const options = {};
   for (let i = 0; i < rest.length; i += 2) {
@@ -33,12 +33,12 @@ export function parseActionsArgs(argv) {
   if (!['preview-reviewed', 'production'].includes(options['--target']) ||
       (mode.startsWith('probe') && (options['--scope'] !== undefined || (options['--slug'] !== undefined && options['--slug'] !== SINGLE_SLUG))) ||
       (mode.endsWith('-python') && options['--target'] !== 'preview-reviewed') ||
-      (mode === 'publish-python' && (options['--scope'] !== undefined || options['--slug'] !== undefined)) ||
+      (Object.hasOwn(ACTIONS_PYTHON_PUBLISH_SCOPES, mode) && (options['--scope'] !== undefined || options['--slug'] !== undefined)) ||
       (mode === 'inspect' && (options['--scope'] !== undefined || options['--slug'] !== undefined)) ||
       (mode === 'publish' && (options['--slug'] !== undefined || !['single', 'pilot', 'all'].includes(options['--scope'])))) {
     throw new Error('invalid_actions_arguments');
   }
-  return { mode, alias: options['--target'], scope: mode === 'publish' ? options['--scope'] : 'single' };
+  return { mode, alias: options['--target'], scope: mode === 'publish' ? options['--scope'] : ACTIONS_PYTHON_PUBLISH_SCOPES[mode] ?? 'single' };
 }
 
 /** @param {Record<string,string|undefined>} env */

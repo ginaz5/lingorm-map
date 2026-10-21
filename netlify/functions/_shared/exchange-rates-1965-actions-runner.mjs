@@ -7,6 +7,11 @@ export const ACTIONS_BUDGET_MS = 12 * 60_000;
 export const ACTIONS_JOB_KEY = 'exchange-rates-1965/actions/job';
 export const ACTIONS_SINGLE_SLUG = 'superrich1965-58';
 export const ACTIONS_PILOT_SLUGS = Object.freeze([ACTIONS_SINGLE_SLUG, 'superrich1965-56', 'superrich1965-57']);
+export const ACTIONS_FIVE_SLUGS = Object.freeze([...ACTIONS_PILOT_SLUGS, 'superrich1965-59', 'superrich1965-60']);
+/** @type {Readonly<Record<string, 'single'|'five'|'all'>>} */
+export const ACTIONS_PYTHON_PUBLISH_SCOPES = Object.freeze({
+  'publish-python': 'single', 'publish-five-python': 'five', 'publish-all-python': 'all',
+});
 export const ACTIONS_BRANCH_STATUSES = Object.freeze([
   'cache_hit', 'probe_succeeded', 'published', 'source_failed', 'source_unknown', 'publication_failed', 'not_attempted',
 ]);
@@ -35,9 +40,10 @@ const isoOrNull = value => typeof value === 'string' && Number.isFinite(Date.par
  */
 export function actionsScopeSlugs(scope) {
   const slugs = scope === 'single' ? [ACTIONS_SINGLE_SLUG] : scope === 'pilot' ? [...ACTIONS_PILOT_SLUGS]
+    : scope === 'five' ? [...ACTIONS_FIVE_SLUGS]
     : scope === 'all' ? Object.keys(ORANGE_BRANCHES) : [];
   if (!slugs.length || new Set(slugs).size !== slugs.length ||
-      slugs.some(slug => !Object.hasOwn(ORANGE_BRANCHES, slug)) || (scope === 'all' && slugs.length !== 38)) {
+      slugs.some(slug => !Object.hasOwn(ORANGE_BRANCHES, slug)) || (scope === 'five' && slugs.length !== 5) || (scope === 'all' && slugs.length !== 38)) {
     throw new Error('invalid_configuration');
   }
   return slugs;
@@ -53,8 +59,9 @@ function identityFor(input) {
   const { repository, runId, mode, scope, commit, controlVersion, target } = input;
   if (typeof repository !== 'string' || !/^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/.test(repository) ||
       typeof runId !== 'string' || !/^[1-9][0-9]{0,19}$/.test(runId) || !SHA.test(commit ?? '') ||
-      !UUID.test(controlVersion ?? '') || !['probe', 'probe-python', 'publish', 'publish-python'].includes(mode) ||
-      !['single', 'pilot', 'all'].includes(scope) || (mode !== 'publish' && scope !== 'single') || !isObject(target) ||
+      !UUID.test(controlVersion ?? '') || !['probe', 'probe-python', 'publish', ...Object.keys(ACTIONS_PYTHON_PUBLISH_SCOPES)].includes(mode) ||
+      !['single', 'pilot', 'five', 'all'].includes(scope) ||
+      (mode === 'publish' ? scope === 'five' : scope !== (ACTIONS_PYTHON_PUBLISH_SCOPES[mode] ?? 'single')) || !isObject(target) ||
       (mode.endsWith('-python') && target.alias !== 'preview-reviewed') ||
       !['preview-reviewed', 'production'].includes(target.alias) || !UUID.test(target.siteID ?? '') ||
       typeof target.branch !== 'string' || !/^[A-Za-z0-9_./-]{1,255}$/.test(target.branch) ||
@@ -89,7 +96,7 @@ function branchResult(value, slug, mode) {
   if ((success && !value.sourceSucceeded) || (value.sourceSucceeded && !success && value.status !== 'source_unknown') ||
       (['cache_hit', 'not_attempted'].includes(value.status) && value.sourceRequestCount !== 0) ||
       (value.sourceSucceeded && value.sourceRequestCount === 0) ||
-      (value.status === 'published' && !['publish', 'publish-python'].includes(mode)) ||
+      (value.status === 'published' && mode !== 'publish' && !Object.hasOwn(ACTIONS_PYTHON_PUBLISH_SCOPES, mode)) ||
       (value.status === 'probe_succeeded' && !['probe', 'probe-python'].includes(mode))) return invalid;
   return { slug, status: value.status, sourceSucceeded: value.sourceSucceeded, sourceRequestCount: value.sourceRequestCount,
     reason: value.reason === null || value.reason === undefined ? null : safeReason(value.reason),
@@ -167,7 +174,7 @@ function validJob(value, nowMs) {
 
 /** Durable invocation ledger and bounded serial collector. The caller supplies a reviewed
  * branch collector and its target/source stores; this module never opens a network client.
- * @param {{store:any,repository:string,runId:string,commit:string,controlVersion:string,target:any,mode:'probe'|'probe-python'|'publish'|'publish-python',scope:'single'|'pilot'|'all',
+ * @param {{store:any,repository:string,runId:string,commit:string,controlVersion:string,target:any,mode:'probe'|'probe-python'|'publish'|'publish-python'|'publish-five-python'|'publish-all-python',scope:'single'|'pilot'|'five'|'all',
  * collectorImpl:(input:any)=>Promise<any>,signal?:AbortSignal,nowImpl?:()=>number,randomUUIDImpl?:()=>string,
  * randomImpl?:()=>number,sleepImpl?:(ms:number,signal:AbortSignal)=>Promise<void>}} input
  */
@@ -291,7 +298,7 @@ export async function runActionsCollector(input) {
       let observed = null;
       let returned, collectorThrew = false;
       try {
-        returned = await collectorImpl({ slug, publishQuote: ['publish', 'publish-python'].includes(identity.mode), signal,
+        returned = await collectorImpl({ slug, publishQuote: identity.mode === 'publish' || Object.hasOwn(ACTIONS_PYTHON_PUBLISH_SCOPES, identity.mode), signal,
           operationId, operationKey, ownerId, beforeSource: () => owns(15_000, slug), beforePublish: () => owns(0, slug),
           canContinue: () => !signal.aborted && nowImpl() < operation.deadlineAtMs,
           onResult: (/** @type {any} */ result) => { observed = result; } });

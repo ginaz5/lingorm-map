@@ -1,7 +1,8 @@
 # SuperRich 1965：Python 單店 Preview 發布
 
-更新：2026-10-21。此階段只完成固定單店的發布與頁面驗收，不擴大 pilot／38 家，
-不新增 production target 或排程。PR #8 保持開啟，正式站維持原發布版本。
+更新：2026-10-21。本文件記錄固定單店的發布與頁面驗收；後續五店／38 家驗證見
+[多店文件](superrich1965-python-batches.zh-TW.md)。不新增 production target 或排程，
+PR #8 保持開啟，正式站維持原發布版本。
 
 ## 已完成的來源驗證
 
@@ -22,7 +23,8 @@ npm run fx:1965:actions -- publish-python --target preview-reviewed
 ```
 
 新模式固定 `superrich1965-58`（A04／36，Ratchadamri Soi 1），拒絕 `--scope`、
-`--slug`、production、任意 URL 或自訂 transport；Python helper 的分店白名單維持不變。
+`--slug`、production、任意 URL 或自訂 transport；單店範圍維持不變，Python helper
+共用正式 mapping 白名單。
 只在可信 main 的 workflow_dispatch 執行，不偽造本機 GitHub 身分。
 Workflow 的 action 下拉選單明確選 `publish-python`，不因 inspect／probe 自動發布。
 

@@ -1,13 +1,13 @@
 name: SuperRich 1965 manual verification
 
-# Reviewed main can publish only the single fixed Preview branch. This workflow
+# Reviewed main can publish only fixed scopes to the reviewed Preview. This workflow
 # never deploys the site. Remote Environment rules must separately allow
 # only main and hold the PAT; they are not created by this YAML.
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: Inspect, probe, or publish the single reviewed Preview branch using Python
+        description: Inspect, probe, or publish a fixed single/five/all scope to the reviewed Preview
         type: choice
         required: true
         default: inspect
@@ -16,6 +16,8 @@ on:
           - probe
           - probe-python
           - publish-python
+          - publish-five-python
+          - publish-all-python
 
 permissions:
   contents: read
@@ -47,7 +49,7 @@ jobs:
         run: npm ci
 
       - name: Verify Python stdlib transport offline
-        if: inputs.action == 'probe-python' || inputs.action == 'publish-python'
+        if: endsWith(inputs.action, '-python')
         run: |
           python3 --version
           python3 -I -B tests/exchange-rates-1965-python-http.test.py
@@ -61,7 +63,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$ACTION_MODE" in
-            inspect|probe|probe-python|publish-python) ;;
+            inspect|probe|probe-python|publish-python|publish-five-python|publish-all-python) ;;
             *) exit 2 ;;
           esac
           result=0

@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { ORANGE_BRANCHES } from '../src/data/exchange-rates-1965-branch.js';
 
 const HELPER = fileURLToPath(new URL('./exchange-rates-1965-python-http.py', import.meta.url));
 const TOKEN_URL = 'https://api.superrich1965.com/front/exchange-rate/oauth2/callback';
@@ -7,7 +8,7 @@ const RATE_URL = 'https://www.superrich1965.com/api/exchange-rate-service/v1/ext
 const MAX_OUTPUT = 7 * 1024 * 1024; // JSON escaping can expand a bounded 1 MiB body sixfold.
 const DIAGNOSTIC_HEADERS = ['content-type', 'cf-mitigated', 'cf-ray', 'retry-after'];
 
-/** The Python experiment is limited to the one reviewed branch. No caller URL,
+/** Python accepts only the checked-in branch mapping. No caller URL,
  * credentials, headers or executable configuration passes through to Python.
  * @param {RequestInfo|URL} input @param {RequestInit|undefined} options
  */
@@ -22,9 +23,9 @@ function requestMessage(input, options) {
   if (!token || token.length > 16_384) throw new Error('invalid_python_request');
   let body;
   try { body = JSON.parse(options.body); } catch { throw new Error('invalid_python_request'); }
-  if (JSON.stringify(body) !== JSON.stringify({ filters: [
-    { field: 'company_code', value: 'A04' }, { field: 'branch_no', value: '36' },
-  ] })) throw new Error('invalid_python_request');
+  if (!Object.values(ORANGE_BRANCHES).some(branch => JSON.stringify(body) === JSON.stringify({ filters: [
+    { field: 'company_code', value: branch.companyCode }, { field: 'branch_no', value: branch.branchNo },
+  ] }))) throw new Error('invalid_python_request');
   return { stage: 'rate', token, body: options.body };
 }
 
