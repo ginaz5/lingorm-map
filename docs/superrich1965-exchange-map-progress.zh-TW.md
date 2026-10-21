@@ -4,7 +4,7 @@
 > - 建立日期：2026-09-09
 > - 最後更新：2026-10-22
 > - 手動單店試點：Silom Plaza 本機真實查詢成功；後續依使用者指示將全部 38 家改為 Published，供本機手動測試。
-> - 現況：Actions Python／Safari 已驗 Preview 單店、五店全新與 38 店覆蓋（全店 33 新加 5 cache）。正式接線及預設關閉排程正在準備，正式部署／定時結果另驗；見[維運文件](superrich1965-actions-runbook.zh-TW.md)。
+> - 現況：PR #8 已正式部署，production inspect、單店、五店（4 新取＋1 cache）與全店（刷新邊界後 38 店全新）通過；正式 Google、中英文及 USD／TWD 排序已實測。台灣時間 07:41 已核對排程開啟／guard resumed，09:00／09:30 首兩輪定時結果待驗。Preview 先前為五店全新及全店 33 新加 5 cache；見[正式上線紀錄](superrich1965-production-release.zh-TW.md)與[維運文件](superrich1965-actions-runbook.zh-TW.md)。
 > - 下列里程碑保留歷史：M1～M6 曾完成；10 月 17 日本機循環驗收見[單店實測紀錄](superrich1965-single-branch-test-2026-10-17.zh-TW.md)。舊 FETCH_MODE 切換與來源函式驗收步驟已退役。
 > - 規格依據：[SuperRich 1965（橘標）USD／TWD 換匯地圖實作計畫](superrich1965-exchange-map-plan.zh-TW.md)
 > - 審閱歷程：[審閱摘要](superrich1965-exchange-map-plan-revisions.zh-TW.md)
@@ -19,8 +19,9 @@
 
 ---
 
-## 里程碑總覽
+## 原 2026-09 里程碑總覽
 
+下表及其後 M1～M6 保留當時狀態；38 家已於 10 月改為 Published，現行流程與正式驗收以上方連結為準。
 | 里程碑 | 內容 | 使用者可見 | 狀態 |
 | --- | --- | --- | --- |
 | M1 | Phase A0（POST 可行性）+ Phase A1（來源契約與純解析） | 無 | **完成**：38 筆 Our Branch 收錄，E52-01 排除 |
@@ -29,8 +30,7 @@
 | M4 | Phase D1（前端品牌分派、三色 marker／cluster）+ 分店轉 `Published` | **目前快照不可見** | **9 月 11 日本機發布測試完成**；現行快照為 `Paused`，重新發布與瀏覽器驗收待辦 |
 | M5 | Phase E（測試補齊、README、ADR） | 無 | **本機完成** |
 
-9 月 11 日的本機驗收曾以 38 筆 `Published` 分店確認橘色 marker 與卡片。9 月 20 日提交的 `data/locations.csv` 將這 38 筆改為 `Paused`，因此目前版本開啟「顯示換匯點」也不會顯示橘標分店。此處只核對已提交快照，未重新查詢 Notion 的現行狀態。
-
+9 月 11 日的本機驗收曾以 38 筆 `Published` 分店確認橘色 marker 與卡片。9 月 20 日提交的 `data/locations.csv` 將這 38 筆改為 `Paused`，因此當時版本開啟「顯示換匯點」也不會顯示橘標分店。此處為歷史快照紀錄，現行狀態以上方說明為準。
 ---
 
 ## M1 · Phase A0 — POST 可行性驗證

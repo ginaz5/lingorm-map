@@ -523,5 +523,15 @@ blockLevel=2 與冷卻歷史不變。每店開始及發布前重新核對正式�
 CLI 兩層 gate，只能全店 production。正式人工取價、API、地圖與排序通過才啟用，
 再驗真正定時更新。網站回滾不會回復 Blobs 或停 Actions，須另操作 guard／control。
 
-Preview 已驗五店全新及後續 33 新加 5 cache 的 38 店覆蓋；正式部署與排程仍須另驗，
-操作與後續證據見 [Actions 維運文件](../docs/superrich1965-actions-runbook.zh-TW.md) 與 PR #8。
+Preview 已驗五店全新及後續 33 新加 5 cache 的 38 店覆蓋。PR #8 已合併為
+`e88e8b90d46194faa9f8ca5179efd89655d7c802`，正式 deploy
+`6ad94882c583f63d0a5bc49b` 已 ready 並綁定到 Environment SHA。
+正式 inspect、單店新取／發布及五店 4 新取＋1 cache 已通過，production control
+獨立建立，不搬 Preview quote。正式全店於刷新邊界後全數 38 店新取並發布，
+cacheHit=0、來源 HTTP=39，API／quote 及零讀取副作用通過；正式 Google、中英文及
+USD／TWD 排序通過。HERE 的現場隔離驗收與實際 quote 離線到期測試分別記錄，
+不將其描述成正式站現場切換 HERE。台灣時間 07:41 已核對排程開關為 true、
+guard resumed 且無 lease／未結案來源，原 control／epoch／封鎖歷史不變；
+首兩輪預定台灣時間 09:00／09:30，真正定時更新另行驗收。
+操作見 [Actions 維運文件](../docs/superrich1965-actions-runbook.zh-TW.md)，
+實際證據見 [正式上線紀錄](../docs/superrich1965-production-release.zh-TW.md)。

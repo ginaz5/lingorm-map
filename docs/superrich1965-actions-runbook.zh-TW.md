@@ -11,7 +11,23 @@ Preview 五店 [39617098664](https://github.com/ginaz5/lingorm-map/actions/runs/
 [39618515018](https://github.com/ginaz5/lingorm-map/actions/runs/39618515018) 新取／發布 33 店、
 cacheHit 5 店，34 次來源 HTTP，總覆蓋 38 店有效 USD／TWD。全部 HTTP 200、無 replay，
 兩個 API 與快取一致；中英文、列表、HERE popup、USD／TWD 排序通過。
-舊 quote 已按原期限到期。正式接線程式正在準備，正式部署與定時更新另須驗收。
+舊 quote 已按原期限到期。PR #8 已於台灣時間 2026-10-22 07:19 合併並部署正式站；
+main `e88e8b90d46194faa9f8ca5179efd89655d7c802`、production deploy
+`6ad94882c583f63d0a5bc49b` 已核對。專用 PAT production inspect
+[39693020146](https://github.com/ginaz5/lingorm-map/actions/runs/39693020146)
+為零來源／零發布；正式單店
+[39693213469](https://github.com/ginaz5/lingorm-map/actions/runs/39693213469)
+新取及發布 1 店、2 次來源 HTTP；正式五店
+[39693450584](https://github.com/ginaz5/lingorm-map/actions/runs/39693450584) 新取／發布 4 店、
+cacheHit 1 店、5 次來源 HTTP。兩輪 quote／只讀 API 與零讀取副作用驗收通過。
+正式全店 [39694052646](https://github.com/ginaz5/lingorm-map/actions/runs/39694052646)
+跨過刷新邊界，38 店全新取／發布、0 cache hit、39 次來源 HTTP、sourceValidated=true，
+38 店 API／quote 比對及零讀取副作用通過。正式 Google 地圖、popup、中英文及
+USD／TWD 排序已實測，HERE 的隔離及離線到期範圍詳見
+[正式上線紀錄](superrich1965-production-release.zh-TW.md)。
+人工全店完成後先 pause；台灣時間 2026-10-22 07:41 已核對排程開關為 true、
+guard resumed、無 lease／unresolved，control／epoch／blockLevel=2 均不變。
+排程已啟用，首兩輪預定台灣時間 09:00／09:30，實際 schedule 結果仍待驗收。
 
 沿用 main-only Environment `superrich1965-preview` 與既有專用 PAT Secret、site ID
 variable。名稱沿用，實際可供兩個明確 target；不代表 PAT 只限單一 store。
@@ -72,6 +88,8 @@ concurrency、lease、CAS、取消與 ledger。每店成功獨立發布，失敗
 緊急先關排程並 source-pause；報價內容有疑慮時 disable production control 撤價。
 網站回滾不會停 Actions 或還原 site-wide Blobs，須另操作上述控制。保留冷卻與 ledger，
 不恢復退役的 Netlify 來源入口。Bootstrap 的 `[skip netlify]` 只略過該次部署。
+如正式部署已失配，source-pause 可使用仍通過 metadata 核對的 `preview-reviewed`；
+共同 guard 與 target 無關。不要為了讓管理指令通過而將正式 SHA 綁到未審閱部署。
 
 參考：[GitHub schedule](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)、
 [Netlify deploy](https://docs.netlify.com/deploy/manage-deploys/manage-deploys-overview/)。
