@@ -98,7 +98,7 @@ export async function verifyActionsTarget(target, { token, fetchImpl = fetch }) 
 }
 
 /** A reviewed target must pass credentials and metadata checks before either store can be opened.
- * The checked-in configuration is deliberately empty until a deployment is reviewed.
+ * The checked-in configuration contains only explicitly reviewed deployments.
  * @param {{alias:string,targetsInput?:unknown,env?:Record<string,string|undefined>,fetchImpl?:typeof fetch,getStoreImpl?:typeof getStore,getDeployStoreImpl?:typeof getDeployStore}} input
  */
 export async function openActionsTarget({ alias, targetsInput, env = process.env, fetchImpl = fetch,

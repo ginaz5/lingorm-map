@@ -47,9 +47,10 @@ for (const args of [[], ['probe'], ['publish','--target','preview-reviewed'],
   test(`Actions arguments fail closed: ${args.join(' ') || '(empty)'}`, () => assert.throws(() => parseActionsArgs(args)));
 }
 
-test('default checked-in target configuration cannot accidentally contact any network', async t => {
+test('an unconfigured target cannot accidentally contact any network', async t => {
   let calls = 0;
   const result = await runActionsCommand(['probe','--target','preview-reviewed'], { env,
+    targetsInput: { schemaVersion: 1, siteID: PROJECT_SITE_ID, targets: {} },
     fetchImpl: async () => { calls++; throw new Error('PRIVATE_CREDENTIAL'); } });
   assert.equal(result.exitCode, 2);
   assert.equal(result.summary.reason, 'target_not_configured');

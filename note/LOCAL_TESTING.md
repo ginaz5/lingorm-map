@@ -473,7 +473,7 @@ POST 都 200，USD `100-50` 與 TWD `1000-100` 指定面額解析成功；不能
 
 已完成 runner、明確 target／control 管理、固定 site-wide source guard、probe 不發布、
 job／rerun／取消與逐店發布核心。新 workflow 只允許手動 inspect／probe，無 publish 或 schedule。
-`config/exchange-rates-1965-actions-targets.json` 的 targets 預設空；未設定即 fail closed，
+`config/exchange-rates-1965-actions-targets.json` 只接受經核對的明確 target；未設定即 fail closed，
 不會默用正式 target 或 `.env` 的日常 token。實際指令見 [Actions 維運文件](../docs/superrich1965-actions-runbook.zh-TW.md)。
 
 使用者已同意先保持正式網站不變，bootstrap 要核對最終 main commit 的 `[skip netlify]`；
@@ -489,6 +489,13 @@ job／rerun／取消與逐店發布核心。新 workflow 只允許手動 inspect
 sourceValidated=true 且 published=0 才通過 probe；cache hit／歷史 replay 不算來源成功。
 之後才驗 Preview 單店發布、pilot／38 家、列表與 Google／HERE，再安排正式排程。
 本次沒有設定 Secrets、執行 workflow、觸發來源或改正式部署。
+
+2026-10-21：已綁定 PR #8 的只讀 Preview `6ad779f97644e6fb5b04b05c`，
+建立只允許 main 的專用 Environment／site ID 及 paused source guard，並停用全部
+10 個退役前測試部署的來源 control，保留原 breaker／gate／job。Preview 快取 GET
+200、單店無報價 POST 503 符合只讀契約；794 項測試、typecheck、build 通過。
+專用 PAT Secret 已確認存在，權限尚未驗證；main bootstrap 及真實 probe 尚未完成，
+詳見上述維運文件的本次準備紀錄。
 
 ### Netlify 瀏覽器模式驗收
 

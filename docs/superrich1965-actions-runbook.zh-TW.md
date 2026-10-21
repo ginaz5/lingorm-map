@@ -1,7 +1,9 @@
 # SuperRich 1965：Actions 手動驗證與維運
 
-更新：2026-10-20。本機程式與 mock 已實作；尚未設定遠端 target、專用 PAT、
-GitHub Environment、source guard 或執行 workflow。正式網站保持原部署。
+更新：2026-10-21。本機程式與 mock 已實作；已核對並綁定 PR #8 的只讀 Preview，
+建立 main-only GitHub Environment 與 paused source guard。使用者已加入專用 PAT Secret，
+目前只確認 Secret 存在，尚未驗證憑證權限；main workflow bootstrap 尚未完成，
+未執行 workflow 或來源請求。正式網站保持原部署。
 計畫與證據見 [實作計畫](superrich1965-github-actions-plan.zh-TW.md)及
 [實作前調查](superrich1965-actions-research-2026-10-20.zh-TW.md)。
 
@@ -9,11 +11,37 @@ GitHub Environment、source guard 或執行 workflow。正式網站保持原部�
 
 - 新增 `fx:1965:actions`：inspect／probe／publish，以及獨立的 actions:control 管理工具。
 - 新 workflow 只接受手動 inspect／probe，不提供 publish、push／PR 自動抓價或 schedule。
-- `config/exchange-rates-1965-actions-targets.json` 的 targets 故意為空；任何未設定 target
-  都在讀 credentials、Netlify metadata 或來源之前失敗，不回退 production。
+- `config/exchange-rates-1965-actions-targets.json` 目前只設定已核對的 preview-reviewed；
+  任何未設定 target 都在讀 credentials、Netlify metadata 或來源之前失敗，不回退 production。
 - CLI 不自動載入 `.env`，避免默用日常管理 token。遠端設定時使用專用、有到期日的 PAT；
   憑證只放專用執行環境或 GitHub Environment，不放設定檔、命令參數或對話。
 - 用戶已同意日後沿用泰國 08:00～22:30 每半小時更新；目前不啟用排程，夜間報價仍按期撤下。
+
+## PR #8 本次準備紀錄
+
+- Preview deploy ID：`6ad779f97644e6fb5b04b05c`，context：`deploy-preview`。
+- Branch：`codex/superrich1965-on-demand`；commit：`74b9013494b94201bd0841ee8090f583c7994288`。
+- 固定測試網址：[此部署的 Preview](https://6ad779f97644e6fb5b04b05c--lingorm-map.netlify.app/)。
+  PR alias 若因後續 push 指向其他部署，Actions 仍寫入上述固定部署，須使用固定網址驗收，
+  或另行核對後重新綁定。
+- 快取 GET 回 200、空 quotes；單店 `superrich1965-58` POST 回 503 unavailable、
+  Retry-After 60，沒有建立 control、breaker、gate 或 job，也沒有來源請求。
+- `superrich1965-preview` Environment 已建立，deployment branch policy 只允許 main；
+  `NETLIFY_SITE_ID` 已設定，`NETLIFY_AUTH_TOKEN` Secret 已確認存在。
+  GitHub 不回傳 Secret 值，PAT 的實際權限與到期日仍須後續驗證。
+- 已查核並停用本分支全部 10 個退役前 Preview／branch 部署的來源 control。
+  操作只 CAS 寫 control；原 breaker、gate、job 逐一比對未變。未使用會重設 breaker
+  歷史的一般 disable 流程。正式站目前部署不含橘標來源入口，正式 control 未修改。
+- 共用 source guard 已建立，保持 paused、沒有 lease 或 unresolved attempt；保留
+  blockLevel=1 與原 blockedUntil=`2026-10-19T20:50:01.138Z`，不因歷史冷卻已過期而清除。
+  一次性退役及 paused bootstrap 使用既有本機管理憑證，未將該憑證移交 GitHub；
+  Actions 使用使用者另設的專用 PAT Secret，實際存取權限仍待 runner inspect 驗證。
+- 正式發布基準：deploy `6aba5d63729551000809bfa5`、commit
+  `9eeb498112230102c3cb39510247ad445bfb8582`。尚未合併 PR #8、推送 main 或啟動新部署。
+- 使用者已決定保留 PR #8 開啟，先不合併；下節的 main 合併 bootstrap 尚未授權。
+  目前 main 只有既有 CI Test，不能沿用它直接執行新 collector。若要在 PR #8 保持開啟時
+  做 GitHub runner 來源驗證，須另行審閱獨立 bootstrap 方案；不自行放寬 main-only
+  Environment、執行身分檢查，或偽造 GitHub 環境變數。本次 6 個檔案變更尚未 commit／push。
 
 ## 先完成本機審閱
 
@@ -31,10 +59,10 @@ netlify functions:build --src netlify/functions --functions /private/tmp/lingorm
 本次驗證：794 項 Node 測試、typecheck、Vite build、Functions 打包通過；
 workflow YAML／Bash 與文件連結檢查通過。全部來源流程使用 mock，未執行遠端 workflow。
 
-未設定 target 時，下列只讀命令預期以 `target_not_configured` 失敗：
+目前未設定 production target，下列只讀命令預期以 `target_not_configured` 失敗：
 
 ```bash
-npm run fx:1965:actions -- inspect --target preview-reviewed
+npm run fx:1965:actions -- inspect --target production
 ```
 
 這是 fail-closed 驗證，不能當作來源或 Blobs 網路成功。

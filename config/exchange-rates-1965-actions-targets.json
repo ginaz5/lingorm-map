@@ -1,5 +1,13 @@
 {
   "schemaVersion": 1,
   "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
-  "targets": {}
+  "targets": {
+    "preview-reviewed": {
+      "kind": "preview",
+      "deployID": "6ad779f97644e6fb5b04b05c",
+      "branch": "codex/superrich1965-on-demand",
+      "commit": "74b9013494b94201bd0841ee8090f583c7994288",
+      "context": "deploy-preview"
+    }
+  }
 }

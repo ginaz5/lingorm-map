@@ -13,11 +13,11 @@ const config = (targets = { 'preview-reviewed': preview() }) => ({ schemaVersion
 const metadata = (extra = {}) => ({ id: DEPLOY, site_id: PROJECT_SITE_ID, branch: 'codex/actions-test',
   commit_ref: COMMIT, context: 'deploy-preview', state: 'ready', ...extra });
 
-test('reviewed aliases resolve exactly; empty checked-in targets fail closed without HTTP or store access', async () => {
+test('reviewed aliases resolve exactly; empty targets fail closed without HTTP or store access', async () => {
   const target = resolveActionsTarget('preview-reviewed', config());
   assert.deepEqual(target, { alias: 'preview-reviewed', siteID: PROJECT_SITE_ID, ...preview() });
   assert.equal(Object.isFrozen(target), true);
-  await assert.rejects(openActionsTarget({ alias: 'preview-reviewed', env: ENV,
+  await assert.rejects(openActionsTarget({ alias: 'preview-reviewed', targetsInput: config({}), env: ENV,
     fetchImpl: async () => assert.fail('must not fetch without a reviewed target'),
     getStoreImpl: () => assert.fail('must not open a store without a reviewed target') }), /target_not_configured/);
 });
