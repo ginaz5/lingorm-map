@@ -4,6 +4,37 @@
 [Actions 維運文件](superrich1965-actions-runbook.zh-TW.md)。未完成的階段保持待驗收，
 不以 GitHub 綠燈、Preview 報價或歷史 replay 代替正式來源及發布驗收。
 
+## 首次實際排程失敗（2026-10-22）
+
+[Run 39730672160](https://github.com/ginaz5/lingorm-map/actions/runs/39730672160)
+為 event=schedule，台灣時間 13:54:06 建立、14:00:05 以 exitCode=1 結束。
+Workflow commit 為 `bf760512bbc70eed4517dfb9ec736eb3d3508c5d`，網站 target 仍是
+下表已審閱的正式 SHA；中間只有 `[skip netlify]` 文件提交，並非部署綁定失配。
+
+- requested=38、sourceSucceeded=34、published=34、failed=1、notAttempted=3，
+  共 36 次來源 HTTP；GitHub 的「All jobs have failed」表示唯一 job 失敗，並非 38 店皆失敗。
+- 前 34 店成功；第 35 店 `superrich1965-92` 尚未送 rate POST，就在重新取得 token
+  時停止。Callback 回 HTTP 200／JSON、無 challenge，diagnostic reason=`invalid`。
+  剩餘 93／110／112 未嘗試；本輪沒有 403／429 證據。
+- 現有 log 將 JSON／token 格式錯誤及到期／接近到期都記成 `invalid`，未保存原始
+  token 或 body，因此無法從這次紀錄確認具體原因。跨過整點只是時間上的線索，
+  不能認定是 token 到期或官網快取問題。
+- 台灣時間 14:10:11 正式 cache GET 仍回 34 店有效 quote，期限均為 14:35，
+  沒有把未成功的四店補上報價或延長期限。隨後只讀查核確認 control 啟用、正式部署
+  身分相符、共同 guard 未 paused、blockLevel=2 保留、lease 與 unresolved 均為空；
+  普通失敗的 60 秒來源間隔已過，未清冷卻、重跑或改遠端控制。
+
+本機修正將 token 失敗診斷細分為 `invalid_token_json`／`invalid_token_value`／
+`expired_token`／`near_expiry_token`，並在 Actions summary 顯示成功、失敗、未嘗試數量
+及停止分店、HTTP stage／status／診斷。保留 30 秒安全邊界、失敗停輪及禁止重試；
+模擬 34 店發布後更新 token 失敗，驗證舊 quote、guard 結案與零來源 replay。
+這是診斷改善，不能描述成來源已修復或正式排程已恢復；須經審閱上線及後續實際
+schedule 結果才能確認穩定性。
+
+本機驗證：122 項 focused Node 測試、完整 852 項 Node 測試、14 項 Python 離線測試、
+strict checkJs、Vite／Functions build（輸出至 `/private/tmp`）及 `git diff --check` 通過。
+調查與驗證期間未推送或部署；沒有另發真實來源請求。
+
 ## 發布與控制身分
 
 | 項目 | 已核對值 |
@@ -43,7 +74,7 @@ strict checkJs、Vite／Functions build、snapshot／收藏／mapping 驗證通�
 | 五店 | [39693450584](https://github.com/ginaz5/lingorm-map/actions/runs/39693450584) | 4 | 1 | 5 | coverage=5；cache GET／5 店 POST 都 200，沿用單店 58 的原 quote |
 | 全店 | [39694052646](https://github.com/ginaz5/lingorm-map/actions/runs/39694052646) | 38 | 0 | 39 | coverage=38、sourceValidated=true，GET／38 店 POST 都 200 |
 | 正式地圖及排序 | 現場瀏覽器 | — | — | 0 | Google SDK／圖磚／popup、中英文及 USD／TWD 最佳排序通過；HERE／期限證據見下文 |
-| 真正定時更新 | — | — | — | — | 排程已啟用；首兩輪預定台灣時間 10 月 22 日 09:00／09:30，結果待驗收 |
+| 真正定時更新 | [39730672160](https://github.com/ginaz5/lingorm-map/actions/runs/39730672160) | 34 | 0 | 36 | token 更新驗證失敗，1 店失敗、3 店未嘗試；詳見上方紀錄，尚未通過排程驗收 |
 
 單店於台灣時間 07:24 新取並發布，coverage=1；GET cache 與單店 POST 均回 200，
 對應相同 quote，讀取前後 control／breaker／gate／job／operation／source guard 未變。
@@ -79,7 +110,8 @@ production metadata 仍為上表部署及 SHA，source-resume 成功且 paused=f
 leaseId=null、leaseUntilMs=0、unresolvedAttempt=null，原 control、sourceEpoch、
 blockLevel=2 及已過期冷卻歷史皆保留，沒有其他 active GitHub 來源工作。
 這是核對時間，不當作精確設定變更時間。預定首兩輪為台灣時間 09:00／09:30，
-截至本次紀錄均尚未發生，沒有記為成功；每日執行窗為台灣 09:00～23:30。
+啟用時尚未發生，沒有記為成功；本次查到的首輪實際結果見上方失敗紀錄。
+每日執行窗為台灣 09:00～23:30。
 
 來源 403／429／challenge、格式錯誤、缺面額、timeout 或發布失敗都停止該輪，保留
 已成功及未過期 quote。共同 guard 已有兩級歷史，再次 challenge 可能升第三級暫停；

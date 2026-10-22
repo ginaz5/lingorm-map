@@ -27,7 +27,11 @@ USD／TWD 排序已實測，HERE 的隔離及離線到期範圍詳見
 [正式上線紀錄](superrich1965-production-release.zh-TW.md)。
 人工全店完成後先 pause；台灣時間 2026-10-22 07:41 已核對排程開關為 true、
 guard resumed、無 lease／unresolved，control／epoch／blockLevel=2 均不變。
-排程已啟用，首兩輪預定台灣時間 09:00／09:30，實際 schedule 結果仍待驗收。
+排程已啟用，首兩輪原預定台灣時間 09:00／09:30。首次查到的實際 schedule
+[39730672160](https://github.com/ginaz5/lingorm-map/actions/runs/39730672160)
+於 13:54 建立，成功發布 34 店後，更新 token 的 HTTP 200 回應未通過驗證，
+1 店失敗、3 店未嘗試，exitCode=1；排程尚未通過驗收。
+詳細證據與目前無法確認的原因見[正式上線紀錄](superrich1965-production-release.zh-TW.md)。
 
 沿用 main-only Environment `superrich1965-preview` 與既有專用 PAT Secret、site ID
 variable。名稱沿用，實際可供兩個明確 target；不代表 PAT 只限單一 store。
@@ -75,6 +79,14 @@ Repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 必須明確為 `true
 兩層檢查，預設不執行。Schedule 固定 production／`publish-all-python`，核對 repo、main
 及 UTC cron `0,30 1-15 * * *`（泰國 08:00～22:30，每天 30 輪）。預定觸發可能延遲。
 手動 dispatch、純 cache hit 或歷史 replay 不能代替真實定時取價驗收。
+
+失敗時先看 summary 的 Published／Failed／Not attempted 與停止分店，避免將單一 job
+失敗解讀為全部分店皆失敗。舊版 token diagnostic 的 `invalid` 無法區分失敗類型；
+本機準備的診斷修正將細分為 `invalid_token_json`（JSON／大小不符）、
+`invalid_token_value`（token 缺少／格式不符）、`expired_token`（已到期）、
+`near_expiry_token`（距到期不超過 30 秒），保留一般來源結果與停止規則。
+這些新欄位尚須經審閱上線；不以舊 log 的 `invalid` 推定為已到期，不記錄 token、
+claims 或原始 body，也不為取證而繞過 guard、縮短安全邊界或額外重試。
 
 管理命令使用 `node --env-file-if-exists=.env scripts/exchange-rates-1965-actions-control.mjs`
 加上 `status|enable|source-status|source-resume|source-pause --target production`；正式 target

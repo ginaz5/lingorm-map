@@ -116,7 +116,7 @@ test('fresh expired or near-expiry tokens never authorize a rate request', async
     } });
     await assert.rejects(request(source), error => {
       assert.equal(error.message, 'anonymous_source_failed');
-      assert.equal(readSourceRequests(error)[0].reason, 'invalid');
+      assert.equal(readSourceRequests(error)[0].reason, remainingSeconds <= 0 ? 'expired_token' : 'near_expiry_token');
       return true;
     });
     assert.deepEqual(calls, [TOKEN_URL]);
@@ -145,16 +145,19 @@ test('callback HTTP blocks are returned to the collector and stop the session wi
 });
 
 test('malformed callback JSON or token never reaches the rate endpoint or exposes payload text', async () => {
-  const responses = [() => new Response('invalid callback body with private-content'),
-    () => Response.json({}), () => Response.json({ accessToken: 123 }),
-    () => Response.json({ accessToken: 'test-token\ninvalid' }),
-    () => new Response(' '.repeat(65_536) + JSON.stringify({ accessToken: 'test-token' }))];
-  for (const respond of responses) {
+  const responses = [
+    [() => new Response('invalid callback body with private-content'), 'invalid_token_json'],
+    [() => Response.json({}), 'invalid_token_value'],
+    [() => Response.json({ accessToken: 123 }), 'invalid_token_value'],
+    [() => Response.json({ accessToken: 'test-token\ninvalid' }), 'invalid_token_value'],
+    [() => new Response(' '.repeat(65_536) + JSON.stringify({ accessToken: 'test-token' })), 'invalid_token_json'],
+  ];
+  for (const [respond, reason] of responses) {
     let calls = 0;
     const source = createAnonymousApiSource({ fetchImpl: async () => { calls++; return respond(); } });
     await assert.rejects(request(source), error => {
       assert.equal(error.message, 'anonymous_source_failed');
-      assert.equal(readSourceRequests(error)[0].reason, 'invalid');
+      assert.equal(readSourceRequests(error)[0].reason, reason);
       assert.equal(JSON.stringify(readSourceRequests(error)).includes('private-content'), false);
       return true;
     });

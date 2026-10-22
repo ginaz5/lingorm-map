@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { ORANGE_BRANCHES } from '../../../src/data/exchange-rates-1965-branch.js';
 import { conditionalSetJSON, readEntry } from './exchange-rates-1965-storage.mjs';
+import { TOKEN_FAILURE_REASONS } from './exchange-rates-1965-source-telemetry.mjs';
 
 export const ACTIONS_BUDGET_MS = 12 * 60_000;
 export const ACTIONS_JOB_KEY = 'exchange-rates-1965/actions/job';
@@ -23,7 +24,7 @@ const SAFE_REASONS = new Set(['busy', 'cooldown', 'disabled', 'stale_control', '
   'guard_invalid', 'guard_unavailable', 'guard_busy', 'guard_paused', 'guard_cooldown', 'operation_conflict',
   'operation_abandoned', 'invalid_operation', 'publication_failed', 'http_error', 'timeout', 'invalid', 'cancelled',
   'source_guard_missing', 'source_guard_invalid', 'source_guard_unavailable', 'source_epoch_mismatch',
-  'source_guard_conflict', 'lease_expired', 'invalid_guard_input', 'stale_target']);
+  'source_guard_conflict', 'lease_expired', 'invalid_guard_input', 'stale_target', ...TOKEN_FAILURE_REASONS]);
 const SKIP_REASONS = new Set(['busy', 'cooldown', 'disabled', 'stale_control', 'paused']);
 /** @param {unknown} value @returns {value is Record<string,any>} */
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);

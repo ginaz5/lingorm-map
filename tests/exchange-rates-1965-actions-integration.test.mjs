@@ -650,8 +650,58 @@ test('an abort during source work leaves a durable unknown result and no publica
 });
 
 test('summary renders only allowed values and never upstream or arbitrary error text', () => {
-  const summary = renderActionsSummary({ outcome:'<script>PRIVATE</script>', reason:'PRIVATE_AUTH=secret', sourceRequestCount:-1 });
+  const summary = renderActionsSummary({ outcome:'<script>PRIVATE</script>', reason:'PRIVATE_AUTH=secret', sourceRequestCount:-1,
+    stoppedSlug: 'superrich1965-92', results: [{ slug: 'superrich1965-92', diagnostics: [
+      { stage: 'token', status: 'PRIVATE_STATUS', reason: 'PRIVATE_REASON', body: 'PRIVATE_BODY', accessToken: 'PRIVATE_TOKEN' },
+    ] }] });
   assert.doesNotMatch(summary, /PRIVATE|script|secret/);
+  assert.match(summary, /HTTP status: unavailable/);
+  assert.match(summary, /Diagnostic: unavailable/);
+});
+
+for (const [reason, response] of [
+  ['invalid_token_json', () => new Response('PRIVATE_BODY')],
+  ['invalid_token_value', () => Response.json({ accessToken: 'PRIVATE_INVALID TOKEN' })],
+  ['expired_token', () => Response.json({ accessToken: 'PRIVATE_TOKEN', expires_in: 0 })],
+  ['near_expiry_token', () => Response.json({ accessToken: 'PRIVATE_TOKEN', expires_in: 20 })],
+]) test(`full batch retains 34 published quotes and diagnoses token renewal ${reason} without retry`, async t => {
+  const h = await harness(t);
+  let tokenCalls = 0;
+  h.tokenResponse = () => ++tokenCalls === 1
+    ? Response.json({ accessToken: 'PRIVATE_SOURCE_TOKEN', expires_in: 370 }) : response();
+  h.rateResponse = () => { h.advance(8000); return Response.json(FIXTURE); };
+  h.input.pythonFetchImpl = h.input.fetchImpl;
+  h.input.fetchImpl = async () => assert.fail('no Node fallback');
+  const result = await h.run('publish-all-python');
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.summary.published, 34);
+  assert.equal(result.summary.failed, 1);
+  assert.equal(result.summary.notAttempted, 3);
+  assert.equal(result.summary.sourceRequestCount, 36);
+  assert.equal(result.summary.stoppedSlug, 'superrich1965-92');
+  assert.deepEqual(result.summary.results[34].diagnostics, [{ stage: 'token', status: 200, challenge: false, reason }]);
+  assert.equal(tokenCalls, 2);
+  assert.equal(h.calls.length, 36);
+  for (const entry of result.summary.results.slice(0, 34)) assert.ok(h.store.entries.has(branchCacheKey(entry.slug)));
+  for (const entry of result.summary.results.slice(34)) assert.equal(h.store.entries.has(branchCacheKey(entry.slug)), false);
+  const guard = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
+  assert.equal(guard.unresolvedAttempt, null);
+  assert.equal(guard.leaseId, null);
+  const summary = renderActionsSummary(result.summary);
+  assert.match(summary, /\| Published \| 34 \|/);
+  assert.match(summary, /\| Failed \| 1 \|/);
+  assert.match(summary, /\| Not attempted \| 3 \|/);
+  assert.match(summary, /Stopped branch: superrich1965-92/);
+  assert.match(summary, /Source stage: token/);
+  assert.match(summary, /HTTP status: 200/);
+  assert.ok(summary.includes(`Diagnostic: ${reason}`));
+  assert.doesNotMatch(JSON.stringify(result) + summary, /PRIVATE/);
+  const replay = await h.run('publish-all-python');
+  assert.equal(replay.exitCode, 1);
+  assert.equal(replay.summary.replayed, true);
+  assert.equal(replay.summary.sourceRequestCount, 0);
+  assert.deepEqual(replay.summary.results[34].diagnostics, result.summary.results[34].diagnostics);
+  assert.equal(h.calls.length, 36);
 });
 
 test('same-run replay preserves a failed token challenge instead of turning cooldown into green skip', async t => {

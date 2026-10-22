@@ -5,6 +5,11 @@
 /** @type {WeakMap<object, SourceRequestDiagnostic[]>} */
 const observations = new WeakMap();
 
+// Fixed classifications only; never include the callback body or token claims.
+export const TOKEN_FAILURE_REASONS = Object.freeze([
+  'invalid_token_json', 'invalid_token_value', 'expired_token', 'near_expiry_token',
+]);
+
 /** @template {object} T @param {T} target @param {SourceRequestDiagnostic[]} diagnostics @returns {T} */
 export function recordSourceRequests(target, diagnostics) {
   observations.set(target, diagnostics);
