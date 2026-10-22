@@ -652,7 +652,8 @@ test('an abort during source work leaves a durable unknown result and no publica
 test('summary renders only allowed values and never upstream or arbitrary error text', () => {
   const summary = renderActionsSummary({ outcome:'<script>PRIVATE</script>', reason:'PRIVATE_AUTH=secret', sourceRequestCount:-1,
     stoppedSlug: 'superrich1965-92', results: [{ slug: 'superrich1965-92', diagnostics: [
-      { stage: 'token', status: 'PRIVATE_STATUS', reason: 'PRIVATE_REASON', body: 'PRIVATE_BODY', accessToken: 'PRIVATE_TOKEN' },
+      { stage: 'token', status: 'PRIVATE_STATUS', reason: 'PRIVATE_REASON', body: 'PRIVATE_BODY', accessToken: 'PRIVATE_TOKEN',
+        tokenRemainingSeconds: 'PRIVATE_SECONDS', tokenReissued: 'PRIVATE_FLAG' },
     ] }] });
   assert.doesNotMatch(summary, /PRIVATE|script|secret/);
   assert.match(summary, /HTTP status: unavailable/);
@@ -663,7 +664,7 @@ for (const [reason, response] of [
   ['invalid_token_json', () => new Response('PRIVATE_BODY')],
   ['invalid_token_value', () => Response.json({ accessToken: 'PRIVATE_INVALID TOKEN' })],
   ['expired_token', () => Response.json({ accessToken: 'PRIVATE_TOKEN', expires_in: 0 })],
-  ['near_expiry_token', () => Response.json({ accessToken: 'PRIVATE_TOKEN', expires_in: 20 })],
+  ['near_expiry_token', () => Response.json({ accessToken: 'PRIVATE_SOURCE_TOKEN', expires_in: 20 })],
 ]) test(`full batch retains 34 published quotes and diagnoses token renewal ${reason} without retry`, async t => {
   const h = await harness(t);
   let tokenCalls = 0;
@@ -679,7 +680,9 @@ for (const [reason, response] of [
   assert.equal(result.summary.notAttempted, 3);
   assert.equal(result.summary.sourceRequestCount, 36);
   assert.equal(result.summary.stoppedSlug, 'superrich1965-92');
-  assert.deepEqual(result.summary.results[34].diagnostics, [{ stage: 'token', status: 200, challenge: false, reason }]);
+  const timing = reason === 'expired_token' ? { tokenRemainingSeconds: 0, tokenReissued: 0 }
+    : reason === 'near_expiry_token' ? { tokenRemainingSeconds: 20, tokenReissued: 1 } : {};
+  assert.deepEqual(result.summary.results[34].diagnostics, [{ stage: 'token', status: 200, challenge: false, reason, ...timing }]);
   assert.equal(tokenCalls, 2);
   assert.equal(h.calls.length, 36);
   for (const entry of result.summary.results.slice(0, 34)) assert.ok(h.store.entries.has(branchCacheKey(entry.slug)));
@@ -695,6 +698,10 @@ for (const [reason, response] of [
   assert.match(summary, /Source stage: token/);
   assert.match(summary, /HTTP status: 200/);
   assert.ok(summary.includes(`Diagnostic: ${reason}`));
+  if (reason === 'near_expiry_token') {
+    assert.match(summary, /Token remaining seconds \(bounded to ±86400\): 20/);
+    assert.match(summary, /Callback returned previous token: yes/);
+  }
   assert.doesNotMatch(JSON.stringify(result) + summary, /PRIVATE/);
   const replay = await h.run('publish-all-python');
   assert.equal(replay.exitCode, 1);

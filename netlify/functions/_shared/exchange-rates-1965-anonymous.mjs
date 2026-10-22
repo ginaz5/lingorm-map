@@ -92,6 +92,7 @@ export function createAnonymousApiSource({ fetchImpl = fetch, nowImpl = Date.now
       if (closed || failed) throw new Error('anonymous_source_unavailable');
       signal?.throwIfAborted();
       let token = cachedToken;
+      const previousValue = token?.value ?? null;
       if (token && token.expiresAtMs <= nowImpl() + TOKEN_SAFETY_MS) token = cachedToken = null;
       if (!token) {
         const startedAtMs = nowImpl();
@@ -120,6 +121,11 @@ export function createAnonymousApiSource({ fetchImpl = fetch, nowImpl = Date.now
           throw new Error('invalid_anonymous_token');
         }
         const expiresAtMs = tokenExpiry(value, payload?.expires_in, startedAtMs);
+        // Derived timing and an equality flag identify stale callback responses
+        // without retaining a token, fingerprint, or JWT claims in diagnostics.
+        observation.tokenReissued = previousValue === null ? null : Number(value === previousValue);
+        observation.tokenRemainingSeconds = expiresAtMs === null ? null
+          : Math.max(-86_400, Math.min(86_400, Math.floor((expiresAtMs - nowImpl()) / 1_000)));
         if (expiresAtMs !== null && expiresAtMs <= nowImpl() + TOKEN_SAFETY_MS) {
           observation.reason = expiresAtMs <= nowImpl() ? 'expired_token' : 'near_expiry_token';
           throw new Error('expired_anonymous_token');

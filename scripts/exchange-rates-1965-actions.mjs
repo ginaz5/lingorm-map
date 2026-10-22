@@ -159,7 +159,11 @@ export function renderActionsSummary(summary) {
   const last = Array.isArray(stopped?.diagnostics) ? stopped.diagnostics.at(-1) : null;
   const detail = last && ['token', 'rate'].includes(last.stage)
     ? `\nStopped branch: ${stoppedSlug}\n\nSource stage: ${last.stage}\n\nHTTP status: ${Number.isInteger(last.status) && last.status >= 100 && last.status <= 599 ? last.status : 'unavailable'}\n\n` +
-      `Diagnostic: ${[...TOKEN_FAILURE_REASONS, 'invalid', 'timeout', 'http_error'].includes(last.reason) ? last.reason : 'unavailable'}\n`
+      `Diagnostic: ${[...TOKEN_FAILURE_REASONS, 'invalid', 'timeout', 'http_error'].includes(last.reason) ? last.reason : 'unavailable'}\n` +
+      (last.stage === 'token' && Number.isSafeInteger(last.tokenRemainingSeconds) && Math.abs(last.tokenRemainingSeconds) <= 86_400
+        ? `\nToken remaining seconds (bounded to ±86400): ${last.tokenRemainingSeconds}\n` : '') +
+      (last.stage === 'token' && (last.tokenReissued === 0 || last.tokenReissued === 1)
+        ? `\nCallback returned previous token: ${last.tokenReissued === 1 ? 'yes' : 'no'}\n` : '')
     : '';
   return `## SuperRich 1965\n\nOutcome: ${text(summary.outcome ?? summary.status)}\n\n` +
     `| Metric | Count |\n| --- | ---: |\n| Requested | ${count(summary.requested)} |\n| Cache hit | ${count(summary.cacheHit)} |\n` +

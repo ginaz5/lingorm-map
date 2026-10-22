@@ -84,7 +84,11 @@ function safeDiagnostics(value) {
   return Array.isArray(value) ? value.slice(0, 2).filter(entry => isObject(entry) && ['token', 'rate'].includes(entry.stage))
     .map(entry => ({ stage: entry.stage, status: Number.isInteger(entry.status) && entry.status >= 100 && entry.status <= 599 ? entry.status : null,
       challenge: entry.cfMitigated === 'challenge' || entry.challenge === true,
-      reason: entry.reason === null || entry.reason === undefined ? null : safeReason(entry.reason) })) : [];
+      reason: entry.reason === null || entry.reason === undefined ? null : safeReason(entry.reason),
+      ...(entry.stage === 'token' && Number.isSafeInteger(entry.tokenRemainingSeconds) && Math.abs(entry.tokenRemainingSeconds) <= 86_400
+        ? { tokenRemainingSeconds: entry.tokenRemainingSeconds } : {}),
+      ...(entry.stage === 'token' && (entry.tokenReissued === 0 || entry.tokenReissued === 1) ? { tokenReissued: entry.tokenReissued } : {}),
+    })) : [];
 }
 
 /** @param {unknown} value @param {string} slug @param {string} mode */

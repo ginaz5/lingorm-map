@@ -124,6 +124,29 @@ test('fresh expired or near-expiry tokens never authorize a rate request', async
   }
 });
 
+test('callback returning the same near-expiry JWT stops renewal without retrying or posting a rate', async () => {
+  let now = START;
+  const value = tokenWithExpiry((START + 370_000) / 1000);
+  const calls = [];
+  const source = createAnonymousApiSource({ nowImpl: () => now, fetchImpl: async url => {
+    calls.push(url);
+    return url === TOKEN_URL ? tokenResponse({ accessToken: value }) : Response.json({ ok: true });
+  } });
+  await request(source);
+  now += 342_000; // The original JWT is still valid but has only 28 seconds left.
+  await assert.rejects(request(source), error => {
+    assert.deepEqual(readSourceRequests(error).map(entry => [entry.stage, entry.status, entry.reason]),
+      [['token', 200, 'near_expiry_token']]);
+    assert.equal(readSourceRequests(error)[0].tokenRemainingSeconds, 28);
+    assert.equal(readSourceRequests(error)[0].tokenReissued, 1);
+    assert.equal(JSON.stringify(readSourceRequests(error)).includes(value), false);
+    return true;
+  });
+  await assert.rejects(request(source));
+  assert.deepEqual(calls, [TOKEN_URL, RATE_URL, TOKEN_URL]);
+  await source.close();
+});
+
 test('callback HTTP blocks are returned to the collector and stop the session without POST or fallback', async () => {
   for (const [status, challenge] of [[403, false], [429, false], [200, true], [401, false], [500, false]]) {
     let calls = 0;

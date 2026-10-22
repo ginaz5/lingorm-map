@@ -35,6 +35,25 @@ schedule 結果才能確認穩定性。
 strict checkJs、Vite／Functions build（輸出至 `/private/tmp`）及 `git diff --check` 通過。
 調查與驗證期間未推送或部署；沒有另發真實來源請求。
 
+### 後續比對與取證準備
+
+[Run 39771123990](https://github.com/ginaz5/lingorm-map/actions/runs/39771123990)
+於台灣時間 19:30:42 建立，19:35:53 已完成最後一店；同一 workflow commit、
+同一正式 target，38 店全新取／發布、39 次來源 HTTP、failed=0。
+全輪只有首次 token GET，沒有 token 更新；這能證明後續全店成功，不能驗證
+失敗時的 token 更新已修復。原失敗 run 的 artifacts API 為 total_count=0。
+
+程式路徑確認：已重用 34 店的第一個 token，只有在剩餘有效期不超過 30 秒時才會
+被丟棄並重新 GET callback。若 callback 仍回同一個接近到期的 token，新的驗證會
+立刻停止；本機用同一個 JWT、剩餘 28 秒重現，沒有再 POST rate 或重試。
+這是可重現的候選原因，尚未證明原 14:00 回應的內容就是此情況。
+
+本次診斷追加僅管理端可見的 `tokenRemainingSeconds`（剩餘秒數，限制 ±86400）
+與 `tokenReissued`（同一 session 的更新是否回相同 token，0／1）；不保存 token、
+fingerprint、JWT claims 或 body。原本的 main-only、固定 target、source guard、
+lease、冷卻與零重試都保留。使用者已授權推送、開 PR、驗證後合併並以受控流程
+取證；最終合併訊息須含 `[skip netlify]`，保留目前正式網站部署與 target SHA。
+
 ## 發布與控制身分
 
 | 項目 | 已核對值 |

@@ -87,6 +87,8 @@ Repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 必須明確為 `true
 `near_expiry_token`（距到期不超過 30 秒），保留一般來源結果與停止規則。
 這些新欄位尚須經審閱上線；不以舊 log 的 `invalid` 推定為已到期，不記錄 token、
 claims 或原始 body，也不為取證而繞過 guard、縮短安全邊界或額外重試。
+Token 診斷另以有界 `tokenRemainingSeconds` 與 session 內 `tokenReissued`（0／1）
+區分 callback 是否仍回傳前一個、接近到期的 token；不輸出 token 或 fingerprint。
 
 管理命令使用 `node --env-file-if-exists=.env scripts/exchange-rates-1965-actions-control.mjs`
 加上 `status|enable|source-status|source-resume|source-pause --target production`；正式 target
