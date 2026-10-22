@@ -10,6 +10,7 @@ import { EXCHANGE_KEYS, isValidBreaker } from '../netlify/functions/_shared/exch
 import { queryBranchRates } from '../netlify/functions/_shared/exchange-rates-1965-on-demand.mjs';
 import { readSourceGuard } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
 import { readEntry } from '../netlify/functions/_shared/exchange-rates-1965-storage.mjs';
+import { TOKEN_FAILURE_REASONS } from '../netlify/functions/_shared/exchange-rates-1965-source-telemetry.mjs';
 
 const REPOSITORY = 'ginaz5/lingorm-map';
 const SINGLE_SLUG = 'superrich1965-58';
@@ -151,11 +152,24 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
 export function renderActionsSummary(summary) {
   const count = (/** @type {unknown} */ value) => Number.isSafeInteger(value) && Number(value) >= 0 ? String(value) : '0';
   const text = (/** @type {unknown} */ value) => typeof value === 'string' && /^[a-z0-9_\-]{1,64}$/.test(value) ? value : 'unavailable';
+  const stoppedSlug = typeof summary.stoppedSlug === 'string' && /^superrich1965-[1-9][0-9]{0,2}$/.test(summary.stoppedSlug)
+    ? summary.stoppedSlug : null;
+  const stopped = stoppedSlug && Array.isArray(summary.results)
+    ? summary.results.find((/** @type {any} */ result) => result?.slug === stoppedSlug) : null;
+  const last = Array.isArray(stopped?.diagnostics) ? stopped.diagnostics.at(-1) : null;
+  const detail = last && ['token', 'rate'].includes(last.stage)
+    ? `\nStopped branch: ${stoppedSlug}\n\nSource stage: ${last.stage}\n\nHTTP status: ${Number.isInteger(last.status) && last.status >= 100 && last.status <= 599 ? last.status : 'unavailable'}\n\n` +
+      `Diagnostic: ${[...TOKEN_FAILURE_REASONS, 'invalid', 'timeout', 'http_error'].includes(last.reason) ? last.reason : 'unavailable'}\n` +
+      (last.stage === 'token' && Number.isSafeInteger(last.tokenRemainingSeconds) && Math.abs(last.tokenRemainingSeconds) <= 86_400
+        ? `\nToken remaining seconds (bounded to ±86400): ${last.tokenRemainingSeconds}\n` : '') +
+      (last.stage === 'token' && (last.tokenReissued === 0 || last.tokenReissued === 1)
+        ? `\nCallback returned previous token: ${last.tokenReissued === 1 ? 'yes' : 'no'}\n` : '')
+    : '';
   return `## SuperRich 1965\n\nOutcome: ${text(summary.outcome ?? summary.status)}\n\n` +
     `| Metric | Count |\n| --- | ---: |\n| Requested | ${count(summary.requested)} |\n| Cache hit | ${count(summary.cacheHit)} |\n` +
-    `| Source succeeded | ${count(summary.sourceSucceeded)} |\n| Published | ${count(summary.published)} |\n| Source HTTP requests | ${count(summary.sourceRequestCount)} |\n\n` +
+    `| Source succeeded | ${count(summary.sourceSucceeded)} |\n| Published | ${count(summary.published)} |\n| Failed | ${count(summary.failed)} |\n| Not attempted | ${count(summary.notAttempted)} |\n| Source HTTP requests | ${count(summary.sourceRequestCount)} |\n\n` +
     `Source validated this run: ${summary.sourceValidated === true && !summary.replayed ? 'yes' : 'no'}\n\n` +
-    `Mode: ${text(summary.mode)}\n\nReason: ${text(summary.reason ?? 'none')}\n`;
+    `Mode: ${text(summary.mode)}\n\nReason: ${text(summary.reason ?? 'none')}\n` + detail;
 }
 
 async function main() {

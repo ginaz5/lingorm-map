@@ -1,6 +1,6 @@
 import { branchQuoteFailure1965, DENOMS_1965, parseBranchExchange1965 } from '../../../src/data/exchange-rates-1965.js';
 import { parseRetryAfter } from './exchange-rates-1965-breaker.mjs';
-import { readSourceRequests } from './exchange-rates-1965-source-telemetry.mjs';
+import { readSourceRequests, TOKEN_FAILURE_REASONS } from './exchange-rates-1965-source-telemetry.mjs';
 
 export const SOURCE_BASE_URL = 'https://www.superrich1965.com/spr/front/exchange-rate';
 export const SOURCE_TIMEOUT_MS = 5_000;
@@ -170,7 +170,8 @@ function createPacedRequester({ fetchImpl, nowImpl, sleepImpl, functionStartedAt
         return { kind: 'blocked', status: challenge.status ?? 403,
           retryAfterMs: parseRetryAfter(challenge.retryAfter, nowImpl()) };
       }
-      if (entries.some(entry => entry.reason === 'invalid')) return { kind: 'fatal', reason: 'invalid' };
+      if (entries.some(entry => entry.reason === 'invalid' ||
+          (typeof entry.reason === 'string' && TOKEN_FAILURE_REASONS.includes(entry.reason)))) return { kind: 'fatal', reason: 'invalid' };
       return { kind: 'retryable', reason };
     } finally {
       clearTimeout(timeoutId);

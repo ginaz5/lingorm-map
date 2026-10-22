@@ -92,6 +92,7 @@ export function createAnonymousApiSource({ fetchImpl = fetch, nowImpl = Date.now
       if (closed || failed) throw new Error('anonymous_source_unavailable');
       signal?.throwIfAborted();
       let token = cachedToken;
+      const previousValue = token?.value ?? null;
       if (token && token.expiresAtMs <= nowImpl() + TOKEN_SAFETY_MS) token = cachedToken = null;
       if (!token) {
         const startedAtMs = nowImpl();
@@ -111,17 +112,22 @@ export function createAnonymousApiSource({ fetchImpl = fetch, nowImpl = Date.now
           if (text.length > 65_536) throw new Error('invalid_anonymous_token');
           payload = JSON.parse(text);
         }
-        catch { observation.reason = signal?.aborted ? 'timeout' : 'invalid'; throw new Error('invalid_anonymous_token'); }
+        catch { observation.reason = signal?.aborted ? 'timeout' : 'invalid_token_json'; throw new Error('invalid_anonymous_token'); }
         signal?.throwIfAborted();
         if (closed) throw new Error('anonymous_source_unavailable');
         const value = payload?.accessToken;
         if (typeof value !== 'string' || !value || value.length > 16_384 || !/^[A-Za-z0-9._~+\/-]+={0,2}$/.test(value)) {
-          observation.reason = 'invalid';
+          observation.reason = 'invalid_token_value';
           throw new Error('invalid_anonymous_token');
         }
         const expiresAtMs = tokenExpiry(value, payload?.expires_in, startedAtMs);
+        // Derived timing and an equality flag identify stale callback responses
+        // without retaining a token, fingerprint, or JWT claims in diagnostics.
+        observation.tokenReissued = previousValue === null ? null : Number(value === previousValue);
+        observation.tokenRemainingSeconds = expiresAtMs === null ? null
+          : Math.max(-86_400, Math.min(86_400, Math.floor((expiresAtMs - nowImpl()) / 1_000)));
         if (expiresAtMs !== null && expiresAtMs <= nowImpl() + TOKEN_SAFETY_MS) {
-          observation.reason = 'invalid';
+          observation.reason = expiresAtMs <= nowImpl() ? 'expired_token' : 'near_expiry_token';
           throw new Error('expired_anonymous_token');
         }
         // Unknown TTL permits this one quote only, never cross-quote reuse.

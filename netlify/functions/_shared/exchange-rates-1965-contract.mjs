@@ -228,6 +228,10 @@ export function sanitizeDiagnostics(value) {
       const raw = entry[key];
       clean[key] = typeof raw === 'string' ? raw.replace(/[^\x20-\x7e]/g, '').slice(0, 100) : null;
     }
+    if (entry.stage === 'token') {
+      if (Number.isSafeInteger(entry.tokenRemainingSeconds) && Math.abs(entry.tokenRemainingSeconds) <= 86_400) clean.tokenRemainingSeconds = entry.tokenRemainingSeconds;
+      if (entry.tokenReissued === 0 || entry.tokenReissued === 1) clean.tokenReissued = entry.tokenReissued;
+    }
     return clean;
   });
 }
