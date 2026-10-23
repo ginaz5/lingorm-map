@@ -3,7 +3,8 @@
 橘標改由 Netlify Scheduled Function 在泰國時間 08:00～22:30 每半小時派送背景工作。
 排程為 UTC `0,30 1-15 * * *`；台灣時間為 09:00～23:30。排程函式只派送，
 完整取價與逐店發布在 Background Function 中執行，整輪應用預算 12 分鐘。
-實際部署、切換及定時驗收狀態另記於部署驗收文件，不以程式存在表示已啟用。
+實際部署、切換及定時驗收狀態見[部署驗收文件](superrich1965-netlify-cutover-2026-10-23.zh-TW.md)，
+不以程式存在表示已啟用。
 
 ## 綁定與安全界線
 
@@ -17,7 +18,9 @@
 - 來源延用共同 source guard、原 epoch、冷卻／breaker 歷史、CAS lease 與 unresolved
   marker；不因切換平台而 bootstrap、輪替或清冷卻。
 - Python／Safari helper 固定使用現有 38 店 mapping、parser、token 生命週期、
-  逐店 2～5 秒間隔，遇失敗即停、不新增來源 retry 或 Node fallback。
+  逐店 2～5 秒間隔，遇失敗即停、不新增來源 retry 或 Node fallback。唯一例外：
+  token callback GET 若因單次 25 秒逾時失敗，同一 quote 內重試一次（見
+  `note/TECH_DECISIONS.md` 2026-10-23）；rate POST 與其他失敗不重試。
 - GitHub workflow 保留 main-only 手動操作，不再有 cron。Netlify control 啟用時，
   GitHub collector 也會以 `netlify_collector_active` 零來源略過，避免兩邊發布。
 

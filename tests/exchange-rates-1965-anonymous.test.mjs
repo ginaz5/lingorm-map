@@ -24,7 +24,7 @@ test('anonymous session is lazy and has a bounded sequential source profile', as
   let calls = 0;
   const source = createAnonymousApiSource({ fetchImpl: async () => { calls++; throw new Error('unexpected'); } });
   assert.deepEqual(ANONYMOUS_SOURCE_PROFILE, { name: 'anonymous-api', concurrency: 1,
-    minStartGapMs: 0, requestTimeoutMs: 12000, deadlineMs: 15000 });
+    minStartGapMs: 0, requestTimeoutMs: 75000, deadlineMs: 80000 });
   await source.close();
   assert.equal(calls, 0);
 });
@@ -366,4 +366,70 @@ test('closing while token JSON resolves prevents a POST and clears session reuse
     return true;
   });
   assert.deepEqual(calls, [TOKEN_URL]);
+});
+
+const timeoutError = () => new Error('python_source_timeout');
+
+test('a timed-out token callback is retried exactly once and the quote continues', async () => {
+  const calls = [];
+  const source = createAnonymousApiSource({ nowImpl: () => START, fetchImpl: async url => {
+    calls.push(url);
+    if (url === TOKEN_URL && calls.filter(call => call === TOKEN_URL).length === 1) throw timeoutError();
+    return url === TOKEN_URL ? tokenResponse() : Response.json({ ok: true });
+  } });
+  const response = await request(source);
+  assert.equal(response.status, 200);
+  assert.deepEqual(calls, [TOKEN_URL, TOKEN_URL, RATE_URL]);
+  assert.deepEqual(readSourceRequests(response).map(entry => [entry.stage, entry.status, entry.reason]),
+    [['token', null, 'timeout'], ['token', 200, null], ['rate', 200, null]]);
+  await source.close();
+});
+
+test('two token callback timeouts stop the session after two counted requests', async () => {
+  let calls = 0;
+  const source = createAnonymousApiSource({ fetchImpl: async () => { calls++; throw timeoutError(); } });
+  await assert.rejects(request(source), error => {
+    assert.equal(error.message, 'anonymous_source_failed');
+    assert.deepEqual(readSourceRequests(error).map(entry => [entry.stage, entry.status, entry.reason]),
+      [['token', null, 'timeout'], ['token', null, 'timeout']]);
+    return true;
+  });
+  await assert.rejects(request(source));
+  assert.equal(calls, 2);
+  await source.close();
+});
+
+test('token retry never applies to HTTP blocks, other errors, caller aborts or the rate POST', async () => {
+  const controller = new AbortController();
+  const cases = [
+    ['caller abort', async () => { controller.abort(); throw timeoutError(); }, { signal: controller.signal }],
+    ['non-timeout error', async () => { throw new Error('python_source_failed'); }, {}],
+  ];
+  for (const [label, fetchImpl, options] of cases) {
+    let calls = 0;
+    const source = createAnonymousApiSource({ fetchImpl: async (...args) => { calls++; return fetchImpl(...args); } });
+    await assert.rejects(request(source, options), label);
+    assert.equal(calls, 1, label);
+    await source.close();
+  }
+  const calls = [];
+  const source = createAnonymousApiSource({ nowImpl: () => START, fetchImpl: async url => {
+    calls.push(url);
+    if (url === TOKEN_URL) return tokenResponse();
+    throw timeoutError();
+  } });
+  await assert.rejects(request(source), error => {
+    assert.deepEqual(readSourceRequests(error).map(entry => [entry.stage, entry.reason]), [['token', null], ['rate', 'timeout']]);
+    return true;
+  });
+  assert.deepEqual(calls, [TOKEN_URL, RATE_URL]);
+  await source.close();
+});
+
+test('a longer request budget does not make fresh tokens wait for expiry', async () => {
+  const source = createAnonymousApiSource({ nowImpl: () => START, fetchImpl: async url =>
+    url === TOKEN_URL ? tokenResponse({ accessToken: tokenWithExpiry((START + 100_000) / 1000) }) : Response.json({ ok: true }) });
+  await request(source);
+  assert.equal(source.getReadyAtMs(), START);
+  await source.close();
 });

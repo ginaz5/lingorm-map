@@ -611,7 +611,7 @@ test('guard outcome write failure survives lease expiry and a new deployment wit
   assert.equal(first.exitCode, 1);
   assert.equal(first.summary.sourceRequestCount, 1);
   h.sourceGuardStore.beforeSet = null;
-  h.advance(60_000);
+  h.advance(90_000); // past the 89s source lease (80s profile deadline + 9s)
   h.target.deployID = '2'.repeat(24);
   h.input.env.GITHUB_RUN_ID = '1235';
   const second = await h.run();
@@ -744,7 +744,7 @@ test('a late final control read cannot start publication after the source lease 
   h.store.getWithMetadata = async (key, options) => {
     const result = await read(key, options);
     // CLI preflight adds one control read before the five collector reads.
-    if (key === EXCHANGE_KEYS.control && ++controlReads === 6) h.advance(25_000);
+    if (key === EXCHANGE_KEYS.control && ++controlReads === 6) h.advance(90_000); // past the 89s source lease
     return result;
   };
   const result = await h.run('publish', ['--scope','single']);

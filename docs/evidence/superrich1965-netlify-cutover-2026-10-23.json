@@ -1,0 +1,4167 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-23",
+  "timezone": "Asia/Taipei",
+  "implementationPR": "https://github.com/ginaz5/lingorm-map/pull/16",
+  "implementationCommit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+  "preview": {
+    "target": {
+      "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+      "deployID": "6adb3e2a47ed0ef9b810f74d",
+      "context": "deploy-preview",
+      "branch": "codex/superrich1965-netlify-schedule",
+      "commit": "ff8b4f7340a040164c14c1418a0cc428811be54d"
+    },
+    "binding": {
+      "schemaVersion": 1,
+      "enabled": true,
+      "bindingVersion": "57d6118c-2a66-42af-8f0c-a07dbcd181be",
+      "quoteControlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+      "deployID": "6adb3e2a47ed0ef9b810f74d",
+      "commit": "ff8b4f7340a040164c14c1418a0cc428811be54d",
+      "branch": "codex/superrich1965-netlify-schedule",
+      "context": "deploy-preview",
+      "changedAt": "2026-10-23T11:01:54.122Z"
+    },
+    "receipt": {
+      "schemaVersion": 1,
+      "slotMs": 1792753200000,
+      "bindingVersion": "57d6118c-2a66-42af-8f0c-a07dbcd181be",
+      "deployID": "6adb3e2a47ed0ef9b810f74d",
+      "trigger": "manual",
+      "status": "complete",
+      "createdAtMs": 1792753329591,
+      "completedAtMs": 1792753580810,
+      "summary": {
+        "schemaVersion": 1,
+        "repository": "netlify/b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+        "runId": "1792753200000",
+        "commit": "ff8b4f7340a040164c14c1418a0cc428811be54d",
+        "target": {
+          "alias": "preview-reviewed",
+          "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+          "deployID": "6adb3e2a47ed0ef9b810f74d",
+          "branch": "codex/superrich1965-netlify-schedule",
+          "commit": "ff8b4f7340a040164c14c1418a0cc428811be54d",
+          "context": "deploy-preview"
+        },
+        "mode": "publish-all-python",
+        "scope": "all",
+        "requested": 38,
+        "cacheHit": 0,
+        "sourceSucceeded": 38,
+        "published": 38,
+        "failed": 0,
+        "notAttempted": 0,
+        "sourceRequestCount": 39,
+        "attemptSourceRequestCount": 39,
+        "sourceValidated": true,
+        "stoppedSlug": null,
+        "outcome": "complete",
+        "reason": null,
+        "retryAt": null,
+        "exitCode": 0,
+        "replayed": false,
+        "results": [
+          {
+            "slug": "superrich1965-56",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 2,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "token",
+                "status": 200,
+                "challenge": false,
+                "reason": null,
+                "tokenRemainingSeconds": 938
+              },
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-57",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-58",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-59",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-60",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-61",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-62",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-63",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-64",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-65",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-66",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-67",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-68",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-69",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-70",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-71",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-72",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-73",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-74",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-76",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-77",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-78",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-79",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-80",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-81",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-82",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-83",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-84",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-85",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-86",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-88",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-89",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-90",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-91",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-92",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-93",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-110",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-112",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "cache": {
+      "schemaVersion": 1,
+      "checkedAt": "2026-10-23T11:06:45.094Z",
+      "enabled": true,
+      "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+      "quotes": [
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-56",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:02:13.043Z",
+          "completedAt": "2026-10-23T11:02:16.597Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-56",
+            "officialId": 56,
+            "branchNo": "00",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-57",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:02:21.204Z",
+          "completedAt": "2026-10-23T11:02:22.438Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-57",
+            "officialId": 57,
+            "branchNo": "35",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-58",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:02:27.718Z",
+          "completedAt": "2026-10-23T11:02:28.930Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-58",
+            "officialId": 58,
+            "branchNo": "36",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-59",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:02:33.826Z",
+          "completedAt": "2026-10-23T11:02:34.992Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-59",
+            "officialId": 59,
+            "branchNo": "40",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-60",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:02:40.821Z",
+          "completedAt": "2026-10-23T11:02:42.053Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-60",
+            "officialId": 60,
+            "branchNo": "50",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-61",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:02:47.870Z",
+          "completedAt": "2026-10-23T11:02:49.143Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-61",
+            "officialId": 61,
+            "branchNo": "34",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-62",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:02:55.382Z",
+          "completedAt": "2026-10-23T11:02:56.599Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-62",
+            "officialId": 62,
+            "branchNo": "23",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-63",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:03:03.197Z",
+          "completedAt": "2026-10-23T11:03:05.095Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-63",
+            "officialId": 63,
+            "branchNo": "03",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-64",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:03:10.006Z",
+          "completedAt": "2026-10-23T11:03:11.231Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-64",
+            "officialId": 64,
+            "branchNo": "19",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-65",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:03:15.117Z",
+          "completedAt": "2026-10-23T11:03:16.329Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-65",
+            "officialId": 65,
+            "branchNo": "05",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-66",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:03:20.272Z",
+          "completedAt": "2026-10-23T11:03:21.502Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-66",
+            "officialId": 66,
+            "branchNo": "45",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-67",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:03:27.820Z",
+          "completedAt": "2026-10-23T11:03:28.946Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-67",
+            "officialId": 67,
+            "branchNo": "62",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-68",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:03:34.180Z",
+          "completedAt": "2026-10-23T11:03:35.466Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-68",
+            "officialId": 68,
+            "branchNo": "11",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-69",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:03:41.884Z",
+          "completedAt": "2026-10-23T11:03:43.157Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-69",
+            "officialId": 69,
+            "branchNo": "44",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-70",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:03:46.889Z",
+          "completedAt": "2026-10-23T11:03:48.140Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-70",
+            "officialId": 70,
+            "branchNo": "26",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-71",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:03:54.384Z",
+          "completedAt": "2026-10-23T11:03:55.584Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-71",
+            "officialId": 71,
+            "branchNo": "20",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-72",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:04:02.090Z",
+          "completedAt": "2026-10-23T11:04:03.352Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-72",
+            "officialId": 72,
+            "branchNo": "46",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-73",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:04:09.206Z",
+          "completedAt": "2026-10-23T11:04:10.470Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-73",
+            "officialId": 73,
+            "branchNo": "21",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-74",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:04:14.524Z",
+          "completedAt": "2026-10-23T11:04:15.667Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-74",
+            "officialId": 74,
+            "branchNo": "63",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-76",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:04:22.007Z",
+          "completedAt": "2026-10-23T11:04:23.231Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-76",
+            "officialId": 76,
+            "branchNo": "47",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-77",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:04:29.313Z",
+          "completedAt": "2026-10-23T11:04:30.552Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-77",
+            "officialId": 77,
+            "branchNo": "48",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-78",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:04:36.015Z",
+          "completedAt": "2026-10-23T11:04:37.256Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-78",
+            "officialId": 78,
+            "branchNo": "27",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-79",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:04:42.185Z",
+          "completedAt": "2026-10-23T11:04:43.429Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-79",
+            "officialId": 79,
+            "branchNo": "52",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-80",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:04:48.392Z",
+          "completedAt": "2026-10-23T11:04:49.619Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-80",
+            "officialId": 80,
+            "branchNo": "04",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-81",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:04:54.175Z",
+          "completedAt": "2026-10-23T11:04:55.408Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-81",
+            "officialId": 81,
+            "branchNo": "53",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-82",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:05:01.427Z",
+          "completedAt": "2026-10-23T11:05:02.929Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-82",
+            "officialId": 82,
+            "branchNo": "09",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-83",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:05:07.335Z",
+          "completedAt": "2026-10-23T11:05:08.538Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-83",
+            "officialId": 83,
+            "branchNo": "57",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-84",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:05:12.959Z",
+          "completedAt": "2026-10-23T11:05:14.183Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-84",
+            "officialId": 84,
+            "branchNo": "55",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-85",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:05:20.512Z",
+          "completedAt": "2026-10-23T11:05:21.770Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-85",
+            "officialId": 85,
+            "branchNo": "49",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-86",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:05:25.889Z",
+          "completedAt": "2026-10-23T11:05:27.124Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-86",
+            "officialId": 86,
+            "branchNo": "56",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-88",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:05:32.316Z",
+          "completedAt": "2026-10-23T11:05:33.507Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-88",
+            "officialId": 88,
+            "branchNo": "58",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-89",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:05:38.136Z",
+          "completedAt": "2026-10-23T11:05:39.351Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-89",
+            "officialId": 89,
+            "branchNo": "16",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-90",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:05:45.373Z",
+          "completedAt": "2026-10-23T11:05:46.615Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-90",
+            "officialId": 90,
+            "branchNo": "17",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-91",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:05:50.009Z",
+          "completedAt": "2026-10-23T11:05:51.251Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-91",
+            "officialId": 91,
+            "branchNo": "41",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-92",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:05:57.396Z",
+          "completedAt": "2026-10-23T11:05:58.560Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-92",
+            "officialId": 92,
+            "branchNo": "60",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-93",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:06:05.219Z",
+          "completedAt": "2026-10-23T11:06:06.381Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-93",
+            "officialId": 93,
+            "branchNo": "59",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-110",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:06:12.488Z",
+          "completedAt": "2026-10-23T11:06:13.669Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-110",
+            "officialId": 110,
+            "branchNo": "64",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-112",
+          "controlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+          "attemptedAt": "2026-10-23T11:06:18.885Z",
+          "completedAt": "2026-10-23T11:06:20.159Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-112",
+            "officialId": 112,
+            "branchNo": "51",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        }
+      ]
+    },
+    "duplicate": {
+      "target": {
+        "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+        "deployID": "6adb3e2a47ed0ef9b810f74d",
+        "context": "deploy-preview",
+        "branch": "codex/superrich1965-netlify-schedule",
+        "commit": "ff8b4f7340a040164c14c1418a0cc428811be54d"
+      },
+      "status": "skipped",
+      "reason": "slot_already_dispatched",
+      "slotMs": 1792753200000
+    },
+    "disabled": {
+      "target": {
+        "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+        "deployID": "6adb3e2a47ed0ef9b810f74d",
+        "context": "deploy-preview",
+        "branch": "codex/superrich1965-netlify-schedule",
+        "commit": "ff8b4f7340a040164c14c1418a0cc428811be54d"
+      },
+      "binding": {
+        "schemaVersion": 1,
+        "enabled": false,
+        "bindingVersion": "57d6118c-2a66-42af-8f0c-a07dbcd181be",
+        "quoteControlVersion": "d9764d90-e98b-4617-87a1-1761e2061aa3",
+        "deployID": "6adb3e2a47ed0ef9b810f74d",
+        "commit": "ff8b4f7340a040164c14c1418a0cc428811be54d",
+        "branch": "codex/superrich1965-netlify-schedule",
+        "context": "deploy-preview",
+        "changedAt": "2026-10-23T11:07:49.035Z"
+      }
+    }
+  },
+  "production": {
+    "before": {
+      "checkedAt": "2026-10-23T11:07:53.795Z",
+      "quoteControl": {
+        "enabled": true,
+        "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+        "enabledAt": "2026-10-21T23:24:02.466Z",
+        "changedAt": "2026-10-21T23:24:02.466Z",
+        "disabledReason": null,
+        "disabledAt": null,
+        "updatedBy": "manual"
+      },
+      "binding": null,
+      "sourceGuard": {
+        "schemaVersion": 1,
+        "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+        "paused": false,
+        "breaker": {
+          "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "consecutiveFailedRuns": 2,
+          "blockLevel": 2,
+          "blockedUntil": "2026-10-21T13:16:22.420Z",
+          "lastStatus": "failed",
+          "lastError": "source_failed"
+        },
+        "leaseId": null,
+        "leaseUntilMs": 0,
+        "nextRequestAtMs": 1792753582017,
+        "unresolvedAttempt": null,
+        "lastReconciliation": null
+      }
+    },
+    "deploy": {
+      "id": "6adb4042ae391a294444ba45",
+      "state": "ready",
+      "context": "production",
+      "branch": "main",
+      "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+      "publishedAt": "2026-10-23T11:09:16.946Z",
+      "functionSchedules": [
+        {
+          "cron": "0,30 1-15 * * *",
+          "name": "exchange-rates-1965-schedule"
+        },
+        {
+          "cron": "0,30 1-15 * * *",
+          "name": "exchange-rates-fetch"
+        }
+      ]
+    },
+    "runtime": {
+      "schemaVersion": 1,
+      "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+      "deployID": "6adb4042ae391a294444ba45",
+      "context": "production",
+      "node": "v22.23.2"
+    },
+    "enabled": {
+      "target": {
+        "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+        "deployID": "6adb4042ae391a294444ba45",
+        "context": "production",
+        "branch": "main",
+        "commit": "f26229c46f80259dcfcfe85b1827716cf3860678"
+      },
+      "binding": {
+        "schemaVersion": 1,
+        "enabled": true,
+        "bindingVersion": "90ee8e85-d8de-4ce7-881a-85dff6fedf46",
+        "quoteControlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+        "deployID": "6adb4042ae391a294444ba45",
+        "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+        "branch": "main",
+        "context": "production",
+        "changedAt": "2026-10-23T11:10:03.342Z"
+      }
+    },
+    "dispatch": {
+      "target": {
+        "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+        "deployID": "6adb4042ae391a294444ba45",
+        "context": "production",
+        "branch": "main",
+        "commit": "f26229c46f80259dcfcfe85b1827716cf3860678"
+      },
+      "status": "dispatched",
+      "slotMs": 1792753200000,
+      "workerHttpStatus": 202
+    },
+    "githubScheduleEnabled": false,
+    "manualReceipt": {
+      "schemaVersion": 1,
+      "slotMs": 1792753200000,
+      "bindingVersion": "90ee8e85-d8de-4ce7-881a-85dff6fedf46",
+      "deployID": "6adb4042ae391a294444ba45",
+      "trigger": "manual",
+      "status": "stopped",
+      "createdAtMs": 1792753812593,
+      "completedAtMs": 1792753941478,
+      "summary": {
+        "schemaVersion": 1,
+        "repository": "netlify/b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+        "runId": "1792753200000",
+        "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+        "target": {
+          "alias": "production",
+          "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+          "deployID": null,
+          "branch": "main",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "context": "production"
+        },
+        "mode": "publish-all-python",
+        "scope": "all",
+        "requested": 38,
+        "cacheHit": 0,
+        "sourceSucceeded": 18,
+        "published": 18,
+        "failed": 1,
+        "notAttempted": 19,
+        "sourceRequestCount": 20,
+        "attemptSourceRequestCount": 20,
+        "sourceValidated": false,
+        "stoppedSlug": "superrich1965-74",
+        "outcome": "stopped",
+        "reason": "unavailable",
+        "retryAt": "2026-10-23T12:12:21.167Z",
+        "exitCode": 1,
+        "replayed": false,
+        "results": [
+          {
+            "slug": "superrich1965-56",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 2,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "token",
+                "status": 200,
+                "challenge": false,
+                "reason": null,
+                "tokenRemainingSeconds": 454
+              },
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-57",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-58",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-59",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-60",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-61",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-62",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-63",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-64",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-65",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-66",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-67",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-68",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-69",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-70",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-71",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-72",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-73",
+            "status": "published",
+            "sourceSucceeded": true,
+            "sourceRequestCount": 1,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": 200,
+                "challenge": false,
+                "reason": null
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-74",
+            "status": "source_failed",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 1,
+            "reason": "unavailable",
+            "retryAt": "2026-10-23T12:12:21.167Z",
+            "diagnostics": [
+              {
+                "stage": "rate",
+                "status": null,
+                "challenge": false,
+                "reason": "timeout"
+              }
+            ]
+          },
+          {
+            "slug": "superrich1965-76",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-77",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-78",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-79",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-80",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-81",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-82",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-83",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-84",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-85",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-86",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-88",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-89",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-90",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-91",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-92",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-93",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-110",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          },
+          {
+            "slug": "superrich1965-112",
+            "status": "not_attempted",
+            "sourceSucceeded": false,
+            "sourceRequestCount": 0,
+            "reason": null,
+            "retryAt": null,
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    "scheduledReceipts": [
+      {
+        "slot": "2026-10-23T12:30:00Z",
+        "receipt": {
+          "schemaVersion": 1,
+          "slotMs": 1792758600000,
+          "bindingVersion": "90ee8e85-d8de-4ce7-881a-85dff6fedf46",
+          "deployID": "6adb4042ae391a294444ba45",
+          "trigger": "schedule",
+          "status": "stopped",
+          "createdAtMs": 1792758633994,
+          "completedAtMs": 1792758649554,
+          "summary": {
+            "schemaVersion": 1,
+            "repository": "netlify/b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+            "runId": "1792758600000",
+            "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+            "target": {
+              "alias": "production",
+              "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+              "deployID": null,
+              "branch": "main",
+              "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+              "context": "production"
+            },
+            "mode": "publish-all-python",
+            "scope": "all",
+            "requested": 38,
+            "cacheHit": 0,
+            "sourceSucceeded": 0,
+            "published": 0,
+            "failed": 1,
+            "notAttempted": 37,
+            "sourceRequestCount": 1,
+            "attemptSourceRequestCount": 1,
+            "sourceValidated": false,
+            "stoppedSlug": "superrich1965-56",
+            "outcome": "stopped",
+            "reason": "unavailable",
+            "retryAt": "2026-10-23T12:31:49.320Z",
+            "exitCode": 1,
+            "replayed": false,
+            "results": [
+              {
+                "slug": "superrich1965-56",
+                "status": "source_failed",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 1,
+                "reason": "unavailable",
+                "retryAt": "2026-10-23T12:31:49.320Z",
+                "diagnostics": [
+                  {
+                    "stage": "token",
+                    "status": null,
+                    "challenge": false,
+                    "reason": "timeout"
+                  }
+                ]
+              },
+              {
+                "slug": "superrich1965-57",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-58",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-59",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-60",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-61",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-62",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-63",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-64",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-65",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-66",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-67",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-68",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-69",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-70",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-71",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-72",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-73",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-74",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-76",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-77",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-78",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-79",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-80",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-81",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-82",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-83",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-84",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-85",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-86",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-88",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-89",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-90",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-91",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-92",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-93",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-110",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-112",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              }
+            ]
+          }
+        },
+        "ledger": {
+          "schemaVersion": 1,
+          "identity": {
+            "repository": "netlify/b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+            "runId": "1792758600000",
+            "mode": "publish-all-python",
+            "scope": "all",
+            "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+            "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+            "target": {
+              "alias": "production",
+              "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+              "deployID": null,
+              "branch": "main",
+              "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+              "context": "production"
+            }
+          },
+          "status": "stopped",
+          "ownerId": "1779762f-5222-4b01-b4a6-9b3bb2eb88c0",
+          "createdAtMs": 1792758635898,
+          "deadlineAtMs": 1792759355898,
+          "completedAtMs": 1792758649515,
+          "currentSlug": null,
+          "results": [
+            {
+              "slug": "superrich1965-56",
+              "status": "source_failed",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 1,
+              "reason": "unavailable",
+              "retryAt": "2026-10-23T12:31:49.320Z",
+              "diagnostics": [
+                {
+                  "stage": "token",
+                  "status": null,
+                  "challenge": false,
+                  "reason": "timeout"
+                }
+              ]
+            },
+            {
+              "slug": "superrich1965-57",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-58",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-59",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-60",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-61",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-62",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-63",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-64",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-65",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-66",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-67",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-68",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-69",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-70",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-71",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-72",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-73",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-74",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-76",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-77",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-78",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-79",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-80",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-81",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-82",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-83",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-84",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-85",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-86",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-88",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-89",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-90",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-91",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-92",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-93",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-110",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-112",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            }
+          ],
+          "reason": "unavailable",
+          "exitCode": 1
+        },
+        "validation": {
+          "countsAsSuccessfulScheduledAcceptance": false,
+          "receiptMatchesLedger": true,
+          "requested": 38,
+          "sourceSucceeded": 0,
+          "published": 0,
+          "failed": 1,
+          "notAttempted": 37,
+          "sourceRequestCount": 1,
+          "tokenGetAttempts": 1,
+          "ratePostAttempts": 0,
+          "tokenGetCountBasis": "single attempted result has one source request and token-stage timeout; no rate diagnostic",
+          "timeoutStage": "token",
+          "httpStatus": null,
+          "challenge": false,
+          "no403Evidence": true
+        }
+      }
+    ],
+    "cacheAfterScheduledRuns": [],
+    "after": {
+      "checkedAt": "2026-10-23T11:14:32.180Z",
+      "sourceGuard": {
+        "schemaVersion": 1,
+        "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+        "paused": false,
+        "breaker": {
+          "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "consecutiveFailedRuns": 0,
+          "blockLevel": 2,
+          "blockedUntil": "2026-10-23T12:12:21.013Z",
+          "lastStatus": "failed",
+          "lastError": "source_failed"
+        },
+        "leaseId": null,
+        "leaseUntilMs": 0,
+        "nextRequestAtMs": 1792754001210,
+        "unresolvedAttempt": null,
+        "lastReconciliation": null
+      }
+    },
+    "manualCache": {
+      "schemaVersion": 1,
+      "checkedAt": "2026-10-23T11:13:43.071Z",
+      "enabled": true,
+      "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+      "quotes": [
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-56",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:10:16.632Z",
+          "completedAt": "2026-10-23T11:10:20.070Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-56",
+            "officialId": 56,
+            "branchNo": "00",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-57",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:10:24.775Z",
+          "completedAt": "2026-10-23T11:10:26.658Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-57",
+            "officialId": 57,
+            "branchNo": "35",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-58",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:10:30.183Z",
+          "completedAt": "2026-10-23T11:10:31.394Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-58",
+            "officialId": 58,
+            "branchNo": "36",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-59",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:10:37.448Z",
+          "completedAt": "2026-10-23T11:10:38.672Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-59",
+            "officialId": 59,
+            "branchNo": "40",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-60",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:10:42.709Z",
+          "completedAt": "2026-10-23T11:10:43.911Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-60",
+            "officialId": 60,
+            "branchNo": "50",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-61",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:10:48.436Z",
+          "completedAt": "2026-10-23T11:10:49.695Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-61",
+            "officialId": 61,
+            "branchNo": "34",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-62",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:10:55.035Z",
+          "completedAt": "2026-10-23T11:10:56.220Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-62",
+            "officialId": 62,
+            "branchNo": "23",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-63",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:11:02.538Z",
+          "completedAt": "2026-10-23T11:11:03.771Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-63",
+            "officialId": 63,
+            "branchNo": "03",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-64",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:11:07.673Z",
+          "completedAt": "2026-10-23T11:11:08.901Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-64",
+            "officialId": 64,
+            "branchNo": "19",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-65",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:11:13.434Z",
+          "completedAt": "2026-10-23T11:11:14.624Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-65",
+            "officialId": 65,
+            "branchNo": "05",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-66",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:11:20.578Z",
+          "completedAt": "2026-10-23T11:11:21.764Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-66",
+            "officialId": 66,
+            "branchNo": "45",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-67",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:11:25.706Z",
+          "completedAt": "2026-10-23T11:11:26.862Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-67",
+            "officialId": 67,
+            "branchNo": "62",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-68",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:11:31.968Z",
+          "completedAt": "2026-10-23T11:11:33.162Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-68",
+            "officialId": 68,
+            "branchNo": "11",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-69",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:11:39.638Z",
+          "completedAt": "2026-10-23T11:11:40.929Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-69",
+            "officialId": 69,
+            "branchNo": "44",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-70",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:11:46.798Z",
+          "completedAt": "2026-10-23T11:11:48.008Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-70",
+            "officialId": 70,
+            "branchNo": "26",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-71",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:11:52.176Z",
+          "completedAt": "2026-10-23T11:11:53.371Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-71",
+            "officialId": 71,
+            "branchNo": "20",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-72",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:11:57.709Z",
+          "completedAt": "2026-10-23T11:11:58.967Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-72",
+            "officialId": 72,
+            "branchNo": "46",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "slug": "superrich1965-73",
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "attemptedAt": "2026-10-23T11:12:02.699Z",
+          "completedAt": "2026-10-23T11:12:03.899Z",
+          "expiresAt": "2026-10-23T12:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-73",
+            "officialId": 73,
+            "branchNo": "21",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        }
+      ]
+    },
+    "cooldownDispatch": {
+      "target": {
+        "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+        "deployID": "6adb4042ae391a294444ba45",
+        "context": "production",
+        "branch": "main",
+        "commit": "f26229c46f80259dcfcfe85b1827716cf3860678"
+      },
+      "status": "skipped",
+      "reason": "cooldown"
+    },
+    "readonlyChecks": [
+      {
+        "checkedAt": "2026-10-23T11:46:13.227Z",
+        "published": {
+          "id": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "context": "production",
+          "branch": "main",
+          "state": "ready"
+        },
+        "runtime": {
+          "schemaVersion": 1,
+          "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+          "deployID": "6adb4042ae391a294444ba45",
+          "context": "production",
+          "node": "v22.23.2"
+        },
+        "binding": {
+          "schemaVersion": 1,
+          "enabled": true,
+          "bindingVersion": "90ee8e85-d8de-4ce7-881a-85dff6fedf46",
+          "quoteControlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "deployID": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "branch": "main",
+          "context": "production",
+          "changedAt": "2026-10-23T11:10:03.342Z"
+        },
+        "quoteControl": {
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "enabledAt": "2026-10-21T23:24:02.466Z",
+          "changedAt": "2026-10-21T23:24:02.466Z",
+          "disabledReason": null,
+          "disabledAt": null,
+          "updatedBy": "manual"
+        },
+        "sourceGuard": {
+          "schemaVersion": 1,
+          "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "paused": false,
+          "breaker": {
+            "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+            "consecutiveFailedRuns": 0,
+            "blockLevel": 2,
+            "blockedUntil": "2026-10-23T12:12:21.013Z",
+            "lastStatus": "failed",
+            "lastError": "source_failed"
+          },
+          "leaseId": null,
+          "leaseUntilMs": 0,
+          "nextRequestAtMs": 1792754001210,
+          "unresolvedAttempt": null,
+          "lastReconciliation": null
+        },
+        "githubScheduleEnabled": false,
+        "issues": [],
+        "receipts": [
+          {
+            "slot": "2026-10-23T11:00:00Z",
+            "status": "stopped",
+            "trigger": "manual",
+            "published": 18,
+            "failed": 1
+          },
+          {
+            "slot": "2026-10-23T11:30:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          },
+          {
+            "slot": "2026-10-23T12:30:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          },
+          {
+            "slot": "2026-10-23T13:00:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          }
+        ],
+        "publicCache": {
+          "checkedAt": "2026-10-23T11:46:13.146Z",
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "validSchema": true,
+          "quoteCount": 18,
+          "quoteSlugs": [
+            "superrich1965-56",
+            "superrich1965-57",
+            "superrich1965-58",
+            "superrich1965-59",
+            "superrich1965-60",
+            "superrich1965-61",
+            "superrich1965-62",
+            "superrich1965-63",
+            "superrich1965-64",
+            "superrich1965-65",
+            "superrich1965-66",
+            "superrich1965-67",
+            "superrich1965-68",
+            "superrich1965-69",
+            "superrich1965-70",
+            "superrich1965-71",
+            "superrich1965-72",
+            "superrich1965-73"
+          ],
+          "quotesSHA256": "b1b862f40299363006d7a1bc70e6d04840b73d6e65452597f428ed063b9f55e9",
+          "matchesManualQuoteSet": true
+        },
+        "assessment": "unchanged_existing_cooldown_before_target_schedule_slots",
+        "noSourceRequests": true
+      },
+      {
+        "checkedAt": "2026-10-23T12:25:02.605Z",
+        "published": {
+          "id": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "context": "production",
+          "branch": "main",
+          "state": "ready"
+        },
+        "runtime": {
+          "schemaVersion": 1,
+          "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+          "deployID": "6adb4042ae391a294444ba45",
+          "context": "production",
+          "node": "v22.23.2"
+        },
+        "binding": {
+          "schemaVersion": 1,
+          "enabled": true,
+          "bindingVersion": "90ee8e85-d8de-4ce7-881a-85dff6fedf46",
+          "quoteControlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "deployID": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "branch": "main",
+          "context": "production",
+          "changedAt": "2026-10-23T11:10:03.342Z"
+        },
+        "quoteControl": {
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "enabledAt": "2026-10-21T23:24:02.466Z",
+          "changedAt": "2026-10-21T23:24:02.466Z",
+          "disabledReason": null,
+          "disabledAt": null,
+          "updatedBy": "manual"
+        },
+        "sourceGuard": {
+          "schemaVersion": 1,
+          "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "paused": false,
+          "breaker": {
+            "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+            "consecutiveFailedRuns": 0,
+            "blockLevel": 2,
+            "blockedUntil": "2026-10-23T12:12:21.013Z",
+            "lastStatus": "failed",
+            "lastError": "source_failed"
+          },
+          "leaseId": null,
+          "leaseUntilMs": 0,
+          "nextRequestAtMs": 1792757630212,
+          "unresolvedAttempt": null,
+          "lastReconciliation": null
+        },
+        "githubScheduleEnabled": false,
+        "issues": [],
+        "receipts": [
+          {
+            "slot": "2026-10-23T11:00:00Z",
+            "status": "stopped",
+            "trigger": "manual",
+            "published": 18,
+            "failed": 1
+          },
+          {
+            "slot": "2026-10-23T11:30:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          },
+          {
+            "slot": "2026-10-23T12:00:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          },
+          {
+            "slot": "2026-10-23T12:30:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          },
+          {
+            "slot": "2026-10-23T13:00:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          }
+        ],
+        "publicCache": {
+          "checkedAt": "2026-10-23T12:25:02.291Z",
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "validSchema": true,
+          "quoteCount": 0,
+          "quoteSlugs": [],
+          "quotesSHA256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment": "unchanged_binding_cooldown_naturally_expired_before_target_schedule_slots",
+        "noSourceRequests": true
+      },
+      {
+        "checkedAt": "2026-10-23T12:35:37.267Z",
+        "published": {
+          "id": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "context": "production",
+          "branch": "main",
+          "state": "ready"
+        },
+        "runtime": {
+          "schemaVersion": 1,
+          "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+          "deployID": "6adb4042ae391a294444ba45",
+          "context": "production",
+          "node": "v22.23.2"
+        },
+        "binding": {
+          "schemaVersion": 1,
+          "enabled": true,
+          "bindingVersion": "90ee8e85-d8de-4ce7-881a-85dff6fedf46",
+          "quoteControlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "deployID": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "branch": "main",
+          "context": "production",
+          "changedAt": "2026-10-23T11:10:03.342Z"
+        },
+        "quoteControl": {
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "enabledAt": "2026-10-21T23:24:02.466Z",
+          "changedAt": "2026-10-21T23:24:02.466Z",
+          "disabledReason": null,
+          "disabledAt": null,
+          "updatedBy": "manual"
+        },
+        "sourceGuard": {
+          "schemaVersion": 1,
+          "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "paused": false,
+          "breaker": {
+            "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+            "consecutiveFailedRuns": 1,
+            "blockLevel": 2,
+            "blockedUntil": "2026-10-23T12:12:21.013Z",
+            "lastStatus": "failed",
+            "lastError": "source_failed"
+          },
+          "leaseId": null,
+          "leaseUntilMs": 0,
+          "nextRequestAtMs": 1792758709321,
+          "unresolvedAttempt": null,
+          "lastReconciliation": null
+        },
+        "githubScheduleEnabled": false,
+        "issues": [
+          "scheduled_slot_stopped_token_timeout"
+        ],
+        "receipts": [
+          {
+            "slot": "2026-10-23T12:30:00Z",
+            "status": "stopped",
+            "trigger": "schedule",
+            "published": 0,
+            "failed": 1
+          },
+          {
+            "slot": "2026-10-23T13:00:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          }
+        ],
+        "publicCache": {
+          "checkedAt": "2026-10-23T12:35:36.925Z",
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "validSchema": true,
+          "quoteCount": 0,
+          "quoteSlugs": [],
+          "quotesSHA256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment": "true_schedule_receipt_stopped_token_timeout_acceptance_failed",
+        "noSourceRequests": true
+      }
+    ]
+  },
+  "verification": {
+    "nodeTests": 889,
+    "pythonTests": 14,
+    "typecheck": "passed",
+    "viteBuild": "passed",
+    "frontendAssetPathsUnchanged": true,
+    "productionCI": "https://github.com/ginaz5/lingorm-map/actions/runs/39944038560"
+  },
+  "acceptanceStatus": "production_schedule_token_timeout_automatic_acceptance_failed",
+  "followUp": {
+    "kind": "read-only thread heartbeat",
+    "active": false,
+    "checkMinutes": [
+      6,
+      36
+    ],
+    "targetScheduleSlotsTaipei": [
+      "2026-10-23T20:30:00+08:00",
+      "2026-10-23T21:00:00+08:00"
+    ],
+    "noManualSourceRequests": true,
+    "status": "PAUSED",
+    "pausedAt": "2026-10-23T12:37:23.971Z",
+    "pauseReason": "new_schedule_receipt_stopped_token_timeout",
+    "successfulScheduledSlots": 0,
+    "netlifyProductionCollectorEnabled": true
+  },
+  "parallelExperiment": {
+    "record": "superrich1965-netlify-python-parallel-2026-10-23.json",
+    "completedAt": "2026-10-23T12:13:48.582Z",
+    "status": "complete",
+    "sourceSucceeded": 38,
+    "sourceRequestCount": 39,
+    "published": 0,
+    "elapsedMs": 9605,
+    "peakInFlight": 38,
+    "launchSpreadMs": 2,
+    "countsAsScheduledAcceptance": false,
+    "productionRuntimeUnchanged": true,
+    "sourceGuardAfter": {
+      "schemaVersion": 1,
+      "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+      "paused": false,
+      "breaker": {
+        "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+        "consecutiveFailedRuns": 0,
+        "blockLevel": 2,
+        "blockedUntil": "2026-10-23T12:12:21.013Z",
+        "lastStatus": "failed",
+        "lastError": "source_failed"
+      },
+      "leaseId": null,
+      "leaseUntilMs": 0,
+      "nextRequestAtMs": 1792757630212,
+      "unresolvedAttempt": null,
+      "lastReconciliation": null
+    }
+  }
+}

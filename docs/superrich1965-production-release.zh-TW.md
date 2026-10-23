@@ -1,7 +1,10 @@
 # SuperRich 1965：正式上線與驗收紀錄
 
-更新：2026-10-23（Asia/Taipei）。此文件記錄 PR #8 正式上線的實際證據，操作方式見
-[Actions 維運文件](superrich1965-actions-runbook.zh-TW.md)。未完成的階段保持待驗收，
+更新：2026-10-23（Asia/Taipei）。目前正式取價已切換至 Netlify，最新部署、
+正式首輪 timeout 與待完成的定時驗收見[Netlify 切換紀錄](superrich1965-netlify-cutover-2026-10-23.zh-TW.md)，
+操作方式見 [Netlify 維運手冊](superrich1965-netlify-runbook.zh-TW.md)。
+以下保留 PR #8 與 GitHub Actions 時期的證據及故障調查；舊排程開關值不代表目前設定。
+未完成的階段保持待驗收，
 不以 GitHub 綠燈、Preview 報價或歷史 replay 代替正式來源及發布驗收。
 
 ## Token 更新失敗原因已重現（2026-10-23）

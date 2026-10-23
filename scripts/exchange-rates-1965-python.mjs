@@ -7,6 +7,9 @@ const TOKEN_URL = 'https://api.superrich1965.com/front/exchange-rate/oauth2/call
 const RATE_URL = 'https://www.superrich1965.com/api/exchange-rate-service/v1/external-app-exchange-rate/get';
 const MAX_OUTPUT = 7 * 1024 * 1024; // JSON escaping can expand a bounded 1 MiB body sixfold.
 const DIAGNOSTIC_HEADERS = ['content-type', 'cf-mitigated', 'cf-ray', 'retry-after'];
+// Per-HTTP-call cap. Netlify egress to the source showed intermittent >12s stalls,
+// so each call gets 25s; the Python helper's own socket timeout is a longer backstop.
+export const PYTHON_REQUEST_TIMEOUT_MS = 25_000;
 
 /** Python accepts only the checked-in branch mapping. No caller URL,
  * credentials, headers or executable configuration passes through to Python.
@@ -45,13 +48,13 @@ export function createPythonSafariFetch({ spawnImpl = spawn } = {}) {
           shell: false, env: { PATH: process.env.PATH, LANG: 'C.UTF-8' }, stdio: ['pipe', 'pipe', 'pipe'],
         });
       } catch { reject(new Error('python_source_failed')); return; }
-      let buffer = '', bytes = 0, failed = false, finished = false;
+      let buffer = '', bytes = 0, failed = false, finished = false, timedOut = false;
       /** @type {{status:number,headers:Record<string,string>}|null} */
       let headers = null;
       /** @type {string|null} */
       let body = null;
       const stop = () => { failed = true; child.kill('SIGKILL'); };
-      const timer = setTimeout(stop, 12_500);
+      const timer = setTimeout(() => { timedOut = true; stop(); }, PYTHON_REQUEST_TIMEOUT_MS);
       const signal = options?.signal;
       signal?.addEventListener('abort', stop, { once: true });
       const finish = (/** @type {boolean} */ ok) => {
@@ -59,7 +62,7 @@ export function createPythonSafariFetch({ spawnImpl = spawn } = {}) {
         finished = true;
         clearTimeout(timer);
         signal?.removeEventListener('abort', stop);
-        if (!headers) { reject(new Error('python_source_failed')); return; }
+        if (!headers) { reject(new Error(timedOut ? 'python_source_timeout' : 'python_source_failed')); return; }
         // Retain known HTTP/challenge metadata even if cancellation or a body
         // failure follows headers. Existing telemetry decides known vs unknown.
         const responseBody = ok && !failed && body !== null ? body : new ReadableStream({
