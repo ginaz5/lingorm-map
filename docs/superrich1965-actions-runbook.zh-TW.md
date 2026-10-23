@@ -1,6 +1,6 @@
 # SuperRich 1965：Actions 抓取與 Netlify 快取維運
 
-更新：2026-10-22。Netlify 橘標 API 只讀快取，GitHub Actions 以 Python／Safari
+更新：2026-10-23。Netlify 橘標 API 只讀快取，GitHub Actions 以 Python／Safari
 匿名取價，JS 管理 token、parser、mapping、lease、source guard 與發布。
 Chromium、Netlify 橘標背景來源入口與兩個 FETCH_MODE／SOURCE_TRANSPORT 開關已退役。
 
@@ -82,13 +82,24 @@ Repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 必須明確為 `true
 
 失敗時先看 summary 的 Published／Failed／Not attempted 與停止分店，避免將單一 job
 失敗解讀為全部分店皆失敗。舊版 token diagnostic 的 `invalid` 無法區分失敗類型；
-本機準備的診斷修正將細分為 `invalid_token_json`（JSON／大小不符）、
+PR #14 合併後的診斷已細分為 `invalid_token_json`（JSON／大小不符）、
 `invalid_token_value`（token 缺少／格式不符）、`expired_token`（已到期）、
 `near_expiry_token`（距到期不超過 30 秒），保留一般來源結果與停止規則。
-這些新欄位尚須經審閱上線；不以舊 log 的 `invalid` 推定為已到期，不記錄 token、
+新欄位已由 main 的實際排程驗證；不以舊 log 的 `invalid` 推定為已到期，不記錄 token、
 claims 或原始 body，也不為取證而繞過 guard、縮短安全邊界或額外重試。
 Token 診斷另以有界 `tokenRemainingSeconds` 與 session 內 `tokenReissued`（0／1）
 區分 callback 是否仍回傳前一個、接近到期的 token；不輸出 token 或 fingerprint。
+10 月 23 日的 [39818355808](https://github.com/ginaz5/lingorm-map/actions/runs/39818355808)
+已直接記錄 `near_expiry_token`、剩 18 秒、`tokenReissued=1`：callback GET
+回同一個舊 token，未通過 30 秒安全邊界，24 店成功後停止。這是已確認的失敗機制，
+PR #14 的診斷更新本身未修正此行為；不要藉此縮短安全邊界或對舊 token 強行 POST。
+
+後續修復會在已知 token 剩餘 ≤45 秒時，於分店／來源 lease 建立前先等待至
+實際到期後 2 秒，再正常取得 token；原 30 秒安全邊界保留。快取命中不等待，
+等待計入 12 分鐘整輪預算，每秒檢查取消／ownership，結束後重驗正式部署；
+`exchange_rates_1965_token_wait` 的 `waitMs` 可核對來源前的等待。
+等待期間不呼叫來源、不寫 quote 或 unresolved marker。冷 session 首次即收到
+近到期／已到期 token，或實際更新失敗，仍停止而不重試。
 
 管理命令使用 `node --env-file-if-exists=.env scripts/exchange-rates-1965-actions-control.mjs`
 加上 `status|enable|source-status|source-resume|source-pause --target production`；正式 target
