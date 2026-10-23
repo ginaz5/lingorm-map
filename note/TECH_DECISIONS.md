@@ -579,3 +579,9 @@ GitHub 取價。實際 Preview／正式啟用及定時驗收不得由本機測�
 代價：最壞情況單店約 75 秒；整輪仍受 12 分鐘預算與失敗即停限制。尚未部署，
 需重新部署後依 Netlify 維運手冊重新 bind／enable，並觀察至少兩輪真正的排程收據。
 
+**後續修正（23:00 排程失敗）：** 部署後 23:00 輪次第一店 token 逾時、重試成功並已發布，
+但 actions runner 的逐店結果驗證仍限制 `sourceRequestCount <= 2`、診斷最多 2 筆，
+3 次請求（token＋token 重試＋rate）被判為 `source_unknown`／`invalid_result`，
+整輪停止、其餘 37 店未嘗試。上限改為 `MAX_BRANCH_SOURCE_REQUESTS = 3`，
+診斷保留 3 筆；超過 3 仍 fail closed。新增 runner 單元與 Python 端到端整合測試。
+

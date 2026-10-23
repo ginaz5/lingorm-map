@@ -264,6 +264,28 @@ test('all Python branches reuse five fresh quotes, fetch the remaining 33 and le
   assert.equal(h.calls.length, 40);
 });
 
+test('a Python token timeout retried once publishes the quote and reports three source requests', async t => {
+  const h = await harness(t);
+  let tokenCalls = 0;
+  h.input.pythonFetchImpl = async (url, options) => {
+    h.calls.push({ url: String(url), options });
+    if (!String(url).includes('oauth2/callback')) return h.rateResponse();
+    if (++tokenCalls === 1) throw new Error('python_source_timeout');
+    return h.tokenResponse();
+  };
+  h.input.fetchImpl = async () => { throw new Error('node_source_must_not_run'); };
+  const result = await h.run('publish-python');
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.summary.published, 1);
+  assert.equal(result.summary.sourceValidated, true);
+  assert.equal(result.summary.sourceRequestCount, 3);
+  assert.equal(result.summary.results[0].status, 'published');
+  assert.deepEqual(result.summary.results[0].diagnostics.map(entry => [entry.stage, entry.status, entry.reason]),
+    [['token', null, 'timeout'], ['token', 200, null], ['rate', 200, null]]);
+  assert.equal(h.calls.length, 3);
+  assert.equal(isValidBranchQuote(h.store.entries.get(branchCacheKey(SLUG)).data), true);
+});
+
 test('Python publication writes one valid quote; paused cache reads, cache hits and terminal replay add no source HTTP', async t => {
   const h = await harness(t);
   h.input.pythonFetchImpl = h.input.fetchImpl;

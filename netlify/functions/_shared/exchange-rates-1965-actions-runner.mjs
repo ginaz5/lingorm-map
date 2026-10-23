@@ -77,11 +77,14 @@ function identityFor(input) {
 const untouched = (slug, reason = null) => ({ slug, status: 'not_attempted', sourceSucceeded: false,
   sourceRequestCount: 0, reason, retryAt: null, diagnostics: [] });
 
+// Token GET, its single timeout retry (exchange-rates-1965-anonymous.mjs), and the rate POST.
+const MAX_BRANCH_SOURCE_REQUESTS = 3;
+
 /** Only the two HTTP stages and fixed reasons are exposed, never arbitrary headers or body text.
  * @param {unknown} value
  */
 function safeDiagnostics(value) {
-  return Array.isArray(value) ? value.slice(0, 2).filter(entry => isObject(entry) && ['token', 'rate'].includes(entry.stage))
+  return Array.isArray(value) ? value.slice(0, MAX_BRANCH_SOURCE_REQUESTS).filter(entry => isObject(entry) && ['token', 'rate'].includes(entry.stage))
     .map(entry => ({ stage: entry.stage, status: Number.isInteger(entry.status) && entry.status >= 100 && entry.status <= 599 ? entry.status : null,
       challenge: entry.cfMitigated === 'challenge' || entry.challenge === true,
       reason: entry.reason === null || entry.reason === undefined ? null : safeReason(entry.reason),
@@ -95,7 +98,7 @@ function safeDiagnostics(value) {
 function branchResult(value, slug, mode) {
   const invalid = { ...untouched(slug, 'invalid_result'), status: 'source_unknown' };
   if (!isObject(value) || !ACTIONS_BRANCH_STATUSES.includes(value.status) || typeof value.sourceSucceeded !== 'boolean' ||
-      !Number.isSafeInteger(value.sourceRequestCount) || value.sourceRequestCount < 0 || value.sourceRequestCount > 2) return invalid;
+      !Number.isSafeInteger(value.sourceRequestCount) || value.sourceRequestCount < 0 || value.sourceRequestCount > MAX_BRANCH_SOURCE_REQUESTS) return invalid;
   const success = ['probe_succeeded', 'published', 'publication_failed'].includes(value.status);
   if ((success && !value.sourceSucceeded) || (value.sourceSucceeded && !success && value.status !== 'source_unknown') ||
       (['cache_hit', 'not_attempted'].includes(value.status) && value.sourceRequestCount !== 0) ||
