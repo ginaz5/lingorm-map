@@ -58,4 +58,6 @@ case "$DATA_SOURCE" in
     ;;
 esac
 
+node scripts/prepare-superrich1965-python.mjs
+
 echo "Build complete."

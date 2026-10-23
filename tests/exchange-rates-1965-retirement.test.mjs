@@ -24,7 +24,8 @@ test('retired orange scheduled and background functions cannot be deployed', asy
 });
 
 test('deployed orange API entry points only expose cache readers', async () => {
-  const names = (await readdir(functionsURL)).filter(name => /^exchange-rates-1965(?:-|\.)/.test(name));
+  const names = (await readdir(functionsURL)).filter(name => ['exchange-rates-1965.mjs',
+    'exchange-rates-1965-cache.mjs', 'exchange-rates-1965-branch.mjs'].includes(name));
   assert.ok(names.includes('exchange-rates-1965.mjs'), 'existing local snapshot API remains available');
   assert.ok(names.includes('exchange-rates-1965-cache.mjs'), 'branch cache API remains available');
   assert.ok(names.includes('exchange-rates-1965-branch.mjs'), 'single branch cache API remains available');

@@ -7,6 +7,9 @@
   node_bundler = "esbuild"
   included_files = ["data/locations.csv", "data/superrich-branches.json", "data/superrich1965-branches.json"]
 
+[functions."exchange-rates-1965-worker"]
+  included_files = ["data/superrich1965-branches.json", "scripts/exchange-rates-1965-python-http.py", ".runtime/superrich1965/python/**"]
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"

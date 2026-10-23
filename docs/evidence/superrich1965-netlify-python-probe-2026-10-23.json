@@ -1,0 +1,169 @@
+{
+  "experiment": "Netlify standalone Python single-branch no-publish probe",
+  "date": "2026-10-23",
+  "timezone": "Asia/Taipei",
+  "sourceCommit": "b9ef0de7da639d44f4993429f2657ac62c510d0d",
+  "deployment": {
+    "id": "6adae5e504bbc25f76b8a22f",
+    "url": "https://6adae5e504bbc25f76b8a22f--lingorm-map.netlify.app",
+    "context": "deploy-preview"
+  },
+  "pythonArtifact": {
+    "release": "20261021",
+    "name": "cpython-3.12.15+20261021-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261021/cpython-3.12.15%2B20261021-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "digest": "sha256:6d7521138fd33afddc1ccd08abb007d9a2829e38117c2576f9efdc0ec73ce772",
+    "size": 34479606,
+    "digestVerified": true
+  },
+  "result": {
+    "status": "probe_succeeded",
+    "runtime": {
+      "platform": "linux",
+      "architecture": "x64",
+      "node": "v24.21.0",
+      "python": {
+        "available": true,
+        "version": "Python 3.12.15",
+        "reason": null
+      },
+      "deployID": "6adae5e504bbc25f76b8a22f",
+      "deployContext": "deploy-preview"
+    },
+    "completedAt": "2026-10-23T04:44:31.855Z",
+    "slug": "superrich1965-58",
+    "sourceSucceeded": true,
+    "sourceRequestCount": 2,
+    "reason": null,
+    "retryAt": null,
+    "diagnostics": [
+      {
+        "officialId": 58,
+        "stage": "token",
+        "status": 200,
+        "cfMitigated": null,
+        "contentType": "application/json; charset=utf-8",
+        "retryAfter": null,
+        "rayId": "a4ee1639391faedd-CMH",
+        "reason": null,
+        "tokenRemainingSeconds": 1703
+      },
+      {
+        "officialId": 58,
+        "stage": "rate",
+        "status": 200,
+        "cfMitigated": null,
+        "contentType": "application/json",
+        "retryAfter": null,
+        "rayId": "a4ee1641bab2eefa-CMH",
+        "reason": null
+      }
+    ],
+    "sourceOutcome": "complete",
+    "published": 0,
+    "httpStatus": 200,
+    "quote": {
+      "schemaVersion": 1,
+      "slug": "superrich1965-58",
+      "controlVersion": "4bd9521b-a048-45ee-91b2-97f12374113c",
+      "attemptedAt": "2026-10-23T04:44:28.064Z",
+      "completedAt": "2026-10-23T04:44:31.664Z",
+      "expiresAt": "2026-10-23T05:35:00.000Z",
+      "branch": {
+        "slug": "superrich1965-58",
+        "officialId": 58,
+        "branchNo": "36",
+        "companyCode": "A04",
+        "status": "ok",
+        "rates": {
+          "USD_1965": {
+            "denom": "USD_1965",
+            "rateScaledE6": 33630000,
+            "displayDecimals": 2,
+            "unavailableReason": null
+          },
+          "TWD_1965": {
+            "denom": "TWD_1965",
+            "rateScaledE6": 1030000,
+            "displayDecimals": 3,
+            "unavailableReason": null
+          }
+        }
+      }
+    }
+  },
+  "replayMatched": true,
+  "sourceGuard": {
+    "before": {
+      "ok": true,
+      "reason": null,
+      "state": {
+        "schemaVersion": 1,
+        "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+        "paused": false,
+        "breaker": {
+          "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "consecutiveFailedRuns": 2,
+          "blockLevel": 2,
+          "blockedUntil": "2026-10-21T13:16:22.420Z",
+          "lastStatus": "failed",
+          "lastError": "source_failed"
+        },
+        "leaseId": null,
+        "leaseUntilMs": 0,
+        "nextRequestAtMs": 1792726601368,
+        "unresolvedAttempt": null,
+        "lastReconciliation": null
+      }
+    },
+    "after": {
+      "ok": true,
+      "reason": null,
+      "state": {
+        "schemaVersion": 1,
+        "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+        "paused": false,
+        "breaker": {
+          "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "consecutiveFailedRuns": 2,
+          "blockLevel": 2,
+          "blockedUntil": "2026-10-21T13:16:22.420Z",
+          "lastStatus": "failed",
+          "lastError": "source_failed"
+        },
+        "leaseId": null,
+        "leaseUntilMs": 0,
+        "nextRequestAtMs": 1792730673250,
+        "unresolvedAttempt": null,
+        "lastReconciliation": null
+      }
+    }
+  },
+  "productionBefore": {
+    "id": "6ad94882c583f63d0a5bc49b",
+    "commit": "e88e8b90d46194faa9f8ca5179efd89655d7c802",
+    "state": "ready"
+  },
+  "productionAfter": {
+    "id": "6ad94882c583f63d0a5bc49b",
+    "commit": "e88e8b90d46194faa9f8ca5179efd89655d7c802",
+    "state": "ready"
+  },
+  "verification": {
+    "nodeTests": 866,
+    "pythonOfflineTests": 14,
+    "typecheck": "passed",
+    "viteBuild": "passed; output in /private/tmp",
+    "probeAccessAndRuntimeChecks": 6
+  },
+  "scope": {
+    "branches": 1,
+    "published": 0,
+    "schedulerChanged": false,
+    "productionFunctionsChanged": false,
+    "allBranchesVerified": false,
+    "tokenRenewalBoundaryVerified": false,
+    "longTermReliabilityVerified": false
+  },
+  "caveat": "The current Netlify Python probe succeeded; the earlier Node challenge was on a different date. This does not isolate the original failure solely to Node fetch."
+}

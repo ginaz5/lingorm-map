@@ -12,6 +12,7 @@ import { queryBranchRates } from '../netlify/functions/_shared/exchange-rates-19
 import { readSourceGuard } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
 import { readEntry } from '../netlify/functions/_shared/exchange-rates-1965-storage.mjs';
 import { TOKEN_FAILURE_REASONS } from '../netlify/functions/_shared/exchange-rates-1965-source-telemetry.mjs';
+import { NETLIFY_CONTROL_KEY, validNetlifyControl } from '../netlify/functions/_shared/exchange-rates-1965-netlify.mjs';
 
 const REPOSITORY = 'ginaz5/lingorm-map';
 const SINGLE_SLUG = 'superrich1965-58';
@@ -88,6 +89,10 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
     }
     const opened = await openTargetImpl({ alias, targetsInput, env, fetchImpl });
     const { target, metadata, store, sourceGuardStore, verifyCurrent } = opened;
+    const netlifyControl = (await readEntry(store, NETLIFY_CONTROL_KEY))?.data;
+    if (netlifyControl && !validNetlifyControl(netlifyControl)) throw new Error('invalid_target_configuration');
+    if (mode !== 'inspect' && netlifyControl?.enabled) return { exitCode: 3,
+      summary: { mode, outcome: 'skipped', reason: 'netlify_collector_active', sourceRequestCount: 0, published: 0, sourceValidated: false } };
     if (target.kind === 'production' && typeof verifyCurrent !== 'function') throw new Error('invalid_target_configuration');
     const runnerBase = { store, ...identity, mode, scope, target: { ...target, deployID: target.deployID ?? null }, signal, nowImpl,
       ...(randomUUIDImpl ? { randomUUIDImpl } : {}), ...(sleepImpl ? { sleepImpl } : {}), ...(randomImpl ? { randomImpl } : {}) };

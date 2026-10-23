@@ -544,3 +544,14 @@ guard resumed 且無 lease／未結案來源，原 control／epoch／封鎖歷�
 15 秒啟動裕度。快取命中不等待，等待仍受 12 分鐘 job、取消與 ownership 限制，
 結束後重驗正式部署，再由原控制、breaker、guard 與 CAS 把關來源工作。
 不改 HTTP 失敗重試政策、未知 TTL、冷 session 無效 token 或封鎖處理。
+
+### 2026-10-23：Netlify Python 背景取價與排程切換
+
+Netlify 上的獨立 Python 單店及 38 店實測成功，不能將先前 Node 的 403 概括為
+所有 Netlify 傳輸皆失敗。新正式 collector 延用 Python 與既有來源 guard／逐店契約，
+以 Scheduled Function 派送 Background Function，維持泰國 08:00～22:30 半小時頻率。
+Server-only control 綁定實際 deploy 與 quote control，HMAC 驗證 worker、每 slot CAS
+只派送一次；來源及發布前核對目前部署。Python binary 僅在 build 下載並核對固定摘要，
+只放入 worker 封包，不進 Git。GitHub cron 移除並保留手動備援，Netlify 啟用時拒絕
+GitHub 取價。實際 Preview／正式啟用及定時驗收不得由本機測試推定，見
+[Netlify 維運手冊](../docs/superrich1965-netlify-runbook.zh-TW.md)。
