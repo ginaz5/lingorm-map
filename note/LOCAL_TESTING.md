@@ -539,6 +539,15 @@ job 期限／ownership、control／部署／source guard 及 gate CAS 變更的�
 真實來源是否曾跨過 token 更新邊界，須看 token wait log 及兩次 token GET 的時間；
 只有 38 店成功、沒有更新 token 的輪次不能當作更新邊界的實測。
 
+### Netlify Python 排程與背景取價
+
+單店與 38 店背景實驗已驗證 Python 能在 Netlify 取價。新正式 scheduler／worker
+採部署綁定與 HMAC、半小時 slot CAS、Node 22 與 build 時驗證的獨立 Python；
+正式 control 預設未綁定／disabled，不因部署而自動取價。公開 API 仍只讀。
+操作與切換順序見 [Netlify 維運手冊](../docs/superrich1965-netlify-runbook.zh-TW.md)，
+背景實測見 [38 店紀錄](../docs/superrich1965-netlify-python-background-2026-10-23.zh-TW.md)。
+上方 Actions 及退役紀錄保留作歷史與手動備援說明，現行自動排程以 Netlify 手冊為準。
+
 ### Netlify 瀏覽器模式驗收
 
 瀏覽器模式與專用套件已退役，不再設定 browser transport、封裝 Chromium 或

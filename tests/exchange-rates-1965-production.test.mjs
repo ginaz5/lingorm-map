@@ -8,6 +8,7 @@ import { EXCHANGE_KEYS, createControl } from '../netlify/functions/_shared/excha
 import { SOURCE_GUARD_KEY, bootstrapSourceGuard, setSourceGuardPaused } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
 import { branchCacheKey } from '../netlify/functions/_shared/exchange-rates-1965-branch-cache.mjs';
 import { FakeBlobStore, uuid } from './helpers/exchange-rates-store.mjs';
+import { NETLIFY_CONTROL_KEY } from '../netlify/functions/_shared/exchange-rates-1965-netlify.mjs';
 
 const SHA = 'a'.repeat(40), DEPLOY_SHA = 'b'.repeat(40), DEPLOY = '1'.repeat(24);
 const START = Date.parse('2026-10-22T01:00:00Z');
@@ -37,6 +38,19 @@ async function harness(t) {
   h.run = (mode = 'publish-python') => runActionsCommand([mode, '--target', 'production'], h.input);
   return h;
 }
+
+test('an enabled Netlify collector blocks GitHub source work while allowing read-only inspect', async t => {
+  const h = await harness(t);
+  h.store.seed(NETLIFY_CONTROL_KEY, { schemaVersion: 1, enabled: true, bindingVersion: uuid(3),
+    quoteControlVersion: uuid(1), deployID: DEPLOY, commit: DEPLOY_SHA, branch: 'main', context: 'production',
+    hmacKey: '1'.repeat(64), changedAt: new Date(START).toISOString() });
+  const result = await h.run('publish-all-python');
+  assert.equal(result.exitCode, 3);
+  assert.equal(result.summary.reason, 'netlify_collector_active');
+  assert.equal(h.http.length, 0);
+  assert.equal((await h.run('inspect')).summary.outcome, 'inspected');
+  assert.equal(h.http.length, 0);
+});
 
 test('production Python modes preserve fixed scopes and reject caller overrides or Node source', () => {
   for (const [mode, scope] of [['probe-python','single'], ['publish-python','single'], ['publish-five-python','five'], ['publish-all-python','all']]) {
@@ -131,11 +145,11 @@ test('missing control or paused guard keeps production source untouched',async t
   }
 });
 
-test('workflow keeps default-off production cron, main-only Environment and one shared concurrency',async()=>{
+test('workflow retains manual fallback, main-only Environment and concurrency after Netlify cron cutover',async()=>{
   const workflow=await readFile(new URL('../.github/workflows/exchange-rates-1965.yml',import.meta.url),'utf8');
-  assert.match(workflow,/cron: '0,30 1-15 \* \* \*'/);assert.match(workflow,/vars.EXCHANGE_RATES_1965_SCHEDULE_ENABLED == 'true'/);
+  assert.doesNotMatch(workflow,/\bcron:/);assert.match(workflow,/github.event_name == 'workflow_dispatch'/);
   assert.match(workflow,/group: exchange-rates-1965-source/);assert.match(workflow,/cancel-in-progress: false/);
   assert.match(workflow,/environment: superrich1965-preview/);assert.match(workflow,/github.ref == 'refs\/heads\/main'/);
   assert.ok(workflow.indexOf('NETLIFY_AUTH_TOKEN:')>workflow.indexOf('Verify Python stdlib transport offline'));
-  assert.match(workflow,/GITHUB_EVENT_SCHEDULE: \$\{\{ github.event.schedule \}\}/);
+  assert.doesNotMatch(workflow,/GITHUB_EVENT_SCHEDULE:/);
 });

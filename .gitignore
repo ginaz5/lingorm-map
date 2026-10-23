@@ -11,6 +11,7 @@
 
 # Local Netlify folder
 .netlify
+.runtime/
 
 # Node / Vite
 node_modules/

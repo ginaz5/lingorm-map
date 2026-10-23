@@ -1,0 +1,2152 @@
+{
+  "experiment": "Netlify Python 38-branch background no-publish probe",
+  "date": "2026-10-23",
+  "timezone": "Asia/Taipei",
+  "sourceCommit": "e9e29a809a8358b782d669da275562394a9eb2b7",
+  "sourceHashes": [
+    {
+      "path": "scripts/experiments/netlify-python-background-probe.mjs",
+      "sha256": "724a16433529cf399b80478e54c916d4d639e5cf2830884e994e4f8670647a79"
+    },
+    {
+      "path": "scripts/experiments/netlify-python-background-endpoints.mjs",
+      "sha256": "d6f0a189c525d5336e0a29ce4804e7a149da66794916603fa259ec8a6697b72d"
+    },
+    {
+      "path": "scripts/exchange-rates-1965-python.mjs",
+      "sha256": "c0f7b3813946f7f33ccf88542a32eb96952ac2e74d4279b19b8ae72121afbe3d"
+    },
+    {
+      "path": "scripts/exchange-rates-1965-python-http.py",
+      "sha256": "3b9c35aea3396ade29e23367e61f0b27aeac5b29d0f158c4409e93e6ed355055"
+    },
+    {
+      "path": "data/superrich1965-branches.json",
+      "sha256": "26c783c3267eec406071e621e04a807731472d8e65e541d2316c77312c7b2e06"
+    }
+  ],
+  "deployment": {
+    "id": "6adb3584957d0c5aa752ede4",
+    "url": "https://6adb3584957d0c5aa752ede4--lingorm-map.netlify.app",
+    "context": "deploy-preview",
+    "worker": "python-probe-worker",
+    "background": true
+  },
+  "dispatch": {
+    "status": "dispatched",
+    "workerHttpStatus": 202,
+    "operationId": "netlify-python-background/aa61f049-d486-496b-8871-2ddf4b18c88d"
+  },
+  "startedAt": "2026-10-23T10:23:56.859Z",
+  "completedAt": "2026-10-23T10:27:25.903Z",
+  "summary": {
+    "status": "complete",
+    "reason": null,
+    "requested": 38,
+    "sourceSucceeded": 38,
+    "failed": 0,
+    "notAttempted": 0,
+    "published": 0,
+    "cacheHit": 0,
+    "sourceRequestCount": 39,
+    "tokenGets": 1,
+    "ratePosts": 38,
+    "elapsedMs": 209044,
+    "currentSlug": null,
+    "tokenWaits": []
+  },
+  "job": {
+    "status": "complete",
+    "requested": 38,
+    "results": [
+      {
+        "slug": "superrich1965-56",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 2,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 56,
+            "stage": "token",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json; charset=utf-8",
+            "retryAfter": null,
+            "rayId": "a4f007851e40cf5a-CMH",
+            "reason": null,
+            "tokenRemainingSeconds": 3234
+          },
+          {
+            "officialId": 56,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f0078d6cc53014-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-56",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:23:57.419Z",
+          "completedAt": "2026-10-23T10:24:01.034Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-56",
+            "officialId": 56,
+            "branchNo": "00",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751041233
+      },
+      {
+        "slug": "superrich1965-57",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 57,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f007b09e08f8bb-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-57",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:24:04.580Z",
+          "completedAt": "2026-10-23T10:24:06.557Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-57",
+            "officialId": 57,
+            "branchNo": "35",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751046772
+      },
+      {
+        "slug": "superrich1965-58",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 58,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f007d2ddb7cf5a-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-58",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:24:10.113Z",
+          "completedAt": "2026-10-23T10:24:12.012Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-58",
+            "officialId": 58,
+            "branchNo": "36",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751052201
+      },
+      {
+        "slug": "superrich1965-59",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 59,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f007fdce59cac0-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-59",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:24:16.991Z",
+          "completedAt": "2026-10-23T10:24:18.250Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-59",
+            "officialId": 59,
+            "branchNo": "40",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751058453
+      },
+      {
+        "slug": "superrich1965-60",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 60,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00816ac3eea0a-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-60",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:24:20.963Z",
+          "completedAt": "2026-10-23T10:24:22.212Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-60",
+            "officialId": 60,
+            "branchNo": "50",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751062409
+      },
+      {
+        "slug": "superrich1965-61",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 61,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f0083d491dd685-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-61",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:24:27.165Z",
+          "completedAt": "2026-10-23T10:24:28.421Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-61",
+            "officialId": 61,
+            "branchNo": "34",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751068620
+      },
+      {
+        "slug": "superrich1965-62",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 62,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f008668aadefe9-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-62",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:24:33.753Z",
+          "completedAt": "2026-10-23T10:24:34.941Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-62",
+            "officialId": 62,
+            "branchNo": "23",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751075131
+      },
+      {
+        "slug": "superrich1965-63",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 63,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00885e9b2b87b-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-63",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:24:38.769Z",
+          "completedAt": "2026-10-23T10:24:40.027Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-63",
+            "officialId": 63,
+            "branchNo": "03",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751080223
+      },
+      {
+        "slug": "superrich1965-64",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 64,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f008a1dad93524-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-64",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:24:43.246Z",
+          "completedAt": "2026-10-23T10:24:44.507Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-64",
+            "officialId": 64,
+            "branchNo": "19",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751084707
+      },
+      {
+        "slug": "superrich1965-65",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 65,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f008c12ba26019-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-65",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:24:48.246Z",
+          "completedAt": "2026-10-23T10:24:49.472Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-65",
+            "officialId": 65,
+            "branchNo": "05",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751089676
+      },
+      {
+        "slug": "superrich1965-66",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 66,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f008dea997c465-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-66",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:24:52.979Z",
+          "completedAt": "2026-10-23T10:24:54.207Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-66",
+            "officialId": 66,
+            "branchNo": "45",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751094405
+      },
+      {
+        "slug": "superrich1965-67",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 67,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f008f8e82b9318-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-67",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:24:57.173Z",
+          "completedAt": "2026-10-23T10:24:58.325Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-67",
+            "officialId": 67,
+            "branchNo": "62",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751098518
+      },
+      {
+        "slug": "superrich1965-68",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 68,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f009143d40ad68-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-68",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:25:01.550Z",
+          "completedAt": "2026-10-23T10:25:03.073Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-68",
+            "officialId": 68,
+            "branchNo": "11",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751103273
+      },
+      {
+        "slug": "superrich1965-69",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 69,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f009412f2ba9fe-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-69",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:25:08.732Z",
+          "completedAt": "2026-10-23T10:25:10.000Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-69",
+            "officialId": 69,
+            "branchNo": "44",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751110164
+      },
+      {
+        "slug": "superrich1965-70",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 70,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00969ee247f3b-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-70",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:25:15.263Z",
+          "completedAt": "2026-10-23T10:25:16.483Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-70",
+            "officialId": 70,
+            "branchNo": "26",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751116660
+      },
+      {
+        "slug": "superrich1965-71",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 71,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f0098b88591b3f-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-71",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:25:20.647Z",
+          "completedAt": "2026-10-23T10:25:21.818Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-71",
+            "officialId": 71,
+            "branchNo": "20",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751121998
+      },
+      {
+        "slug": "superrich1965-72",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 72,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f009ab6be53191-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-72",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:25:25.738Z",
+          "completedAt": "2026-10-23T10:25:26.969Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-72",
+            "officialId": 72,
+            "branchNo": "46",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751127144
+      },
+      {
+        "slug": "superrich1965-73",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 73,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f009cecb04ada9-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-73",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:25:31.397Z",
+          "completedAt": "2026-10-23T10:25:32.601Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-73",
+            "officialId": 73,
+            "branchNo": "21",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751132774
+      },
+      {
+        "slug": "superrich1965-74",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 74,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f009f40b17cf74-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-74",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:25:37.361Z",
+          "completedAt": "2026-10-23T10:25:38.473Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-74",
+            "officialId": 74,
+            "branchNo": "63",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751138681
+      },
+      {
+        "slug": "superrich1965-76",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 76,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00a113923c235-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-76",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:25:42.039Z",
+          "completedAt": "2026-10-23T10:25:43.271Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-76",
+            "officialId": 76,
+            "branchNo": "47",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751143462
+      },
+      {
+        "slug": "superrich1965-77",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 77,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00a356c8abe76-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-77",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:25:47.822Z",
+          "completedAt": "2026-10-23T10:25:49.011Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-77",
+            "officialId": 77,
+            "branchNo": "48",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751149216
+      },
+      {
+        "slug": "superrich1965-78",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 78,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00a5feaff48fc-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-78",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:25:54.621Z",
+          "completedAt": "2026-10-23T10:25:55.822Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-78",
+            "officialId": 78,
+            "branchNo": "27",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751156139
+      },
+      {
+        "slug": "superrich1965-79",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 79,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00a825866b86e-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-79",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:26:00.133Z",
+          "completedAt": "2026-10-23T10:26:01.370Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-79",
+            "officialId": 79,
+            "branchNo": "52",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751161597
+      },
+      {
+        "slug": "superrich1965-80",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 80,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00aac6a0ea0ea-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-80",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:26:06.863Z",
+          "completedAt": "2026-10-23T10:26:08.050Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-80",
+            "officialId": 80,
+            "branchNo": "04",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751168265
+      },
+      {
+        "slug": "superrich1965-81",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 81,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00ad7dfefb7b5-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-81",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:26:13.808Z",
+          "completedAt": "2026-10-23T10:26:15.029Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-81",
+            "officialId": 81,
+            "branchNo": "53",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751175232
+      },
+      {
+        "slug": "superrich1965-82",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 82,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00afb5ddf4c41-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-82",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:26:19.484Z",
+          "completedAt": "2026-10-23T10:26:20.754Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-82",
+            "officialId": 82,
+            "branchNo": "09",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751180957
+      },
+      {
+        "slug": "superrich1965-83",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 83,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00b1febdbddf0-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-83",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:26:25.325Z",
+          "completedAt": "2026-10-23T10:26:26.820Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-83",
+            "officialId": 83,
+            "branchNo": "57",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751186996
+      },
+      {
+        "slug": "superrich1965-84",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 84,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00b3c7c906bf7-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-84",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:26:29.914Z",
+          "completedAt": "2026-10-23T10:26:31.142Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-84",
+            "officialId": 84,
+            "branchNo": "55",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751191344
+      },
+      {
+        "slug": "superrich1965-85",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 85,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00b620ca61330-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-85",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:26:35.921Z",
+          "completedAt": "2026-10-23T10:26:37.144Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-85",
+            "officialId": 85,
+            "branchNo": "49",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751197327
+      },
+      {
+        "slug": "superrich1965-86",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 86,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00b8c6b74994c-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-86",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:26:42.706Z",
+          "completedAt": "2026-10-23T10:26:43.894Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-86",
+            "officialId": 86,
+            "branchNo": "56",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751204084
+      },
+      {
+        "slug": "superrich1965-88",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 88,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00bad4c8dcf52-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-88",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:26:47.953Z",
+          "completedAt": "2026-10-23T10:26:49.156Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-88",
+            "officialId": 88,
+            "branchNo": "58",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751209359
+      },
+      {
+        "slug": "superrich1965-89",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 89,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00bcc6f7e879c-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-89",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:26:52.941Z",
+          "completedAt": "2026-10-23T10:26:54.176Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-89",
+            "officialId": 89,
+            "branchNo": "16",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751214373
+      },
+      {
+        "slug": "superrich1965-90",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 90,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00bf7bcb6689d-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-90",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:26:59.880Z",
+          "completedAt": "2026-10-23T10:27:01.084Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-90",
+            "officialId": 90,
+            "branchNo": "17",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751221315
+      },
+      {
+        "slug": "superrich1965-91",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 91,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00c1f4ef47f3b-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-91",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:27:06.205Z",
+          "completedAt": "2026-10-23T10:27:07.417Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-91",
+            "officialId": 91,
+            "branchNo": "41",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751227595
+      },
+      {
+        "slug": "superrich1965-92",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 92,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00c44684c6019-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-92",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:27:12.132Z",
+          "completedAt": "2026-10-23T10:27:13.273Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-92",
+            "officialId": 92,
+            "branchNo": "60",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751233478
+      },
+      {
+        "slug": "superrich1965-93",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 93,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00c5dee7cdf63-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-93",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:27:16.227Z",
+          "completedAt": "2026-10-23T10:27:17.360Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-93",
+            "officialId": 93,
+            "branchNo": "59",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33480000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1005000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751237574
+      },
+      {
+        "slug": "superrich1965-110",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 110,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00c77eda7f162-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-110",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:27:20.382Z",
+          "completedAt": "2026-10-23T10:27:21.498Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-110",
+            "officialId": 110,
+            "branchNo": "64",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751241674
+      },
+      {
+        "slug": "superrich1965-112",
+        "status": "probe_succeeded",
+        "sourceSucceeded": true,
+        "sourceRequestCount": 1,
+        "reason": null,
+        "retryAt": null,
+        "diagnostics": [
+          {
+            "officialId": 112,
+            "stage": "rate",
+            "status": 200,
+            "cfMitigated": null,
+            "contentType": "application/json",
+            "retryAfter": null,
+            "rayId": "a4f00c914f3497b7-CMH",
+            "reason": null
+          }
+        ],
+        "sourceOutcome": "complete",
+        "httpStatus": 200,
+        "quote": {
+          "schemaVersion": 1,
+          "slug": "superrich1965-112",
+          "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+          "attemptedAt": "2026-10-23T10:27:24.431Z",
+          "completedAt": "2026-10-23T10:27:25.666Z",
+          "expiresAt": "2026-10-23T11:05:00.000Z",
+          "branch": {
+            "slug": "superrich1965-112",
+            "officialId": 112,
+            "branchNo": "51",
+            "companyCode": "A04",
+            "status": "ok",
+            "rates": {
+              "USD_1965": {
+                "denom": "USD_1965",
+                "rateScaledE6": 33560000,
+                "displayDecimals": 2,
+                "unavailableReason": null
+              },
+              "TWD_1965": {
+                "denom": "TWD_1965",
+                "rateScaledE6": 1015000,
+                "displayDecimals": 3,
+                "unavailableReason": null
+              }
+            }
+          }
+        },
+        "completedAtMs": 1792751245838
+      }
+    ],
+    "tokenWaits": [],
+    "currentSlug": null,
+    "operationId": "netlify-python-background/aa61f049-d486-496b-8871-2ddf4b18c88d",
+    "controlVersion": "c2091e78-ebaa-41d5-90ca-c801fbace808",
+    "deployID": "6adb3584957d0c5aa752ede4",
+    "runtime": {
+      "platform": "linux",
+      "architecture": "x64",
+      "node": "v24.21.0",
+      "python": "Python 3.12.15",
+      "deployID": "6adb3584957d0c5aa752ede4",
+      "deployContext": "deploy-preview"
+    },
+    "ownerId": "981f487d-987d-406d-af5a-5f2d6a23f7bb",
+    "createdAtMs": 1792751035398,
+    "startedAtMs": 1792751036859,
+    "updatedAtMs": 1792751245903,
+    "completedAtMs": 1792751245903,
+    "deadlineAtMs": 1792751755398,
+    "reason": null
+  },
+  "replay": {
+    "duplicateStartMatched": true,
+    "duplicateWorkerDeliveryHttpStatus": 202,
+    "jobUnchanged": true,
+    "guardUnchanged": true,
+    "additionalSourceRequests": 0
+  },
+  "sourceGuard": {
+    "before": {
+      "ok": true,
+      "reason": null,
+      "state": {
+        "schemaVersion": 1,
+        "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+        "paused": false,
+        "breaker": {
+          "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "consecutiveFailedRuns": 2,
+          "blockLevel": 2,
+          "blockedUntil": "2026-10-21T13:16:22.420Z",
+          "lastStatus": "failed",
+          "lastError": "source_failed"
+        },
+        "leaseId": null,
+        "leaseUntilMs": 0,
+        "nextRequestAtMs": 1792735161318,
+        "unresolvedAttempt": null,
+        "lastReconciliation": null
+      }
+    },
+    "after": {
+      "ok": true,
+      "reason": null,
+      "state": {
+        "schemaVersion": 1,
+        "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+        "paused": false,
+        "breaker": {
+          "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "consecutiveFailedRuns": 2,
+          "blockLevel": 2,
+          "blockedUntil": "2026-10-21T13:16:22.420Z",
+          "lastStatus": "failed",
+          "lastError": "source_failed"
+        },
+        "leaseId": null,
+        "leaseUntilMs": 0,
+        "nextRequestAtMs": 1792751247258,
+        "unresolvedAttempt": null,
+        "lastReconciliation": null
+      }
+    }
+  },
+  "productionBefore": {
+    "id": "6ad94882c583f63d0a5bc49b",
+    "commit": "e88e8b90d46194faa9f8ca5179efd89655d7c802",
+    "state": "ready"
+  },
+  "productionAfter": {
+    "id": "6ad94882c583f63d0a5bc49b",
+    "commit": "e88e8b90d46194faa9f8ca5179efd89655d7c802",
+    "state": "ready"
+  },
+  "verification": {
+    "nodeTests": 872,
+    "pythonOfflineTests": 14,
+    "focusedTests": 6,
+    "projectTypecheck": "passed",
+    "experimentalModulesStrictCheckJs": "passed",
+    "viteBuild": "passed; output in /private/tmp"
+  },
+  "scope": {
+    "freshBranches": 38,
+    "published": 0,
+    "schedulerChanged": false,
+    "productionFunctionsChanged": false,
+    "tokenRenewalBoundaryObserved": false,
+    "productionNode22PackagingVerified": false,
+    "longTermReliabilityVerified": false
+  },
+  "evidenceAuthority": "Persisted strong-consistency draft job and per-branch diagnostics; not merely the background dispatch 202."
+}

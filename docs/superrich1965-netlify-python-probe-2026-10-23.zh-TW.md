@@ -3,6 +3,10 @@
 日期：2026-10-23（Asia/Taipei）。使用者要求驗證 Python 能否在 Netlify 取得橘標報價，
 不能把先前 Node fetch 的 403 challenge 視為所有 Netlify 傳輸方式都失敗。
 
+後續同日已完成 [38 店 Netlify Python 背景實測](superrich1965-netlify-python-background-2026-10-23.zh-TW.md)：
+全數新取成功、39 次來源 HTTP、耗時 3 分 29 秒、未發布報價或切換排程。
+以下保留單店階段的實測範圍與當時尚未完成的項目。
+
 ## 結果
 
 台灣時間 12:44:28～12:44:31，在 Netlify 的獨立 draft／deploy-preview 執行

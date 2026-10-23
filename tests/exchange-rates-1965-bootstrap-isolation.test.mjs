@@ -17,7 +17,8 @@ function localImports(code) {
 
 test('public Function and page dependency graphs remain isolated from the orange collector', async () => {
   const functions = await readdir(resolve(ROOT, 'netlify/functions'), { withFileTypes: true });
-  const roots = functions.filter(entry => entry.isFile() && /\.[cm]?js$/.test(entry.name))
+  const privateCollectors = ['exchange-rates-1965-worker.mjs', 'exchange-rates-1965-schedule.mjs'];
+  const roots = functions.filter(entry => entry.isFile() && /\.[cm]?js$/.test(entry.name) && !privateCollectors.includes(entry.name))
     .map(entry => resolve(ROOT, 'netlify/functions', entry.name));
   assert.ok(roots.length > 0, 'must inspect the deployable Function entrypoints');
   for (const html of ['index.html', 'changelog.html']) {

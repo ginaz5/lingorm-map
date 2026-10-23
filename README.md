@@ -23,11 +23,16 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 
 SuperRich 1965（橘標）沿用同一個「換匯」標籤、卡片與排序選單，提供
 USD／TWD 指定面額買入價、橘色 marker／群聚，以及 Google／HERE popup。
-橘標已退役 Netlify 排程、背景取價、Chromium 與兩個來源環境開關；
 頁面及單店「重新整理匯率」按鈕只讀快取，不會向官網取價。有效期與綠標相同，
 排序只比較已有有效報價的分店；既有本機完整快照 CLI 保留。
 38 家橘標分店的 Published 狀態由 Notion 管理，不代表報價服務已部署或啟用。
 操作方式見 [橘標整合與維運](note/LOCAL_TESTING.md#橘標整合與維運)。
+
+2026-10-23：Netlify＋獨立 Python 的單店與 38 店背景取價已實測成功；
+新增部署綁定、HMAC worker、半小時 slot 防重複派送與正式逐店發布。
+新 Netlify collector 預設關閉，需在核對部署後明確 bind／enable；GitHub workflow
+保留手動備援、移除 cron。公開 API 仍只讀。部署與排程驗收狀態分開記錄，操作見
+[Netlify 維運手冊](docs/superrich1965-netlify-runbook.zh-TW.md)。
 
 2026-10-22：GitHub Actions 使用 Python 標準函式庫及 Safari User-Agent，匿名取得
 token 後逐店查詢並發布至 Netlify Blobs。Preview 已完成單店、五店及 38 店驗收；
@@ -48,7 +53,8 @@ PR #8 已合併並部署正式站，production target 與已發布 commit 綁定
 The app is a static site with Netlify Functions for map configuration, the location
 snapshot, and cached exchange rates. Browser state holds filters and displayed
 quotes; Netlify Blobs persist rate controls and quotes. SuperRich Thailand uses its
-Netlify collector, while SuperRich 1965 uses a main-only GitHub Actions collector.
+Netlify collector. SuperRich 1965 has a deploy-bound Netlify scheduled dispatcher
+and Python background collector, with main-only GitHub Actions retained for manual fallback.
 Public orange-rate APIs only read cached data; they never dispatch source work.
 The independent [Actions bootstrap](docs/superrich1965-actions-bootstrap.zh-TW.md)
 documents the earlier Preview-only rollout.
