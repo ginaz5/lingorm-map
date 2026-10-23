@@ -94,7 +94,7 @@ class PythonHttpTests(unittest.TestCase):
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
             "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
         ))
-        self.assertEqual(timeout, 12)
+        self.assertEqual(timeout, HTTP.REQUEST_TIMEOUT_SECONDS)
         self.assertEqual(events, [
             {"event": "headers", "status": 200, "headers": {}},
             {"event": "body", "body": '{"accessToken":"offline-token"}'},

@@ -7,10 +7,17 @@ const RATE_URL = 'https://www.superrich1965.com/api/exchange-rate-service/v1/ext
 const REQUEST_URL = `${SOURCE_BASE_URL}/get`;
 const TOKEN_SAFETY_MS = 30_000;
 const TOKEN_RENEWAL_SKEW_MS = 2_000;
+// Startup lead for token-expiry waits. Kept separate from the profile deadline so
+// a longer request budget never makes every token look "about to expire".
+const TOKEN_READY_LEAD_MS = 15_000;
+// A token callback that times out is retried once; no other failure is retried.
+const TOKEN_TIMEOUT_ATTEMPTS = 2;
+const TIMEOUT_ERROR_MESSAGE = 'python_source_timeout';
 
 export const ANONYMOUS_SOURCE_PROFILE = Object.freeze({
   name: 'anonymous-api', concurrency: 1, minStartGapMs: 0,
-  requestTimeoutMs: 12_000, deadlineMs: 15_000,
+  // Budget for one quote: token (25s) + one token retry (25s) + rate POST (25s).
+  requestTimeoutMs: 75_000, deadlineMs: 80_000,
 });
 
 /** @param {unknown} value @param {string[]} keys @returns {value is Record<string, any>} */
@@ -84,7 +91,7 @@ export function createAnonymousApiSource({ fetchImpl = fetch, nowImpl = Date.now
   const getReadyAtMs = () => {
     const nowMs = nowImpl();
     return !closed && !failed && cachedToken && Number.isFinite(cachedToken.expiresAtMs) &&
-      cachedToken.expiresAtMs <= nowMs + TOKEN_SAFETY_MS + ANONYMOUS_SOURCE_PROFILE.deadlineMs
+      cachedToken.expiresAtMs <= nowMs + TOKEN_SAFETY_MS + TOKEN_READY_LEAD_MS
       ? Math.max(nowMs, cachedToken.expiresAtMs + TOKEN_RENEWAL_SKEW_MS) : nowMs;
   };
 
@@ -107,10 +114,25 @@ export function createAnonymousApiSource({ fetchImpl = fetch, nowImpl = Date.now
       if (token && token.expiresAtMs <= nowImpl() + TOKEN_SAFETY_MS) token = cachedToken = null;
       if (!token) {
         const startedAtMs = nowImpl();
-        const observation = diagnostic('token', null);
+        let observation = diagnostic('token', null);
         diagnostics.push(observation);
-        const response = await fetchImpl(TOKEN_URL, { method: 'GET', redirect: 'error', credentials: 'omit', cache: 'no-store',
-          headers: { Accept: 'application/json', 'User-Agent': SOURCE_USER_AGENT }, signal });
+        /** @type {Response|undefined} */
+        let response;
+        for (let attempt = 1; response === undefined; attempt++) {
+          try {
+            response = await fetchImpl(TOKEN_URL, { method: 'GET', redirect: 'error', credentials: 'omit', cache: 'no-store',
+              headers: { Accept: 'application/json', 'User-Agent': SOURCE_USER_AGENT }, signal });
+          } catch (error) {
+            // Only a per-request timeout of the idempotent token GET is retried,
+            // once. HTTP responses (403/429/challenge/5xx), other network errors
+            // and caller aborts stop the session exactly as before.
+            if (signal?.aborted || attempt >= TOKEN_TIMEOUT_ATTEMPTS ||
+                !(error instanceof Error) || error.message !== TIMEOUT_ERROR_MESSAGE) throw error;
+            observation.reason = 'timeout';
+            observation = diagnostic('token', null);
+            diagnostics.push(observation);
+          }
+        }
         Object.assign(observation, diagnostic('token', response));
         if (blocked(response) || !response.ok) {
           failed = true;
@@ -156,11 +178,12 @@ export function createAnonymousApiSource({ fetchImpl = fetch, nowImpl = Date.now
       signal?.throwIfAborted();
       if (blocked(response) || !response.ok) { failed = true; cachedToken = null; }
       return recordSourceRequests(response, diagnostics);
-    } catch {
+    } catch (error) {
       failed = true;
       cachedToken = null;
+      const timedOut = error instanceof Error && error.message === TIMEOUT_ERROR_MESSAGE;
       const last = diagnostics.at(-1);
-      if (last && last.reason === null) last.reason = signal?.aborted ? 'timeout' : 'http_error';
+      if (last && last.reason === null) last.reason = signal?.aborted || timedOut ? 'timeout' : 'http_error';
       // Fixed messages and a private WeakMap keep token/body/exception data out
       // of public responses, logs, cache entries and propagated error text.
       throw recordSourceRequests(new Error('anonymous_source_failed'), diagnostics);

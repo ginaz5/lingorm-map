@@ -555,3 +555,27 @@ Server-only control 綁定實際 deploy 與 quote control，HMAC 驗證 worker�
 只放入 worker 封包，不進 Git。GitHub cron 移除並保留手動備援，Netlify 啟用時拒絕
 GitHub 取價。實際 Preview／正式啟用及定時驗收不得由本機測試推定，見
 [Netlify 維運手冊](../docs/superrich1965-netlify-runbook.zh-TW.md)。
+
+### 2026-10-23：橘標來源逾時放寬與 token 逾時單次重試
+
+20:30 自動排程在第一個 token callback GET 逾時（`stage=token`、`status=null`、
+`challenge=false`、`reason=timeout`）就停止：1 次來源請求、0 店發布，先前報價約
+20:05 到期，38 家全部「暫無報價」。19:12 人工首輪也有一次 rate POST 逾時。
+同時段的平行實驗 39 次請求全部 200，來源本身可達，判斷為 Netlify 出口的偶發慢連線。
+
+調整兩項，皆不改請求身分（URL、UA、headers、body 不變）：
+
+- **逾時放寬：** 單一 HTTP 呼叫上限 12 秒 → 25 秒（`PYTHON_REQUEST_TIMEOUT_MS`；
+  Python helper socket 逾時 30 秒僅作後備）。`ANONYMOUS_SOURCE_PROFILE` 改為
+  `requestTimeoutMs 75_000`、`deadlineMs 80_000`（token 25＋token 重試 25＋rate 25）。
+  來源 lease 隨 `deadlineMs + 9s` 變為 89 秒。token 到期等待改用獨立常數
+  `TOKEN_READY_LEAD_MS = 15_000`，不隨 deadline 放大，避免新 token 被誤判為將到期。
+- **token 逾時重試一次：** 只在 token GET 以 Python 層逾時結束（`python_source_timeout`）
+  且呼叫端未取消時重試一次。HTTP 回應（403／429／challenge／5xx）、其他網路錯誤、
+  rate POST、body 解析失敗、呼叫端取消一律不重試，維持原停止行為。兩次嘗試都計入
+  來源請求數與診斷（先 `timeout` 再結果），第二次也逾時時整個 quote 以 failed 計入 guard。
+  這是對 10/17 之後「不新增來源 retry」規則的明確例外，範圍僅限 token GET。
+
+代價：最壞情況單店約 75 秒；整輪仍受 12 分鐘預算與失敗即停限制。尚未部署，
+需重新部署後依 Netlify 維運手冊重新 bind／enable，並觀察至少兩輪真正的排程收據。
+

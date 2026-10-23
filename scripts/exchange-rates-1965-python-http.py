@@ -27,7 +27,9 @@ SAFARI_USER_AGENT = (
 INPUT_LIMIT = 32_768
 TOKEN_BODY_LIMIT = 65_536
 RATE_BODY_LIMIT = 1_048_576
-REQUEST_TIMEOUT_SECONDS = 12
+# Backstop only: the Node parent enforces the authoritative per-request cap
+# (PYTHON_REQUEST_TIMEOUT_MS) and kills this process first.
+REQUEST_TIMEOUT_SECONDS = 30
 HEADER_NAMES = ("content-type", "cf-mitigated", "cf-ray", "retry-after")
 MAPPING_PATH = Path(__file__).resolve().parent.parent / "data" / "superrich1965-branches.json"
 MAPPING_LIMIT = 65_536

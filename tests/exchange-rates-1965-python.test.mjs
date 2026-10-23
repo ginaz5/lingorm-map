@@ -4,7 +4,7 @@ import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { createPythonSafariFetch } from '../scripts/exchange-rates-1965-python.mjs';
+import { createPythonSafariFetch, PYTHON_REQUEST_TIMEOUT_MS } from '../scripts/exchange-rates-1965-python.mjs';
 import { ORANGE_BRANCHES } from '../src/data/exchange-rates-1965-branch.js';
 
 const TOKEN_URL = 'https://api.superrich1965.com/front/exchange-rate/oauth2/callback';
@@ -287,4 +287,19 @@ test('truncated body protocol cannot become a successful response body', async (
   const response = await pending;
   assert.equal(response.status, 200);
   await assert.rejects(response.text(), fixedError);
+});
+
+test('a call gets 25 seconds, then the child is killed and a distinct fixed timeout error is raised', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { spawnImpl, children } = fakeSpawner();
+  const fetchImpl = createPythonSafariFetch({ spawnImpl });
+  assert.equal(PYTHON_REQUEST_TIMEOUT_MS, 25_000);
+  const pending = tokenRequest(fetchImpl);
+  const outcome = assert.rejects(pending, error => fixedError(error, 'python_source_timeout'));
+  t.mock.timers.tick(PYTHON_REQUEST_TIMEOUT_MS - 1);
+  assert.deepEqual(children[0].kills, []);
+  t.mock.timers.tick(1);
+  assert.deepEqual(children[0].kills, ['SIGKILL']);
+  children[0].close(1);
+  await outcome;
 });
