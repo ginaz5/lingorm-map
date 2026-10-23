@@ -52,13 +52,65 @@ Preview `6adb3e2a47ed0ef9b810f74d`，commit
 - 冷卻中經同一 dispatcher 檢查，回 `skipped`／`cooldown`，沒有建立第二個工作或
   重試來源。19:30、20:00 預期均受冷卻 gate 擋下，不能算全店定時驗收通過。
 
-Netlify collector 保持啟用，GitHub 自動排程保持停用；下一個可取價的排程時段為
-20:30。20:30、21:00 的實際自動完成收據與全店 cache 尚待觀測，
-沒有以 HTTP 202、已註冊 cron、Preview 成功或人工輪次代替完成驗收。
+Netlify collector 保持啟用，GitHub 自動排程保持停用。20:30 已取得真正的
+`trigger=schedule` 收據，但 token GET 逾時後停止，未發布任何店，詳見下方新收據。
+目前成功自動輪次為 0，兩輪驗收未通過；沒有以 HTTP 202、已註冊 cron、
+Preview 成功或人工輪次代替完成驗收。
 
-本對話已啟用短期只讀回查，於每小時 :06／:36 檢視持久化收據與公開 cache，
-不人工派送或更動任何正式控制。兩輪完成或出現新的失敗／具體阻礙時回報並停用回查；
-最晚 23:45 結案。這個回查與網站的 Netlify 取價 cron 是兩個不同的工作。
+本對話原以短期只讀回查，於每小時 :06／:36 檢視持久化收據與公開 cache，
+不人工派送或更動任何正式控制。20:35 查得新的失敗後已回報，並依約將回查設為
+`PAUSED`；正常 Netlify 正式 cron 保持啟用。這個回查與網站的取價 cron 是兩個不同的工作。
+
+### 19:46 只讀回查
+
+台灣時間 19:46:13 再核對：正式 deploy／runtime／collector binding／quote control 均未變，
+GitHub 排程開關仍為 false。共同 sourceEpoch 與 blockLevel=2 保留，paused=false，
+lease／unresolved 均為空；仍在原有冷卻期限內，沒有新的來源失敗或控制異動。
+公開 cache schema 有效，18 店 quote 與正式人工首輪保存內容相同。
+
+19:30 尚無 slot receipt，與冷卻 gate 相符；這不能單獨證明 scheduler 已呼叫，
+也不算新的排程失敗。目標 20:30／21:00 尚未到時，定時驗收繼續等待；
+本回查未人工派送或發出來源請求。
+
+### 20:13 獨立平行實驗
+
+使用者另要求的[38 店平行實驗](superrich1965-netlify-python-parallel-2026-10-23.zh-TW.md)
+在原冷卻自然結束後完成：38／38 店、39 次來源 HTTP 全部 200，工作紀錄耗時
+9.605 秒，實際最大在途數 38、啟動時間差 2 毫秒。整輪未發布報價，
+不計入正式排程的兩輪驗收。正式部署／binding 未變，來源 guard 的 epoch、
+blockLevel=2 與歷史保留，paused=false、lease／unresolved 均為空。
+原 20:30／21:00 正式定時驗收仍待實際收據。
+
+### 20:25 只讀回查
+
+台灣時間 20:25:02 核對正式 published deploy、runtime、collector binding 與
+quote control 均未變，GitHub 排程開關仍為 false。原冷卻已自然到期，
+source guard 的 epoch 與 blockLevel=2 保留，paused=false、lease／unresolved 均為空。
+
+公開 cache schema 有效，目前有效 quote 為 0，與人工首輪報價已到期相符；
+獨立平行實驗沒有發布報價。19:30／20:00 沒有 slot receipt，目標 20:30／21:00
+尚未到時，仍未取得真正自動完成收據。本回查未發出來源請求或改動正式資料，
+回查維持啟用並等待目標時段。
+
+### 20:30 自動排程失敗，20:35 只讀確認
+
+強一致 production site-wide store 的 slot `1792758600000` 已保存真正的
+`trigger=schedule` 收據：20:30:33.994 建立，20:30:49.554 以 `stopped` 結束，
+`exitCode=1`。對應 actions operation ledger 的終態、逐店結果與 exit code 相符。
+
+- requested=38、sourceSucceeded=0、published=0、failed=1、notAttempted=37、cacheHit=0。
+- 第一店 `superrich1965-56` 在 token 階段逾時：`status=null`、`challenge=false`、
+  `reason=timeout`。共 1 次來源 HTTP，為 1 次 token GET 嘗試；尚未發出 rate POST，
+  沒有本輪 403 或 challenge 的證據。
+- 20:35:37 公開 cache schema 有效，有效 quote 為 0；因此無法驗收 38 店 mapping、
+  USD／TWD 與完整發布。正式 deploy／runtime／collector binding／quote control 均未變，
+  GitHub 排程開關仍為 false。
+- source guard 保留原 epoch、blockLevel=2 與既有冷卻時間，consecutiveFailedRuns=1；
+  paused=false、lease／unresolved 均為空，沒有新增整輪長冷卻或未決工作。
+
+本回查未請求來源、重跑或更動正式資料。已回報新失敗並將回查設為 `PAUSED`，
+正常 Netlify 正式排程保留。下一步應排查 token GET 的連線逾時；本輪在逐店取價前
+已停止，不能據此歸因於 38 店並行或逐店間隔。兩輪自動驗收仍未完成，21:00 尚未到時。
 
 ## 驗證範圍
 

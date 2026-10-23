@@ -2439,7 +2439,798 @@
         ]
       }
     },
-    "scheduledReceipts": [],
+    "scheduledReceipts": [
+      {
+        "slot": "2026-10-23T12:30:00Z",
+        "receipt": {
+          "schemaVersion": 1,
+          "slotMs": 1792758600000,
+          "bindingVersion": "90ee8e85-d8de-4ce7-881a-85dff6fedf46",
+          "deployID": "6adb4042ae391a294444ba45",
+          "trigger": "schedule",
+          "status": "stopped",
+          "createdAtMs": 1792758633994,
+          "completedAtMs": 1792758649554,
+          "summary": {
+            "schemaVersion": 1,
+            "repository": "netlify/b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+            "runId": "1792758600000",
+            "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+            "target": {
+              "alias": "production",
+              "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+              "deployID": null,
+              "branch": "main",
+              "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+              "context": "production"
+            },
+            "mode": "publish-all-python",
+            "scope": "all",
+            "requested": 38,
+            "cacheHit": 0,
+            "sourceSucceeded": 0,
+            "published": 0,
+            "failed": 1,
+            "notAttempted": 37,
+            "sourceRequestCount": 1,
+            "attemptSourceRequestCount": 1,
+            "sourceValidated": false,
+            "stoppedSlug": "superrich1965-56",
+            "outcome": "stopped",
+            "reason": "unavailable",
+            "retryAt": "2026-10-23T12:31:49.320Z",
+            "exitCode": 1,
+            "replayed": false,
+            "results": [
+              {
+                "slug": "superrich1965-56",
+                "status": "source_failed",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 1,
+                "reason": "unavailable",
+                "retryAt": "2026-10-23T12:31:49.320Z",
+                "diagnostics": [
+                  {
+                    "stage": "token",
+                    "status": null,
+                    "challenge": false,
+                    "reason": "timeout"
+                  }
+                ]
+              },
+              {
+                "slug": "superrich1965-57",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-58",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-59",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-60",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-61",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-62",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-63",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-64",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-65",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-66",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-67",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-68",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-69",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-70",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-71",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-72",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-73",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-74",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-76",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-77",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-78",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-79",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-80",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-81",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-82",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-83",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-84",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-85",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-86",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-88",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-89",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-90",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-91",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-92",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-93",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-110",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              },
+              {
+                "slug": "superrich1965-112",
+                "status": "not_attempted",
+                "sourceSucceeded": false,
+                "sourceRequestCount": 0,
+                "reason": null,
+                "retryAt": null,
+                "diagnostics": []
+              }
+            ]
+          }
+        },
+        "ledger": {
+          "schemaVersion": 1,
+          "identity": {
+            "repository": "netlify/b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+            "runId": "1792758600000",
+            "mode": "publish-all-python",
+            "scope": "all",
+            "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+            "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+            "target": {
+              "alias": "production",
+              "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+              "deployID": null,
+              "branch": "main",
+              "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+              "context": "production"
+            }
+          },
+          "status": "stopped",
+          "ownerId": "1779762f-5222-4b01-b4a6-9b3bb2eb88c0",
+          "createdAtMs": 1792758635898,
+          "deadlineAtMs": 1792759355898,
+          "completedAtMs": 1792758649515,
+          "currentSlug": null,
+          "results": [
+            {
+              "slug": "superrich1965-56",
+              "status": "source_failed",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 1,
+              "reason": "unavailable",
+              "retryAt": "2026-10-23T12:31:49.320Z",
+              "diagnostics": [
+                {
+                  "stage": "token",
+                  "status": null,
+                  "challenge": false,
+                  "reason": "timeout"
+                }
+              ]
+            },
+            {
+              "slug": "superrich1965-57",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-58",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-59",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-60",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-61",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-62",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-63",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-64",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-65",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-66",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-67",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-68",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-69",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-70",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-71",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-72",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-73",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-74",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-76",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-77",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-78",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-79",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-80",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-81",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-82",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-83",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-84",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-85",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-86",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-88",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-89",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-90",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-91",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-92",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-93",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-110",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            },
+            {
+              "slug": "superrich1965-112",
+              "status": "not_attempted",
+              "sourceSucceeded": false,
+              "sourceRequestCount": 0,
+              "reason": null,
+              "retryAt": null,
+              "diagnostics": []
+            }
+          ],
+          "reason": "unavailable",
+          "exitCode": 1
+        },
+        "validation": {
+          "countsAsSuccessfulScheduledAcceptance": false,
+          "receiptMatchesLedger": true,
+          "requested": 38,
+          "sourceSucceeded": 0,
+          "published": 0,
+          "failed": 1,
+          "notAttempted": 37,
+          "sourceRequestCount": 1,
+          "tokenGetAttempts": 1,
+          "ratePostAttempts": 0,
+          "tokenGetCountBasis": "single attempted result has one source request and token-stage timeout; no rate diagnostic",
+          "timeoutStage": "token",
+          "httpStatus": null,
+          "challenge": false,
+          "no403Evidence": true
+        }
+      }
+    ],
     "cacheAfterScheduledRuns": [],
     "after": {
       "checkedAt": "2026-10-23T11:14:32.180Z",
@@ -3002,7 +3793,318 @@
       },
       "status": "skipped",
       "reason": "cooldown"
-    }
+    },
+    "readonlyChecks": [
+      {
+        "checkedAt": "2026-10-23T11:46:13.227Z",
+        "published": {
+          "id": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "context": "production",
+          "branch": "main",
+          "state": "ready"
+        },
+        "runtime": {
+          "schemaVersion": 1,
+          "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+          "deployID": "6adb4042ae391a294444ba45",
+          "context": "production",
+          "node": "v22.23.2"
+        },
+        "binding": {
+          "schemaVersion": 1,
+          "enabled": true,
+          "bindingVersion": "90ee8e85-d8de-4ce7-881a-85dff6fedf46",
+          "quoteControlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "deployID": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "branch": "main",
+          "context": "production",
+          "changedAt": "2026-10-23T11:10:03.342Z"
+        },
+        "quoteControl": {
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "enabledAt": "2026-10-21T23:24:02.466Z",
+          "changedAt": "2026-10-21T23:24:02.466Z",
+          "disabledReason": null,
+          "disabledAt": null,
+          "updatedBy": "manual"
+        },
+        "sourceGuard": {
+          "schemaVersion": 1,
+          "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "paused": false,
+          "breaker": {
+            "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+            "consecutiveFailedRuns": 0,
+            "blockLevel": 2,
+            "blockedUntil": "2026-10-23T12:12:21.013Z",
+            "lastStatus": "failed",
+            "lastError": "source_failed"
+          },
+          "leaseId": null,
+          "leaseUntilMs": 0,
+          "nextRequestAtMs": 1792754001210,
+          "unresolvedAttempt": null,
+          "lastReconciliation": null
+        },
+        "githubScheduleEnabled": false,
+        "issues": [],
+        "receipts": [
+          {
+            "slot": "2026-10-23T11:00:00Z",
+            "status": "stopped",
+            "trigger": "manual",
+            "published": 18,
+            "failed": 1
+          },
+          {
+            "slot": "2026-10-23T11:30:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          },
+          {
+            "slot": "2026-10-23T12:30:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          },
+          {
+            "slot": "2026-10-23T13:00:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          }
+        ],
+        "publicCache": {
+          "checkedAt": "2026-10-23T11:46:13.146Z",
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "validSchema": true,
+          "quoteCount": 18,
+          "quoteSlugs": [
+            "superrich1965-56",
+            "superrich1965-57",
+            "superrich1965-58",
+            "superrich1965-59",
+            "superrich1965-60",
+            "superrich1965-61",
+            "superrich1965-62",
+            "superrich1965-63",
+            "superrich1965-64",
+            "superrich1965-65",
+            "superrich1965-66",
+            "superrich1965-67",
+            "superrich1965-68",
+            "superrich1965-69",
+            "superrich1965-70",
+            "superrich1965-71",
+            "superrich1965-72",
+            "superrich1965-73"
+          ],
+          "quotesSHA256": "b1b862f40299363006d7a1bc70e6d04840b73d6e65452597f428ed063b9f55e9",
+          "matchesManualQuoteSet": true
+        },
+        "assessment": "unchanged_existing_cooldown_before_target_schedule_slots",
+        "noSourceRequests": true
+      },
+      {
+        "checkedAt": "2026-10-23T12:25:02.605Z",
+        "published": {
+          "id": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "context": "production",
+          "branch": "main",
+          "state": "ready"
+        },
+        "runtime": {
+          "schemaVersion": 1,
+          "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+          "deployID": "6adb4042ae391a294444ba45",
+          "context": "production",
+          "node": "v22.23.2"
+        },
+        "binding": {
+          "schemaVersion": 1,
+          "enabled": true,
+          "bindingVersion": "90ee8e85-d8de-4ce7-881a-85dff6fedf46",
+          "quoteControlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "deployID": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "branch": "main",
+          "context": "production",
+          "changedAt": "2026-10-23T11:10:03.342Z"
+        },
+        "quoteControl": {
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "enabledAt": "2026-10-21T23:24:02.466Z",
+          "changedAt": "2026-10-21T23:24:02.466Z",
+          "disabledReason": null,
+          "disabledAt": null,
+          "updatedBy": "manual"
+        },
+        "sourceGuard": {
+          "schemaVersion": 1,
+          "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "paused": false,
+          "breaker": {
+            "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+            "consecutiveFailedRuns": 0,
+            "blockLevel": 2,
+            "blockedUntil": "2026-10-23T12:12:21.013Z",
+            "lastStatus": "failed",
+            "lastError": "source_failed"
+          },
+          "leaseId": null,
+          "leaseUntilMs": 0,
+          "nextRequestAtMs": 1792757630212,
+          "unresolvedAttempt": null,
+          "lastReconciliation": null
+        },
+        "githubScheduleEnabled": false,
+        "issues": [],
+        "receipts": [
+          {
+            "slot": "2026-10-23T11:00:00Z",
+            "status": "stopped",
+            "trigger": "manual",
+            "published": 18,
+            "failed": 1
+          },
+          {
+            "slot": "2026-10-23T11:30:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          },
+          {
+            "slot": "2026-10-23T12:00:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          },
+          {
+            "slot": "2026-10-23T12:30:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          },
+          {
+            "slot": "2026-10-23T13:00:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          }
+        ],
+        "publicCache": {
+          "checkedAt": "2026-10-23T12:25:02.291Z",
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "validSchema": true,
+          "quoteCount": 0,
+          "quoteSlugs": [],
+          "quotesSHA256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment": "unchanged_binding_cooldown_naturally_expired_before_target_schedule_slots",
+        "noSourceRequests": true
+      },
+      {
+        "checkedAt": "2026-10-23T12:35:37.267Z",
+        "published": {
+          "id": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "context": "production",
+          "branch": "main",
+          "state": "ready"
+        },
+        "runtime": {
+          "schemaVersion": 1,
+          "siteID": "b5ac142c-7e21-4910-90f7-1719a9d90d5d",
+          "deployID": "6adb4042ae391a294444ba45",
+          "context": "production",
+          "node": "v22.23.2"
+        },
+        "binding": {
+          "schemaVersion": 1,
+          "enabled": true,
+          "bindingVersion": "90ee8e85-d8de-4ce7-881a-85dff6fedf46",
+          "quoteControlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "deployID": "6adb4042ae391a294444ba45",
+          "commit": "f26229c46f80259dcfcfe85b1827716cf3860678",
+          "branch": "main",
+          "context": "production",
+          "changedAt": "2026-10-23T11:10:03.342Z"
+        },
+        "quoteControl": {
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "enabledAt": "2026-10-21T23:24:02.466Z",
+          "changedAt": "2026-10-21T23:24:02.466Z",
+          "disabledReason": null,
+          "disabledAt": null,
+          "updatedBy": "manual"
+        },
+        "sourceGuard": {
+          "schemaVersion": 1,
+          "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+          "paused": false,
+          "breaker": {
+            "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+            "consecutiveFailedRuns": 1,
+            "blockLevel": 2,
+            "blockedUntil": "2026-10-23T12:12:21.013Z",
+            "lastStatus": "failed",
+            "lastError": "source_failed"
+          },
+          "leaseId": null,
+          "leaseUntilMs": 0,
+          "nextRequestAtMs": 1792758709321,
+          "unresolvedAttempt": null,
+          "lastReconciliation": null
+        },
+        "githubScheduleEnabled": false,
+        "issues": [
+          "scheduled_slot_stopped_token_timeout"
+        ],
+        "receipts": [
+          {
+            "slot": "2026-10-23T12:30:00Z",
+            "status": "stopped",
+            "trigger": "schedule",
+            "published": 0,
+            "failed": 1
+          },
+          {
+            "slot": "2026-10-23T13:00:00Z",
+            "status": null,
+            "trigger": null,
+            "published": null,
+            "failed": null
+          }
+        ],
+        "publicCache": {
+          "checkedAt": "2026-10-23T12:35:36.925Z",
+          "enabled": true,
+          "controlVersion": "82980bfd-a934-4aaf-90ac-127d44c2384b",
+          "validSchema": true,
+          "quoteCount": 0,
+          "quoteSlugs": [],
+          "quotesSHA256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment": "true_schedule_receipt_stopped_token_timeout_acceptance_failed",
+        "noSourceRequests": true
+      }
+    ]
   },
   "verification": {
     "nodeTests": 889,
@@ -3012,10 +4114,10 @@
     "frontendAssetPathsUnchanged": true,
     "productionCI": "https://github.com/ginaz5/lingorm-map/actions/runs/39944038560"
   },
-  "acceptanceStatus": "production_enabled_manual_timeout_automatic_acceptance_pending",
+  "acceptanceStatus": "production_schedule_token_timeout_automatic_acceptance_failed",
   "followUp": {
     "kind": "read-only thread heartbeat",
-    "active": true,
+    "active": false,
     "checkMinutes": [
       6,
       36
@@ -3024,6 +4126,42 @@
       "2026-10-23T20:30:00+08:00",
       "2026-10-23T21:00:00+08:00"
     ],
-    "noManualSourceRequests": true
+    "noManualSourceRequests": true,
+    "status": "PAUSED",
+    "pausedAt": "2026-10-23T12:37:23.971Z",
+    "pauseReason": "new_schedule_receipt_stopped_token_timeout",
+    "successfulScheduledSlots": 0,
+    "netlifyProductionCollectorEnabled": true
+  },
+  "parallelExperiment": {
+    "record": "superrich1965-netlify-python-parallel-2026-10-23.json",
+    "completedAt": "2026-10-23T12:13:48.582Z",
+    "status": "complete",
+    "sourceSucceeded": 38,
+    "sourceRequestCount": 39,
+    "published": 0,
+    "elapsedMs": 9605,
+    "peakInFlight": 38,
+    "launchSpreadMs": 2,
+    "countsAsScheduledAcceptance": false,
+    "productionRuntimeUnchanged": true,
+    "sourceGuardAfter": {
+      "schemaVersion": 1,
+      "sourceEpoch": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+      "paused": false,
+      "breaker": {
+        "controlVersion": "4eb55ef8-212f-4bd3-b1b0-ebe760769c26",
+        "consecutiveFailedRuns": 0,
+        "blockLevel": 2,
+        "blockedUntil": "2026-10-23T12:12:21.013Z",
+        "lastStatus": "failed",
+        "lastError": "source_failed"
+      },
+      "leaseId": null,
+      "leaseUntilMs": 0,
+      "nextRequestAtMs": 1792757630212,
+      "unresolvedAttempt": null,
+      "lastReconciliation": null
+    }
   }
 }
