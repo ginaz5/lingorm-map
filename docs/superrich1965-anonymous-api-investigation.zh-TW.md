@@ -12,6 +12,11 @@ USD 與 TWD 的指定面額買入價可直接通過現有 `parseBranchExchange19
 詳見本文末的雲端紀錄。下一步改評估
 [GitHub Actions 抓取計畫](superrich1965-github-actions-plan.zh-TW.md)，尚未實作或執行。
 
+2026-10-23 補驗：將獨立 Python runtime 打包到 Netlify 後，Python／Safari 單店
+token GET 與 rate POST 都回 200，parser 通過、未發布報價。先前 403 僅是當時
+Node 傳輸的結果，不能概括所有 Netlify 取價方式；兩次測試日期不同，也不足以
+單獨證實 Node 是原失敗的唯一原因。見 [Netlify Python 實測](superrich1965-netlify-python-probe-2026-10-23.zh-TW.md)。
+
 目前本機程式已退役 Netlify 直接抓價入口與 browser dependencies，三個公開 API
 均只讀快取；這批變更尚未部署。匿名來源核心保留供未來外部 runner 使用，
 本文的本機 Function 成功與 Preview 403／429 是退役前的歷史證據，不能用舊環境
