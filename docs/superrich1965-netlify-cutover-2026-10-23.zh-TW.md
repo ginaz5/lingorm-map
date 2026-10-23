@@ -54,7 +54,8 @@ Preview `6adb3e2a47ed0ef9b810f74d`，commit
 
 Netlify collector 保持啟用，GitHub 自動排程保持停用。20:30 已取得真正的
 `trigger=schedule` 收據，但 token GET 逾時後停止，未發布任何店，詳見下方新收據。
-目前成功自動輪次為 0，兩輪驗收未通過；沒有以 HTTP 202、已註冊 cron、
+逾時修正（PR #17）上線並重新綁定後，22:30 首輪自動排程 38／38 發布；
+目前在新 deploy 上連續成功 1 輪，兩輪驗收尚未完成。沒有以 HTTP 202、已註冊 cron、
 Preview 成功或人工輪次代替完成驗收。
 
 本對話原以短期只讀回查，於每小時 :06／:36 檢視持久化收據與公開 cache，
@@ -111,6 +112,38 @@ source guard 的 epoch 與 blockLevel=2 保留，paused=false、lease／unresolv
 本回查未請求來源、重跑或更動正式資料。已回報新失敗並將回查設為 `PAUSED`，
 正常 Netlify 正式排程保留。下一步應排查 token GET 的連線逾時；本輪在逐店取價前
 已停止，不能據此歸因於 38 店並行或逐店間隔。兩輪自動驗收仍未完成，21:00 尚未到時。
+
+### 22:00 逾時修正上線與重新綁定
+
+[PR #17](https://github.com/ginaz5/lingorm-map/pull/17) 以 squash 合併為
+`d58fa9af7199d45a11b790959ecb3287f4811e25`：單次來源請求上限 12 秒改 25 秒，
+token GET 僅在逾時時於同一 quote 內重試一次。正式 deploy `6adb684e10879df37c5c2719`
+於台灣時間 22:00:08.123 發布，main CI 通過。
+
+換版前未先 disable collector；舊 binding 仍為 enabled 但指向舊 deploy
+`6adb4042ae391a294444ba45`，依 deploy 身分檢查不會取價，22:00 沒有 slot receipt。
+隨後依維運手冊於 22:02:31.999 disable、22:02:49.447 bind、22:03:06.387 enable，
+新 bindingVersion 為 `e3e01df9-fcf8-462e-bbe9-ff7be4e00d35`，quote control
+`82980bfd-a934-4aaf-90ac-127d44c2384b` 沿用原值。未人工派送，GitHub 排程開關仍為 false。
+
+綁定前公開 cache 已有 38 店報價，完成於 21:30～21:34，來自舊 deploy 的 21:30 輪次；
+本次未讀取該 slot receipt，且不是修正後的程式，不計入新 deploy 的兩輪驗收。
+
+### 22:30 自動排程成功，22:36 只讀確認
+
+slot `1792765800000` 保存真正的 `trigger=schedule` 收據：22:30:38.486 建立，
+22:34:42.521 以 `complete` 結束，`exitCode=0`，耗時約 244 秒。
+binding 與 deploy 均為上述新值。
+
+- requested=38、sourceSucceeded=38、published=38、failed=0、notAttempted=0、cacheHit=0。
+- 來源 HTTP 39 次（1 次 token GET＋38 次 rate POST），全部 200、無 challenge。
+  token GET 首次即成功，剩餘有效期 3009 秒，本輪未觸發 token 逾時重試。
+- 22:36 公開 cache `enabled=true`，38 個唯一 Slug 的 quote 均完成於
+  22:30:44.933～22:34:41.872，已全數取代 21:30 報價；最早到期為 23:35。
+- 正式 published deploy 仍為 `6adb684e10879df37c5c2719`，GitHub 排程開關仍為 false。
+
+本回查未請求來源、派送或更動正式控制。這是新 deploy 上第 1 輪成功的自動排程；
+23:00 若同樣 38／38 發布，即完成兩輪連續驗收。
 
 ## 驗證範圍
 
