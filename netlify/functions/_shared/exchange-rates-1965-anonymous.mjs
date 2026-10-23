@@ -6,6 +6,7 @@ const TOKEN_URL = 'https://api.superrich1965.com/front/exchange-rate/oauth2/call
 const RATE_URL = 'https://www.superrich1965.com/api/exchange-rate-service/v1/external-app-exchange-rate/get';
 const REQUEST_URL = `${SOURCE_BASE_URL}/get`;
 const TOKEN_SAFETY_MS = 30_000;
+const TOKEN_RENEWAL_SKEW_MS = 2_000;
 
 export const ANONYMOUS_SOURCE_PROFILE = Object.freeze({
   name: 'anonymous-api', concurrency: 1, minStartGapMs: 0,
@@ -76,6 +77,16 @@ export function createAnonymousApiSource({ fetchImpl = fetch, nowImpl = Date.now
   let gate = Promise.resolve();
 
   const close = async () => { closed = true; cachedToken = null; };
+
+  // The Actions caller may wait BEFORE acquiring a branch/source lease. Leave
+  // enough room for startup reads as well as the unchanged 30-second margin.
+  // This never fetches, clears a token, or retries a failed source request.
+  const getReadyAtMs = () => {
+    const nowMs = nowImpl();
+    return !closed && !failed && cachedToken && Number.isFinite(cachedToken.expiresAtMs) &&
+      cachedToken.expiresAtMs <= nowMs + TOKEN_SAFETY_MS + ANONYMOUS_SOURCE_PROFILE.deadlineMs
+      ? Math.max(nowMs, cachedToken.expiresAtMs + TOKEN_RENEWAL_SKEW_MS) : nowMs;
+  };
 
   /** @type {typeof fetch} */
   const wrappedFetch = async (input, options) => {
@@ -157,5 +168,5 @@ export function createAnonymousApiSource({ fetchImpl = fetch, nowImpl = Date.now
       release();
     }
   };
-  return { fetchImpl: wrappedFetch, close };
+  return { fetchImpl: wrappedFetch, getReadyAtMs, close };
 }

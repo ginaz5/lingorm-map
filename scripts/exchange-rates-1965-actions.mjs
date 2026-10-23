@@ -1,5 +1,6 @@
 import { appendFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
 import { createPythonSafariFetch } from './exchange-rates-1965-python.mjs';
 
 import { openActionsTarget } from '../netlify/functions/_shared/exchange-rates-1965-actions-target.mjs';
@@ -70,7 +71,7 @@ function guardSummary(guard) {
  * @param {string[]} argv
  * @param {{env?:Record<string,string|undefined>,openTargetImpl?:(input:any)=>Promise<any>,targetsInput?:unknown,
  * fetchImpl?:typeof fetch,pythonFetchImpl?:typeof fetch,nowImpl?:()=>number,signal?:AbortSignal,runCollectorImpl?:(input:any)=>Promise<any>,
- * queryImpl?:typeof queryBranchRates,randomUUIDImpl?:()=>string,sleepImpl?:(ms:number)=>Promise<void>,randomImpl?:()=>number}} [input]
+ * queryImpl?:typeof queryBranchRates,randomUUIDImpl?:()=>string,sleepImpl?:(ms:number,signal:AbortSignal)=>Promise<void>,randomImpl?:()=>number}} [input]
  */
 export async function runActionsCommand(argv, { env = process.env, openTargetImpl = openActionsTarget, targetsInput,
   fetchImpl = fetch, pythonFetchImpl, nowImpl = Date.now, signal, runCollectorImpl = runActionsCollector, queryImpl = queryBranchRates,
@@ -120,6 +121,8 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
     const pythonMode = mode.endsWith('-python');
     source = createAnonymousApiSource({ fetchImpl: pythonMode ? pythonFetchImpl ?? createPythonSafariFetch() : fetchImpl, nowImpl });
     const sourceFetch = source.fetchImpl;
+    const session = source;
+    const waitImpl = sleepImpl ?? (async (/** @type {number} */ ms, /** @type {AbortSignal} */ signal) => { await delay(ms, undefined, { signal }); });
     const result = await runCollectorImpl({ ...runnerBase,
       controlVersion: effective.control.controlVersion,
       collectorImpl: async (/** @type {any} */ options) => {
@@ -132,6 +135,27 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
         requireExistingControl: true, enabledDefault: 'false', expectedControlVersion: effective.control.controlVersion,
         refreshDue: true, nowImpl, fetchImpl: sourceFetch, sourceProfile: pythonMode
           ? { ...ANONYMOUS_SOURCE_PROFILE, name: 'anonymous-python-safari' } : ANONYMOUS_SOURCE_PROFILE,
+        prepareSource: async () => {
+          const readyAtMs = session.getReadyAtMs();
+          if (readyAtMs <= nowImpl()) return null;
+          const stoppedReason = () => options.signal?.aborted
+            ? options.signal.reason === 'deadline' ? 'deadline' : 'cancelled'
+            : options.canContinue?.() === false ? 'deadline' : 'lease_lost';
+          const guard = await readSourceGuard({ store: sourceGuardStore, nowMs: nowImpl() });
+          if (!guard.ok) return { reason: guard.reason ?? 'source_guard_unavailable', retryAtMs: guard.retryAtMs };
+          if (nowImpl() < readyAtMs) console.info(JSON.stringify({ event: 'exchange_rates_1965_token_wait',
+            waitMs: readyAtMs - nowImpl() }));
+          // No token GET is attempted during this wait. Every source and target
+          // gate is still checked by queryBranchRates after preparation ends.
+          while (nowImpl() < readyAtMs) {
+            if (!await options.beforeSource()) return { reason: stoppedReason() };
+            try { await waitImpl(Math.min(1_000, readyAtMs - nowImpl()), options.signal); }
+            catch (error) { if (options.signal?.aborted) return { reason: stoppedReason() }; throw error; }
+          }
+          if (!await options.beforeSource()) return { reason: stoppedReason() };
+          if (target.kind === 'production' && !await verifyCurrent()) return { reason: 'stale_target' };
+          return null;
+        },
         onResult: result => { observedSourceRequests += result.sourceRequestCount; options.onResult?.(result); },
         beforePublish: async () => (target.kind !== 'production' || await verifyCurrent()) &&
           (!options.beforePublish || await options.beforePublish()),

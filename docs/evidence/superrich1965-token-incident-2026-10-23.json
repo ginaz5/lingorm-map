@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-23T03:03:21.816Z",
+  "timezone": "Asia/Taipei",
+  "diagnosticMergeCommit": "74f4958dd599d6ead7a746ab2e1b1f91dee7f19f",
+  "productionWebsiteCommit": "e88e8b90d46194faa9f8ca5179efd89655d7c802",
+  "productionDeployID": "6ad94882c583f63d0a5bc49b",
+  "originalTokenFailureDetailsRecoverable": false,
+  "confirmedMechanism": "callback_returned_same_token_with_18_seconds_remaining_rejected_by_30_second_safety_margin",
+  "sourceBehaviorFixed": false,
+  "runs": [
+    {
+      "id": "39730672160",
+      "url": "https://github.com/ginaz5/lingorm-map/actions/runs/39730672160",
+      "commit": "bf760512bbc70eed4517dfb9ec736eb3d3508c5d",
+      "mode": "publish-all-python",
+      "outcome": "stopped",
+      "published": 34,
+      "failed": 1,
+      "notAttempted": 3,
+      "sourceRequestCount": 36,
+      "replayed": false,
+      "stoppedSlug": "superrich1965-92",
+      "tokenEvents": [
+        {
+          "slug": "superrich1965-56",
+          "attemptedAt": "2026-10-22T05:54:22.575Z",
+          "completedAt": "2026-10-22T05:54:29.342Z",
+          "status": 200,
+          "reason": null,
+          "tokenRemainingSeconds": null,
+          "tokenReissued": null
+        },
+        {
+          "slug": "superrich1965-92",
+          "attemptedAt": "2026-10-22T06:00:00.647Z",
+          "completedAt": "2026-10-22T06:00:05.188Z",
+          "status": 200,
+          "reason": "invalid",
+          "tokenRemainingSeconds": null,
+          "tokenReissued": null
+        }
+      ]
+    },
+    {
+      "id": "39771123990",
+      "url": "https://github.com/ginaz5/lingorm-map/actions/runs/39771123990",
+      "commit": "bf760512bbc70eed4517dfb9ec736eb3d3508c5d",
+      "mode": "publish-all-python",
+      "outcome": "complete",
+      "published": 38,
+      "failed": 0,
+      "notAttempted": 0,
+      "sourceRequestCount": 39,
+      "replayed": false,
+      "stoppedSlug": null,
+      "tokenEvents": [
+        {
+          "slug": "superrich1965-56",
+          "attemptedAt": "2026-10-22T11:30:55.174Z",
+          "completedAt": "2026-10-22T11:31:01.173Z",
+          "status": 200,
+          "reason": null,
+          "tokenRemainingSeconds": null,
+          "tokenReissued": null
+        }
+      ]
+    },
+    {
+      "id": "39798525108",
+      "url": "https://github.com/ginaz5/lingorm-map/actions/runs/39798525108",
+      "commit": "74f4958dd599d6ead7a746ab2e1b1f91dee7f19f",
+      "mode": "probe-python",
+      "outcome": "complete",
+      "published": 0,
+      "failed": 0,
+      "notAttempted": 0,
+      "sourceRequestCount": 2,
+      "replayed": false,
+      "stoppedSlug": null,
+      "tokenEvents": [
+        {
+          "slug": "superrich1965-58",
+          "attemptedAt": "2026-10-22T14:48:45.868Z",
+          "completedAt": "2026-10-22T14:48:51.839Z",
+          "status": 200,
+          "reason": null,
+          "tokenRemainingSeconds": 783,
+          "tokenReissued": null
+        }
+      ]
+    },
+    {
+      "id": "39818355808",
+      "url": "https://github.com/ginaz5/lingorm-map/actions/runs/39818355808",
+      "commit": "74f4958dd599d6ead7a746ab2e1b1f91dee7f19f",
+      "mode": "publish-all-python",
+      "outcome": "stopped",
+      "published": 24,
+      "failed": 1,
+      "notAttempted": 13,
+      "sourceRequestCount": 26,
+      "replayed": false,
+      "stoppedSlug": "superrich1965-81",
+      "tokenEvents": [
+        {
+          "slug": "superrich1965-56",
+          "attemptedAt": "2026-10-22T16:57:13.874Z",
+          "completedAt": "2026-10-22T16:57:23.045Z",
+          "status": 200,
+          "reason": null,
+          "tokenRemainingSeconds": 334,
+          "tokenReissued": null
+        },
+        {
+          "slug": "superrich1965-81",
+          "attemptedAt": "2026-10-22T17:02:30.628Z",
+          "completedAt": "2026-10-22T17:02:35.913Z",
+          "status": 200,
+          "reason": "near_expiry_token",
+          "tokenRemainingSeconds": 18,
+          "tokenReissued": 1
+        }
+      ]
+    }
+  ]
+}

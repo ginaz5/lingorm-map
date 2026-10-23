@@ -532,6 +532,13 @@ Cache GET 與 38 個單店 POST 均回 200，內容與逐店 Blobs 一致，純�
 另檢查 YAML／Bash、固定 action SHA、main-only 與 Secret 只在最後 CLI step 注入；
 這些本機檢查不代替遠端正式驗收。
 
+Token 更新回歸另見 `tests/exchange-rates-1965-token-renewal.test.mjs`：模擬官網在
+到期前重用相同 token，驗證 collector 在無 source／target lease 的情況下，
+等到到期後 2 秒才更新，38 店全數完成。等待保留 30 秒安全邊界，並覆蓋取消、
+job 期限／ownership、control／部署／source guard 及 gate CAS 變更的零來源停止。
+真實來源是否曾跨過 token 更新邊界，須看 token wait log 及兩次 token GET 的時間；
+只有 38 店成功、沒有更新 token 的輪次不能當作更新邊界的實測。
+
 ### Netlify 瀏覽器模式驗收
 
 瀏覽器模式與專用套件已退役，不再設定 browser transport、封裝 Chromium 或

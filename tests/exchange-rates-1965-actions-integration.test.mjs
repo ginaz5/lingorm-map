@@ -669,7 +669,7 @@ for (const [reason, response] of [
   const h = await harness(t);
   let tokenCalls = 0;
   h.tokenResponse = () => ++tokenCalls === 1
-    ? Response.json({ accessToken: 'PRIVATE_SOURCE_TOKEN', expires_in: 370 }) : response();
+    ? Response.json({ accessToken: 'PRIVATE_SOURCE_TOKEN', expires_in: 385 }) : response();
   h.rateResponse = () => { h.advance(8000); return Response.json(FIXTURE); };
   h.input.pythonFetchImpl = h.input.fetchImpl;
   h.input.fetchImpl = async () => assert.fail('no Node fallback');

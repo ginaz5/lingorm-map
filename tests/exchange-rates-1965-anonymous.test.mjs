@@ -86,6 +86,42 @@ test('unknown lifetime is never reused across quotes', async () => {
   await source.close();
 });
 
+test('readiness reserves startup time and waits until known expiry plus two seconds without HTTP', async () => {
+  let now = START, calls = 0;
+  const source = createAnonymousApiSource({ nowImpl: () => now, fetchImpl: async url => {
+    calls++;
+    return url === TOKEN_URL ? tokenResponse({ accessToken: tokenWithExpiry((START + 90_000) / 1000) }) : Response.json({ ok: true });
+  } });
+  assert.equal(source.getReadyAtMs(), now);
+  assert.equal(calls, 0);
+  await request(source);
+  now += 44_999;
+  assert.equal(source.getReadyAtMs(), now);
+  now++;
+  assert.equal(source.getReadyAtMs(), START + 92_000);
+  assert.equal(calls, 2);
+  now = START + 92_000;
+  assert.equal(source.getReadyAtMs(), now);
+  await source.close();
+  assert.equal(source.getReadyAtMs(), now);
+});
+
+test('readiness never delays an unknown-lifetime or failed token session', async () => {
+  for (const failed of [false, true]) {
+    let calls = 0;
+    const source = createAnonymousApiSource({ nowImpl: () => START, fetchImpl: async url => {
+      calls++;
+      return failed ? new Response(null, { status: 403 })
+        : url === TOKEN_URL ? tokenResponse({ accessToken: 'opaque-test-token' }) : Response.json({ ok: true });
+    } });
+    await request(source);
+    const before = calls;
+    assert.equal(source.getReadyAtMs(), START);
+    assert.equal(calls, before);
+    await source.close();
+  }
+});
+
 test('earliest JWT exp or expires_in controls reuse with a 30 second safety margin', async () => {
   for (const shorterHint of ['jwt', 'expires_in']) {
     let now = START;

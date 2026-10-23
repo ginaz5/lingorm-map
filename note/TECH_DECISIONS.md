@@ -535,3 +535,12 @@ guard resumed 且無 lease／未結案來源，原 control／epoch／封鎖歷�
 首兩輪預定台灣時間 09:00／09:30，真正定時更新另行驗收。
 操作見 [Actions 維運文件](../docs/superrich1965-actions-runbook.zh-TW.md)，
 實際證據見 [正式上線紀錄](../docs/superrich1965-production-release.zh-TW.md)。
+
+### 2026-10-23：橘標 token 到期前不提早要求更新
+
+實際排程證實 callback GET 可能回傳同一個、僅剩 18 秒有效期的 token，
+因此原本在剩 30 秒時更新會讓整輪停止。Actions 改在已知 token 剩餘 ≤45 秒時，
+於 target／source lease 起算前先等待到期後 2 秒；45 秒包含原 30 秒安全邊界與
+15 秒啟動裕度。快取命中不等待，等待仍受 12 分鐘 job、取消與 ownership 限制，
+結束後重驗正式部署，再由原控制、breaker、guard 與 CAS 把關來源工作。
+不改 HTTP 失敗重試政策、未知 TTL、冷 session 無效 token 或封鎖處理。

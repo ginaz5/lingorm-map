@@ -1,8 +1,68 @@
 # SuperRich 1965：正式上線與驗收紀錄
 
-更新：2026-10-22（Asia/Taipei）。此文件記錄 PR #8 正式上線的實際證據，操作方式見
+更新：2026-10-23（Asia/Taipei）。此文件記錄 PR #8 正式上線的實際證據，操作方式見
 [Actions 維運文件](superrich1965-actions-runbook.zh-TW.md)。未完成的階段保持待驗收，
 不以 GitHub 綠燈、Preview 報價或歷史 replay 代替正式來源及發布驗收。
+
+## Token 更新失敗原因已重現（2026-10-23）
+
+[PR #14](https://github.com/ginaz5/lingorm-map/pull/14) 的診斷變更已於台灣時間
+10 月 22 日 22:45:17 合併，main commit 為
+`74f4958dd599d6ead7a746ab2e1b1f91dee7f19f`，最終訊息含 `[skip netlify]`。
+853 項 Node、14 項 Python、checkJs、Vite／Functions、GitHub CI 及固定 Preview
+`6ada1e2cd20d19ea990509fa` 驗證通過；Preview cache 為空，前端資產與正式版一致。
+合併後已只讀核對正式部署仍為下表原版，網站 target SHA 沒有變更。
+
+[受控 probe 39798525108](https://github.com/ginaz5/lingorm-map/actions/runs/39798525108)
+於 10 月 22 日 22:48:45 開始來源工作，token GET／rate POST 都 200、來源 2 次、
+sourceValidated=true、published=0。首次 callback token 僅剩 783 秒；不把重新 GET
+等同於取得完整新有效期。原訂到期附近的額外手動對照未執行，以下證據來自排程本身。
+
+[排程 39818355808](https://github.com/ginaz5/lingorm-map/actions/runs/39818355808)
+於 10 月 23 日 00:56:54 建立；第一個 token GET 剩 334 秒。01:02:30 開始處理
+`superrich1965-81`，更新 token 的 callback 回 HTTP 200／JSON、沒有 challenge，但：
+
+- `reason=near_expiry_token`
+- `tokenRemainingSeconds=18`
+- `tokenReissued=1`，表示 callback 確實回傳同一 session 先前的同一個 token。
+
+因此已在實際 GitHub 排程重現原因：現有流程會在 token 進入到期前 30 秒時重新 GET
+callback，但 callback 不保證簽發新 token；回傳的同一個舊 token 僅剩 18 秒，仍不符
+30 秒安全邊界，程式在 rate POST 之前停止整輪。這次不是 403／429、錯誤 JSON 或
+分店參數問題，也不是對已到期 token 發出了 rate 請求。
+
+該輪 requested=38、published=24、failed=1、notAttempted=13、來源 HTTP=26，
+沒有 replay；成功 quote 保留原期限，失敗後沒有人工重試、清冷卻或改 guard。
+來源的 60 秒失敗間隔仍正常生效。已擷取的清理後證據見
+[JSON 紀錄](evidence/superrich1965-token-incident-2026-10-23.json)。
+
+原 10 月 22 日 14:00 的失敗也發生在這條 token 更新／驗證路徑，但原回應沒有保存，
+不能宣稱已從舊 log 證明當時的精確 token 值或剩餘秒數。新的排程則提供直接證據，
+不再只是本機模擬。官網為何重用 token（例如 origin 或 CDN 快取）仍未驗證。
+PR #14 只改善診斷，沒有改變 token 更新及整輪停止行為；後續修復見下一節。
+
+### Token 到期等待修復
+
+Actions 的 session 現在提供純記憶體的來源準備時間。已知 token 剩餘不超過
+45 秒（原 30 秒安全邊界＋15 秒來源啟動裕度）時，先等到該 token 到期後 2 秒，
+才進入下一家的正常 token GET／rate POST。這避免在 callback 尚會重用舊 token
+時提早要求更新，不縮短安全邊界，也不把失敗的 HTTP 請求重新送一次。
+
+等待只發生於需要新報價的分店，快取命中不等。等待在 target／source lease 與
+15 秒來源 deadline 建立前，每秒檢查取消、job ownership 與整輪 12 分鐘預算；
+結束後重驗 production target，既有 control、breaker、source guard 與 CAS 仍逐一
+把關。等待期間不發來源請求、不建立 unresolved marker、不計來源失敗。
+`exchange_rates_1965_token_wait` 僅記錄等待毫秒數，無 token／fingerprint。
+
+本機整合回歸確認 38 店跨 token 到期全數發布（2 次 token GET＋38 次 rate POST），
+等待當下無 target/source lease，既有 quote 與保護歷史保留；取消、期限、ownership、
+control／target／guard 及 gate CAS 變更都不新增 HTTP。首次取得的 token 本身已過期／
+近到期、過期後官網仍回無效 token、403／429／challenge 等仍按原規則停止，
+不新增 force、fallback 或失敗重試。本機驗證與實際上線結果分別記錄。
+
+本次修復本機驗證：866 項 Node 測試、14 項 Python 離線測試、strict checkJs、
+Vite／Functions build（輸出至 `/private/tmp`）、本機文件連結及 `git diff --check`
+通過；獨立程式審閱沒有需要修補的問題。
 
 ## 首次實際排程失敗（2026-10-22）
 

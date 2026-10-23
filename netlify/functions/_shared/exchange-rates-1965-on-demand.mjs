@@ -26,11 +26,11 @@ function validGate(gate) {
 
 /** An authorized collector can fetch one whitelisted branch. A persistent CAS lease
  * serializes cold requests across server instances; warm cache hits bypass it.
- * @param {{store:any, slug:string, enabledDefault?:unknown, fetchImpl?:typeof fetch, nowImpl?:()=>number, randomUUIDImpl?:()=>string, refreshDue?:boolean, expectedControlVersion?:string, sourceProfile?:import('./exchange-rates-1965-source.mjs').SourceProfile, requireExistingControl?:boolean, publishQuote?:boolean, sourceGuardStore?:any, operationId?:string, ownerId?:string, signal?:AbortSignal, beforeSource?:()=>Promise<boolean>, beforePublish?:()=>Promise<boolean>, canContinue?:()=>boolean, onResult?:(result:any)=>void}} input
+ * @param {{store:any, slug:string, enabledDefault?:unknown, fetchImpl?:typeof fetch, nowImpl?:()=>number, randomUUIDImpl?:()=>string, refreshDue?:boolean, expectedControlVersion?:string, sourceProfile?:import('./exchange-rates-1965-source.mjs').SourceProfile, requireExistingControl?:boolean, publishQuote?:boolean, sourceGuardStore?:any, operationId?:string, ownerId?:string, signal?:AbortSignal, prepareSource?:()=>Promise<{reason:string,retryAtMs?:number|null}|null>, beforeSource?:()=>Promise<boolean>, beforePublish?:()=>Promise<boolean>, canContinue?:()=>boolean, onResult?:(result:any)=>void}} input
  */
 export async function queryBranchRates({ store, slug, enabledDefault = process.env.EXCHANGE_RATES_1965_ENABLED,
   fetchImpl = fetch, nowImpl = Date.now, randomUUIDImpl = randomUUID, refreshDue = false, expectedControlVersion, sourceProfile = PROFILE,
-  requireExistingControl = false, publishQuote = true, sourceGuardStore, operationId, ownerId, signal, beforeSource, beforePublish, canContinue, onResult }) {
+  requireExistingControl = false, publishQuote = true, sourceGuardStore, operationId, ownerId, signal, prepareSource, beforeSource, beforePublish, canContinue, onResult }) {
   if (!Object.hasOwn(ORANGE_BRANCHES, slug)) return branchResponse(slug, nowImpl(), { status: 400, reason: 'invalid_request' });
   /** @type {any|null} */
   let lease = null;
@@ -114,6 +114,13 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
       diagnostic.cooldownSource = 'gate';
       return reply('cooldown', 429, gate.nextRequestAtMs);
     }
+    // Token rotation waits happen only on a cold quote, before either lease
+    // or the source deadline starts. A concurrent gate change loses the CAS.
+    if (prepareSource) {
+      const preparation = await prepareSource();
+      if (preparation) return reply(preparation.reason, preparation.reason === 'busy' ? 202 : 503, preparation.retryAtMs ?? null);
+    }
+    if (signal?.aborted) return reply('cancelled', 503);
     const leaseMs = Math.max(BRANCH_LEASE_MS, sourceProfile.deadlineMs + 9_000);
     const gateValue = { leaseId: randomUUIDImpl(), leaseUntilMs: nowImpl() + leaseMs, nextRequestAtMs: nowImpl() + BRANCH_MIN_GAP_MS };
     const acquired = await conditionalSetJSON(store, BRANCH_GATE_KEY, gateValue, gateEntry);
