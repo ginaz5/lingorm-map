@@ -5,9 +5,8 @@ import { state } from '../src/core/state.js';
 import { T } from '../src/core/i18n.js';
 import { parseCSV } from '../src/data/csv-parser.js';
 import { ORANGE_BRANCHES, BRANCH_QUOTE_TTL_MS, parseBranchQueryPayload } from '../src/data/exchange-rates-1965-branch.js';
-import { queryOrangeBranch, loadCachedBranchQuotes, getBranchQueryState, initBranchQueries, cancelBranchQueries, BRANCH_QUERY_API, BRANCH_CACHE_API } from '../src/features/exchange-rates-1965-branch.js';
-import { getExchangeRateCell1965 } from '../src/features/exchange-rates-1965.js';
-import { isExchangeSortAvailable, syncExchangeControls } from '../src/features/exchange-rates.js';
+import { queryOrangeBranch, loadCachedBranchQuotes, getBranchQueryState, getExchangeRateCell1965, initBranchQueries, cancelBranchQueries, BRANCH_QUERY_API, BRANCH_CACHE_API } from '../src/features/exchange-rates-1965-branch.js';
+import { cancelExchangeScheduling, isExchangeSortAvailable, syncExchangeControls } from '../src/features/exchange-rates.js';
 import { renderExchangeRates, buildPopupContent, sortVisibleIndexes } from '../src/ui/render.js';
 import { refreshActivePopup } from '../src/map/map.js';
 import { uuid } from './helpers/exchange-rates-store.mjs';
@@ -35,9 +34,6 @@ function harness(t, onChange = () => {}) {
   state.exchange1965BranchControlVersion = null;
   state.exchange1965BranchObservedAtMs = 0;
   state.exchangeSort = 'default';
-  state.exchange1965.ratesBySlug = {};
-  state.exchange1965.hasUsableSnapshot = false;
-  state.exchange1965.enabled = null;
   state.data = [row]; state.visIdx = [0]; state.favorites = new Set();
   const listeners = {};
   const add = (event, fn, capture) => { listeners[event] = { fn, capture }; };
@@ -57,7 +53,7 @@ function harness(t, onChange = () => {}) {
   return { listeners, document };
 }
 
-test('rendering, resume and expiry only read shared cache and never POST to the source proxy', async t => {
+test('rendering, resume and expiry only read shared cache and never POST a branch refresh', async t => {
   const fetch = t.mock.method(globalThis, 'fetch', async url => {
     assert.equal(url, BRANCH_CACHE_API);
     return Response.json({ schemaVersion: 1, checkedAt: new Date(Date.now()).toISOString(), enabled: true, controlVersion: uuid(1), quotes: [] });
@@ -325,4 +321,21 @@ test('orange sorting puts quoted branches first without inventing rates for unqu
     assert.equal(typeof T.zh[key], 'string');
     assert.equal(typeof T.en[key], 'string');
   }
+});
+
+test('cancelling exchange scheduling also aborts orange branch queries', async t => {
+  harness(t);
+  let querySignal;
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.equal(url, BRANCH_QUERY_API);
+    querySignal = options.signal;
+    return new Promise((_, reject) => options.signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true }));
+  });
+  const query = queryOrangeBranch(slug);
+  await Promise.resolve();
+  assert.equal(getBranchQueryState(slug)?.loading, true);
+  cancelExchangeScheduling();
+  assert.equal(querySignal.aborted, true);
+  assert.equal(getBranchQueryState(slug)?.loading, false);
+  await query;
 });

@@ -4,7 +4,7 @@
 // No network, no DOM, no storage: this module is imported by both the
 // scheduled Netlify Function and the browser bundle.
 //
-// Contract reference: docs/superrich-exchange-map-plan.zh-TW.md §2.2, §4.3.
+// Contract reference: docs/exchange-rate-contract.zh-TW.md#品牌與來源解析.
 // Quotes contain numbers, fixed enums and validated branch codes. Branch
 // details additionally contain validated Google Maps URLs. Raw display strings never escape, because
 // src/ui/render.js builds markup with innerHTML and performs no escaping.

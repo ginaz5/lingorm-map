@@ -51,6 +51,27 @@ export async function resetBreakerForControl(store, controlVersion, previousBrea
   return { breaker, modified: result.modified, etag: result.etag };
 }
 
+/** @param {any} store @param {any} controlEntry @param {any} control @param {any} breakerEntry @param {number} nowMs @param {()=>string} randomUUIDImpl */
+export async function autoDisable(store, controlEntry, control, breakerEntry, nowMs, randomUUIDImpl) {
+  const disabled = createControl({
+    enabled: false,
+    nowMs,
+    controlVersion: randomUUIDImpl(),
+    updatedBy: 'breaker',
+    previous: control,
+    disabledReason: 'source_blocked',
+  });
+  const result = await conditionalSetJSON(store, EXCHANGE_KEYS.control, disabled, controlEntry);
+  if (!result.modified) return false;
+  const blockedUntil = breakerEntry?.data?.blockedUntil && Date.parse(breakerEntry.data.blockedUntil) > nowMs
+    ? breakerEntry.data.blockedUntil
+    : null;
+  // Keep the ETag of this run's breaker write. Re-reading here could adopt
+  // a newer manual enable's ETag and overwrite its breaker with our version.
+  await resetBreakerForControl(store, disabled.controlVersion, breakerEntry, blockedUntil);
+  return true;
+}
+
 /** Preserve the latest future cooldown across a conflicting breaker write.
  * @param {any|null} entry @param {number} nowMs @param {string|null} [previous]
  */

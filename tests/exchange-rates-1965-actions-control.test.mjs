@@ -2,10 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { parseActionsControlArgs, runActionsControlCommand } from '../scripts/exchange-rates-1965-actions-control.mjs';
-import { EXCHANGE_KEYS, createBreaker } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
+import { EXCHANGE_KEYS, LEGACY_BATCH_JOB_KEY, createBreaker } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { SOURCE_GUARD_KEY } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
 import { BRANCH_GATE_KEY } from '../netlify/functions/_shared/exchange-rates-1965-on-demand.mjs';
-import { BATCH_JOB_KEY } from '../netlify/functions/_shared/exchange-rates-1965-background.mjs';
 import { LEGACY_PREVIEW_DEPLOY_IDS } from '../netlify/functions/_shared/exchange-rates-1965-actions-target.mjs';
 import { FakeBlobStore, enabledControl, uuid } from './helpers/exchange-rates-store.mjs';
 
@@ -114,17 +113,17 @@ test('source bootstrap reads all three legacy stores and the target, preserving 
   assert.equal(result.sourceGuard.breaker.blockLevel, 2);
   assert.equal(result.sourceGuard.breaker.consecutiveFailedRuns, 2);
   for (const store of [...f.legacy, f.store]) {
-    assert.deepEqual(store.calls.map(call => call.key), [EXCHANGE_KEYS.control, EXCHANGE_KEYS.breaker, BRANCH_GATE_KEY, BATCH_JOB_KEY]);
+    assert.deepEqual(store.calls.map(call => call.key), [EXCHANGE_KEYS.control, EXCHANGE_KEYS.breaker, BRANCH_GATE_KEY, LEGACY_BATCH_JOB_KEY]);
     assert.equal(store.calls.every(call => call.operation === 'get'), true);
   }
   assert.equal(f.sourceGuardStore.calls.filter(call => call.operation === 'set').length, 1);
 });
 
-test('active legacy gates, pending jobs and unknown legacy state all block bootstrap without mutating source state', async () => {
-  for (const kind of ['gate', 'job', 'invalid', 'unavailable']) {
+test('active legacy gates, pending or running jobs and unknown legacy state block bootstrap without mutating source state', async () => {
+  for (const kind of ['gate', 'pending_job', 'running_job', 'invalid', 'unavailable']) {
     const f = sourceFixture();
     if (kind === 'gate') f.legacy[0].seed(BRANCH_GATE_KEY, { leaseId: uuid(1), leaseUntilMs: START + 15_000, nextRequestAtMs: 0 });
-    if (kind === 'job') f.legacy[1].seed(BATCH_JOB_KEY, { token: uuid(1), controlVersion: uuid(2), status: 'pending',
+    if (kind.endsWith('_job')) f.legacy[1].seed('exchange-rates-1965/background-job', { token: uuid(1), controlVersion: uuid(2), status: kind.split('_')[0],
       scheduledAtMs: START, deadlineAtMs: START + 60_000, leaseId: null });
     if (kind === 'invalid') f.legacy[2].seed(EXCHANGE_KEYS.breaker, { unknown: true });
     if (kind === 'unavailable') f.legacy[0].getWithMetadata = async () => { throw new Error('mock-secret'); };

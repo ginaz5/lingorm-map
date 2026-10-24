@@ -1,23 +1,14 @@
-// Shared, source-string-free contracts for SuperRich snapshots and controls.
-
-import { DENOMS_1965 as DENOMS } from '../../../src/data/exchange-rates-1965.js';
+// Shared control, breaker and bounded diagnostic contracts for SuperRich 1965.
 
 export const EXCHANGE_STORE_NAME = 'exchange-rates-1965';
 export const EXCHANGE_KEYS = Object.freeze({
-  snapshot: 'exchange-rates-1965/snapshot',
   breaker: 'exchange-rates-1965/breaker',
   control: 'exchange-rates-1965/control',
-  lastAttempt: 'exchange-rates-1965/last-attempt',
 });
-export const SNAPSHOT_SCHEMA_VERSION = 1;
-export const PUBLIC_SCHEMA_VERSION = 1;
-export const HALF_HOUR_MS = 30 * 60 * 1000;
-export const SNAPSHOT_GRACE_MS = 90 * 1000;
-
+// Inspect immutable deployments' old jobs before adopting their source state.
+export const LEGACY_BATCH_JOB_KEY = 'exchange-rates-1965/background-job';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REASON_PATTERN = /^[a-z0-9_]{1,64}$/;
-const STATUS_VALUES = new Set(['ok', 'partial', 'failed']);
-const UNAVAILABLE_VALUES = new Set(['timeout', 'invalid', 'missing', 'http_error', 'expired']);
 
 /** @typedef {'manual'|'breaker'} ControlActor */
 /** @typedef {{enabled:boolean, controlVersion:string, enabledAt:string|null, changedAt:string, disabledReason:string|null, disabledAt:string|null, updatedBy:ControlActor}} ExchangeControl */
@@ -33,13 +24,6 @@ const isIso = value => {
 };
 /** @param {unknown} value */
 const isUuid = value => typeof value === 'string' && UUID_PATTERN.test(value);
-
-/** Return the next UTC :00 or :30 boundary strictly after `attemptedAtMs`. */
-/** @param {number} attemptedAtMs */
-export function nextUtcHalfHour(attemptedAtMs) {
-  if (!Number.isFinite(attemptedAtMs)) throw new Error('attemptedAtMs must be finite.');
-  return Math.floor(attemptedAtMs / HALF_HOUR_MS) * HALF_HOUR_MS + HALF_HOUR_MS;
-}
 
 /**
  * @param {{enabled:boolean, nowMs:number, controlVersion:string, updatedBy:ControlActor, previous?:ExchangeControl|null, disabledReason?:string|null}} input
@@ -101,89 +85,6 @@ export function isValidBreaker(value) {
     (value.lastError === null || (typeof value.lastError === 'string' && REASON_PATTERN.test(value.lastError)));
 }
 
-/** @param {unknown} cell @param {string} denom */
-function isRateCell(cell, denom) {
-  if (!isObject(cell) || cell.denom !== denom) return false;
-  const hasRate = Number.isSafeInteger(cell.rateScaledE6) && cell.rateScaledE6 > 0;
-  if (hasRate) {
-    return Number.isSafeInteger(cell.displayDecimals) && cell.displayDecimals >= 0 &&
-      cell.displayDecimals <= 6 && cell.unavailableReason === null;
-  }
-  return cell.rateScaledE6 === null && cell.displayDecimals === null && UNAVAILABLE_VALUES.has(cell.unavailableReason);
-}
-
-/** @param {unknown} branch */
-function isBranch(branch) {
-  if (!isObject(branch) || typeof branch.slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(branch.slug)) return false;
-  if (!Number.isSafeInteger(branch.officialId) || branch.officialId <= 0 || typeof branch.branchNo !== 'string' || !/^\d{2}$/.test(branch.branchNo) || branch.companyCode !== 'A04' || branch.slug !== `superrich1965-${branch.officialId}`) return false;
-  if (branch.sourceUpdatedAtMs !== null && (!Number.isSafeInteger(branch.sourceUpdatedAtMs) || branch.sourceUpdatedAtMs <= 0)) return false;
-  if (!STATUS_VALUES.has(branch.status) || !isObject(branch.rates)) return false;
-  if (!DENOMS.every(denom => isRateCell(branch.rates[denom], denom))) return false;
-  const available = DENOMS.filter(denom => branch.rates[denom].rateScaledE6 !== null).length;
-  return branch.status === (available === DENOMS.length ? 'ok' : available === 0 ? 'failed' : 'partial');
-}
-
-/**
- * @param {{runId:string, controlVersion:string, attemptedAtMs:number, completedAtMs:number, sourceBranchIds:number[], branches:any[], unknownBranchCount:number, missingBranchCount:number}} input
- */
-export function buildSnapshot({ runId, controlVersion, attemptedAtMs, completedAtMs, sourceBranchIds, branches, unknownBranchCount, missingBranchCount }) {
-  if (!isUuid(runId) || !isUuid(controlVersion) || !Number.isFinite(attemptedAtMs) || !Number.isFinite(completedAtMs)) {
-    throw new Error('Invalid snapshot identity or time.');
-  }
-  if (completedAtMs < attemptedAtMs || !Array.isArray(sourceBranchIds) || !Array.isArray(branches)) {
-    throw new Error('Invalid snapshot collection.');
-  }
-  if (!sourceBranchIds.every(id => Number.isSafeInteger(id) && id > 0) || new Set(sourceBranchIds).size !== sourceBranchIds.length) {
-    throw new Error('Invalid snapshot source IDs.');
-  }
-  if (!branches.every(isBranch) || new Set(branches.map(branch => branch.slug)).size !== branches.length) {
-    throw new Error('Invalid snapshot branches.');
-  }
-  if (![unknownBranchCount, missingBranchCount].every(value => Number.isSafeInteger(value) && value >= 0)) {
-    throw new Error('Invalid snapshot inventory counts.');
-  }
-  const nextUpdateAtMs = nextUtcHalfHour(attemptedAtMs);
-  return {
-    schemaVersion: SNAPSHOT_SCHEMA_VERSION,
-    runId,
-    controlVersion,
-    attemptedAt: new Date(attemptedAtMs).toISOString(),
-    completedAt: new Date(completedAtMs).toISOString(),
-    nextUpdateAt: new Date(nextUpdateAtMs).toISOString(),
-    expiresAt: new Date(nextUpdateAtMs + SNAPSHOT_GRACE_MS).toISOString(),
-    sourceBranchIds: [...sourceBranchIds].sort((left, right) => left - right),
-    sourceBranchCount: sourceBranchIds.length,
-    okBranchCount: branches.filter(branch => branch.status === 'ok').length,
-    partialBranchCount: branches.filter(branch => branch.status === 'partial').length,
-    failedBranchCount: branches.filter(branch => branch.status === 'failed').length,
-    unknownBranchCount,
-    missingBranchCount,
-    branches,
-  };
-}
-
-/** @param {unknown} value @returns {value is Record<string, any>} */
-export function isValidSnapshot(value) {
-  if (!isObject(value) || value.schemaVersion !== SNAPSHOT_SCHEMA_VERSION || !isUuid(value.runId) || !isUuid(value.controlVersion)) return false;
-  if (![value.attemptedAt, value.completedAt, value.nextUpdateAt, value.expiresAt].every(isIso)) return false;
-  const attempted = Date.parse(value.attemptedAt);
-  const completed = Date.parse(value.completedAt);
-  const next = Date.parse(value.nextUpdateAt);
-  const expires = Date.parse(value.expiresAt);
-  if (completed < attempted || next !== nextUtcHalfHour(attempted) || expires !== next + SNAPSHOT_GRACE_MS) return false;
-  if (!Array.isArray(value.sourceBranchIds) || !value.sourceBranchIds.every(id => Number.isSafeInteger(id) && id > 0)) return false;
-  if (new Set(value.sourceBranchIds).size !== value.sourceBranchIds.length || value.sourceBranchCount !== value.sourceBranchIds.length) return false;
-  if (!value.sourceBranchIds.every((id, index) => index === 0 || value.sourceBranchIds[index - 1] < id)) return false;
-  if (!Array.isArray(value.branches) || !value.branches.every(isBranch) || new Set(value.branches.map(branch => branch.slug)).size !== value.branches.length) return false;
-  if (new Set(value.branches.map(branch => branch.officialId)).size !== value.branches.length) return false;
-  for (const key of ['okBranchCount', 'partialBranchCount', 'failedBranchCount', 'unknownBranchCount', 'missingBranchCount']) {
-    if (!Number.isSafeInteger(value[key]) || value[key] < 0) return false;
-  }
-  return value.okBranchCount === value.branches.filter(branch => branch.status === 'ok').length &&
-    value.partialBranchCount === value.branches.filter(branch => branch.status === 'partial').length &&
-    value.failedBranchCount === value.branches.filter(branch => branch.status === 'failed').length;
-}
-
 /** @param {unknown} value */
 export function environmentEnabled(value) {
   if (value === undefined || value === null || value === '') return false;
@@ -192,32 +93,14 @@ export function environmentEnabled(value) {
   throw new Error('EXCHANGE_RATES_1965_ENABLED must be true or false.');
 }
 
-/**
- * Bounded run summary. Never carries a raw upstream response — only fixed
- * counts, fixed reason codes and the same bounded header diagnostics the
- * source module already collects.
- */
-export const LAST_ATTEMPT_SCHEMA_VERSION = 1;
-export const MAX_ATTEMPT_DIAGNOSTICS = 8;
-
-const ATTEMPT_MODES = new Set(['probe', 'dry_run', 'publish', 'scheduled']);
-/**
- * `published` must never stand in for a source failure: a run that collected
- * rates but wrote nothing is `not_published`, and a challenged run is
- * `blocked`, regardless of how the snapshot write went.
- */
-const ATTEMPT_RESULTS = new Set(['collected', 'published', 'not_published', 'blocked', 'skipped', 'failed']);
-const ATTEMPT_OUTCOMES = new Set(['complete', 'partial', 'failed', 'blocked']);
+const MAX_SOURCE_DIAGNOSTICS = 8;
 const DIAGNOSTIC_STRING_KEYS = ['cfMitigated', 'contentType', 'retryAfter', 'rayId', 'reason'];
-
-/** @typedef {'probe'|'dry_run'|'publish'|'scheduled'} AttemptMode */
-/** @typedef {'collected'|'published'|'not_published'|'blocked'|'skipped'|'failed'} AttemptResult */
 
 /** Keep only known keys, bounded lengths and a bounded entry count. */
 /** @param {unknown} value @returns {Array<Record<string, string|number|null>>} */
 export function sanitizeDiagnostics(value) {
   if (!Array.isArray(value)) return [];
-  return value.slice(0, MAX_ATTEMPT_DIAGNOSTICS).map(entry => {
+  return value.slice(0, MAX_SOURCE_DIAGNOSTICS).map(entry => {
     /** @type {Record<string, string|number|null>} */
     const clean = {};
     if (!isObject(entry)) return clean;
@@ -234,65 +117,4 @@ export function sanitizeDiagnostics(value) {
     }
     return clean;
   });
-}
-
-/**
- * @param {{mode:AttemptMode, result:AttemptResult, attemptedAtMs:number, completedAtMs:number, controlVersion?:string|null, runId?:string|null, sourceOutcome?:string|null, sourceRequestCount?:number, okBranchCount?:number, failedBranchCount?:number, reason?:string|null, diagnostics?:unknown}} input
- */
-export function createLastAttempt({
-  mode,
-  result,
-  attemptedAtMs,
-  completedAtMs,
-  controlVersion = null,
-  runId = null,
-  sourceOutcome = null,
-  sourceRequestCount = 0,
-  okBranchCount = 0,
-  failedBranchCount = 0,
-  reason = null,
-  diagnostics = [],
-}) {
-  if (!ATTEMPT_MODES.has(mode) || !ATTEMPT_RESULTS.has(result)) throw new Error('Invalid attempt identity.');
-  if (!Number.isFinite(attemptedAtMs) || !Number.isFinite(completedAtMs) || completedAtMs < attemptedAtMs) {
-    throw new Error('Invalid attempt time.');
-  }
-  if (controlVersion !== null && !isUuid(controlVersion)) throw new Error('Invalid attempt control version.');
-  if (runId !== null && !isUuid(runId)) throw new Error('Invalid attempt run id.');
-  if (sourceOutcome !== null && !ATTEMPT_OUTCOMES.has(sourceOutcome)) throw new Error('Invalid attempt outcome.');
-  if (reason !== null && (typeof reason !== 'string' || !REASON_PATTERN.test(reason))) throw new Error('Invalid attempt reason.');
-  for (const count of [sourceRequestCount, okBranchCount, failedBranchCount]) {
-    if (!Number.isSafeInteger(count) || count < 0) throw new Error('Invalid attempt counts.');
-  }
-  return {
-    schemaVersion: LAST_ATTEMPT_SCHEMA_VERSION,
-    mode,
-    result,
-    controlVersion,
-    runId,
-    attemptedAt: new Date(attemptedAtMs).toISOString(),
-    completedAt: new Date(completedAtMs).toISOString(),
-    sourceOutcome,
-    sourceRequestCount,
-    okBranchCount,
-    failedBranchCount,
-    reason,
-    diagnostics: sanitizeDiagnostics(diagnostics),
-  };
-}
-
-/** @param {unknown} value @returns {value is Record<string, any>} */
-export function isValidLastAttempt(value) {
-  if (!isObject(value) || value.schemaVersion !== LAST_ATTEMPT_SCHEMA_VERSION) return false;
-  if (!ATTEMPT_MODES.has(value.mode) || !ATTEMPT_RESULTS.has(value.result)) return false;
-  if (!isIso(value.attemptedAt) || !isIso(value.completedAt)) return false;
-  if (Date.parse(value.completedAt) < Date.parse(value.attemptedAt)) return false;
-  if (value.controlVersion !== null && !isUuid(value.controlVersion)) return false;
-  if (value.runId !== null && !isUuid(value.runId)) return false;
-  if (value.sourceOutcome !== null && !ATTEMPT_OUTCOMES.has(value.sourceOutcome)) return false;
-  if (value.reason !== null && (typeof value.reason !== 'string' || !REASON_PATTERN.test(value.reason))) return false;
-  for (const key of ['sourceRequestCount', 'okBranchCount', 'failedBranchCount']) {
-    if (!Number.isSafeInteger(value[key]) || value[key] < 0) return false;
-  }
-  return Array.isArray(value.diagnostics) && value.diagnostics.length <= MAX_ATTEMPT_DIAGNOSTICS;
 }

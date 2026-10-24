@@ -20,7 +20,15 @@ export function breakerBlocks(breaker, controlVersion, nowMs) {
   return breaker.blockedUntil !== null && Date.parse(breaker.blockedUntil) > nowMs;
 }
 
-/** Pure breaker transition. Full success is passed only after snapshot publication. */
+/** A published branch quote clears consecutive failures only. Block escalation
+ * and any active block time are kept, so repeated challenges still escalate.
+ * @param {import('./exchange-rates-1965-contract.mjs').ExchangeBreaker} breaker
+ */
+export function clearFailedRuns(breaker) {
+  return breaker.consecutiveFailedRuns === 0 ? breaker : { ...breaker, consecutiveFailedRuns: 0 };
+}
+
+/** Pure breaker transition. Individual branch successes use clearFailedRuns instead. */
 /**
  * @param {unknown} current
  * @param {{controlVersion:string, outcome:'complete'|'partial'|'failed'|'blocked', nowMs:number, retryAfterMs?:number|null}} event

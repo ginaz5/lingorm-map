@@ -199,10 +199,10 @@ git push -u origin <feature-branch>
 
 ## 換匯功能上線與維運手冊
 
-換匯（SuperRich）功能的資料模型與階段設計以
-[實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md) 為準、進度與已
-完成的驗證見 [進度紀錄](../docs/superrich-exchange-map-progress.zh-TW.md)；
-本節只記錄「正式環境要怎麼操作」，避免每次上線或排查問題都要重讀整份計畫。
+本節記錄 SuperRich Thailand（綠標）的部署與維運。
+兩品牌共用的資料、到期與公開 API 邊界見[匯率資料契約](../docs/exchange-rate-contract.zh-TW.md)。
+橘標使用獨立的 [Netlify 維運手冊](../docs/superrich1965-netlify-runbook.zh-TW.md)；
+早期階段設計與驗收歷程已移至[歷史索引](../docs/archive/README.md)。
 
 ### 報價更新時段
 
@@ -232,10 +232,10 @@ npm run fx:control -- status
 回一般排序；恢復連線且取得新快照後可以再次顯示報價。
 `tests/exchange-rates-ui.test.mjs` 以模擬時鐘涵蓋這些情境。
 
-換匯點的顯示以綠標 mapping 為準：`Type = Currency Exchange` 但 Slug 不在
-`data/superrich-branches.json` 的地點，即使是 `Published`，也不會出現在清單、搜尋、
-收藏、類別／標籤計數、目的地選項或地圖上（`isSupportedLocation()`）；綠標與一般地點
-不受影響。
+換匯點的顯示以兩品牌 mapping 的聯集與正式發布規則為準：
+`data/superrich-branches.json` 與 `data/superrich1965-branches.json` 以外的換匯 Slug
+不會出現在清單、搜尋、收藏、計數、目的地選項或地圖上（`isSupportedLocation()`）。
+兩個品牌各自讀取控制與報價；一般地點沿用位置發布規則。
 
 ### 排程首次啟用（正式環境）
 
@@ -336,8 +336,7 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
 
 若上面任何一項不成立，先查 `npm run fx:control -- status` 的
 `control`／`breaker`／`snapshot` 三個物件，再對照
-[實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md) §4－§5 的契約
-定義；這是故障排查的第一步，不是重新部署。
+[匯率資料契約](../docs/exchange-rate-contract.zh-TW.md) 的快取與前端行為；這是故障排查的第一步，不是重新部署。
 
 ---
 
@@ -383,37 +382,21 @@ http://localhost:8888/api/config
 
 ## 橘標整合與維運
 
-2026-10-17：全部 38 家橘標已在 Notion 改為 Published 並經 exporter 更新 CSV。
-分店發布不代表匯率服務已啟用。2026-10-20 起退役 Netlify 的橘標來源
-抓取，保留只讀 API。2026-10-21 已在 GitHub runner 完成 Python／Safari 匿名
-流程、Preview 單店與五店發布，再以 33 店新發布＋5 店有效快取完成 38 店覆蓋。
-2026-10-22 PR #8 已合併並部署正式站，專用 PAT 的 production inspect 與正式單店
-新取價／發布、五店 4 新取＋1 cache、全店 38 新取及正式 Google 地圖／排序驗收
-通過；真正定時更新另行記錄，最新狀態見
-[正式上線紀錄](../docs/superrich1965-production-release.zh-TW.md)。
-完整契約見 [Netlify 只讀快取與外部抓取](../docs/superrich1965-on-demand-plan.zh-TW.md)。
+橘標 38 家位置已發布，正式報價由 Netlify Scheduled Function 派送 Python background
+worker。泰國 08:00～22:30 每半小時更新；GitHub Actions 只有手動備援，沒有 cron。
+PR #18 於 2026-10-24 正式部署，兩輪自動排程與後續追加回查通過，詳見
+[最新上線紀錄](../docs/superrich1965-netlify-pr18-release-2026-10-24.zh-TW.md)。
 
-- 頁面每 60 秒 GET `/api/exchange-rates-1965-cache`，只讀有效逐店報價。
-  缺少報價的卡片顯示「重新整理匯率／Refresh rates」，POST 到
-  `/api/exchange-rates-1965-branch` 也只讀快取，不會再向來源取價。
-- 保留 `/api/exchange-rates-1965` 完整 snapshot API 與既有本機 CLI 契約。
-  單店 API 可讀有效 snapshot fallback，但不播種逐店快取或延長到期時間。
-- 報價到期為下一個整點／半點加 35 分鐘，實際約 35～65 分鐘。
-  重新整理只讀快取，報價到期後仍須等待外部抓取器成功發布。
-- 刪除 `exchange-rates-1965-fetch`、`exchange-rates-1965-refresh` 兩個 Function、
-  Netlify dispatch、Chromium helper／套件／打包設定。
-- `EXCHANGE_RATES_1965_FETCH_MODE`、`EXCHANGE_RATES_1965_SOURCE_TRANSPORT`
-  已無程式讀取，也已從 Netlify 專案所有 context 移除；本次正式部署已採用退役後程式。
-  `EXCHANGE_RATES_1965_ENABLED` 保留，
-  預設 false，既有 runtime control 優先；只讀端點不初始化 control。
-- 保留控制、cache、lease、breaker、gate 與 job 資料，不清除已知冷卻。
-  `NETLIFY_SITE_ID`、`NETLIFY_AUTH_TOKEN` 仍供控制工具／既有 CLI 使用。
-- 列表與 Google／HERE popup 共用報價、排序及到期狀態；綠標維持原流程。
+- [Netlify 維運手冊](../docs/superrich1965-netlify-runbook.zh-TW.md)：部署綁定、啟停、派送、收據、回滾。
+- [Actions 手動備援](../docs/superrich1965-actions-runbook.zh-TW.md)：停用 Netlify collector 後，使用明確 production target。
+- [匯率資料契約](../docs/exchange-rate-contract.zh-TW.md)：指定面額、只讀 API、控制版本、到期與排序。
+- [歷史文件](../docs/archive/README.md)：已退役的 browser transport、舊環境開關、bootstrap 與實驗驗收。
 
 ### 只讀 API 本機驗收
 
-使用 `netlify dev`，先確認本機控制及 store；不要為了測試改正式 control。
-例如 localhost:8888 的同源請求：
+使用 `netlify dev` 與本機 store，先確認不會連到正式控制資料。
+頁面每 60 秒 GET `/api/exchange-rates-1965-cache`；單店「重新整理匯率」POST
+也只讀快取，不會派送工作或向來源取價。例如：
 
 ```bash
 curl -sS http://localhost:8888/api/exchange-rates-1965-cache
@@ -423,13 +406,14 @@ curl -sS -X POST http://localhost:8888/api/exchange-rates-1965-branch \
   --data '{"slug":"superrich1965-58"}'
 ```
 
-單店有有效報價時回 200；無有效報價回 `503 unavailable`、Retry-After 60 秒。
-停用時為 `503 disabled`；沒有有效 control 時不會自行建立。報價必須符合
-slug、controlVersion、enabledAt 與原有效期；不會建立 lease、讀 breaker、
-寫 Blobs 或發出來源請求。前端兩種讀取 timeout 均為 12 秒。
-本機已有報價只能證明快取可讀，不能當作 GitHub runner 來源驗收。
+單店 POST 有效報價回 200；無有效報價回 `503 unavailable`、`Retry-After: 60`；停用時為
+`503 disabled`。聚合 cache GET 在停用、缺 control 或沒有有效報價時回 200、`quotes: []`。
+兩者缺 control 都不自行建立，不寫 Blobs 或發出來源請求。
+橘標只讀逐店 quote，不再從完整 snapshot fallback 補值；公開讀取不延長有效期。
+`/api/exchange-rates-1965-runtime` 只提供目前部署身分，供 collector binding 驗證。
+舊橘標 `/api/exchange-rates-1965` 與 `fx:1965:fetch` 已從目前程式移除；綠標 snapshot API 繼續使用。
 
-程式驗證使用 mock，不打真實來源、不寫正式資料：
+程式驗證使用 mock，不接觸真實來源或正式資料：
 
 ```bash
 npm run typecheck
@@ -438,121 +422,9 @@ npm run build
 netlify functions:build --src netlify/functions --functions /private/tmp/lingorm-functions-build
 ```
 
-新只讀測試覆蓋零來源、零寫入、缺 control、控制切換、到期、snapshot fallback；
-退役測試確認公開 API 不載入 collector，且兩個來源入口不存在。
-這次沒有改位置資料；若另有 snapshot 變更，再跑位置／收藏／mapping validators。
-
-### 橘標來源失敗診斷
-
-以下用來解讀**退役前部署**及保留的 collector 診斷。新版 Netlify 公開 API
-不抓來源，不會再產生來源查詢 log。舊部署仍須以確切 commit／deploy ID 辨識。
-
-歷史 `exchange_rates_1965_branch` 紀錄中的 `httpStatus` 是本站狀態，
-`blockedStatus` 與 `diagnostics[].status` 才是來源 HTTP 狀態：
-
-- `sourceRequestCount=1`、`sourceOutcome=blocked`、`cooldownSource=source_blocked`
-  表示來源請求被拒絕；`cfMitigated=challenge` 可辨識 challenge。
-- `sourceRequestCount=0`、`cooldownSource=breaker|gate` 表示被既有冷卻擋下，
-  沒有新來源請求。快取命中同樣為零來源，但回 200。
-- `retryAt` 是本站允許再試的 UTC 時間，不保證來源已解封。
-  背景紀錄的 `stoppedSlug` 是停止分店，`loaded` 是成功店數。
-
-2026-10-19 Preview 的匿名 token GET 回 403 challenge，未發出匯率 POST，
-本站回 429 是保護機制。不要以新部署、store 或 runner 規避未結束的冷卻。
-詳見 [匿名 API 調查紀錄](../docs/superrich1965-anonymous-api-investigation.zh-TW.md)。
-診斷不得記錄 token、Cookie、完整來源回應或任意例外文字。
-
-### 匿名 API 模式本機驗收
-
-原先以 `SOURCE_TRANSPORT=anonymous-api` 啟動 Netlify 單店取價的步驟已退役，
-不再使用舊環境開關。已完成的本機驗證是歷史證據：A04／36 token GET／rate
-POST 都 200，USD `100-50` 與 TWD `1000-100` 指定面額解析成功；不能據此
-宣稱 Netlify 或 GitHub runner 可用。
-
-匿名模組與其 mock／整合測試由 Actions runner 共用。token 只留在
-程序記憶體；同輪可重用具明確到期提示的 token。任何階段遇 403／429／challenge
-仍遵守共享 breaker；不 fallback、不自動重試。新的真實來源驗收使用已審閱的
-Actions 入口，不能呼叫已刪除的 Netlify Function。
-
-### GitHub Actions 驗收與正式接線
-
-現行 runner 保留明確 target／control、固定 site-wide source guard、job／operation
-ledger、取消與逐店發布。Python helper 只負責固定匿名 token GET／rate POST，JS
-仍負責 token 生命週期、正式 38 店 mapping、parser、節奏及發布保護，沒有來源 fallback。
-`probe-python` 不發布；`publish-python` 固定單店 58，`publish-five-python` 固定
-58／56／57／59／60，`publish-all-python` 使用全部 38 店。
-實際指令及最新遠端證據見 [Actions 維運文件](../docs/superrich1965-actions-runbook.zh-TW.md)。
-
-PR #9～#12 已以獨立 bootstrap 進 main，使用最終 `[skip netlify]` 訊息維持正式站
-原部署；GitHub Environment 的專用 PAT 已通過真實 inspect／發布。Environment
-沿用 `superrich1965-preview` 名稱、僅允許 main，正式接線仍使用該專用 Secret，
-不換成本機 `.env` 管理 token。名稱不代表 PAT 本身僅有 Preview／單一 store 權限。
-
-PR #8 的固定 Preview `6ad779f97644e6fb5b04b05c` 已完成 Python probe、單店發布、
-五店全新發布及 38 店覆蓋。五店 run `39617098664`；全店 run `39618515018` 新取
-33 店、cache hit 5 店，`sourceValidated=false` 如實反映混合結果。兩個只讀 API
-與逐店快取一致，中英文、列表、HERE popup、USD／TWD 排序已實測；該 Preview
-沒有 Google 設定，不能作為正式 Google 現場驗收的證據。
-這些歷史 quote 已按原期限到期，不以測試成功暗示目前仍有有效報價。
-
-正式接線使用明確 `production` target、production context 與 main 正式發布，
-`commitPolicy: environment-reviewed` 以 Environment variable
-`EXCHANGE_RATES_1965_PRODUCTION_COMMIT` 綁定已審閱且實際發布的 40 字元 commit。
-未設定、格式錯誤或 metadata 不符都停止，不從目前 main 或 Preview 推導。
-往後網站更新後，必須核對新正式發布並更新綁定，才能繼續正式取價。
-
-PR #8 合併前完成 848 項 Node、14 項 Python 測試、checkJs、Vite／Functions build、
-snapshot／收藏／mapping 驗證及新版 Preview。正式部署後先查只讀 API，再以獨立
-production control 做人工單店→五店→全店驗收。後續階段可能沿用先前有效快取，必須分別列出新來源與 cache hit，
-不清快取或重標時間製造全新覆蓋。Preview quote／control 不搬到正式 store。
-
-排程採 UTC `0,30 1-15 * * *`，即泰國 08:00～22:30，每天 30 輪。
-Repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 必須明確為 `true`，
-workflow 與 CLI 才接受 schedule；預設關閉，人工驗收前 source guard 亦保持 paused。
-Schedule 固定 production／`publish-all-python`，保留與手動相同的 concurrency group。
-人工驗收通過才啟用，再核對至少兩輪實際定時結果，不把全 cache 或歷史 replay 當新來源成功。
-台灣時間 2026-10-22 07:41 已核對開關為 true、guard 為 resumed，lease 及未結案來源
-均為空，原 control／epoch／blockLevel=2 不變。排程已開啟；首兩輪預定台灣時間
-09:00／09:30（泰國 08:00／08:30），截至本次紀錄尚待真正 schedule 結果。
-
-正式全店 run `39694052646` 已於台灣時間 07:39 驗收：跨過半小時刷新邊界後
-38 店全部新取並發布、cache hit 0、failed 0、source HTTP 39、sourceValidated=true。
-Cache GET 與 38 個單店 POST 均回 200，內容與逐店 Blobs 一致，純讀前後保護狀態未變。
-正式 Google SDK／圖磚／popup、中英文及橘標 USD／TWD 最佳排序已實測；
-新 Preview 的 HERE 正確顯示無自身報價，驗證 store 隔離，實際正式 quote 的 API、
-列表及 Google／HERE 到期撤價另由三項模擬時鐘測試確認，並非等候現場到期。
-
-目前共同 sourceEpoch 與 blockLevel=2 的歷史保留，成功不清升級紀錄。既有 10 個
-退役前部署的來源 control 已停用，正式接手不啟用未整合共同 guard 的本機舊 CLI。
-遇 403／429／challenge 即停止，跨 target 保留共同冷卻；不因部署或重綁重新 bootstrap。
-回滾網站前先 source-pause，因為網站回滾不會停止 Actions 或還原 Blobs。
-
-測試涵蓋來源成功／零發布、串行與 token 重用、冷卻／unknown outcome、取消、
-租約／CAS、損壞 ledger、失敗 rerun、公開 API 零來源零寫入，以及背景／離線到期。
-另檢查 YAML／Bash、固定 action SHA、main-only 與 Secret 只在最後 CLI step 注入；
-這些本機檢查不代替遠端正式驗收。
-
-Token 更新回歸另見 `tests/exchange-rates-1965-token-renewal.test.mjs`：模擬官網在
-到期前重用相同 token，驗證 collector 在無 source／target lease 的情況下，
-等到到期後 2 秒才更新，38 店全數完成。等待保留 30 秒安全邊界，並覆蓋取消、
-job 期限／ownership、control／部署／source guard 及 gate CAS 變更的零來源停止。
-真實來源是否曾跨過 token 更新邊界，須看 token wait log 及兩次 token GET 的時間；
-只有 38 店成功、沒有更新 token 的輪次不能當作更新邊界的實測。
-
-### Netlify Python 排程與背景取價
-
-單店與 38 店背景實驗已驗證 Python 能在 Netlify 取價。新正式 scheduler／worker
-採部署綁定與 HMAC、半小時 slot CAS、Node 22 與 build 時驗證的獨立 Python；
-正式 control 預設未綁定／disabled，不因部署而自動取價。公開 API 仍只讀。
-操作與切換順序見 [Netlify 維運手冊](../docs/superrich1965-netlify-runbook.zh-TW.md)，
-背景實測見 [38 店紀錄](../docs/superrich1965-netlify-python-background-2026-10-23.zh-TW.md)。
-上方 Actions 及退役紀錄保留作歷史與手動備援說明，現行自動排程以 Netlify 手冊為準。
-
-### Netlify 瀏覽器模式驗收
-
-瀏覽器模式與專用套件已退役，不再設定 browser transport、封裝 Chromium 或
-人工觸發 fetch／refresh。歷史驗證已確認瀏覽器啟動成功，但官網 navigation
-仍回 403 challenge；不再調整 Chromium 來延長這條路徑。
+本機測試與打包不代替部署驗收；正式驗收須核對 scheduler 的實際 receipt、
+operation ledger、38 店有效 quote 與目前 binding，細節見 Netlify 維運手冊。
+有 snapshot 或 mapping 變更時，另跑位置、收藏相容性與兩品牌 mapping validators。
 
 ### 橘標 UI 本機驗收
 
@@ -562,6 +434,8 @@ job 期限／ownership、control／部署／source guard 及 gate CAS 變更的�
 `fail=1` 模擬舊 429 的前端相容處理，不代表新版 cache API 會建立冷卻。
 fixture 在記憶體攔截請求，不碰來源、正式 Blobs 或 CSV。
 
-新版部署確認三個橘標 API 只讀、兩個取價入口及舊環境開關已退役。
-本機測試與打包不能代替部署驗收；本機 UI 測試不改正式 control 或清除 breaker，
-正式 control 只在正式維運與人工發布流程中明確操作。
+用模擬時鐘檢查背景、離線及 API 請求跨到期後撤價；Google／HERE 與列表均應一致。
+橘標 branch／cache API 只讀逐店報價，runtime API 只讀部署身分。Netlify Function 的來源工作
+由受部署綁定與 HMAC 保護的 scheduler／worker 執行；受控 Actions 入口保留手動備援。
+本機保留管理控制 CLI，舊完整快照取價 CLI 已退役。舊 snapshot Blobs 不讀取、不搬移或刪除。
+不要恢復已退役的 fetch／refresh Function、Chromium 或舊來源模式環境開關。

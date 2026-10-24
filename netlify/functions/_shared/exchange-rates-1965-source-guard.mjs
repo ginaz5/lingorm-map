@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { ORANGE_BRANCHES } from '../../../src/data/exchange-rates-1965-branch.js';
-import { breakerBlocks, nextBreakerState } from './exchange-rates-1965-breaker.mjs';
+import { breakerBlocks, clearFailedRuns, nextBreakerState } from './exchange-rates-1965-breaker.mjs';
 import { createBreaker, isValidBreaker } from './exchange-rates-1965-contract.mjs';
 import { conditionalSetJSON, readEntry } from './exchange-rates-1965-storage.mjs';
 
@@ -181,7 +181,8 @@ export async function validateSourceAttemptLease({ store, lease, nowMs = Date.no
 
 /** Persist the actual outcome before any target mutation. Late owners may
  * still reconcile their result: an unresolved attempt cannot be re-leased.
- * Complete SINGLE branches never reset source escalation or failure history.
+ * Complete SINGLE branches never reset source escalation or failure history here;
+ * only a published quote clears the failure count, via clearSourceFailedRuns.
  * @param {{store:any,lease:any,outcome:'complete'|'failed'|'blocked'|'unknown',nowMs?:number,retryAfterMs?:number|null}} input
  */
 export async function finishSourceAttempt({ store, lease, outcome, nowMs = Date.now(), retryAfterMs = null }) {
@@ -210,6 +211,30 @@ export async function finishSourceAttempt({ store, lease, outcome, nowMs = Date.
     } catch { return { ok: false, reason: 'source_guard_unavailable', state: current.state, retryAtMs: retryAt(current.state) }; }
   }
   return { ok: false, reason: 'source_guard_conflict', state: null, retryAtMs: null };
+}
+
+/** After a published quote, clear consecutive failures while the caller still
+ * owns a live lease and the guard is not paused. Block escalation and any
+ * active block time are kept.
+ * @param {{store:any,lease:any,nowMs?:number}} input
+ */
+export async function clearSourceFailedRuns({ store, lease, nowMs = Date.now() }) {
+  if (!timestamp(nowMs)) return { ok: false, reason: 'invalid_guard_input', state: null };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const current = await readSourceGuard({ store, nowMs, expectedEpoch: lease?.sourceEpoch });
+    if (!current.state || !current.entry || !owns(current.state, lease)) return { ...current, ok: false, reason: 'lease_lost' };
+    if (current.state.unresolvedAttempt) return { ...current, ok: false, reason: 'unknown_outcome' };
+    if (current.state.leaseUntilMs <= nowMs) return { ...current, ok: false, reason: 'lease_expired' };
+    if (current.state.paused) return { ...current, ok: false, reason: 'paused' };
+    const breaker = clearFailedRuns(current.state.breaker);
+    if (breaker === current.state.breaker) return { ok: true, reason: null, state: current.state };
+    const state = { ...current.state, breaker };
+    try {
+      const write = await conditionalSetJSON(store, SOURCE_GUARD_KEY, state, current.entry);
+      if (write.modified) return { ok: true, reason: null, state };
+    } catch { return { ok: false, reason: 'source_guard_unavailable', state: current.state }; }
+  }
+  return { ok: false, reason: 'source_guard_conflict', state: null };
 }
 
 /** Never clears an unresolved result, even on cancellation or lease expiry.

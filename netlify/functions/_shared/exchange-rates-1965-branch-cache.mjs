@@ -1,8 +1,6 @@
 import { BRANCH_API_SCHEMA_VERSION, ORANGE_BRANCHES, isValidBranchQuote, parseBranchQueryPayload } from '../../../src/data/exchange-rates-1965-branch.js';
-import { EXCHANGE_KEYS, isValidSnapshot } from './exchange-rates-1965-contract.mjs';
 import { readEffectiveControl } from './exchange-rates-1965-control.mjs';
 import { readEntry } from './exchange-rates-1965-storage.mjs';
-import { quoteExpiryMs } from '../../../src/data/exchange-rate-timing.js';
 
 const BRANCH_READ_RETRY_MS = 60_000;
 /** @param {string} slug */
@@ -50,19 +48,7 @@ export async function readBranchRates({ store, slug, enabledDefault = process.en
     const usable = candidate => isValidBranchQuote(candidate) && candidate.slug === slug &&
       candidate.controlVersion === version && Date.parse(candidate.attemptedAt) >= enabledAtMs &&
       Date.parse(candidate.expiresAt) > nowImpl() && Date.parse(candidate.completedAt) <= nowImpl();
-    let quote = (await readEntry(store, branchCacheKey(slug)))?.data;
-    if (!usable(quote)) {
-      // Existing local collectors publish a complete snapshot. Read it without
-      // seeding a branch blob or extending the original quote lifetime.
-      const full = (await readEntry(store, EXCHANGE_KEYS.snapshot))?.data;
-      const branch = isValidSnapshot(full)
-        ? full.branches.find((/** @type {any} */ candidate) => candidate.slug === slug) : null;
-      quote = branch?.status === 'ok' ? {
-        schemaVersion: BRANCH_API_SCHEMA_VERSION, slug, controlVersion: full.controlVersion,
-        attemptedAt: full.attemptedAt, completedAt: full.completedAt,
-        expiresAt: new Date(Math.min(Date.parse(full.expiresAt), quoteExpiryMs(Date.parse(full.attemptedAt)))).toISOString(), branch,
-      } : null;
-    }
+    const quote = (await readEntry(store, branchCacheKey(slug)))?.data;
     const latest = await readEffectiveControl(store, enabledDefault);
     control = latest.control;
     enabled = latest.enabled;

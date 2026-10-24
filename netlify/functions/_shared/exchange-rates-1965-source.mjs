@@ -27,28 +27,13 @@ export const NETLIFY_SOURCE_PROFILE = Object.freeze({
   deadlineMs: SOURCE_DEADLINE_MS,
 });
 
-/** Local collector: one request at a time, 1.5s apart, 180s whole-round budget. */
-/** @type {SourceProfile} */
-export const LOCAL_SOURCE_PROFILE = Object.freeze({
-  name: 'local',
-  concurrency: 1,
-  minStartGapMs: 1_500,
-  requestTimeoutMs: SOURCE_TIMEOUT_MS,
-  deadlineMs: 180_000,
-});
-
-export const SOURCE_PROFILES = Object.freeze({
-  netlify: NETLIFY_SOURCE_PROFILE,
-  local: LOCAL_SOURCE_PROFILE,
-});
-
 /**
- * @param {SourceProfile|'netlify'|'local'} [profile]
+ * @param {SourceProfile|'netlify'} [profile]
  * @param {{sourceDeadlineMs?:number, requestTimeoutMs?:number}} [overrides]
  * @returns {SourceProfile}
  */
 export function resolveSourceProfile(profile = NETLIFY_SOURCE_PROFILE, overrides = {}) {
-  const base = typeof profile === 'string' ? SOURCE_PROFILES[profile] : profile;
+  const base = profile === 'netlify' ? NETLIFY_SOURCE_PROFILE : profile;
   if (!base || typeof base !== 'object') throw new Error('invalid_source_profile');
   const resolved = {
     name: typeof base.name === 'string' && base.name ? base.name : 'custom',
@@ -197,7 +182,7 @@ function unavailableReason(result) {
 
 /** Fetch only the reviewed fixed mapping. No live inventory or automatic identity matching. */
 /**
- * @param {{mapping:any, fetchImpl?:typeof fetch, nowImpl?:()=>number, sleepImpl?:(ms:number)=>Promise<void>, functionStartedAtMs?:number, sourceDeadlineMs?:number, requestTimeoutMs?:number, profile?:SourceProfile|'netlify'|'local', allowRetry?:boolean, signal?:AbortSignal}} input
+ * @param {{mapping:any, fetchImpl?:typeof fetch, nowImpl?:()=>number, sleepImpl?:(ms:number)=>Promise<void>, functionStartedAtMs?:number, sourceDeadlineMs?:number, requestTimeoutMs?:number, profile?:SourceProfile|'netlify', allowRetry?:boolean, signal?:AbortSignal}} input
  */
 export async function collectSourceQuotes({
   mapping,

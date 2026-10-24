@@ -2,10 +2,9 @@ import { pathToFileURL } from 'node:url';
 
 import { LEGACY_PREVIEW_DEPLOY_IDS, openActionsTarget } from '../netlify/functions/_shared/exchange-rates-1965-actions-target.mjs';
 import { changeControl } from '../netlify/functions/_shared/exchange-rates-1965-control.mjs';
-import { EXCHANGE_KEYS, isValidBreaker, isValidControl } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
+import { EXCHANGE_KEYS, LEGACY_BATCH_JOB_KEY, isValidBreaker, isValidControl } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { readEntry } from '../netlify/functions/_shared/exchange-rates-1965-storage.mjs';
 import { BRANCH_GATE_KEY } from '../netlify/functions/_shared/exchange-rates-1965-on-demand.mjs';
-import { BATCH_JOB_KEY } from '../netlify/functions/_shared/exchange-rates-1965-background.mjs';
 import { bootstrapSourceGuard, readSourceGuard, reconcileSourceAttempt, setSourceGuardPaused } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -61,7 +60,7 @@ async function readLegacyBreaker(store, nowMs, requireDisabled = false) {
   try {
     const [control, breaker, gate, job] = await Promise.all([
       readEntry(store, EXCHANGE_KEYS.control), readEntry(store, EXCHANGE_KEYS.breaker),
-      readEntry(store, BRANCH_GATE_KEY), readEntry(store, BATCH_JOB_KEY),
+      readEntry(store, BRANCH_GATE_KEY), readEntry(store, LEGACY_BATCH_JOB_KEY),
     ]);
     if ((control && !isValidControl(control.data)) || (breaker && !isValidBreaker(breaker.data))) throw new Error();
     // An idle lease does not disable an immutable old deployment's public

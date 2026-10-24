@@ -43,24 +43,13 @@ export const DESTINATIONS = Object.freeze([
 export const COUNTRY_CODES = Object.freeze(COUNTRIES.map(country => country.code));
 export const DESTINATION_KEYS = Object.freeze(DESTINATIONS.map(destination => destination.key));
 
-const COUNTRY_BY_CODE = new Map(COUNTRIES.map(country => [country.code, country]));
 const DESTINATION_BY_KEY = new Map(
   DESTINATIONS.map(destination => [destination.key, destination])
 );
 
-/** @param {string} code @returns {Country|undefined} */
-export function getCountry(code) {
-  return COUNTRY_BY_CODE.get(code);
-}
-
 /** @param {string} key @returns {Destination|undefined} */
 export function getDestination(key) {
   return DESTINATION_BY_KEY.get(key);
-}
-
-/** @param {string} countryCode @returns {Destination[]} */
-export function destinationsForCountry(countryCode) {
-  return DESTINATIONS.filter(destination => destination.countryCode === countryCode);
 }
 
 /**

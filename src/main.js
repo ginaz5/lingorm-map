@@ -10,10 +10,9 @@ import {
 } from './ui/ui.js';
 import {
   openIssueModal, closeIssueModal, submitIssueReport,
-  tryLoadSheet,
+  loadLocations,
 } from './features/forms.js';
 import {
-  initMap,
   loadMapScript,
   updateMapTheme,
   buildMarkers,
@@ -341,6 +340,6 @@ updateLangUI();
 buildCatFilter();
 buildTypeFilter();
 applyFilters();       // render initial (loading) state
-tryLoadSheet(rebuild);  // loads data; rebuild() triggers buildMarkers + renderList
+loadLocations(rebuild);  // loads the location snapshot; rebuild() triggers buildMarkers + renderList
 loadMapScript(); // tries Google Maps first, falls back to HERE if unavailable
 checkWhatsNew(); // show What's New modal if there are updates since last visit

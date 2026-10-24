@@ -4,7 +4,10 @@ import FIXTURE from './fixtures/superrich1965/exchange-rate-00.json' with { type
 import handler from '../netlify/functions/exchange-rates-1965-branch.mjs';
 import { queryBranchRates, branchCacheKey, BRANCH_GATE_KEY, BRANCH_LEASE_MS, BRANCH_MIN_GAP_MS } from '../netlify/functions/_shared/exchange-rates-1965-on-demand.mjs';
 import { BRANCH_QUOTE_TTL_MS, ORANGE_BRANCHES, isValidBranchQuote, parseBranchQueryPayload } from '../src/data/exchange-rates-1965-branch.js';
-import { EXCHANGE_KEYS, createBreaker, createControl, buildSnapshot } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
+import { EXCHANGE_KEYS, createBreaker, createControl } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
+import { clearFailedRuns } from '../netlify/functions/_shared/exchange-rates-1965-breaker.mjs';
+import { SOURCE_GUARD_KEY, bootstrapSourceGuard, setSourceGuardPaused } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
+import { ANONYMOUS_SOURCE_PROFILE } from '../netlify/functions/_shared/exchange-rates-1965-anonymous.mjs';
 import { FakeBlobStore, uuid } from './helpers/exchange-rates-store.mjs';
 
 const START = Date.parse('2026-10-17T01:00:00.000Z');
@@ -133,7 +136,7 @@ test('one click fetches exactly one mapped branch, caches complete USD/TWD and r
   const second = await fetchBody(h.input);
   assert.deepEqual(second.body.quote, first.body.quote);
   assert.equal(h.calls.length, 1);
-  assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
+  assert.equal(h.store.entries.has('exchange-rates-1965/snapshot'), false);
   h.advance(BRANCH_QUOTE_TTL_MS);
   const third = await fetchBody(h.input);
   assert.equal(third.response.status, 200);
@@ -141,16 +144,19 @@ test('one click fetches exactly one mapped branch, caches complete USD/TWD and r
   assert.notEqual(third.body.quote.attemptedAt, first.body.quote.attemptedAt);
 });
 
-test('reuses a recent legacy snapshot without upstream requests and never changes it', async () => {
+test('collector ignores legacy snapshots and obtains a new per-branch quote', async () => {
   const h = harness();
   const initial = (await fetchBody(h.input)).body.quote;
   h.store.entries.delete(branchCacheKey(slug));
-  const full = buildSnapshot({ runId: uuid(20), controlVersion: uuid(1), attemptedAtMs: START, completedAtMs: START,
-    sourceBranchIds: [initial.branch.officialId], branches: [{ ...initial.branch, sourceUpdatedAtMs: null }], unknownBranchCount: 0, missingBranchCount: 0 });
-  h.store.seed(EXCHANGE_KEYS.snapshot, full);
-  assert.equal((await fetchBody(h.input)).response.status, 200);
-  assert.equal(h.calls.length, 1);
-  assert.deepEqual(h.store.entries.get(EXCHANGE_KEYS.snapshot).data, full);
+  const legacy = { ...initial, branches: [initial.branch] };
+  h.store.seed('exchange-rates-1965/snapshot', legacy);
+  h.advance(2_000);
+  const result = await fetchBody(h.input);
+  assert.equal(result.response.status, 200);
+  assert.equal(h.calls.length, 2);
+  assert.notEqual(result.body.quote.attemptedAt, initial.attemptedAt);
+  assert.equal(h.store.calls.some(call => call.key === 'exchange-rates-1965/snapshot'), false);
+  assert.deepEqual(h.store.entries.get('exchange-rates-1965/snapshot').data, legacy);
 });
 
 test('persistent lease suppresses duplicate cold queries and other branches while a fetch is pending', async () => {
@@ -404,3 +410,116 @@ test('missing deployed ETag cannot bypass conditional writes, while stale local 
   assert.equal((await conditionalSetJSON(store, key, { value: 2 }, previous)).modified, false);
   assert.deepEqual(store.entries.get(key).data, { value: 3 });
 });
+
+test('clearing failed runs keeps block escalation and an active block time', () => {
+  const blocked = { ...createBreaker(uuid(1)), consecutiveFailedRuns: 2, blockLevel: 2,
+    blockedUntil: new Date(START + 60_000).toISOString(), lastStatus: 'failed', lastError: 'source_failed' };
+  assert.deepEqual(clearFailedRuns(blocked), { ...blocked, consecutiveFailedRuns: 0 });
+  const clear = createBreaker(uuid(1));
+  assert.equal(clearFailedRuns(clear), clear);
+});
+
+test('a published quote resets spread-out failures in both breakers so they never trip the cooldown', async t => {
+  t.mock.method(console, 'info', () => {});
+  const h = harness();
+  const sourceGuardStore = new FakeBlobStore();
+  await bootstrapSourceGuard({ store: sourceGuardStore, legacyBreakers: [null], legacyReviewed: true, nowMs: START - 1000, randomUUIDImpl: () => uuid(2) });
+  await setSourceGuardPaused({ store: sourceGuardStore, paused: false, nowMs: START - 1000 });
+  const input = { ...h.input, sourceGuardStore, operationId: 'test:on-demand', ownerId: uuid(3) };
+  const failing = async () => { h.calls.push({}); return new Response('upstream error', { status: 500 }); };
+  const counts = () => [h.store.entries.get(EXCHANGE_KEYS.breaker).data, sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data.breaker];
+  for (let i = 0; i < 2; i++) {
+    assert.equal((await fetchBody({ ...input, slug: otherSlug, fetchImpl: failing })).response.status, 503);
+    h.advance(61_000);
+  }
+  assert.deepEqual(counts().map(breaker => breaker.consecutiveFailedRuns), [2, 2]);
+  assert.equal((await fetchBody(input)).response.status, 200);
+  assert.deepEqual(counts().map(breaker => breaker.consecutiveFailedRuns), [0, 0]);
+  h.advance(61_000);
+  assert.equal((await fetchBody({ ...input, slug: otherSlug, fetchImpl: failing })).response.status, 503);
+  for (const breaker of counts()) {
+    assert.equal(breaker.consecutiveFailedRuns, 1);
+    assert.equal(breaker.blockedUntil, null);
+  }
+});
+
+test('a published quote keeps block level and an expired block time while clearing failures', async () => {
+  const h = harness();
+  const breaker = { ...createBreaker(uuid(1)), consecutiveFailedRuns: 2, blockLevel: 1,
+    blockedUntil: new Date(START - 1000).toISOString(), lastStatus: 'failed', lastError: 'source_failed' };
+  h.store.seed(EXCHANGE_KEYS.breaker, breaker);
+  assert.equal((await fetchBody(h.input)).response.status, 200);
+  assert.deepEqual(h.store.entries.get(EXCHANGE_KEYS.breaker).data, { ...breaker, consecutiveFailedRuns: 0 });
+});
+
+test('a probe that does not publish leaves the failure count unchanged', async () => {
+  const h = harness();
+  const breaker = { ...createBreaker(uuid(1)), consecutiveFailedRuns: 2 };
+  h.store.seed(EXCHANGE_KEYS.breaker, breaker);
+  assert.equal((await fetchBody({ ...h.input, publishQuote: false })).response.status, 200);
+  assert.deepEqual(h.store.entries.get(EXCHANGE_KEYS.breaker).data, breaker);
+});
+
+test('a failed breaker reset after publication still returns the published quote', async () => {
+  const h = harness();
+  h.store.seed(EXCHANGE_KEYS.breaker, { ...createBreaker(uuid(1)), consecutiveFailedRuns: 2 });
+  h.store.beforeSet = ({ key }) => { if (key === EXCHANGE_KEYS.breaker) throw new Error('storage down'); };
+  const { response, body } = await fetchBody(h.input);
+  assert.equal(response.status, 200);
+  assert.equal(body.quote.slug, slug);
+  assert.equal(h.store.entries.get(EXCHANGE_KEYS.breaker).data.consecutiveFailedRuns, 2);
+});
+
+for (const timing of ['during reset CAS', 'before reset starts']) {
+  test(`an old published quote preserves a later collector failure ${timing}`, async t => {
+    t.mock.method(console, 'info', () => {});
+    const h = harness();
+    const sourceGuardStore = new FakeBlobStore();
+    h.store.seed(EXCHANGE_KEYS.breaker, { ...createBreaker(uuid(1)), consecutiveFailedRuns: 1 });
+    await bootstrapSourceGuard({ store: sourceGuardStore,
+      legacyBreakers: [{ ...createBreaker(uuid(2)), consecutiveFailedRuns: 1 }],
+      legacyReviewed: true, nowMs: START - 1000, randomUUIDImpl: () => uuid(2) });
+    await setSourceGuardPaused({ store: sourceGuardStore, paused: false, nowMs: START - 1000 });
+    const input = { ...h.input, sourceGuardStore, sourceProfile: ANONYMOUS_SOURCE_PROFILE,
+      requireExistingControl: true, expectedControlVersion: uuid(1),
+      operationId: 'test:old-success', ownerId: uuid(3) };
+    let raced = false, laterResult, newerBreakerEntry;
+    const laterFailure = async () => {
+      raced = true;
+      // The production source profile has an 80s budget and 89s target/source
+      // leases. Model a delayed storage operation that outlives both leases.
+      h.advance(90_000);
+      laterResult = await fetchBody({ ...input, slug: otherSlug,
+        operationId: 'test:later-failure', ownerId: uuid(4),
+        fetchImpl: async () => { h.calls.push({}); return new Response('', { status: 500 }); } });
+      newerBreakerEntry = structuredClone(h.store.entries.get(EXCHANGE_KEYS.breaker));
+    };
+    if (timing === 'during reset CAS') {
+      h.store.beforeSet = async ({ key, data }) => {
+        if (key === EXCHANGE_KEYS.breaker && data.consecutiveFailedRuns === 0 && !raced) await laterFailure();
+      };
+    } else {
+      const read = h.store.getWithMetadata.bind(h.store);
+      h.store.getWithMetadata = async (...args) => {
+        // This is A's final control read after its quote has been saved. A
+        // reset that merely stops retrying, but reads the latest breaker here,
+        // would still incorrectly clear B's newer failure.
+        if (args[0] === EXCHANGE_KEYS.control && h.store.entries.has(branchCacheKey(slug)) && !raced) await laterFailure();
+        return read(...args);
+      };
+    }
+
+    const result = await fetchBody(input);
+    assert.equal(raced, true);
+    assert.equal(result.response.status, 200);
+    assert.equal(laterResult.response.status, 503);
+    assert.equal(h.calls.length, 2);
+    assert.deepEqual(result.body.quote, h.store.entries.get(branchCacheKey(slug)).data);
+    assert.equal(isValidBranchQuote(result.body.quote), true);
+    assert.equal(newerBreakerEntry.data.consecutiveFailedRuns, 2);
+    assert.equal(sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data.breaker.consecutiveFailedRuns, 2);
+    assert.deepEqual(h.store.entries.get(EXCHANGE_KEYS.breaker), newerBreakerEntry);
+    assert.equal(h.store.calls.filter(call => call.operation === 'set' &&
+      call.key === EXCHANGE_KEYS.breaker && call.data.consecutiveFailedRuns === 0).length, 1);
+  });
+}

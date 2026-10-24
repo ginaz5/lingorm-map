@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ═══════════════════════════════════════════════════
 // SUPERRICH 1965 — PHASE A1 BRANCH RECONCILIATION (local only)
-// docs/superrich1965-exchange-map-plan.zh-TW.md §2.3, §4, §6 A1.
+// docs/exchange-rate-contract.zh-TW.md — 品牌與來源解析; historical A1 plan is archived.
 //
 // Cross-references the two branch lists that use DIFFERENT numbering:
 //
@@ -12,8 +12,8 @@
 // The two lists share no key — only names, and the names do not match exactly
 // ("Central World" vs "CentralWorld", "Big C Ratchadapisek" vs "Big C Place
 // Ratchadapisek"). So this script PROPOSES pairings with a confidence tier and
-// writes a review report; it never decides. Plan §2.3 requires per-entry human
-// verification before anything reaches Notion.
+// writes a review report; it never decides. The current mapping contract requires
+// per-entry human verification before updating the formal mapping or Notion.
 //
 // RUN THIS LOCALLY, NOT ON NETLIFY. `GET /spr/front/branches` is the request
 // Cloudflare challenges from datacenter IPs (progress doc, A0 #3); it answers
@@ -179,7 +179,7 @@ export function groupsOf(branch) {
  * on the SAME official branch. The draft mapping is keyed by
  * `superrich1965-{officialId}`, so a collision would silently overwrite one
  * entry and ship a branch_no under the wrong branch's name — and the orange
- * source sends no branch identifier to catch that later (plan §2). Loud here
+ * source sends no branch identifier to catch that later. Loud here
  * or wrong forever.
  *
  * @param {{code:string,name:string,companyCode:string,isDefault:boolean}[]} rateBranches
@@ -314,9 +314,9 @@ const today = new Date().toISOString().slice(0, 10);
 const esc = (v) => String(v ?? '').replace(/\|/g, '\\|');
 const report = `# SuperRich 1965（橘標）分店建檔查證（${today}）
 
-> **這份是機器產生的草稿，不是結論。** 由 \`scripts/superrich1965-branch-reconcile.mjs\` 依 \`/spr/front/branches\` 與 \`exchange-rate/branch-list\` 自動配對產生。計畫 §2.3 要求逐筆人工核對後才能建 Notion；請直接在本檔上修改、把確認過的列標記起來。
+> **這份是機器產生的草稿，不是結論。** 由 \`scripts/superrich1965-branch-reconcile.mjs\` 依 \`/spr/front/branches\` 與 \`exchange-rate/branch-list\` 自動配對產生。更新正式 mapping 或 Notion 前，須逐筆人工核對身分、地址與對照證據，並標記確認結果。
 
-- 規格：[實作計畫](superrich1965-exchange-map-plan.zh-TW.md)｜進度：[進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)
+- 規格：[匯率資料契約](exchange-rate-contract.zh-TW.md)｜歷史：[封存索引](archive/README.md)
 - \`/spr/front/branches\`：${branches.length} 筆
 - \`exchange-rate/branch-list\`：${rateBranches.length} 筆
 - 自動配對：exact ${rows.length - needsReview.length} 筆、需人工確認 ${needsReview.length} 筆
@@ -330,7 +330,7 @@ ${JSON.stringify(groupList, null, 2)}
 
 ${collisions.length ? `## ⚠ 配對衝突（${collisions.length} 組）——最優先處理
 
-多筆 \`branch-list\` 對到同一間 \`/branches\` 分店。草稿對照檔以 \`superrich1965-{officialId}\` 為 key，衝突的話會互相覆蓋，把某個 \`branch_no\` 掛到別間店名下——**而橘標的匯率回應不帶分店識別碼，事後查不出來**（計畫 §2）。這幾筆已從草稿檔剔除，必須人工拆開後手動補回。
+多筆 \`branch-list\` 對到同一間 \`/branches\` 分店。草稿對照檔以 \`superrich1965-{officialId}\` 為 key，衝突的話會互相覆蓋，把某個 \`branch_no\` 掛到別間店名下——**而橘標的匯率回應不帶分店識別碼，事後查不出來**。這幾筆已從草稿檔剔除，必須人工拆開後手動補回。
 
 | officialId | 衝突的 code | 名稱 |
 | --- | --- | --- |
@@ -338,7 +338,7 @@ ${collisions.map((c) => `| ${c.officialId} | ${c.codes.map((x) => `\`${x}\``).jo
 
 ` : ''}## 需人工確認（${needsReview.length} 筆）
 
-配對層級：\`exact\` 正規化後完全相同｜\`contained\` 一方包含另一方｜\`token-subset\` 詞彙子集｜\`fuzzy\` 只有相似度｜\`ambiguous\` 前兩名分不出高下｜\`none\` 找不到候選。**只有 \`exact\` 可以略過細看，其餘都要開官網對照。**
+配對層級：\`exact\` 正規化後完全相同｜\`contained\` 一方包含另一方｜\`token-subset\` 詞彙子集｜\`fuzzy\` 只有相似度｜\`ambiguous\` 前兩名分不出高下｜\`none\` 找不到候選。**\`exact\` 只代表名稱相同，仍須核對分店身分；其餘候選與碰撞逐一開官網對照。**
 
 | code | branch-list 名稱 | 配對層級 | 相似度 | 對到的 /branches | id | 分組 | 次佳候選 | ✅ 已確認 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -352,15 +352,15 @@ ${rows.map((r) => `| \`${esc(r.code)}\`${r.isDefault ? ' ★' : ''} | ${esc(r.na
 
 ★ = \`is_default\`（官網預設分店）
 
-## 待決定
+## 複核項目
 
-1. **\`E52-01\` Terminal 21 Pattaya**（\`company_code: E52\`，其餘 38 筆是 \`A04\`）算不算 Our Branch？看上表它的分組欄位再定。芭達雅也不在曼谷都會區，另外要確認目的地歸屬。
+1. **\`E52-01\` Terminal 21 Pattaya**（\`company_code: E52\`）目前作為 partner 排除於正式 38 店 mapping。若新來源與既有決議有差異，先核對官方分組及目的地，不自動納入。
 2. 分組欄位空白或未配對的那幾筆，要開官網逐一確認。
-3. 確認完的 Our Branch 名單，回填進度紀錄的 M1 · Phase A1，並據以重估 Phase C 的每輪請求數（計畫 §5 目前只用 39 當上限估算）。
+3. 對照既有正式 mapping 與建檔證據，記錄新增、移除或身分差異；更新前評估對報價 coverage、來源請求數、Notion 與 snapshot 的影響。
 
 ## 產出的草稿對照檔
 
-\`data/superrich1965-branches.draft.json\`——**不是正式對照檔**。逐筆核對後刪掉每筆的 \`_review\` 與最上層的 \`_draft\`，另存成 \`data/superrich1965-branches.json\`，再交給 Phase B 的 validator（審閱意見 16）。
+\`data/superrich1965-branches.draft.json\`——**不是正式對照檔**。逐筆核對後依正式 schema 整理差異，移除草稿標記；更新正式 mapping 後執行 mapping、snapshot 與收藏相容性 validators，不直接以自動配對結果覆寫正式對照。
 `;
 
 const reportPath = resolve(ROOT, 'docs/superrich1965-branch-verification.zh-TW.md');

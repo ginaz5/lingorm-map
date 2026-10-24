@@ -1,5 +1,4 @@
-// Shared public contract for one reviewed orange branch. Independent of the
-// all-38-branches snapshot contract used by the legacy collector.
+// Shared public contract for reviewed orange branch quotes.
 import MAPPING from '../../data/superrich1965-branches.json' with { type: 'json' };
 import { DENOMS_1965 } from './exchange-rates-1965.js';
 import { HALF_HOUR_MS, SNAPSHOT_GRACE_MS, quoteExpiryMs } from './exchange-rate-timing.js';
@@ -8,6 +7,13 @@ import { HALF_HOUR_MS, SNAPSHOT_GRACE_MS, quoteExpiryMs } from './exchange-rate-
 export const BRANCH_QUOTE_TTL_MS = HALF_HOUR_MS + SNAPSHOT_GRACE_MS;
 export const BRANCH_API_SCHEMA_VERSION = 1;
 export const ORANGE_BRANCHES = /** @type {Record<string,{officialId:number,branchNo:string,companyCode:string}>} */ (MAPPING.branches);
+
+/** @param {string|{id?:string}} value */
+export function isExchange1965Location(value) {
+  const slug = typeof value === 'string' ? value : value?.id;
+  return typeof slug === 'string' && Object.hasOwn(ORANGE_BRANCHES, slug);
+}
+
 export const BRANCH_QUERY_REASONS = Object.freeze([
   'busy', 'cooldown', 'unavailable', 'disabled', 'stale_control',
   'storage_unavailable', 'invalid_request', 'method_not_allowed', 'invalid_control',

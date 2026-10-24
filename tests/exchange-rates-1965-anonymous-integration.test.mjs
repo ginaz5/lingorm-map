@@ -3,7 +3,6 @@ import test from 'node:test';
 import FIXTURE from './fixtures/superrich1965/exchange-rate-00.json' with { type: 'json' };
 import { createAnonymousApiSource, ANONYMOUS_SOURCE_PROFILE } from '../netlify/functions/_shared/exchange-rates-1965-anonymous.mjs';
 import { queryBranchRates, branchCacheKey, BRANCH_GATE_KEY, BRANCH_LEASE_MS } from '../netlify/functions/_shared/exchange-rates-1965-on-demand.mjs';
-import { runSlowBatch, BATCH_JOB_KEY, BATCH_BUDGET_MS } from '../netlify/functions/_shared/exchange-rates-1965-background.mjs';
 import { EXCHANGE_KEYS, createBreaker, createControl } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { serveBranchCache } from '../netlify/functions/exchange-rates-1965-cache.mjs';
 import { ORANGE_BRANCHES, isValidBranchQuote } from '../src/data/exchange-rates-1965-branch.js';
@@ -25,8 +24,8 @@ function harness() {
   store.seed(EXCHANGE_KEYS.control, createControl({ enabled: true, nowMs: START - 1000,
     controlVersion: uuid(1), updatedBy: 'manual' }));
   let now = START, sequence = 10;
-  const calls = [], tokens = [], delays = [];
-  const h = { store, calls, tokens, delays,
+  const calls = [], tokens = [];
+  const h = { store, calls, tokens,
     nowImpl: () => now,
     advance: ms => { now += ms; },
     randomUUIDImpl: () => uuid(sequence++),
@@ -51,11 +50,6 @@ function harness() {
     const response = await queryBranchRates({ ...h.input, slug: target });
     return { response, body: await response.json() };
   };
-  h.seedJob = () => store.seed(BATCH_JOB_KEY, { token: h.randomUUIDImpl(), controlVersion: uuid(1),
-    scheduledAtMs: now, deadlineAtMs: now + BATCH_BUDGET_MS, status: 'pending', leaseId: null });
-  h.run = options => runSlowBatch({ ...h.input, token: store.entries.get(BATCH_JOB_KEY).data.token,
-    randomImpl: () => 0, slugs: [slug, otherSlug],
-    sleepImpl: async ms => { delays.push(ms); now += ms; }, ...options });
   return h;
 }
 
@@ -203,31 +197,26 @@ for (const mode of ['invalid_token', 'rate_401']) {
 }
 
 for (const expiredBetweenBranches of [false, true]) {
-  test(`anonymous background batch ${expiredBetweenBranches ? 'renews an expired token' : 'reuses one token'} while retaining branch pacing and breaker history`, async t => {
+  test(`anonymous branch queries ${expiredBetweenBranches ? 'renew an expired token' : 'reuse one token'} while retaining breaker history`, async t => {
     const logs = captureLogs(t);
     const h = harness();
     t.after(h.source.close);
     h.store.seed(EXCHANGE_KEYS.breaker, { ...createBreaker(uuid(1)), blockLevel: 1 });
     if (expiredBetweenBranches) h.tokenExpiry = () => h.nowImpl() + 61_000;
-    h.seedJob();
     assert.equal(h.calls.length, 0);
-    const result = await h.run(expiredBetweenBranches ? { sleepImpl: async ms => {
-      h.delays.push(ms);
-      // A delayed worker can resume after expiry even though its planned gap is short.
-      h.advance(62_000);
-    } } : {});
-    assert.equal(result.status, 'complete');
-    assert.equal(result.loaded, 2);
+    const first = await h.query();
+    assert.equal(first.response.status, 200);
+    h.advance(expiredBetweenBranches ? 62_000 : 2_000);
+    const second = await h.query(otherSlug);
+    assert.equal(second.response.status, 200);
     assert.equal(h.calls.filter(call => call.url === TOKEN_URL).length, expiredBetweenBranches ? 2 : 1);
     const rates = h.calls.filter(call => call.url === RATE_URL);
     assert.equal(rates.length, 2);
-    assert.deepEqual(h.delays, [2_000]);
-    assert.ok(rates[1].at - rates[0].at >= 2_000);
     assert.equal(logs[0].sourceRequestCount, 2);
     assert.equal(logs[1].sourceRequestCount, expiredBetweenBranches ? 2 : 1);
     assert.equal(h.store.entries.get(EXCHANGE_KEYS.breaker).data.blockLevel, 1);
     assert.ok(isValidBranchQuote(h.store.entries.get(branchCacheKey(slug)).data));
     assert.ok(isValidBranchQuote(h.store.entries.get(branchCacheKey(otherSlug)).data));
-    assertPrivate(h, { logs, result, entries: [...h.store.entries] });
+    assertPrivate(h, { logs, first: first.body, second: second.body, entries: [...h.store.entries] });
   });
 }
