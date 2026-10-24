@@ -4,67 +4,45 @@ import test from 'node:test';
 
 import { initHomeReset } from '../src/features/home-reset.js';
 
-function makeElement(documentRoot, tagName = 'div') {
-  return Object.assign(new EventTarget(), {
-    tagName,
-    value: '',
-    scrollTop: 0,
-    attributes: new Map(),
-    setAttribute(name, value) { this.attributes.set(name, value); },
-    getAttribute(name) { return this.attributes.get(name); },
-    focus() { documentRoot.activeElement = this; },
-  });
-}
-
 function makeDocument(ids) {
-  const elements = new Map();
-  const documentRoot = {
-    activeElement: null,
-    getElementById: id => elements.get(id) ?? null,
-    createElement: tagName => makeElement(documentRoot, tagName),
-  };
-  for (const id of ids) elements.set(id, documentRoot.createElement());
-  return { documentRoot, elements };
+  const elements = new Map(ids.map(id => [id, new EventTarget()]));
+  return { documentRoot: { getElementById: id => elements.get(id) ?? null }, elements };
 }
-
-const HOME_IDS = ['home-btn', 'search', 'loc-list'];
 
 /** Record every dependency call in one ordered log so sequence is assertable. */
 function makeDeps(calls) {
   return {
+    clearSearch: () => calls.push('clearSearch'),
     clearFilters: () => calls.push('clearFilters'),
-    setFavoritesFilter: on => calls.push(`setFavoritesFilter:${on}`),
     clearActiveLocation: () => calls.push('clearActiveLocation'),
-    switchTab: tab => calls.push(`switchTab:${tab}`),
+    showListFromTop: () => calls.push('showListFromTop'),
     applyFilters: () => calls.push('applyFilters'),
+    trackReset: () => calls.push('trackReset'),
   };
 }
 
-test('clicking the header title clears search, filters, favorites, and selection', () => {
-  const { documentRoot, elements } = makeDocument(HOME_IDS);
-  const search = elements.get('search');
-  const list = elements.get('loc-list');
-  search.value = 'siam';
-  list.scrollTop = 840;
+const RESET_SEQUENCE = [
+  'clearSearch',
+  'clearFilters',
+  'clearActiveLocation',
+  'showListFromTop',
+  'applyFilters',
+  'trackReset',
+];
+
+test('clicking the header title clears search, filters, and selection, then rebuilds', () => {
+  const { documentRoot, elements } = makeDocument(['home-btn']);
   /** @type {string[]} */
   const calls = [];
 
   initHomeReset({ documentRoot, ...makeDeps(calls) });
   elements.get('home-btn').dispatchEvent(new Event('click'));
 
-  assert.equal(search.value, '');
-  assert.equal(list.scrollTop, 0);
-  assert.deepEqual(calls, [
-    'clearFilters',
-    'setFavoritesFilter:false',
-    'clearActiveLocation',
-    'switchTab:list',
-    'applyFilters',
-  ]);
+  assert.deepEqual(calls, RESET_SEQUENCE);
 });
 
-test('the reset rebuilds once, after every filter has been cleared', () => {
-  const { documentRoot, elements } = makeDocument(HOME_IDS);
+test('the reset rebuilds once and reports once, after every clear', () => {
+  const { documentRoot, elements } = makeDocument(['home-btn']);
   /** @type {string[]} */
   const calls = [];
 
@@ -72,38 +50,20 @@ test('the reset rebuilds once, after every filter has been cleared', () => {
   elements.get('home-btn').dispatchEvent(new Event('click'));
 
   assert.equal(calls.filter(call => call === 'applyFilters').length, 1);
-  assert.equal(calls.at(-1), 'applyFilters');
+  assert.equal(calls.filter(call => call === 'trackReset').length, 1);
+  assert.deepEqual(calls.slice(-2), ['applyFilters', 'trackReset']);
 });
 
-test('repeated clicks stay idempotent', () => {
-  const { documentRoot, elements } = makeDocument(HOME_IDS);
-  const search = elements.get('search');
+test('repeated clicks run the full reset each time', () => {
+  const { documentRoot, elements } = makeDocument(['home-btn']);
   /** @type {string[]} */
   const calls = [];
 
   initHomeReset({ documentRoot, ...makeDeps(calls) });
   elements.get('home-btn').dispatchEvent(new Event('click'));
-  search.value = 'again';
   elements.get('home-btn').dispatchEvent(new Event('click'));
 
-  assert.equal(search.value, '');
-  assert.equal(calls.filter(call => call === 'switchTab:list').length, 2);
-});
-
-test('missing header or list elements never throw', () => {
-  const { documentRoot, elements } = makeDocument(['home-btn']);
-  /** @type {string[]} */
-  const calls = [];
-
-  assert.doesNotThrow(() => initHomeReset({ documentRoot, ...makeDeps(calls) }));
-  assert.doesNotThrow(() => elements.get('home-btn').dispatchEvent(new Event('click')));
-  assert.deepEqual(calls, [
-    'clearFilters',
-    'setFavoritesFilter:false',
-    'clearActiveLocation',
-    'switchTab:list',
-    'applyFilters',
-  ]);
+  assert.deepEqual(calls, [...RESET_SEQUENCE, ...RESET_SEQUENCE]);
 });
 
 test('a page without the header button wires nothing', () => {
@@ -113,6 +73,29 @@ test('a page without the header button wires nothing', () => {
 
   assert.equal(initHomeReset({ documentRoot, ...makeDeps(calls) }), null);
   assert.deepEqual(calls, []);
+});
+
+test('main wires silent clears, one fitted rebuild, and a single home_reset event', async () => {
+  const [main, analytics] = await Promise.all([
+    readFile(new URL('../src/main.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/services/analytics.js', import.meta.url), 'utf8'),
+  ]);
+  const silentClear = main.match(/function clearAllFiltersSilently\(\) \{([\s\S]*?)\n\}/)?.[1] ?? '';
+
+  // Every clear inside the reset is silent, so it neither rebuilds nor tracks.
+  assert.match(silentClear, /clearSelectFilter\('category', silent\)/);
+  assert.match(silentClear, /clearSelectFilter\('type', silent\)/);
+  assert.match(silentClear, /clearDestinationFilter\(undefined, silent\)/);
+  assert.match(silentClear, /setFavoritesFilter\(false, silent\)/);
+  assert.match(silentClear, /state\.exchangeSort = 'default'/);
+  assert.match(main, /clearFilters: clearAllFiltersSilently/);
+  // The map returns to the default view even when no destination was set.
+  assert.match(main, /applyFilters: \(\) => applyFiltersAndSyncMap\(\{ fitMap: true \}\)/);
+  assert.match(main, /trackReset: \(\) => trackHomeReset\(state\.visIdx\.length\)/);
+  assert.match(analytics, /trackEvent\('home_reset'/);
+  // Clearing search cancels the debounced search_complete event.
+  const clearSearch = main.match(/function clearSearch\(\) \{([\s\S]*?)\n\}/)?.[1] ?? '';
+  assert.match(clearSearch, /clearTimeout\(searchAnalyticsTimer\)/);
 });
 
 test('the map header title is a labelled button wired to the reset', async () => {
@@ -126,6 +109,7 @@ test('the map header title is a labelled button wired to the reset', async () =>
   assert.match(html, /id="home-btn"[^>]*data-i18n-aria="home_btn_label"/);
   assert.doesNotMatch(html, /<span class="logo cal-sans">/);
   assert.match(main, /initHomeReset\(/);
-  // Bilingual contract: both dictionaries carry the accessible name.
-  assert.equal(i18n.match(/home_btn_label:/g)?.length, 2);
+  // Bilingual contract: both dictionaries carry the accessible name, and each
+  // starts with the visible text so voice control can target it (WCAG 2.5.3).
+  assert.equal(i18n.match(/home_btn_label: 'LingOrm Map/g)?.length, 2);
 });

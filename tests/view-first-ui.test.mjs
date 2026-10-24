@@ -49,7 +49,7 @@ test('index exposes only the view-first controls and issue report form', async (
   // Both titles are actionable: the map header resets the view, the 404 links home.
   assert.match(html, /<button type="button" id="home-btn" class="logo cal-sans"[\s\S]*?LingOrm Map\s*<\/button>/);
   assert.match(notFoundHtml, /<title>404 · LingOrm Map<\/title>/);
-  assert.match(notFoundHtml, /<a class="logo" href="\.\/index\.html">🗺 LingOrm Map<\/a>/);
+  assert.match(notFoundHtml, /<a class="logo" href="\/">🗺 LingOrm Map<\/a>/);
 
   for (const token of REMOVED_UI_TOKENS) {
     assert.doesNotMatch(html, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));

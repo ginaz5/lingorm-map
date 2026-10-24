@@ -5,7 +5,7 @@ import test from 'node:test';
 test('the 404 page title links back to the map', async () => {
   const html = await readFile(new URL('../404.html', import.meta.url), 'utf8');
 
-  assert.match(html, /<a class="logo" href="\.\/index\.html"[^>]*>🗺 LingOrm Map<\/a>/);
+  assert.match(html, /<a class="logo" href="\/"[^>]*>🗺 LingOrm Map<\/a>/);
   assert.doesNotMatch(html, /<span class="logo">/);
   // The existing call-to-action button stays; the title is an extra way home.
   assert.match(html, /<a class="btn" href="\/">/);
