@@ -7,7 +7,6 @@ import { runActionsCollector } from './exchange-rates-1965-actions-runner.mjs';
 import { queryBranchRates } from './exchange-rates-1965-on-demand.mjs';
 import { ANONYMOUS_SOURCE_PROFILE } from './exchange-rates-1965-anonymous.mjs';
 
-export const NETLIFY_SCHEDULE = '0,30 1-15 * * *';
 export const NETLIFY_CONTROL_KEY = 'exchange-rates-1965/netlify/control';
 export const SITE_ID = 'b5ac142c-7e21-4910-90f7-1719a9d90d5d';
 const HALF_HOUR = 1_800_000;

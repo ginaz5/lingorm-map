@@ -4,7 +4,7 @@ import { createBreaker } from '../netlify/functions/_shared/exchange-rates-1965-
 import { BREAKER_BACKOFF_MS } from '../netlify/functions/_shared/exchange-rates-1965-breaker.mjs';
 import { SOURCE_GUARD_KEY, SOURCE_RECONCILE_REASON, isValidSourceGuard, readSourceGuard,
   bootstrapSourceGuard, setSourceGuardPaused, beginSourceAttempt, validateSourceAttemptLease,
-  finishSourceAttempt, releaseSourceAttempt, reconcileSourceAttempt,
+  finishSourceAttempt, releaseSourceAttempt, reconcileSourceAttempt, clearSourceFailedRuns,
 } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
 import { FakeBlobStore, uuid } from './helpers/exchange-rates-store.mjs';
 
@@ -286,4 +286,20 @@ test('operator complete reconciliation retains existing history, stays paused an
   assert.equal(result.state.breaker.consecutiveFailedRuns, 2);
   assert.equal(result.state.paused, true);
   assert.deepEqual([...h.store.entries.keys()], [SOURCE_GUARD_KEY]);
+});
+
+test('clearing source failures after publication keeps block level, block time and the held lease', async () => {
+  const blockedUntil = new Date(START - 1000).toISOString();
+  const h = await ready([{ ...createBreaker(uuid(9), blockedUntil), blockLevel: 2, consecutiveFailedRuns: 2 }]);
+  const { lease } = await h.begin();
+  assert.equal((await finishSourceAttempt({ store: h.store, lease, outcome: 'complete', nowMs: START + 1 })).ok, true);
+  assert.equal(stateOf(h.store).breaker.consecutiveFailedRuns, 2);
+  assert.equal((await clearSourceFailedRuns({ store: h.store, lease: { ...lease, leaseId: uuid(999) }, nowMs: START + 2 })).reason, 'lease_lost');
+  const before = stateOf(h.store);
+  const result = await clearSourceFailedRuns({ store: h.store, lease, nowMs: START + 2 });
+  assert.equal(result.ok, true);
+  assert.deepEqual(stateOf(h.store), { ...before, breaker: { ...before.breaker, consecutiveFailedRuns: 0 } });
+  assert.equal(stateOf(h.store).breaker.blockLevel, 2);
+  assert.equal(stateOf(h.store).breaker.blockedUntil, blockedUntil);
+  assert.equal(stateOf(h.store).leaseId, lease.leaseId);
 });

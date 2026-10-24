@@ -4,7 +4,7 @@ import { setEnvironmentContext } from '@netlify/blobs';
 import handler from '../netlify/functions/exchange-rates-1965-branch.mjs';
 import { readBranchRates, branchCacheKey } from '../netlify/functions/_shared/exchange-rates-1965-branch-cache.mjs';
 const BRANCH_GATE_KEY = 'exchange-rates-1965/on-demand-gate';
-import { buildSnapshot, createControl, EXCHANGE_KEYS } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
+import { createControl, EXCHANGE_KEYS } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { BRANCH_API_SCHEMA_VERSION, ORANGE_BRANCHES, parseBranchQueryPayload } from '../src/data/exchange-rates-1965-branch.js';
 import { quoteExpiryMs } from '../src/data/exchange-rate-timing.js';
 import { FakeBlobStore, uuid } from './helpers/exchange-rates-store.mjs';
@@ -29,13 +29,6 @@ function quote(nowMs = START, target = slug) {
   };
 }
 
-function snapshot(saved = quote()) {
-  return buildSnapshot({ runId: uuid(10), controlVersion: saved.controlVersion,
-    attemptedAtMs: Date.parse(saved.attemptedAt), completedAtMs: Date.parse(saved.completedAt),
-    sourceBranchIds: [saved.branch.officialId], branches: [{ ...saved.branch, sourceUpdatedAtMs: null }],
-    unknownBranchCount: 0, missingBranchCount: 0 });
-}
-
 function harness(t) {
   const store = new FakeBlobStore();
   store.seed(EXCHANGE_KEYS.control, enabledControl());
@@ -51,7 +44,7 @@ function harness(t) {
       const body = await response.json();
       assert.equal(upstream.mock.callCount(), 0);
       assert.equal(store.calls.some(call => call.operation !== 'get'), false);
-      assert.equal(store.calls.some(call => [EXCHANGE_KEYS.breaker, BRANCH_GATE_KEY].includes(call.key)), false);
+      assert.equal(store.calls.some(call => [EXCHANGE_KEYS.breaker, BRANCH_GATE_KEY, 'exchange-rates-1965/snapshot'].includes(call.key)), false);
       if (!options.allowControlChange) assert.deepEqual([...store.entries], before);
       return { response, body };
     },
@@ -72,19 +65,19 @@ test('public refresh returns only the saved public quote without source requests
   assert.equal(h.store.calls.filter(call => call.key === EXCHANGE_KEYS.control).length, 2);
 });
 
-test('public refresh reads the legacy snapshot without seeding a branch or extending expiry', async t => {
+test('public refresh ignores legacy snapshot blobs without reading or changing them', async t => {
   const h = harness(t);
-  const saved = snapshot();
-  h.store.seed(EXCHANGE_KEYS.snapshot, saved);
+  const saved = { ...quote(), branches: [quote().branch] };
+  h.store.seed('exchange-rates-1965/snapshot', saved);
   const { response, body } = await h.read();
-  assert.equal(response.status, 200);
-  assert.equal(body.quote.expiresAt, saved.expiresAt);
+  assert.equal(response.status, 503);
+  assert.equal(body.reason, 'unavailable');
+  assert.equal(body.quote, null);
+  assert.deepEqual(h.store.entries.get('exchange-rates-1965/snapshot').data, saved);
   assert.equal(h.store.entries.has(branchCacheKey(slug)), false);
-  assert.equal(body.quote.branch.rates.USD_1965.rateScaledE6, 32_770_000);
-  assert.equal(body.quote.branch.rates.TWD_1965.rateScaledE6, 995_000);
 });
 
-for (const mode of ['missing', 'expired', 'partial', 'wrong_version', 'wrong_branch', 'future', 'predates_enable', 'invalid_snapshot']) {
+for (const mode of ['missing', 'expired', 'partial', 'wrong_version', 'wrong_branch', 'future', 'predates_enable']) {
   test(`public refresh with ${mode} data reports unavailable and never requests or publishes rates`, async t => {
     const h = harness(t);
     let saved = quote();
@@ -94,8 +87,7 @@ for (const mode of ['missing', 'expired', 'partial', 'wrong_version', 'wrong_bra
     if (mode === 'wrong_branch') saved = quote(START, otherSlug);
     if (mode === 'future') saved = quote(START + 1000);
     if (mode === 'predates_enable') h.store.seed(EXCHANGE_KEYS.control, enabledControl(START + 1000));
-    if (!['missing', 'invalid_snapshot'].includes(mode)) h.store.seed(branchCacheKey(slug), saved);
-    if (mode === 'invalid_snapshot') h.store.seed(EXCHANGE_KEYS.snapshot, { branches: 'invalid' });
+    if (mode !== 'missing') h.store.seed(branchCacheKey(slug), saved);
     const { response, body } = await h.read();
     assert.equal(response.status, 503);
     assert.equal(body.reason, 'unavailable');

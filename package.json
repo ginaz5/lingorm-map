@@ -15,7 +15,6 @@
     "test:location-verification": "node --test tests/formal-location-current-schema.test.mjs tests/location-verification-core.test.mjs tests/location-verification-runner.test.mjs tests/location-verification-ui-server.test.mjs tests/location-verification-ui-workflow.test.mjs tests/location-verification-validator.test.mjs",
     "typecheck": "tsc --noEmit -p jsconfig.json",
     "fx:1965:control": "node --env-file-if-exists=.env scripts/exchange-rates-1965-control.mjs",
-    "fx:1965:fetch": "node --env-file-if-exists=.env scripts/exchange-rates-1965-fetch.mjs",
     "fx:1965:actions": "node scripts/exchange-rates-1965-actions.mjs",
     "fx:1965:actions:control": "node scripts/exchange-rates-1965-actions-control.mjs",
     "fx:1965:netlify:control": "node --env-file-if-exists=.env scripts/exchange-rates-1965-netlify-control.mjs"

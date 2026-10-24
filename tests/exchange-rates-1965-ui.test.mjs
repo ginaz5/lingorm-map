@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import GREEN_MAPPING from '../data/superrich-branches.json' with { type: 'json' };
-import ORANGE_MAPPING from '../data/superrich1965-branches.json' with { type: 'json' };
 import { state } from '../src/core/state.js';
+import { ORANGE_BRANCHES } from '../src/data/exchange-rates-1965-branch.js';
+import { quoteExpiryMs } from '../src/data/exchange-rate-timing.js';
 import {
   applyExchangeRatesPayload,
   getExchangeBrand,
@@ -11,53 +12,38 @@ import {
   syncExchangeControls,
 } from '../src/features/exchange-rates.js';
 import {
-  applyExchangeRates1965Payload,
-  expireExchangeRates1965,
+  BRANCH_CACHE_API,
+  cancelBranchQueries,
   getExchangeRateCell1965,
-  parseExchangeRates1965Payload,
-} from '../src/features/exchange-rates-1965.js';
+  initBranchQueries,
+  loadCachedBranchQuotes,
+} from '../src/features/exchange-rates-1965-branch.js';
 import { renderExchangeRates, sortVisibleIndexes } from '../src/ui/render.js';
 
+const START = Date.parse('2026-10-17T01:00:00.000Z');
 const greenSlugs = Object.keys(GREEN_MAPPING.branches);
-const orangeSlugs = Object.keys(ORANGE_MAPPING.branches);
+const orangeSlugs = Object.keys(ORANGE_BRANCHES);
 
-function orangePayload({ runId = 'orange-run', controlVersion = 'orange-control' } = {}) {
+function orangeQuote(slug = orangeSlugs[0], {
+  now = START, usd = 33_040_000, twd = 1_020_000,
+  expiresAtMs = quoteExpiryMs(now), controlVersion = 'orange-control',
+} = {}) {
   return {
-    schemaVersion: 1,
-    checkedAt: '2026-09-11T00:05:00.000Z',
-    enabled: true,
-    controlVersion,
-    snapshot: {
-      runId,
-      controlVersion,
-      completedAt: '2026-09-11T00:04:30.000Z',
-      nextUpdateAt: '2026-09-11T00:30:00.000Z',
-      expiresAt: '2026-09-11T00:31:30.000Z',
-      branches: orangeSlugs.map(slug => {
-        const branch = ORANGE_MAPPING.branches[slug];
-        return {
-          slug,
-          officialId: branch.officialId,
-          branchNo: branch.branchNo,
-          companyCode: branch.companyCode,
-          sourceUpdatedAtMs: 1_788_951_064_201,
-          status: 'ok',
-          rates: {
-            USD_1965: { denom: 'USD_1965', rateScaledE6: 33_040_000, displayDecimals: 2, unavailableReason: null },
-            TWD_1965: { denom: 'TWD_1965', rateScaledE6: 1_020_000, displayDecimals: 2, unavailableReason: null },
-          },
-        };
-      }),
-    },
+    schemaVersion: 1, slug, controlVersion,
+    attemptedAt: new Date(now).toISOString(),
+    completedAt: new Date(now).toISOString(),
+    expiresAt: new Date(expiresAtMs).toISOString(),
+    branch: { slug, ...ORANGE_BRANCHES[slug], status: 'ok', rates: {
+      USD_1965: { denom: 'USD_1965', rateScaledE6: usd, displayDecimals: 2, unavailableReason: null },
+      TWD_1965: { denom: 'TWD_1965', rateScaledE6: twd, displayDecimals: 2, unavailableReason: null },
+    } },
   };
 }
 
-function emptyOrangeState() {
+function cachePayload(quotes, overrides = {}) {
   return {
-    ratesBySlug: {}, runId: null, controlVersion: null, enabled: null,
-    completedAt: null, nextUpdateAtMs: null, expiresAtMs: null,
-    retryLevel: 0, lastAttemptAtMs: null, updateCheckPending: false,
-    ratesLoading: false, hasUsableSnapshot: false,
+    schemaVersion: 1, checkedAt: new Date(Date.now()).toISOString(),
+    enabled: true, controlVersion: 'orange-control', quotes, ...overrides,
   };
 }
 
@@ -69,41 +55,52 @@ function resetState() {
     exchangeNextUpdateAtMs: null, exchangeExpiresAtMs: null,
     exchangeRetryLevel: 0, exchangeLastAttemptAtMs: null,
     exchangeUpdateCheckPending: false, exchangeRatesLoading: false,
-    exchangeHasUsableSnapshot: false, exchange1965: emptyOrangeState(),
+    exchangeHasUsableSnapshot: false, exchange1965Branches: {},
+    exchange1965BranchControlVersion: null, exchange1965BranchObservedAtMs: 0,
   });
 }
 
+function harness(t, onChange = () => {}) {
+  t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: START });
+  const listeners = {};
+  const add = (event, fn) => { listeners[event] = fn; };
+  const document = { visibilityState: 'visible', getElementById: () => null, addEventListener: add };
+  const navigator = { onLine: true };
+  const globals = { document, navigator, window: { addEventListener: add } };
+  const previous = Object.fromEntries(Object.keys(globals).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  for (const [key, value] of Object.entries(globals)) {
+    Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
+  }
+  initBranchQueries(() => { syncExchangeControls(); onChange(); });
+  cancelBranchQueries(); // Each case explicitly starts its first cache read.
+  t.after(() => {
+    cancelBranchQueries();
+    for (const [key, descriptor] of Object.entries(previous)) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+  });
+  return { listeners, document, navigator };
+}
+
 test.beforeEach(resetState);
-
-test('orange public payload requires exact coverage and branch identity', () => {
-  const parsed = parseExchangeRates1965Payload(orangePayload());
-  assert.equal(Object.keys(parsed.snapshot.bySlug).length, 38);
-  assert.equal(getExchangeRateCell1965(orangeSlugs[0], 'USD_1965'), null);
-
-  const incomplete = orangePayload();
-  incomplete.snapshot.branches.pop();
-  assert.equal(parseExchangeRates1965Payload(incomplete), null);
-
-  const wrongBranch = orangePayload();
-  wrongBranch.snapshot.branches[0].branchNo = '99';
-  assert.equal(parseExchangeRates1965Payload(wrongBranch), null);
-});
 
 test('brand detection supports slugs and location rows without changing the boolean API', () => {
   assert.equal(getExchangeBrand(greenSlugs[0]), 'green');
   assert.equal(getExchangeBrand({ id: orangeSlugs[0] }), 'orange');
   assert.equal(getExchangeBrand({ id: 'regular' }), null);
+  assert.equal(getExchangeBrand('__proto__'), null);
   assert.equal(isExchangeLocation(orangeSlugs[0]), true);
   assert.equal(isExchangeLocation('regular'), false);
 });
 
-test('orange panel uses two orange buckets, company name, and orange official URL', () => {
-  const parsed = parseExchangeRates1965Payload(orangePayload());
-  applyExchangeRates1965Payload(parsed, {
-    requestStartedAtMs: 1_000,
-    responseReceivedAtMs: 1_100,
-    waitingForNewRun: false,
+test('a cached orange branch panel uses its two buckets, company name, and official URL', async t => {
+  harness(t);
+  t.mock.method(globalThis, 'fetch', async url => {
+    assert.equal(url, BRANCH_CACHE_API);
+    return Response.json(cachePayload([orangeQuote()]));
   });
+  await loadCachedBranchQuotes();
   const row = { id: orangeSlugs[0], nameEn: 'Silom', notesEn: 'G floor', maps: 'https://maps.example/orange' };
   state.data = [row];
   state.visIdx = [0];
@@ -118,20 +115,20 @@ test('orange panel uses two orange buckets, company name, and orange official UR
   assert.match(html, /superrich1965\.com\/en\/exchange-rate/);
   assert.doesNotMatch(html, /superrichthailand\.com/);
   assert.match(html, /各分店可接受的鈔票面額可能不同/);
+  assert.equal(getExchangeRateCell1965(orangeSlugs[1], 'USD_1965'), null);
 });
 
-test('mixed-brand sorting compares only the selected brand bucket', () => {
+test('mixed-brand sorting compares only the selected brand bucket from cached branch quotes', async t => {
+  harness(t);
+  t.mock.method(globalThis, 'fetch', async () => Response.json(cachePayload([
+    orangeQuote(orangeSlugs[0], { usd: 33_000_000 }),
+    orangeQuote(orangeSlugs[1], { usd: 32_000_000 }),
+  ])));
+  await loadCachedBranchQuotes();
   state.data = [
-    { id: 'regular' },
-    { id: orangeSlugs[1] },
-    { id: greenSlugs[0] },
-    { id: orangeSlugs[0] },
-    { id: greenSlugs[1] },
+    { id: 'regular' }, { id: orangeSlugs[1] }, { id: greenSlugs[0] },
+    { id: orangeSlugs[0] }, { id: greenSlugs[1] },
   ];
-  state.exchange1965.ratesBySlug = {
-    [orangeSlugs[0]]: { rates: { USD_1965: { rateScaledE6: 33_000_000 } } },
-    [orangeSlugs[1]]: { rates: { USD_1965: { rateScaledE6: 32_000_000 } } },
-  };
   state.exchangeRatesBySlug = {
     [greenSlugs[0]]: { rates: { USD_100: { rateScaledE6: 31_000_000 } } },
     [greenSlugs[1]]: { rates: { USD_100: { rateScaledE6: 34_000_000 } } },
@@ -142,91 +139,64 @@ test('mixed-brand sorting compares only the selected brand bucket', () => {
   assert.deepEqual(sortVisibleIndexes([0, 1, 2, 3, 4], 'USD_100'), [4, 2, 3, 1, 0]);
 });
 
-test('shared controls keep one brand usable when the other is unavailable', () => {
-  const previousDocument = globalThis.document;
+test('shared controls keep cached orange sorting usable while green is disabled', async t => {
+  const { document } = harness(t);
+  t.mock.method(globalThis, 'fetch', async () => Response.json(cachePayload([orangeQuote()])));
+  await loadCachedBranchQuotes();
   const options = ['default', 'USD_100', 'USD_50', 'TWD', 'USD_1965', 'TWD_1965']
     .map(value => ({ value, disabled: false }));
   const sort = { hidden: true, value: '', options };
-  globalThis.document = { getElementById: id => id === 'exchange-sort' ? sort : null };
-  try {
-    state.exchangeSort = 'USD_1965';
-    state.exchangeRatesEnabled = false;
-    state.exchangeHasUsableSnapshot = false;
-    state.exchange1965.enabled = true;
-    state.exchange1965.hasUsableSnapshot = true;
-    state.exchange1965.ratesBySlug = {
-      [orangeSlugs[0]]: { rates: { USD_1965: { rateScaledE6: 33_040_000 } } },
-    };
-    syncExchangeControls();
-
-    assert.equal(sort.hidden, false);
-    assert.equal(sort.value, 'USD_1965');
-    assert.equal(options.find(option => option.value === 'USD_100').disabled, true);
-    assert.equal(options.find(option => option.value === 'USD_1965').disabled, false);
-  } finally {
-    globalThis.document = previousDocument;
-  }
-});
-
-test('disabling or expiring one brand does not clear the other brand', () => {
+  document.getElementById = id => id === 'exchange-sort' ? sort : null;
   state.exchangeSort = 'USD_1965';
-  state.exchangeRatesBySlug = { [greenSlugs[0]]: { rates: {} } };
-  state.exchangeHasUsableSnapshot = true;
-  state.exchange1965.ratesBySlug = { [orangeSlugs[0]]: { rates: {} } };
-  state.exchange1965.hasUsableSnapshot = true;
-
   applyExchangeRatesPayload({ enabled: false, controlVersion: 'green-off', snapshot: null }, {
-    requestStartedAtMs: 1_000, responseReceivedAtMs: 1_100, waitingForNewRun: false,
+    requestStartedAtMs: START, responseReceivedAtMs: START, waitingForNewRun: false,
   });
-  assert.equal(state.exchangeSort, 'USD_1965');
-  assert.equal(state.exchange1965.hasUsableSnapshot, true);
+  syncExchangeControls();
 
-  state.exchangeRatesBySlug = { [greenSlugs[0]]: { rates: {} } };
+  assert.equal(sort.hidden, false);
+  assert.equal(sort.value, 'USD_1965');
+  assert.equal(options.find(option => option.value === 'USD_100').disabled, true);
+  assert.equal(options.find(option => option.value === 'USD_1965').disabled, false);
+  assert.equal(getExchangeRateCell1965(orangeSlugs[0], 'USD_1965').rateScaledE6, 33_040_000);
+});
+
+test('orange cache disable removes its selected sort without clearing green rates', async t => {
+  harness(t);
+  let body = cachePayload([orangeQuote()]);
+  t.mock.method(globalThis, 'fetch', async () => Response.json(body));
+  await loadCachedBranchQuotes();
+  state.exchangeSort = 'USD_1965';
+  state.exchangeRatesEnabled = true;
   state.exchangeHasUsableSnapshot = true;
-  expireExchangeRates1965();
+  state.exchangeRatesBySlug = { [greenSlugs[0]]: { rates: { USD_100: { rateScaledE6: 33_000_000 } } } };
+  body = cachePayload([], { enabled: false, controlVersion: 'orange-off' });
+  await loadCachedBranchQuotes();
+
+  assert.equal(state.exchangeSort, 'default');
+  assert.equal(getExchangeRateCell1965(orangeSlugs[0], 'USD_1965'), null);
   assert.equal(state.exchangeHasUsableSnapshot, true);
-  assert.ok(state.exchangeRatesBySlug[greenSlugs[0]]);
-
-  applyExchangeRates1965Payload({ enabled: false, controlVersion: 'orange-off', snapshot: null }, {
-    requestStartedAtMs: 2_000, responseReceivedAtMs: 2_100, waitingForNewRun: false,
-  });
-  assert.equal(state.exchangeSort, 'default');
-  assert.equal(state.exchangeHasUsableSnapshot, true);
+  assert.equal(state.exchangeRatesBySlug[greenSlugs[0]].rates.USD_100.rateScaledE6, 33_000_000);
 });
 
-test('a failed orange snapshot clears only its selected best-rate sort', () => {
-  state.exchangeSort = 'TWD_1965';
-  state.exchange1965.hasUsableSnapshot = true;
-  applyExchangeRates1965Payload({ enabled: true, controlVersion: 'orange-on', snapshot: null }, {
-    requestStartedAtMs: 1_000, responseReceivedAtMs: 1_100, waitingForNewRun: false,
-  });
-  assert.equal(state.exchangeSort, 'default');
-  assert.equal(state.exchange1965.hasUsableSnapshot, false);
+for (const selected of ['TWD_1965', 'USD_100']) {
+  test(`orange branch expiry ${selected === 'TWD_1965' ? 'resets its' : 'preserves green'} selected sort`, async t => {
+    harness(t);
+    const fetch = t.mock.method(globalThis, 'fetch', async () => Response.json(cachePayload([
+      orangeQuote(orangeSlugs[0], { expiresAtMs: START + 5_000 }),
+    ])));
+    await loadCachedBranchQuotes();
+    state.exchangeRatesEnabled = true;
+    state.exchangeHasUsableSnapshot = true;
+    state.exchangeRatesBySlug = { [greenSlugs[0]]: { rates: { USD_100: { rateScaledE6: 33_000_000 } } } };
+    state.exchangeSort = selected;
+    t.mock.timers.tick(5_000);
 
-  state.exchangeSort = 'USD_100';
-  applyExchangeRates1965Payload({ enabled: true, controlVersion: 'orange-on', snapshot: null }, {
-    requestStartedAtMs: 2_000, responseReceivedAtMs: 2_100, waitingForNewRun: false,
+    assert.equal(state.exchangeSort, selected === 'TWD_1965' ? 'default' : 'USD_100');
+    assert.equal(getExchangeRateCell1965(orangeSlugs[0], 'TWD_1965'), null);
+    assert.equal(state.exchangeHasUsableSnapshot, true);
+    assert.equal(fetch.mock.callCount(), 1);
   });
-  assert.equal(state.exchangeSort, 'USD_100');
-});
-
-test('fresh orange snapshot with all quotes unavailable resets its best-rate sort', () => {
-  const payload = orangePayload();
-  for (const branch of payload.snapshot.branches) {
-    branch.status = 'failed';
-    for (const cell of Object.values(branch.rates)) {
-      cell.rateScaledE6 = null;
-      cell.displayDecimals = null;
-      cell.unavailableReason = 'missing';
-    }
-  }
-  state.exchangeSort = 'TWD_1965';
-  applyExchangeRates1965Payload(parseExchangeRates1965Payload(payload), {
-    requestStartedAtMs: 1_000, responseReceivedAtMs: 1_100, waitingForNewRun: false,
-  });
-  assert.equal(state.exchange1965.hasUsableSnapshot, true);
-  assert.equal(state.exchangeSort, 'default');
-});
+}
 
 // Regression coverage for integrating orange into main's label-based interface.
 test('orange legacy rows use the shared label filter and retain their publication state', async () => {
@@ -291,64 +261,48 @@ test('both map providers distinguish orange-only clusters from green and mixed c
 });
 
 for (const pause of ['offline', 'hidden', 'requestInFlight']) {
-  test(`orange quotes expire independently while ${pause} and recover on resume`, async t => {
-    const { initExchangeRates1965, cancelExchangeScheduling1965, scheduleExchangeAction1965 } =
-      await import('../src/features/exchange-rates-1965.js');
-    t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1_000 });
-    const listeners = {};
-    const document = { visibilityState: 'visible', getElementById: () => null,
-      addEventListener: (event, fn) => { listeners[event] = fn; } };
-    const navigator = { onLine: true };
-    const globals = { document, navigator, window: { addEventListener: (event, fn) => { listeners[event] = fn; } } };
-    const previous = Object.fromEntries(Object.keys(globals).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
-    for (const [key, value] of Object.entries(globals)) {
-      Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
-    }
-    t.after(() => {
-      cancelExchangeScheduling1965();
-      for (const [key, descriptor] of Object.entries(previous)) {
-        if (descriptor) Object.defineProperty(globalThis, key, descriptor);
-        else delete globalThis[key];
+  test(`cached orange quotes expire while ${pause} and recover through the cache endpoint`, async t => {
+    const row = { id: orangeSlugs[0], nameEn: 'Orange fixture' };
+    let html = '';
+    const { document, navigator, listeners } = harness(t, () => { html = renderExchangeRates(row); });
+    state.data = [row]; state.visIdx = [0];
+    let finishRequest;
+    let requestCount = 0;
+    const requests = t.mock.method(globalThis, 'fetch', async url => {
+      assert.equal(url, BRANCH_CACHE_API);
+      if (++requestCount === 1) {
+        return Response.json(cachePayload([orangeQuote(orangeSlugs[0], { expiresAtMs: START + 5_000 })]));
       }
+      return new Promise(resolve => { finishRequest = resolve; });
     });
-    let resolveRequest;
-    const requests = t.mock.method(globalThis, 'fetch', () => new Promise(resolve => { resolveRequest = resolve; }));
-    const payload = orangePayload();
-    payload.checkedAt = '2026-09-11T00:31:25.000Z';
-    applyExchangeRates1965Payload(parseExchangeRates1965Payload(payload), {
-      requestStartedAtMs: Date.now(), responseReceivedAtMs: Date.now(), waitingForNewRun: false,
-    });
+    await loadCachedBranchQuotes();
     state.exchangeSort = 'USD_1965';
+    state.exchangeRatesEnabled = true;
     state.exchangeRatesBySlug = { [greenSlugs[0]]: { rates: { USD_100: { rateScaledE6: 33_000_000 } } } };
     state.exchangeHasUsableSnapshot = true;
-    const row = { id: orangeSlugs[0], nameEn: 'Orange fixture' };
-    let html = renderExchangeRates(row);
-    initExchangeRates1965(() => { html = renderExchangeRates(row); }, syncExchangeControls);
+    html = renderExchangeRates(row);
     assert.match(html, /33\.04 THB/);
     if (pause === 'offline') { navigator.onLine = false; listeners.offline(); }
     if (pause === 'hidden') { document.visibilityState = 'hidden'; listeners.visibilitychange(); }
-    if (pause === 'requestInFlight') {
-      state.exchange1965.lastAttemptAtMs = Date.now() - 60_000;
-      scheduleExchangeAction1965();
-      t.mock.timers.tick(0);
-      assert.equal(requests.mock.callCount(), 1);
-    }
+    if (pause === 'requestInFlight') { void loadCachedBranchQuotes(); await Promise.resolve(); }
     t.mock.timers.tick(5_000);
-    assert.equal(state.exchange1965.hasUsableSnapshot, false);
+
+    assert.equal(getExchangeRateCell1965(orangeSlugs[0], 'USD_1965'), null);
     assert.equal(state.exchangeSort, 'default');
     assert.equal(state.exchangeHasUsableSnapshot, true);
     assert.ok(state.exchangeRatesBySlug[greenSlugs[0]]);
     assert.doesNotMatch(html, /33\.04 THB|fx-best|class="fx-checked"/);
     assert.equal((html.match(/暫無報價/g) || []).length, 2);
-    if (pause !== 'requestInFlight') state.exchange1965.lastAttemptAtMs = Date.now() - 60_000;
+    assert.equal(requests.mock.callCount(), pause === 'requestInFlight' ? 2 : 1);
+
     if (pause === 'offline') { navigator.onLine = true; listeners.online(); }
     if (pause === 'hidden') { document.visibilityState = 'visible'; listeners.visibilitychange(); }
-    t.mock.timers.tick(0);
-    assert.equal(requests.mock.callCount(), 1);
-    resolveRequest(Response.json(orangePayload({ runId: 'recovered-orange' })));
-    await new Promise(resolve => setImmediate(resolve));
-    assert.equal(state.exchange1965.runId, 'recovered-orange');
-    assert.equal(state.exchange1965.hasUsableSnapshot, true);
+    const recovering = loadCachedBranchQuotes();
+    await Promise.resolve();
+    assert.equal(requests.mock.callCount(), 2);
+    finishRequest(Response.json(cachePayload([orangeQuote(orangeSlugs[0], { now: Date.now() })])));
+    await recovering;
+    assert.equal(getExchangeRateCell1965(orangeSlugs[0], 'USD_1965').rateScaledE6, 33_040_000);
     assert.match(html, /33\.04 THB/);
     assert.doesNotMatch(html, /fx-best/);
   });

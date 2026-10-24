@@ -40,7 +40,6 @@
  * @property {number|null} exchangeLastAttemptAtMs
  * @property {boolean} exchangeUpdateCheckPending
  * @property {boolean} exchangeRatesLoading
- * @property {{ratesBySlug:Record<string,any>,runId:string|null,controlVersion:string|null,enabled:boolean|null,completedAt:string|null,nextUpdateAtMs:number|null,expiresAtMs:number|null,retryLevel:number,lastAttemptAtMs:number|null,updateCheckPending:boolean,ratesLoading:boolean,hasUsableSnapshot:boolean}} exchange1965
  * @property {Record<string,import('../features/exchange-rates-1965-branch.js').BranchQueryState>} exchange1965Branches
  * @property {number} exchange1965BranchObservedAtMs
  * @property {string|null} exchange1965BranchControlVersion
@@ -83,7 +82,7 @@ export const state = {
   // Snackbar auto-dismiss timer handle
   snackTimer: null,
 
-  // True until the first sheet load attempt completes
+  // True until the first location snapshot load attempt completes
   isLoading: true,
 
   // Favorites — Set of location id slugs
@@ -114,18 +113,4 @@ export const state = {
   exchange1965Branches: {},
   exchange1965BranchControlVersion: null,
   exchange1965BranchObservedAtMs: 0,
-  exchange1965: {
-    ratesBySlug: {},
-    runId: null,
-    controlVersion: null,
-    enabled: null,
-    completedAt: null,
-    nextUpdateAtMs: null,
-    expiresAtMs: null,
-    retryLevel: 0,
-    lastAttemptAtMs: null,
-    updateCheckPending: false,
-    ratesLoading: false,
-    hasUsableSnapshot: false,
-  },
 };

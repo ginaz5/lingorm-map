@@ -11,7 +11,7 @@
 - [x] Netlify Functions：`/api/config`、`/api/locations`
 - [x] `netlify.toml` 加入 `[functions]` + `[[redirects]]`，修正 /api/* 404
 - [x] Netlify Forms：保留 `issue-report` 作為唯一公開回報管道
-- [x] build.sh 驗證 `GOOGLE_MAPS_KEY` / `GOOGLE_MAP_ID` / `GOOGLE_SHEET_CSV_URL`
+- [x] build.sh 驗證 HERE fallback key、Notion snapshot 與橘標 Python runtime；Google key／Map ID 未設定時使用 HERE
 - [x] `.env.example` + `.gitignore`
 - [x] git init + push 至 GitHub (`ginaz5/lingorm-map`)
 - [x] Netlify 部署成功：https://lingorm-map.netlify.app
@@ -25,24 +25,25 @@
 - [x] 檢視優先介面：移除新增地點、建議修改、審核狀態 UI
 - [x] Notion snapshot schema 移除 `Duplicate Group`
 - [x] 自動測試、型別檢查與 production build 全過
+- [x] 橘標移除舊完整 snapshot API／前端輪詢、單店 snapshot fallback 與本機 `fx:1965:fetch`；綠標 snapshot 流程保留
 
 ---
 
-## 🔲 部署後測試（待確認）
+## 🔲 待確認的維運事項
 
-- [ ] Netlify env var `HERE_API_KEY` 已設定
-- [ ] HERE Maps fallback 可正常載入（暫時移除 Google keys 測試）
-- [ ] 語言切換（中文 ↔ 英文），InfoWindow 內容同步
 - [ ] 「問題回報」表單送出 → Netlify Forms 收到
 - [ ] Netlify Forms 通知 email 已設定
-- [ ] `/api/locations` 可成功回傳 CSV
+
+日常部署驗證使用 [LOCAL_TESTING](note/LOCAL_TESTING.md)，包含 `/api/locations`、
+Google／HERE、語言與 popup 檢查。上述 Forms 項目保留待確認，未以本機測試代替遠端驗收。
+橘標 PR #18 的正式排程已驗收，證據見[最新上線紀錄](docs/superrich1965-netlify-pr18-release-2026-10-24.zh-TW.md)。
 
 ---
 
-## 🔲 Snapshot Schema
+## ✅ Snapshot Schema
 
 - [x] 前端 parser 依 snapshot header 直接產生 location object
-- [ ] 全部地點座標補齊後，移除內建 embedded fallback 資料
+- [x] 移除內建 embedded fallback，正式資料使用已驗證的 Notion CSV snapshot
 
 ---
 

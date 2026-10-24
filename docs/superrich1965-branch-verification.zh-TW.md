@@ -2,9 +2,12 @@
 
 日期：2026-09-10；複核更新：2026-09-11。依使用者「正式資料建檔」及「Place ID 座標足夠」指示完成審核；38 筆已發布。
 
+這份文件保留建檔當時的身分、座標與發布查證；下方部署／快照狀態是當時紀錄。
+目前匯率契約與維運請從[文件索引](README.md)查閱。
+
 ## 收錄範圍與證據
 
-- [實作計畫](superrich1965-exchange-map-plan.zh-TW.md)｜[進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)｜[機器可驗證證據](evidence/superrich1965-branches-2026-09-10.json)
+- [實作計畫](archive/exchange-rates/plans/superrich1965-exchange-map-plan.zh-TW.md)｜[進度紀錄](archive/exchange-rates/plans/superrich1965-exchange-map-progress.zh-TW.md)｜[機器可驗證證據](evidence/superrich1965-branches-2026-09-10.json)
 - [官方分店資料](https://www.superrich1965.com/spr/front/branches?page=1&limit=1000) 53 筆：41 Our Branch、12 Partner；[報價頁](https://www.superrich1965.com/en/exchange-rate) 使用的 branch-list 有 39 筆。
 - 收錄 38 筆 A04／main-branch。Terminal 21 Pattaya（id 106、E52-01）明確屬 partner，排除。
 - Vibhavadi 22（87）、Airport Rail Link Suvarnabhumi（94）、Airport Rail Link Phaya Thai（95）雖列 Our Branch，當前報價清單沒有對照；本批不猜 branchNo、不建入收錄對照。
@@ -98,5 +101,5 @@ Google Maps 連結保留官方分店 iframe 的 CID；Google Place ID 另由 Pla
 - 正式 Notion 建立 38 筆，回讀 760 個屬性檢查、38 個 icon、38 個 parent 全通過。Notion 自動移除 Seacon Square Srinakarin 泰文名稱的一個零寬空白，記錄已同步可見文字。
 - 既有 exporter 匯出 219 筆；38 筆橘標全部為 Published，公開筆數為 199。
 - 三狀態快照、98 個 legacy 收藏 ID、橘標對照與已收錄來源的一對一檢查均通過。
-- 測試與建置最終結果見[進度紀錄](superrich1965-exchange-map-progress.zh-TW.md)。
+- 測試與建置最終結果見[進度紀錄](archive/exchange-rates/plans/superrich1965-exchange-map-progress.zh-TW.md)。
 - 2026-09-11 已完成 38 筆 Place ID、樓層、行政區與座標審核；13 筆改採 Place ID 座標，38 筆均已發布。尚未部署或建立正式匯率快照。

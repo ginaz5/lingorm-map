@@ -2,14 +2,13 @@ import { randomUUID } from 'node:crypto';
 import { branchCacheKey, branchResponse } from './exchange-rates-1965-branch-cache.mjs';
 export { branchCacheKey, branchResponse } from './exchange-rates-1965-branch-cache.mjs';
 import { BRANCH_API_SCHEMA_VERSION, ORANGE_BRANCHES, isValidBranchQuote } from '../../../src/data/exchange-rates-1965-branch.js';
-import { EXCHANGE_KEYS, createBreaker, isValidBreaker, isValidSnapshot, sanitizeDiagnostics } from './exchange-rates-1965-contract.mjs';
-import { ensureFetchControl, readEffectiveControl } from './exchange-rates-1965-control.mjs';
-import { breakerBlocks, nextBreakerState } from './exchange-rates-1965-breaker.mjs';
-import { autoDisable } from './exchange-rates-1965-runner.mjs';
+import { EXCHANGE_KEYS, createBreaker, isValidBreaker, sanitizeDiagnostics } from './exchange-rates-1965-contract.mjs';
+import { autoDisable, ensureFetchControl, readEffectiveControl } from './exchange-rates-1965-control.mjs';
+import { breakerBlocks, clearFailedRuns, nextBreakerState } from './exchange-rates-1965-breaker.mjs';
 import { conditionalSetJSON, readEntry } from './exchange-rates-1965-storage.mjs';
 import { collectSourceQuotes } from './exchange-rates-1965-source.mjs';
 import { nextUtcHalfHour, quoteExpiryMs } from '../../../src/data/exchange-rate-timing.js';
-import { beginSourceAttempt, finishSourceAttempt, releaseSourceAttempt, validateSourceAttemptLease } from './exchange-rates-1965-source-guard.mjs';
+import { beginSourceAttempt, clearSourceFailedRuns, finishSourceAttempt, releaseSourceAttempt, validateSourceAttemptLease } from './exchange-rates-1965-source-guard.mjs';
 
 export const BRANCH_GATE_KEY = 'exchange-rates-1965/on-demand-gate';
 export const BRANCH_LEASE_MS = 15_000;
@@ -22,6 +21,22 @@ function validGate(gate) {
   return gate && (gate.leaseId === null || typeof gate.leaseId === 'string') &&
     Number.isSafeInteger(gate.leaseUntilMs) && gate.leaseUntilMs >= 0 &&
     Number.isSafeInteger(gate.nextRequestAtMs) && gate.nextRequestAtMs >= 0;
+}
+
+/** Best effort: a published quote clears consecutive failures but keeps block
+ * escalation and any active block time. Never changes the published response.
+ * @param {any} store @param {string} version
+ */
+async function clearBreakerFailedRuns(store, version) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const current = await readEntry(store, EXCHANGE_KEYS.breaker);
+      if (!current || !isValidBreaker(current.data) || current.data.controlVersion !== version) return;
+      const breaker = clearFailedRuns(current.data);
+      if (breaker === current.data) return;
+      if ((await conditionalSetJSON(store, EXCHANGE_KEYS.breaker, breaker, current)).modified) return;
+    } catch { return; }
+  }
 }
 
 /** An authorized collector can fetch one whitelisted branch. A persistent CAS lease
@@ -80,16 +95,6 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
       Date.parse(candidate.expiresAt) > nowImpl();
     const reusable = (/** @type {any} */ candidate) => usable(candidate) &&
       (!refreshDue || nowImpl() < nextUtcHalfHour(Date.parse(candidate.attemptedAt)));
-    if (!reusable(quote)) {
-      // Legacy snapshots can seed a branch, without extending their lifetime.
-      const full = (await readEntry(store, EXCHANGE_KEYS.snapshot))?.data;
-      const branch = full?.branches?.find((/** @type {any} */ b) => b.slug === slug);
-      quote = isValidSnapshot(full) && branch?.status === 'ok' ? {
-        schemaVersion: BRANCH_API_SCHEMA_VERSION, slug, controlVersion: full.controlVersion,
-        attemptedAt: full.attemptedAt, completedAt: full.completedAt,
-        expiresAt: new Date(Math.min(Date.parse(full.expiresAt), quoteExpiryMs(Date.parse(full.attemptedAt)))).toISOString(), branch,
-      } : null;
-    }
     if (reusable(quote)) {
       const latest = await readEffectiveControl(store, enabledDefault);
       if (!latest.enabled || latest.control?.controlVersion !== version) {
@@ -245,9 +250,13 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
     const finalControl = await readEffectiveControl(store, enabledDefault);
     control = finalControl.control;
     if (!finalControl.enabled || control?.controlVersion !== version) return reply(finalControl.enabled ? 'stale_control' : 'disabled', 503);
-    // A single successful branch intentionally does not reset the full-round
-    // breaker's escalation history, or consecutive challenge blocks could vanish.
+    // A published quote clears consecutive failures in both breakers, but
+    // keeps block escalation and active block time so challenges still escalate.
     quotePublished = true;
+    await clearBreakerFailedRuns(store, version);
+    if (sourceLease) {
+      try { await clearSourceFailedRuns({ store: sourceGuardStore, lease: sourceLease, nowMs: nowImpl() }); } catch { /* Best effort. */ }
+    }
     return respond({ enabled: true, controlVersion: version, quote });
   } catch {
     releaseDelay = BRANCH_FAILURE_DELAY_MS;

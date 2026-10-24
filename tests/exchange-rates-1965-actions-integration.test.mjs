@@ -136,7 +136,7 @@ for (const [mode, scope, slugs] of [
       assert.equal(quote.branch.branchNo, branch.branchNo);
       assert.doesNotMatch(JSON.stringify(quote), /PRIVATE_SOURCE_TOKEN|authorization|diagnostics/i);
     }
-    assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
+    assert.equal(h.store.entries.has('exchange-rates-1965/snapshot'), false);
     const after = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
     assert.equal(after.sourceEpoch, before.sourceEpoch);
     assert.equal(after.breaker.blockLevel, 2);
@@ -255,7 +255,7 @@ test('all Python branches reuse five fresh quotes, fetch the remaining 33 and le
   for (const slug of Object.keys(ORANGE_BRANCHES)) {
     assert.equal(isValidBranchQuote(h.store.entries.get(branchCacheKey(slug)).data), true);
   }
-  assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
+  assert.equal(h.store.entries.has('exchange-rates-1965/snapshot'), false);
   const replay = await h.run('publish-all-python');
   assert.equal(replay.exitCode, 0);
   assert.equal(replay.summary.replayed, true);
@@ -305,7 +305,7 @@ test('Python publication writes one valid quote; paused cache reads, cache hits 
   const quote = h.store.entries.get(branchCacheKey(SLUG)).data;
   assert.equal(isValidBranchQuote(quote), true);
   assert.equal(quote.controlVersion, uuid(1));
-  assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
+  assert.equal(h.store.entries.has('exchange-rates-1965/snapshot'), false);
   assert.doesNotMatch(JSON.stringify(quote), /PRIVATE_SOURCE_TOKEN|authorization|diagnostics/i);
 
   h.advance(2000);
@@ -411,7 +411,7 @@ for (const interruption of ['cancelled', 'control_changed', 'quote_cas_failed'])
     assert.equal(result.summary.published, 0);
     assert.equal(h.calls.length, 2);
     assert.equal(h.store.entries.has(branchCacheKey(SLUG)), false);
-    assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
+    assert.equal(h.store.entries.has('exchange-rates-1965/snapshot'), false);
   });
 }
 
@@ -427,7 +427,7 @@ test('Python probe uses its transport, validates USD/TWD, publishes nothing and 
   assert.equal(first.summary.published, 0);
   assert.equal(h.calls.length, 2);
   assert.equal(h.store.entries.has(branchCacheKey(SLUG)), false);
-  assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
+  assert.equal(h.store.entries.has('exchange-rates-1965/snapshot'), false);
   const replay = await h.run('probe-python');
   assert.equal(replay.summary.replayed, true);
   assert.equal(replay.summary.sourceRequestCount, 0);
@@ -557,7 +557,7 @@ test('probe validates token and rate but never publishes a quote or clears escal
   assert.equal(result.summary.published, 0);
   assert.equal(h.calls.length, 2);
   assert.equal(h.store.entries.has(branchCacheKey(SLUG)), false);
-  assert.equal(h.store.entries.has(EXCHANGE_KEYS.snapshot), false);
+  assert.equal(h.store.entries.has('exchange-rates-1965/snapshot'), false);
   const guard = h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;
   assert.equal(guard.unresolvedAttempt, null);
   assert.equal(guard.leaseId, null);

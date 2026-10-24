@@ -4,7 +4,7 @@
 // No network, no DOM, no storage: this module is imported by both the
 // external collectors and the browser bundle.
 //
-// Contract reference: docs/superrich1965-exchange-map-plan.zh-TW.md §2, §2.3, §3.3.
+// Contract reference: docs/exchange-rate-contract.zh-TW.md#品牌與來源解析.
 //
 // This file is a DELIBERATE PARALLEL COPY of src/data/exchange-rates.js, not a
 // shared multi-provider abstraction (plan §1). The two modules must never

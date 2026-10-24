@@ -47,6 +47,11 @@ export function getBranchQueryState(slug) {
   return { ...entry, quote: entry.expiresAtMs !== null && entry.expiresAtMs > Date.now() ? entry.quote : null };
 }
 
+/** @param {string} slug @param {'USD_1965'|'TWD_1965'} denom */
+export function getExchangeRateCell1965(slug, denom) {
+  return getBranchQueryState(slug)?.quote?.branch.rates[denom] ?? null;
+}
+
 function notify() { onChange?.(); }
 
 export function expireBranchQueries() {

@@ -378,9 +378,8 @@ export function getExchangeClusterBrand(markers) {
 
 /**
  * Custom renderer for Google MarkerClusterer.
- * Draws a circle with the cluster count; clusters made up entirely of
- * currency-exchange markers get the green `.is-exchange` treatment (Phase D2
- * — mixed clusters keep the default style).
+ * Draws a circle with the cluster count. Clusters containing only one exchange
+ * brand use its green or orange color; mixed clusters keep the default style.
  * @param {{ count: number, position: any, markers: any[] }} param0
  * @returns {any}
  */
@@ -813,6 +812,3 @@ export async function loadMapScript() {
     requiredElement('map-loading').classList.add('is-hidden');
   }
 }
-
-// Keep named export for backward-compat (main.js still imports initMap for applyTheme guard)
-export { initWithHere as initMap };

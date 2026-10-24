@@ -8,9 +8,8 @@ import {
   isSupportedLocation,
 } from '../features/exchange-rates.js';
 import { DENOMS } from '../data/exchange-rates.js';
-import { getBranchQueryState } from '../features/exchange-rates-1965-branch.js';
+import { getBranchQueryState, getExchangeRateCell1965 } from '../features/exchange-rates-1965-branch.js';
 import { DENOMS_1965 } from '../data/exchange-rates-1965.js';
-import { getExchangeRateCell1965 } from '../features/exchange-rates-1965.js';
 import {
   LOCATION_TYPES,
   locationTypeLabel,
@@ -182,10 +181,10 @@ export function renderExchangeRates(row) {
   if (!brand) return '';
   const orange = brand === 'orange';
   const queried = orange ? getBranchQueryState(row.id) : undefined;
-  const brandState = orange ? (queried ? {
-    enabled: !!queried.quote, completedAt: queried.quote?.completedAt ?? null,
-    ratesLoading: queried.loading, hasUsableSnapshot: !!queried.quote,
-  } : state.exchange1965) : {
+  const brandState = orange ? {
+    enabled: !!queried?.quote, completedAt: queried?.quote?.completedAt ?? null,
+    ratesLoading: queried?.loading ?? false, hasUsableSnapshot: !!queried?.quote,
+  } : {
     enabled: state.exchangeRatesEnabled,
     completedAt: state.exchangeCompletedAt,
     ratesLoading: state.exchangeRatesLoading,

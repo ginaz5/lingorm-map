@@ -2,6 +2,15 @@
 
 > 記錄本專案的架構決策與選型理由，方便日後維護或交接。
 
+現行維護入口（2026-10-24）：[文件索引](../docs/README.md)、
+[兩品牌匯率契約](../docs/exchange-rate-contract.zh-TW.md)、
+[橘標 Netlify 維運](../docs/superrich1965-netlify-runbook.zh-TW.md)、
+[Actions 手動備援](../docs/superrich1965-actions-runbook.zh-TW.md)。
+橘標目前由 Netlify 自動取價，PR #18 已完成正式兩輪排程驗收。
+目前程式的橘標資料管線只保留逐店快取，舊完整快照 API／fallback 與本機取價 CLI 已退役；
+綠標仍使用完整快照。
+以下有日期的決策保留當時背景；其中「尚未部署／待驗收」不代表目前狀態。
+
 ---
 
 ## 地圖：Google Maps + HERE Maps 雙 provider
@@ -59,27 +68,19 @@ HERE Maps 的 browser key 同樣會由 SDK request 暴露；應在 HERE project 
 > 目前程式**不再**依審核狀態決定 marker 顏色，一律以下列現行行為為準。
 
 **架構：** `AdvancedMarkerElement` + 自訂 HTML content（28px 圓形 div），由
-`src/map/map.js` 的 `makeMarkerContent(icon, isExchange)` 產生：
-
-```js
-export function makeMarkerContent(icon, isExchange = false) {
-  const el = document.createElement('div');
-  el.className = `marker-dot${isExchange ? ' is-exchange' : ''}`;
-  el.textContent = icon || '📍';
-  return el;
-}
-```
+`src/map/map.js` 的 `makeMarkerContent(icon, isExchange = false, brand = null)` 產生。
+`getExchangeBrand(row)` 依正式 mapping 判斷綠標／橘標身分。
 
 - Emoji 取自 `row.icon`（由 `src/data/csv-parser.js` 依 category 自動填入），找不到時 fallback 為 📍。
 - 公開狀態刻意不編碼進顏色（`Published` 才會出現在地圖上，篩選已在更上游處理）。
-- 唯一的顏色變體是 `.is-exchange`（`--marker-bg:#16835b` 綠），套用在
-  `Category = Currency Exchange` 的分店（`isExchangeLocation(row)`）。
+- 換匯分店加入 `.is-exchange`；綠標使用綠色，橘標另加入 `.is-exchange-orange`。
+  兩品牌 mapping 的聯集決定支援範圍，前端正規化為 `Type = Currency Exchange`、空白 Category。
 
-**群聚著色（Phase D2）：** 單店綠色標記之外，全部由換匯分店組成的群聚也會顯示同一組綠色，混合群聚維持原有樣式（可接受的降級，先於 Phase D1 就這樣約定）：
+**群聚著色：** 全綠標群聚使用綠色，全橘標群聚使用橘色；跨品牌或混有一般地點的群聚使用預設樣式。
 
-- **Google：** `MarkerClusterer` 的 `renderer.render(cluster, stats, map)` 收到的 `cluster.markers` 就是建立單店 marker 時保留的同一批物件（`m.__markerContent = el`），因此 `isExchangeOnlyCluster(markers)` 只需檢查每個 marker 的 `__markerContent.classList.contains('is-exchange')`。
-- **HERE：** `H.clustering.ICluster` 沒有現成的「成分清單」，改用 `cluster.forEachDataPoint(cb)` 走訪葉節點，`isExchangeOnlyDataPoints(forEachDataPoint)` 依此判斷是否每個 `DataPoint` 的 `getData().isExchange` 都是 `true`。
-- 兩個判斷函式都刻意設計成純函式（不依賴 Google／HERE 全域物件），方便在 Node 測試環境下單獨驗證，見 `tests/view-first-ui.test.mjs`。
+- **Google：** renderer 以 `getExchangeClusterBrand(markers)` 檢查各 marker 保存的 `__markerContent` 與品牌 class。
+- **HERE：** `cluster.forEachDataPoint(cb)` 走訪葉節點，`getExchangeDataPointsBrand(forEachDataPoint)` 檢查 `getData().isExchange` 與 `exchangeBrand`。
+- 品牌判斷不依賴 Google／HERE 全域物件，兩品牌與混合群聚行為由 `tests/exchange-rates-1965-ui.test.mjs` 驗證。
 
 ---
 
@@ -142,10 +143,8 @@ normalize 為 `Paused`（非公開），該路徑會顯示 0 筆地點。`build.
 
 **架構：** 使用者填寫表單 → `fetch POST /` → Netlify Forms → Email 通知管理員 → 人工審核後更新 Notion；下一次快照匯出與部署後反映到網站
 
-**三個表單：**
-- `suggest-edit` — 建議修改現有地點
-- `add-location` — 新增地點
-- `issue-report` — 回報地圖問題
+**公開表單：** `issue-report` 回報地圖問題。新增地點、建議修改及審核狀態 UI 已移除；
+正式資料由管理端查證後更新 Notion。
 
 **注意事項：**
 - 需在 Netlify Dashboard → Forms 手動開啟 form detection，再重新 deploy
@@ -164,10 +163,10 @@ normalize 為 `Paused`（非公開），該路徑會顯示 0 筆地點。`build.
 [data-theme="dark"] { --bg: #0f0f1a; }
 ```
 
-**三段切換：** `auto`（跟隨系統）→ `light` → `dark`
+**兩段切換：** `light` ↔ `dark`。未儲存偏好或舊值 `auto` 皆使用 light，不跟隨系統。
 
-Google Maps 主題同步：`map.setOptions({ colorScheme: 'DARK' | 'LIGHT' })`
-HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for dark）
+Google Maps 主題同步：依新的 colorScheme 重建地圖並保留 viewport。
+HERE Maps 主題同步：依 `getHereBaseLayer()` 切換可用的日間／夜間 base layer。
 
 **偏好持久化：** `localStorage.setItem('theme', ...)`
 
@@ -176,14 +175,17 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 ## 多語支援：i18n 系統
 
 **架構：**
-- 所有 UI 字串集中在 `src/core/i18n.js` 的 `T` 物件
+- 共用 UI 翻譯集中在 `src/core/i18n.js` 的 `T` 物件；更新紀錄另由 `src/features/changelog-data.js` 維護雙語內容
 - HTML 元素使用 `data-i18n`, `data-i18n-ph`, `data-i18n-html` 屬性
 - `updateLangUI()` 單次 scan 更新全部元素
 - 動態渲染內容（卡片、category filter）在語系切換時重新 render
 
-**類別資料：** 單一 `CATEGORIES` 陣列驅動 category filter 下拉、新增地點下拉、marker emoji。
+**類別資料：** `src/ui/render.js` 的 `buildCatFilter()` 從公開地點計算類別與數量。
+`src/data/csv-parser.js` 的 `CATEGORY_ALIASES`、`ZH_BY_CAT`、`ICON_BY_CAT` 負責類別正規化、中文名稱及 emoji；
+前台沒有新增地點類別下拉選單。
 
-**未來擴充（泰文）：** 在 `T` 新增 `th: {...}` key，CATEGORIES 新增 `th` 欄位即可。
+目前支援 zh／en。若新增語言，需同步處理語言型別、控制、位置名稱與內容 fallback，
+以及列表、popup、類別和更新紀錄的翻譯與回歸測試。
 
 ---
 
@@ -286,10 +288,12 @@ HERE Maps 主題同步：重新載入 base layer（`vector.normal.mapnight` for 
 **決策：** 前端透過本站 API 讀取換匯報價；由獨立的 Netlify 排程 Function
 （`exchange-rates-fetch.mjs`，泰國時間
 08:00～22:30 每 30 分鐘）向來源抓一次、正規化後寫入 `@netlify/blobs` 快照，前端只打站內
-`/api/exchange-rates`（`exchange-rates.mjs`）讀最新快照。完整規格見
-[SuperRich 換匯地圖實作計畫](../docs/superrich-exchange-map-plan.zh-TW.md)
-§4－§5；本節只記錄「為什麼這樣選」與上線／維運要點，執行細節與驗證見
-[換匯功能進度紀錄](../docs/superrich-exchange-map-progress.zh-TW.md)。
+`/api/exchange-rates`（`exchange-rates.mjs`）讀最新快照。現行資料邊界見
+[匯率資料契約](../docs/exchange-rate-contract.zh-TW.md)，操作見
+[綠標維運](LOCAL_TESTING.md#換匯功能上線與維運手冊)。早期
+[實作計畫](../docs/archive/exchange-rates/plans/superrich-exchange-map-plan.zh-TW.md)與
+[進度紀錄](../docs/archive/exchange-rates/plans/superrich-exchange-map-progress.zh-TW.md)保留當時設計與驗證；
+下方依日期記錄後續調整。
 
 **2026-09-27 時段調整：** 使用者確認以 `Asia/Bangkok` 為準，23:00～08:00
 停止來源抓取。UTC cron 為 `0,30 1-15 * * *`，每日 30 輪。當時 Function 與
@@ -377,12 +381,13 @@ mapping validator 同時接受這兩種表示。所有 `Paused` 狀態與收藏 
 使用者確認改為卡片按鈕觸發本站後端單店查詢。新增
 `POST /api/exchange-rates-1965-branch`，只接受正式 mapping 的 Slug，由後端
 轉換 branchNo／companyCode；前端不直接跨站抓來源。完整契約見
-[單店按需查詢計畫](../docs/superrich1965-on-demand-plan.zh-TW.md)。
+[單店按需查詢計畫](../docs/archive/exchange-rates/plans/superrich1965-on-demand-plan.zh-TW.md)。
 
 單店報價使用獨立 Blobs key 與最多 5 分鐘 TTL，不放寬原本完整 38 店 snapshot
 驗證。跨 Function 的強一致 ETag lease 控制冷查詢併發；快取命中可直接回傳，
 冷請求期間其他訪客取得 busy 與 Retry-After，避免重複來源請求。
 單店成功不重設整批 breaker 的升級歷史，失敗與 challenge 則更新同一 breaker。
+（2026-10-24 起，發布成功會清除連續失敗計數，見同日「發布成功清除連續失敗計數」。）
 新的 `FETCH_MODE=on-demand` 可停掉整批排程；既有 local／netlify 相容行為保留。
 
 前端只在使用者點擊後 POST，不因渲染、切換分頁或到期自動抓來源。到期計時
@@ -433,7 +438,7 @@ token 在原有控制、快取、breaker、lease 後 lazy 取得，只留在 inv
 現有 CLI 的匿名接線／逐店發布、Preview target、probe 不發布與 Netlify 單店
 只讀行為皆待實作；`FETCH_MODE=local` 現在只停排程，不能當成單店只讀開關。
 首次 workflow_dispatch 仍需 workflow 存在預設分支。實作與驗收條件見
-[Actions 計畫](../docs/superrich1965-github-actions-plan.zh-TW.md)。
+[Actions 計畫](../docs/archive/exchange-rates/plans/superrich1965-github-actions-plan.zh-TW.md)。
 本次沒有新增 workflow、設定 Secrets、抓來源或更動 runtime／遠端狀態。
 
 
@@ -473,8 +478,8 @@ lease／失敗 breaker 要持久化；須補明確 target、控制管理、job �
 取消與完整 coverage。舊本機 full-snapshot CLI 不直接搬入 Actions。
 
 實作與 mock 先完成，再經 workflow main bootstrap 做單店 probe，之後才驗
-Preview 單店／pilot／38 家與正式排程。詳見[計畫](../docs/superrich1965-github-actions-plan.zh-TW.md)
-及[調查證據](../docs/superrich1965-actions-research-2026-10-20.zh-TW.md)。
+Preview 單店／pilot／38 家與正式排程。詳見[計畫](../docs/archive/exchange-rates/plans/superrich1965-github-actions-plan.zh-TW.md)
+及[調查證據](../docs/archive/exchange-rates/research/superrich1965-actions-research-2026-10-20.zh-TW.md)。
 本次只改文件，沒有實作、呼叫來源、執行 workflow、設定 Secrets、改遠端或部署。
 
 
@@ -509,7 +514,7 @@ target，讓 runner 驗收可在前端功能合併前進行。沿用 main-only E
 共用來源 guard、control／lease／breaker 與既有 probe，不新增來源的公開 Function。
 現有前端、CSV、公開入口與綠標排程維持 main 版本。本機準備及 mock 驗證沒有取價或部署；
 後續 main bootstrap 須核對最終 `[skip netlify]` 與正式發布基準。詳見
-[bootstrap 操作與驗收](../docs/superrich1965-actions-bootstrap.zh-TW.md)。
+[bootstrap 操作與驗收](../docs/archive/exchange-rates/research/superrich1965-actions-bootstrap.zh-TW.md)。
 
 ### 2026-10-22：橘標正式上線接線
 
@@ -534,7 +539,7 @@ USD／TWD 排序通過。HERE 的現場隔離驗收與實際 quote 離線到期�
 guard resumed 且無 lease／未結案來源，原 control／epoch／封鎖歷史不變；
 首兩輪預定台灣時間 09:00／09:30，真正定時更新另行驗收。
 操作見 [Actions 維運文件](../docs/superrich1965-actions-runbook.zh-TW.md)，
-實際證據見 [正式上線紀錄](../docs/superrich1965-production-release.zh-TW.md)。
+實際證據見 [正式上線紀錄](../docs/archive/exchange-rates/releases/superrich1965-production-release.zh-TW.md)。
 
 ### 2026-10-23：橘標 token 到期前不提早要求更新
 
@@ -584,4 +589,47 @@ GitHub 取價。實際 Preview／正式啟用及定時驗收不得由本機測�
 3 次請求（token＋token 重試＋rate）被判為 `source_unknown`／`invalid_result`，
 整輪停止、其餘 37 店未嘗試。上限改為 `MAX_BRANCH_SOURCE_REQUESTS = 3`，
 診斷保留 3 筆；超過 3 仍 fail closed。新增 runner 單元與 Python 端到端整合測試。
+
+### 2026-10-24：橘標重試結果契約修正與正式排程驗收
+
+Token GET 逾時重試成功後，同一店會有 token、重試與 rate 共 3 次來源請求。
+PR #18 將 runner 逐店結果與安全診斷上限一併改為 3，避免成功發布後被誤判為
+`invalid_result`；超過上限仍拒收。這沒有擴大重試條件，其他來源失敗沿用停止規則。
+
+PR #18 已正式部署，09:30、10:00 兩輪自動排程均新取並發布 38 店，後續追加回查也通過。
+正式取價維持 Netlify scheduler／Python background worker，GitHub 沒有 cron、保留手動備援。
+具體部署、binding 與逐輪證據見[最新上線紀錄](../docs/superrich1965-netlify-pr18-release-2026-10-24.zh-TW.md)。
+舊計畫、bootstrap 與實驗已封存；現行資料邊界整理至[匯率資料契約](../docs/exchange-rate-contract.zh-TW.md)。
+
+### 2026-10-24：橘標舊完整快照管線退役
+
+橘標正式取價與公開讀取已使用逐店 quote，保留舊完整快照管線會增加未使用的
+輪詢、state、驗證與來源入口。本次移除前端舊完整快照輪詢／state、
+`/api/exchange-rates-1965` 端點、單店完整 snapshot fallback，以及本機
+`fx:1965:fetch` 取價 CLI；目前的公開報價與 collector 都只讀各 Slug 的逐店 cache。
+
+保留 `/api/exchange-rates-1965-cache`、`/api/exchange-rates-1965-branch`、
+供部署綁定核對的 `/api/exchange-rates-1965-runtime`，以及現有管理控制 CLI。
+來源工作由 Netlify scheduler／Python background worker 執行，Actions 保留受控手動備援。
+既有橘標 snapshot Blobs 不讀取、不搬移、不改寫或刪除；逐店 quote key、控制與有效期不變。
+綠標 `/api/exchange-rates` 完整快照與 Notion 位置 CSV snapshot 繼續使用。
+
+這次是目前程式的退役整理，部署仍須另依 runbook 核對、重新綁定與驗收。
+過去 release、archive 與 evidence 保留當時的相容契約及驗收結果，不回寫歷史。
+
+### 2026-10-24：橘標發布成功清除連續失敗計數
+
+舊完整快照 runner 退役後，沒有任何路徑會在成功時清除 `consecutiveFailedRuns`；
+相隔數小時或數天的 3 次單店失敗，即使中間有大量成功，仍會觸發 1 小時退避，
+使所有分店回 429 cooldown。
+
+`queryBranchRates()` 在單店報價實際寫入逐店 cache 後，以 `clearFailedRuns()`
+將共用 breaker（`EXCHANGE_KEYS.breaker`）與 source guard breaker 的連續失敗計數歸零：
+
+- 只清 `consecutiveFailedRuns`；`blockLevel`（6h→24h→自動停用升級）與
+  `blockedUntil` 原樣保留，連續 challenge 仍會升級。
+- 只在發布後執行。快取命中、`publishQuote:false` probe、來源未發出請求都不清除；
+  `finishSourceAttempt()` 本身仍不重設任何歷史。
+- Source guard 須仍持有該次 lease 才寫入（`clearSourceFailedRuns()`），兩者皆用 CAS。
+- 清除為盡力而為：寫入失敗不改變已發布報價的 200 回應，計數維持原值。
 

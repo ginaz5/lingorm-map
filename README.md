@@ -24,27 +24,16 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 SuperRich 1965（橘標）沿用同一個「換匯」標籤、卡片與排序選單，提供
 USD／TWD 指定面額買入價、橘色 marker／群聚，以及 Google／HERE popup。
 頁面及單店「重新整理匯率」按鈕只讀快取，不會向官網取價。有效期與綠標相同，
-排序只比較已有有效報價的分店；既有本機完整快照 CLI 保留。
-38 家橘標分店的 Published 狀態由 Notion 管理，不代表報價服務已部署或啟用。
-操作方式見 [橘標整合與維運](note/LOCAL_TESTING.md#橘標整合與維運)。
+排序只比較已有有效報價的分店。38 家橘標位置由 Notion 管理；報價由綁定部署的
+Netlify scheduler／Python background worker 每半小時更新，時段為泰國 08:00～22:30。
+2026-10-24 PR #18 正式部署已通過兩輪自動排程驗收，後續追加回查也成功；實際部署與
+各輪來源／發布數量見[最新上線紀錄](docs/superrich1965-netlify-pr18-release-2026-10-24.zh-TW.md)。
+網站換版後須核對並重新 bind／enable collector。GitHub Actions 保留手動備援，沒有 cron。
+橘標目前只使用逐店快取；舊完整快照 API、輪詢與本機取價 CLI 已退役。綠標仍使用完整快照。
 
-2026-10-23：Netlify＋獨立 Python 的單店與 38 店背景取價已實測成功；
-新增部署綁定、HMAC worker、半小時 slot 防重複派送與正式逐店發布。
-新 Netlify collector 預設關閉，需在核對部署後明確 bind／enable；GitHub workflow
-保留手動備援、移除 cron。公開 API 仍只讀。部署與排程驗收狀態分開記錄，操作見
-[Netlify 維運手冊](docs/superrich1965-netlify-runbook.zh-TW.md)。
-
-2026-10-22：GitHub Actions 使用 Python 標準函式庫及 Safari User-Agent，匿名取得
-token 後逐店查詢並發布至 Netlify Blobs。Preview 已完成單店、五店及 38 店驗收；
-五店全數新取並發布，後續全店輪次新取 33 店、沿用 5 店有效快取，合計覆蓋 38 店。
-PR #8 已合併並部署正式站，production target 與已發布 commit 綁定已通過專用 PAT
-的 inspect，正式單店、五店及全店發布驗收通過；正式全店輪次跨過刷新邊界，
-38 店均新取且發布。正式 Google Maps、中英文及 USD／TWD 排序亦已實測。
-泰國時間 08:00～22:30 的半小時排程已啟用，來源 guard 已恢復；
-首兩輪預定為台灣時間 10 月 22 日 09:00／09:30，真正定時更新結果仍待驗收。
-各階段的實際來源／快取數量與正式發布身分見[正式上線紀錄](docs/superrich1965-production-release.zh-TW.md)。
-[Actions 維運文件](docs/superrich1965-actions-runbook.zh-TW.md)記錄操作、驗收與故障處理；
-來源 guard 與冷卻跨 Preview／正式共用，讀取或重新整理頁面都不會發動取價。
+維護入口：[文件索引](docs/README.md)、[匯率資料契約](docs/exchange-rate-contract.zh-TW.md)、
+[Netlify 維運手冊](docs/superrich1965-netlify-runbook.zh-TW.md)、
+[Actions 手動備援](docs/superrich1965-actions-runbook.zh-TW.md)。
 
 ---
 
@@ -56,16 +45,15 @@ quotes; Netlify Blobs persist rate controls and quotes. SuperRich Thailand uses 
 Netlify collector. SuperRich 1965 has a deploy-bound Netlify scheduled dispatcher
 and Python background collector, with main-only GitHub Actions retained for manual fallback.
 Public orange-rate APIs only read cached data; they never dispatch source work.
-The independent [Actions bootstrap](docs/superrich1965-actions-bootstrap.zh-TW.md)
-documents the earlier Preview-only rollout.
+The [documentation index](docs/README.md) separates current operations from archived rollout records.
 
 ### Boot sequence
 
 On page load, `main.js` kicks off two parallel flows:
 
-1. **Data flow** — `tryLoadSheet()` calls `/api/locations`, which serves the committed Notion export snapshot (`DATA_SOURCE=notion`, the only supported value; the legacy published Google Sheets CSV path is retired — see Deploy section). The response is tokenised by `data/csv-parser.js`, normalised into a flat array, and stored in `core/state.js`. Once loaded, `rebuild()` triggers `ui/render.js` (card list + filters) and `map/map.js` (place markers).
+1. **Data flow** — `loadLocations()` calls `/api/locations`, which serves the committed Notion export snapshot (`DATA_SOURCE=notion`, the only supported value). The response is tokenised by `data/csv-parser.js`, normalised into a flat array, and stored in `core/state.js`. Once loaded, `rebuild()` triggers `ui/render.js` (card list + filters) and `map/map.js` (place markers).
 
-2. **Map flow** — `loadMapScript()` calls `/api/config` to retrieve the browser SDK configuration, including the Google Maps API key and Map ID. These values are not bundled into `dist/`, but they are visible to browser users because the Google Maps and HERE JavaScript SDKs require them client-side. The app injects the Google Maps JS script; if that fails or the Google configuration is absent, it falls back to the HERE Maps JS API. Either way, `initMap()` runs and markers are placed via `buildMarkers()`.
+2. **Map flow** — `loadMapScript()` calls `/api/config` to retrieve the browser SDK configuration, including the Google Maps API key and Map ID. These values are not bundled into `dist/`, but they are visible to browser users because the Google Maps and HERE JavaScript SDKs require them client-side. The app injects the Google Maps JS script; if that fails or the Google configuration is absent, it falls back to the HERE Maps JS API. The selected provider initializes through `initWithGoogle()` or `initWithHere()`, then places markers via `buildMarkers()`.
 
 ```mermaid
 flowchart TD
@@ -88,7 +76,6 @@ flowchart TD
         LOC["/api/locations\nselects location snapshot"]
     end
 
-    GS[("Google Sheets\npublished CSV\n(retired rollback path)")]
     NOTION[("Notion export\ndata/locations.csv")]
     GMAPS["Google Maps JS API"]
     HERE["HERE Maps JS API\n(fallback)"]
@@ -99,8 +86,7 @@ flowchart TD
     MAIN -->|"orchestrates interactions"| COORD
     MAIN -->|"boot"| FORMS
     MAIN -->|"boot"| FAV
-    MAIN -->|"tryLoadSheet"| LOC
-    GS -->|"published CSV"| LOC
+    MAIN -->|"loadLocations"| LOC
     NOTION -->|"DATA_SOURCE=notion"| LOC
     LOC -->|"raw CSV"| CSV
     CSV -->|"rows"| STATE
@@ -197,7 +183,7 @@ graph LR
 | Analytics | Google Tag Manager (GTM-NVNXGP44) → GA4 (G-31MF79LHFM) |
 | Build / check | Vite 6 + TS `checkJs` (no emit), ES modules in `src/` |
 | Deploy | Netlify (GitHub auto-deploy) |
-| Tests | Node.js built-in `node:test` — 256 tests |
+| Tests | Node.js built-in `node:test`, plus offline Python transport tests |
 
 ---
 
@@ -237,9 +223,9 @@ lingorm_bangkok_map/
 ├── netlify/
 │   └── functions/
 │       ├── config.mjs      # /api/config — returns Maps key + map ID
-│       └── locations.mjs   # /api/locations — sheet/snapshot source switch
+│       └── locations.mjs   # /api/locations — validated Notion snapshot
 ├── data/
-│   └── locations.csv       # validated 130-row formal Notion export snapshot
+│   └── locations.csv       # validated formal Notion export snapshot
 ├── scripts/
 │   ├── export-snapshot.mjs # Notion API → stable site CSV contract
 │   └── validate-location-snapshot.mjs # production snapshot deploy gate
@@ -390,13 +376,13 @@ The current formal Notion data source has 20 properties: 17 content fields and
 the three verification fields `Review Needed`, `Verification Note`, and
 `Last Verified`. Verification fields are not exported to the public snapshot.
 `Coordinates Approx` and `Branch Group` have been retired from the formal
-schema; the parser still accepts `Coordinates Approx` only on the legacy Google
-Sheet rollback path.
+schema; the parser still accepts `Coordinates Approx` when reading legacy CSV
+formats for compatibility. Production does not fetch Google Sheets.
 
 The formal data source accepts exactly three status values: `Published`,
 `Paused`, and `Inactive`. Only `Published` locations appear on the public site;
 `Paused`, `Inactive`, and all unknown or blank inputs remain hidden. Legacy
-status names are accepted only while parsing old rollback exports and are
+status names are accepted only while parsing legacy CSV exports and are
 normalized to `Paused` or `Inactive`; they are never emitted by the current
 snapshot contract.
 
@@ -462,16 +448,17 @@ Markers are 28px brand-color emoji circles. Public status is intentionally not
 encoded in marker color. The emoji comes from `row.icon` and falls back to 📍
 if missing.
 
-Currency-exchange branches in `data/superrich-branches.json` get a dedicated
-green `.is-exchange` variant on both the individual marker and, when a
-cluster is made up entirely of exchange branches, the cluster badge itself
-(a mixed cluster keeps the default color). See `makeMarkerContent`,
-`isExchangeOnlyCluster` (Google), and `isExchangeOnlyDataPoints` (HERE) in
-`src/map/map.js`.
+Currency-exchange branches use the union of `data/superrich-branches.json`
+and `data/superrich1965-branches.json`. `getExchangeBrand()` identifies each
+brand; `makeMarkerContent(icon, isExchange, brand)` adds `.is-exchange`, plus
+`.is-exchange-orange` for orange branches. All-green clusters stay green and
+all-orange clusters stay orange; mixed brands or ordinary locations use the
+default cluster color. The renderers use `getExchangeClusterBrand()` (Google)
+and `getExchangeDataPointsBrand()` (HERE) in `src/map/map.js`.
 
 These branches use `Type = Currency Exchange` with a blank Category, so the
 label filter is their single exchange-specific filter. Published exchange
-rows outside the shipped branch mapping remain hidden from the public UI.
+rows outside both shipped branch mappings remain hidden from the public UI.
 
 ---
 

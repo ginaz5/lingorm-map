@@ -1,7 +1,7 @@
 import { pathToFileURL } from 'node:url';
 
 import {
-  EXCHANGE_KEYS, isValidBreaker, isValidControl, isValidLastAttempt, isValidSnapshot,
+  EXCHANGE_KEYS, isValidBreaker, isValidControl,
 } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { changeControl } from '../netlify/functions/_shared/exchange-rates-1965-control.mjs';
 import { createAdminStore, readEntry } from '../netlify/functions/_shared/exchange-rates-1965-storage.mjs';
@@ -43,27 +43,13 @@ export async function runControlCommand(argv, {
   const { command, reason } = parseArgs(argv);
   const targetStore = store ?? createAdminStore();
   if (command === 'status') {
-    const [controlEntry, breakerEntry, snapshotEntry, lastAttemptEntry] = await Promise.all([
+    const [controlEntry, breakerEntry] = await Promise.all([
       readEntry(targetStore, EXCHANGE_KEYS.control),
       readEntry(targetStore, EXCHANGE_KEYS.breaker),
-      readEntry(targetStore, EXCHANGE_KEYS.snapshot),
-      readEntry(targetStore, EXCHANGE_KEYS.lastAttempt),
     ]);
     const control = serializeEntry(controlEntry, isValidControl);
     const breaker = serializeEntry(breakerEntry, isValidBreaker);
-    const snapshot = serializeEntry(snapshotEntry, isValidSnapshot);
-    const lastAttempt = serializeEntry(lastAttemptEntry, isValidLastAttempt);
-    return {
-      control,
-      breaker,
-      lastAttempt,
-      snapshot: snapshot === null ? null : {
-        runId: snapshot.runId,
-        controlVersion: snapshot.controlVersion,
-        completedAt: snapshot.completedAt,
-        expiresAt: snapshot.expiresAt,
-      },
-    };
+    return { control, breaker };
   }
   const control = await changeControl(targetStore, {
     enabled: command === 'enable',

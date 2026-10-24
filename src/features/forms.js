@@ -60,12 +60,12 @@ export async function submitIssueReport() {
 
 
 /** @param {() => void} rebuild @returns {Promise<void>} */
-export async function tryLoadSheet(rebuild) {
+export async function loadLocations(rebuild) {
   const bar = document.createElement('div'); bar.className = 'loading-bar'; document.body.appendChild(bar);
   try {
     const resp = await fetch(LOCATIONS_API); if (!resp.ok) throw new Error();
     const parsed = parseCSV(await resp.text());
     if (parsed && parsed.length) state.data = parsed;
-  } catch (e) { console.warn('Sheet load failed', e); }
+  } catch (e) { console.warn('Location snapshot load failed', e); }
   state.isLoading = false; bar.remove(); rebuild();
 }

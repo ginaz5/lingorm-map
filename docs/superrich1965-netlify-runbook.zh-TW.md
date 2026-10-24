@@ -3,12 +3,16 @@
 橘標改由 Netlify Scheduled Function 在泰國時間 08:00～22:30 每半小時派送背景工作。
 排程為 UTC `0,30 1-15 * * *`；台灣時間為 09:00～23:30。排程函式只派送，
 完整取價與逐店發布在 Background Function 中執行，整輪應用預算 12 分鐘。
-實際部署、切換及定時驗收狀態見[部署驗收文件](superrich1965-netlify-cutover-2026-10-23.zh-TW.md)，
-不以程式存在表示已啟用。
+2026-10-24 PR #18 正式部署已通過兩輪自動排程與後續追加回查，實際部署、綁定與
+收據見[最新上線紀錄](superrich1965-netlify-pr18-release-2026-10-24.zh-TW.md)。
+先前切換與失敗保存在[10/23 歷史驗收](archive/exchange-rates/releases/superrich1965-netlify-cutover-2026-10-23.zh-TW.md)。
+日常維護仍須核對目前 runtime／binding／receipt；新部署不會自動沿用舊綁定。
 
 ## 綁定與安全界線
 
-- 公開三個匯率 API 仍只讀快取；新 runtime API 只回目前路由的部署身分。
+- 公開 branch／cache 匯率 API 只讀逐店快取；runtime API 只回目前路由的部署身分。
+- 舊橘標完整 snapshot API、單店 snapshot fallback 與本機完整快照取價 CLI 已退役。
+  既有 snapshot Blobs 不讀取、不搬移或刪除；綠標完整快照流程不受此退役影響。
 - Netlify collector 預設不啟用。quote store 另存 server-only collector control，
   必須明確綁定 deploy ID、main commit、quote controlVersion 並啟用。
 - Scheduler 與 worker 每次來源／發布前重查啟用狀態與目前部署。正式站換版後，
@@ -17,6 +21,8 @@
   簽章金鑰只存 Blobs，不回傳 status、不進 log、前端或 Git。
 - 來源延用共同 source guard、原 epoch、冷卻／breaker 歷史、CAS lease 與 unresolved
   marker；不因切換平台而 bootstrap、輪替或清冷卻。
+- 單店報價發布成功後，共用 breaker 與 source guard 的連續失敗計數歸零；
+  封鎖等級與未到期的封鎖時間保留。快取命中、未發布的 probe 不清除計數。
 - Python／Safari helper 固定使用現有 38 店 mapping、parser、token 生命週期、
   逐店 2～5 秒間隔，遇失敗即停、不新增來源 retry 或 Node fallback。唯一例外：
   token callback GET 若因單次 25 秒逾時失敗，同一 quote 內重試一次（見
@@ -70,4 +76,5 @@ failed／notAttempted 等摘要，判斷完成須看 receipt 與公開 cache。
 網站再部署或回滾前先 disable Netlify collector；需要中止來源時另 source-pause。
 緊急撤價使用既有 quote control disable。這些控制不清除來源保護歷史。
 若需使用 GitHub 手動備援，先 disable Netlify collector，核對目前正式 SHA 並更新
-GitHub Environment 的 production binding；恢復 GitHub 自動 cron 必須另外還原 workflow。
+GitHub Environment 的 production binding；操作見[Actions 手動備援](superrich1965-actions-runbook.zh-TW.md)。
+GitHub 維持手動，正常自動排程由 Netlify 接手。

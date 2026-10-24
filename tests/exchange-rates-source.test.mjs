@@ -1,4 +1,4 @@
-// Phase A source contract — docs/superrich-exchange-map-plan.zh-TW.md §2.2, §4.3.
+// Source contract — docs/exchange-rate-contract.zh-TW.md#品牌與來源解析.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';

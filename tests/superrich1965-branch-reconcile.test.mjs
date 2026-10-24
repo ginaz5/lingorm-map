@@ -1,4 +1,4 @@
-// Phase A1 branch reconciliation — docs/superrich1965-exchange-map-plan.zh-TW.md §2.3.
+// Branch reconciliation — docs/exchange-rate-contract.zh-TW.md#品牌與來源解析.
 // The name pairs below are the real mismatches recorded in the plan, not invented ones.
 import assert from 'node:assert/strict';
 import test from 'node:test';
