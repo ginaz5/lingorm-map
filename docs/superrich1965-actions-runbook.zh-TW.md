@@ -1,8 +1,8 @@
 # SuperRich 1965：GitHub Actions 手動備援
 
 更新：2026-10-24。現行自動取價由 [Netlify scheduler／Python background worker](superrich1965-netlify-runbook.zh-TW.md)
-執行。GitHub workflow 僅保留 main-only 手動操作，沒有 cron；repository variable
-`EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 保持 false。正常維運入口見
+執行。GitHub workflow 僅保留 main-only 手動操作，沒有 cron；CLI 也拒絕任何 schedule
+事件，舊 repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 已不再讀取。正常維運入口見
 [文件索引](README.md)，歷史 rollout 與失敗調查見[封存索引](archive/README.md)。
 
 ## 身分與執行邊界
@@ -20,7 +20,7 @@
 2. 核對正式網站的 ready／main／production／實際 SHA，更新 GitHub Environment 的 production binding。保持既有 quote control 與 source guard 歷史，不重新 bootstrap。
 3. 執行 production inspect，確認 target、control、guard 與部署相符；inspect 不取來源或寫入報價。
 4. 若 source guard 是 paused，完成停止／冷卻／unresolved 查核後，才以管理工具明確 source-resume。
-5. 按需要選擇固定單店、五店或全店發布。每輪完成後核對摘要、逐店結果、公開 cache 與保護狀態，再決定下一輪。
+5. 執行全店發布。每輪完成後核對摘要、逐店結果、公開 cache 與保護狀態，再決定下一輪。
 
 ```bash
 npm run fx:1965:netlify:control -- status --deploy <current-deploy-id>
@@ -36,18 +36,15 @@ gh workflow run exchange-rates-1965.yml --repo ginaz5/lingorm-map --ref main -f 
 | action | 固定範圍 | 發布 |
 | --- | --- | --- |
 | inspect | 身分／control／guard | 否，零來源零寫入 |
-| probe-python | superrich1965-58（A04／36） | 否 |
-| publish-python | 同上單店 | 是 |
-| publish-five-python | 58、56、57、59、60 | 是 |
 | publish-all-python | mapping 全部 38 店 | 是 |
 
-例如全店備援：
+分階段上線用的 probe／單店／五店模式已於 2026-10-24 移除。全店發布：
 
 ```bash
 gh workflow run exchange-rates-1965.yml --repo ginaz5/lingorm-map --ref main -f action=publish-all-python -f target=production
 ```
 
-不接受任意 URL、Slug、scope、force 或 checkout ref。正式發布只使用 Python 模式。
+不接受任意 URL、Slug、scope、force 或 checkout ref。來源只使用 Python 傳輸。
 既有有效 cache hit 可合法略過來源；不得清快取或重標時間製造全新覆蓋。
 
 ## 結果與故障處理
@@ -87,5 +84,5 @@ source-resume／人工 reconciliation，須先查明實際來源結果與精確 
 
 等待 Actions 完成，核對共同 guard 沒有 lease／unresolved，依 Netlify 手冊核對
 目前部署與 collector binding；部署或 quote controlVersion 改變時重新 bind，再 enable。
-確認下一個真正 schedule receipt 與 38 店公開 cache。GitHub 維持手動，無須開啟舊排程變數。
+確認下一個真正 schedule receipt 與 38 店公開 cache。GitHub 維持手動。
 網站回滾不會停止來源工作或還原 Blobs；先停止 collector，需要中止來源時另 source-pause。

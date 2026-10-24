@@ -633,3 +633,23 @@ PR #18 已正式部署，09:30、10:00 兩輪自動排程均新取並發布 38 �
 - Source guard 須仍持有該次 lease 才寫入（`clearSourceFailedRuns()`），兩者皆用 CAS。
 - 清除為盡力而為：寫入失敗不改變已發布報價的 200 回應，計數維持原值。
 
+
+### 2026-10-24：橘標移除分階段上線模式
+
+正式取價只走 `publish-all-python`（Netlify worker 與 Actions 手動備援皆然），
+但 runner／CLI／workflow 仍保留 PR #10～#12 試跑用的 probe、單店、五店、
+pilot 與 Node 傳輸模式，以及 workflow 從未啟用的 GitHub schedule 路徑。
+本次只留 `inspect` 與 `publish-all-python`：
+
+- Runner 只接受 `mode: 'publish-all-python'`、`scope: 'all'`，固定 38 店；
+  `probe_succeeded` 不再是合法逐店結果。
+- Ledger 的 operation identity 仍保留 mode／scope 欄位與原格式，
+  既有 `publish-all-python` 紀錄（含 stale job 回收路徑）照常可讀。
+- CLI 拒絕任何 schedule 事件（含 inspect），不再讀
+  `EXCHANGE_RATES_1965_SCHEDULE_ENABLED`；來源固定為 Python 傳輸。
+- 來源保護、lease、breaker、source guard、逐店 cache key 與有效期不變。
+
+若 `exchange-rates-1965/actions/job` 停在一筆舊模式的 running 紀錄，回收時會因
+identity 不合而以 `invalid_operation` 停止，需人工檢查。Netlify collector 每輪都以
+`publish-all-python` 寫入該 key，因此正常排程下不會遇到；此點依程式行為推斷，
+未直接讀取正式 Blobs 確認。

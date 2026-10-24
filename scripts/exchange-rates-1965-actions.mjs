@@ -4,7 +4,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { createPythonSafariFetch } from './exchange-rates-1965-python.mjs';
 
 import { openActionsTarget } from '../netlify/functions/_shared/exchange-rates-1965-actions-target.mjs';
-import { actionsOperationKey, runActionsCollector, ACTIONS_PYTHON_PUBLISH_SCOPES } from '../netlify/functions/_shared/exchange-rates-1965-actions-runner.mjs';
+import { actionsOperationKey, runActionsCollector, ACTIONS_MODE, ACTIONS_SCOPE } from '../netlify/functions/_shared/exchange-rates-1965-actions-runner.mjs';
 import { createAnonymousApiSource, ANONYMOUS_SOURCE_PROFILE } from '../netlify/functions/_shared/exchange-rates-1965-anonymous.mjs';
 import { readEffectiveControl } from '../netlify/functions/_shared/exchange-rates-1965-control.mjs';
 import { EXCHANGE_KEYS, isValidBreaker } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
@@ -15,43 +15,29 @@ import { TOKEN_FAILURE_REASONS } from '../netlify/functions/_shared/exchange-rat
 import { NETLIFY_CONTROL_KEY, validNetlifyControl } from '../netlify/functions/_shared/exchange-rates-1965-netlify.mjs';
 
 const REPOSITORY = 'ginaz5/lingorm-map';
-const SINGLE_SLUG = 'superrich1965-58';
-export const ACTIONS_SCHEDULE = '0,30 1-15 * * *';
 const SETTINGS_ERRORS = new Set(['invalid_actions_arguments', 'invalid_actions_identity', 'invalid_target_configuration',
   'target_not_configured', 'target_configuration_unavailable', 'missing_credentials', 'invalid_credentials',
   'invalid_actions_environment', 'target_metadata_mismatch', 'target_metadata_unavailable', 'target_store_unavailable']);
 
-/** A closed interface: no caller URL, arbitrary inventory, force flag or checkout ref.
+/** A closed interface: no caller URL, inventory, force flag or checkout ref.
  * @param {string[]} argv
  */
 export function parseActionsArgs(argv) {
-  const [mode, ...rest] = argv;
-  if (!['inspect', 'probe', 'probe-python', 'publish', ...Object.keys(ACTIONS_PYTHON_PUBLISH_SCOPES)].includes(mode) || rest.length % 2) throw new Error('invalid_actions_arguments');
-  /** @type {Record<string,string>} */
-  const options = {};
-  for (let i = 0; i < rest.length; i += 2) {
-    const key = rest[i];
-    if (!['--target', '--slug', '--scope'].includes(key) || Object.hasOwn(options, key)) throw new Error('invalid_actions_arguments');
-    options[key] = rest[i + 1];
-  }
-  if (!['preview-reviewed', 'production'].includes(options['--target']) ||
-      (mode.startsWith('probe') && (options['--scope'] !== undefined || (options['--slug'] !== undefined && options['--slug'] !== SINGLE_SLUG))) ||
-      (options['--target'] === 'production' && mode !== 'inspect' && !mode.endsWith('-python')) ||
-      (Object.hasOwn(ACTIONS_PYTHON_PUBLISH_SCOPES, mode) && (options['--scope'] !== undefined || options['--slug'] !== undefined)) ||
-      (mode === 'inspect' && (options['--scope'] !== undefined || options['--slug'] !== undefined)) ||
-      (mode === 'publish' && (options['--slug'] !== undefined || !['single', 'pilot', 'all'].includes(options['--scope'])))) {
+  const [mode, flag, alias, ...rest] = argv;
+  if (!['inspect', ACTIONS_MODE].includes(mode) || flag !== '--target' || rest.length ||
+      !['preview-reviewed', 'production'].includes(alias)) {
     throw new Error('invalid_actions_arguments');
   }
-  return { mode, alias: options['--target'], scope: mode === 'publish' ? options['--scope'] : ACTIONS_PYTHON_PUBLISH_SCOPES[mode] ?? 'single' };
+  return { mode, alias, scope: ACTIONS_SCOPE };
 }
 
-/** @param {Record<string,string|undefined>} env @param {string} mode @param {string} alias */
-function executionIdentity(env, mode, alias) {
+/** Manual dispatch only: the workflow has no schedule.
+ * @param {Record<string,string|undefined>} env
+ */
+function executionIdentity(env) {
   if (env.GITHUB_ACTIONS !== 'true' || env.GITHUB_REPOSITORY !== REPOSITORY ||
       !/^[1-9][0-9]{0,19}$/.test(env.GITHUB_RUN_ID ?? '') || !/^[a-f0-9]{40}$/.test(env.GITHUB_SHA ?? '') ||
-      env.GITHUB_REF !== 'refs/heads/main' || !['workflow_dispatch', 'schedule'].includes(env.GITHUB_EVENT_NAME ?? '') ||
-      (env.GITHUB_EVENT_NAME === 'schedule' && (mode !== 'publish-all-python' || alias !== 'production' ||
-        env.GITHUB_EVENT_SCHEDULE !== ACTIONS_SCHEDULE))) {
+      env.GITHUB_REF !== 'refs/heads/main' || env.GITHUB_EVENT_NAME !== 'workflow_dispatch') {
     throw new Error('invalid_actions_identity');
   }
   return { repository: REPOSITORY, runId: /** @type {string} */ (env.GITHUB_RUN_ID), commit: /** @type {string} */ (env.GITHUB_SHA) };
@@ -82,11 +68,8 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
   let observedSourceRequests = 0;
   try {
     const { mode, alias, scope } = parseActionsArgs(argv);
-    const identity = mode === 'inspect' && env.GITHUB_EVENT_NAME !== 'schedule' ? null : executionIdentity(env, mode, alias);
-    if (env.GITHUB_EVENT_NAME === 'schedule' && env.EXCHANGE_RATES_1965_SCHEDULE_ENABLED !== 'true') {
-      return { exitCode: 3, summary: { mode, outcome: 'skipped', reason: 'schedule_disabled',
-        sourceRequestCount: 0, published: 0, sourceValidated: false } };
-    }
+    // Schedule events fail closed in every mode, including read-only inspect.
+    const identity = mode === 'inspect' && env.GITHUB_EVENT_NAME !== 'schedule' ? null : executionIdentity(env);
     const opened = await openTargetImpl({ alias, targetsInput, env, fetchImpl });
     const { target, metadata, store, sourceGuardStore, verifyCurrent } = opened;
     const netlifyControl = (await readEntry(store, NETLIFY_CONTROL_KEY))?.data;
@@ -123,8 +106,7 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
         sourceValidated: false, reason: guardError ? guard.reason : signal?.aborted ? 'cancelled' : !effective.control ? 'missing_control' : !effective.enabled ? 'disabled' : guard.reason,
         sourceGuard: guardSummary(guard) } };
     }
-    const pythonMode = mode.endsWith('-python');
-    source = createAnonymousApiSource({ fetchImpl: pythonMode ? pythonFetchImpl ?? createPythonSafariFetch() : fetchImpl, nowImpl });
+    source = createAnonymousApiSource({ fetchImpl: pythonFetchImpl ?? createPythonSafariFetch(), nowImpl });
     const sourceFetch = source.fetchImpl;
     const session = source;
     const waitImpl = sleepImpl ?? (async (/** @type {number} */ ms, /** @type {AbortSignal} */ signal) => { await delay(ms, undefined, { signal }); });
@@ -138,8 +120,7 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
         }
         return queryImpl({ ...options, store, sourceGuardStore,
         requireExistingControl: true, enabledDefault: 'false', expectedControlVersion: effective.control.controlVersion,
-        refreshDue: true, nowImpl, fetchImpl: sourceFetch, sourceProfile: pythonMode
-          ? { ...ANONYMOUS_SOURCE_PROFILE, name: 'anonymous-python-safari' } : ANONYMOUS_SOURCE_PROFILE,
+        refreshDue: true, nowImpl, fetchImpl: sourceFetch, sourceProfile: { ...ANONYMOUS_SOURCE_PROFILE, name: 'anonymous-python-safari' },
         prepareSource: async () => {
           const readyAtMs = session.getReadyAtMs();
           if (readyAtMs <= nowImpl()) return null;

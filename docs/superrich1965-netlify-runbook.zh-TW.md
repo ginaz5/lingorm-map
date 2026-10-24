@@ -66,8 +66,8 @@ failed／notAttempted 等摘要，判斷完成須看 receipt 與公開 cache。
 
 1. 功能分支完成測試與 Deploy Preview；綁定、啟用 Preview 並人工派送全店，
    核對 38 店逐店發布、公開 cache、來源保護及零來源重播。
-2. 記錄 production control、共同 guard 與目前正式 deploy。停用 GitHub repository
-   variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED`，確認沒有執行中的 Actions。
+2. 記錄 production control、共同 guard 與目前正式 deploy，確認沒有執行中的 Actions。
+   （GitHub workflow 沒有 cron，CLI 也拒絕 schedule 事件。）
 3. 發布 main 新部署；新 Netlify collector 尚未綁定時不會取價。
 4. 驗證正式 runtime API、公開 cache、前端，bind／enable 新正式 deploy。
 5. 人工派送驗證正式發布，再核對至少兩輪真正的 schedule receipt 與 38 店公開 cache。
