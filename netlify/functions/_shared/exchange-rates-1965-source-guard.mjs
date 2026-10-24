@@ -214,7 +214,8 @@ export async function finishSourceAttempt({ store, lease, outcome, nowMs = Date.
 }
 
 /** After a published quote, clear consecutive failures while the caller still
- * owns the lease. Block escalation and any active block time are kept.
+ * owns a live lease and the guard is not paused. Block escalation and any
+ * active block time are kept.
  * @param {{store:any,lease:any,nowMs?:number}} input
  */
 export async function clearSourceFailedRuns({ store, lease, nowMs = Date.now() }) {
@@ -223,6 +224,8 @@ export async function clearSourceFailedRuns({ store, lease, nowMs = Date.now() }
     const current = await readSourceGuard({ store, nowMs, expectedEpoch: lease?.sourceEpoch });
     if (!current.state || !current.entry || !owns(current.state, lease)) return { ...current, ok: false, reason: 'lease_lost' };
     if (current.state.unresolvedAttempt) return { ...current, ok: false, reason: 'unknown_outcome' };
+    if (current.state.leaseUntilMs <= nowMs) return { ...current, ok: false, reason: 'lease_expired' };
+    if (current.state.paused) return { ...current, ok: false, reason: 'paused' };
     const breaker = clearFailedRuns(current.state.breaker);
     if (breaker === current.state.breaker) return { ok: true, reason: null, state: current.state };
     const state = { ...current.state, breaker };

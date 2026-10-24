@@ -303,3 +303,13 @@ test('clearing source failures after publication keeps block level, block time a
   assert.equal(stateOf(h.store).breaker.blockedUntil, blockedUntil);
   assert.equal(stateOf(h.store).leaseId, lease.leaseId);
 });
+
+test('clearing source failures refuses an expired lease or a paused guard', async () => {
+  const h = await ready([{ ...createBreaker(uuid(9)), consecutiveFailedRuns: 2 }]);
+  const { lease } = await h.begin();
+  assert.equal((await finishSourceAttempt({ store: h.store, lease, outcome: 'complete', nowMs: START + 1 })).ok, true);
+  assert.equal((await clearSourceFailedRuns({ store: h.store, lease, nowMs: lease.leaseUntilMs })).reason, 'lease_expired');
+  assert.equal((await setSourceGuardPaused({ store: h.store, paused: true, nowMs: START + 2 })).ok, true);
+  assert.equal((await clearSourceFailedRuns({ store: h.store, lease, nowMs: START + 3 })).reason, 'paused');
+  assert.equal(stateOf(h.store).breaker.consecutiveFailedRuns, 2);
+});
