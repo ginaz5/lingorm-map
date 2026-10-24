@@ -17,6 +17,7 @@ export const T = {
     lang_btn: 'EN',
     theme_btn: '主題',
     more_actions: '更多操作',
+    home_btn_label: 'LingOrm Map：回到首頁，清除搜尋與篩選',
     // Fan resources
     fan_resources_title: '粉絲資源',
     fan_resources_kicker: '粉絲分享',
@@ -159,6 +160,7 @@ export const T = {
     lang_btn: '中文',
     theme_btn: 'Theme',
     more_actions: 'More actions',
+    home_btn_label: 'LingOrm Map: back to home, clear search and filters',
     // Fan resources
     fan_resources_title: 'Fan resources',
     fan_resources_kicker: 'From the fandom',
