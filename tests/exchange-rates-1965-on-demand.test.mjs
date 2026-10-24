@@ -7,6 +7,7 @@ import { BRANCH_QUOTE_TTL_MS, ORANGE_BRANCHES, isValidBranchQuote, parseBranchQu
 import { EXCHANGE_KEYS, createBreaker, createControl } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { clearFailedRuns } from '../netlify/functions/_shared/exchange-rates-1965-breaker.mjs';
 import { SOURCE_GUARD_KEY, bootstrapSourceGuard, setSourceGuardPaused } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
+import { ANONYMOUS_SOURCE_PROFILE } from '../netlify/functions/_shared/exchange-rates-1965-anonymous.mjs';
 import { FakeBlobStore, uuid } from './helpers/exchange-rates-store.mjs';
 
 const START = Date.parse('2026-10-17T01:00:00.000Z');
@@ -468,3 +469,57 @@ test('a failed breaker reset after publication still returns the published quote
   assert.equal(body.quote.slug, slug);
   assert.equal(h.store.entries.get(EXCHANGE_KEYS.breaker).data.consecutiveFailedRuns, 2);
 });
+
+for (const timing of ['during reset CAS', 'before reset starts']) {
+  test(`an old published quote preserves a later collector failure ${timing}`, async t => {
+    t.mock.method(console, 'info', () => {});
+    const h = harness();
+    const sourceGuardStore = new FakeBlobStore();
+    h.store.seed(EXCHANGE_KEYS.breaker, { ...createBreaker(uuid(1)), consecutiveFailedRuns: 1 });
+    await bootstrapSourceGuard({ store: sourceGuardStore,
+      legacyBreakers: [{ ...createBreaker(uuid(2)), consecutiveFailedRuns: 1 }],
+      legacyReviewed: true, nowMs: START - 1000, randomUUIDImpl: () => uuid(2) });
+    await setSourceGuardPaused({ store: sourceGuardStore, paused: false, nowMs: START - 1000 });
+    const input = { ...h.input, sourceGuardStore, sourceProfile: ANONYMOUS_SOURCE_PROFILE,
+      requireExistingControl: true, expectedControlVersion: uuid(1),
+      operationId: 'test:old-success', ownerId: uuid(3) };
+    let raced = false, laterResult, newerBreakerEntry;
+    const laterFailure = async () => {
+      raced = true;
+      // The production source profile has an 80s budget and 89s target/source
+      // leases. Model a delayed storage operation that outlives both leases.
+      h.advance(90_000);
+      laterResult = await fetchBody({ ...input, slug: otherSlug,
+        operationId: 'test:later-failure', ownerId: uuid(4),
+        fetchImpl: async () => { h.calls.push({}); return new Response('', { status: 500 }); } });
+      newerBreakerEntry = structuredClone(h.store.entries.get(EXCHANGE_KEYS.breaker));
+    };
+    if (timing === 'during reset CAS') {
+      h.store.beforeSet = async ({ key, data }) => {
+        if (key === EXCHANGE_KEYS.breaker && data.consecutiveFailedRuns === 0 && !raced) await laterFailure();
+      };
+    } else {
+      const read = h.store.getWithMetadata.bind(h.store);
+      h.store.getWithMetadata = async (...args) => {
+        // This is A's final control read after its quote has been saved. A
+        // reset that merely stops retrying, but reads the latest breaker here,
+        // would still incorrectly clear B's newer failure.
+        if (args[0] === EXCHANGE_KEYS.control && h.store.entries.has(branchCacheKey(slug)) && !raced) await laterFailure();
+        return read(...args);
+      };
+    }
+
+    const result = await fetchBody(input);
+    assert.equal(raced, true);
+    assert.equal(result.response.status, 200);
+    assert.equal(laterResult.response.status, 503);
+    assert.equal(h.calls.length, 2);
+    assert.deepEqual(result.body.quote, h.store.entries.get(branchCacheKey(slug)).data);
+    assert.equal(isValidBranchQuote(result.body.quote), true);
+    assert.equal(newerBreakerEntry.data.consecutiveFailedRuns, 2);
+    assert.equal(sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data.breaker.consecutiveFailedRuns, 2);
+    assert.deepEqual(h.store.entries.get(EXCHANGE_KEYS.breaker), newerBreakerEntry);
+    assert.equal(h.store.calls.filter(call => call.operation === 'set' &&
+      call.key === EXCHANGE_KEYS.breaker && call.data.consecutiveFailedRuns === 0).length, 1);
+  });
+}

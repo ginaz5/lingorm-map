@@ -23,20 +23,17 @@ function validGate(gate) {
     Number.isSafeInteger(gate.nextRequestAtMs) && gate.nextRequestAtMs >= 0;
 }
 
-/** Best effort: a published quote clears consecutive failures but keeps block
- * escalation and any active block time. Never changes the published response.
- * @param {any} store @param {string} version
+/** Clear only the breaker revision observed before this source attempt. A CAS
+ * conflict belongs to a newer writer and must never be retried with its ETag.
+ * This best-effort cleanup never changes the published response.
+ * @param {any} store @param {string} version @param {any|null} previousEntry
  */
-async function clearBreakerFailedRuns(store, version) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const current = await readEntry(store, EXCHANGE_KEYS.breaker);
-      if (!current || !isValidBreaker(current.data) || current.data.controlVersion !== version) return;
-      const breaker = clearFailedRuns(current.data);
-      if (breaker === current.data) return;
-      if ((await conditionalSetJSON(store, EXCHANGE_KEYS.breaker, breaker, current)).modified) return;
-    } catch { return; }
-  }
+async function clearBreakerFailedRuns(store, version, previousEntry) {
+  if (!previousEntry || !isValidBreaker(previousEntry.data) || previousEntry.data.controlVersion !== version) return;
+  const breaker = clearFailedRuns(previousEntry.data);
+  if (breaker === previousEntry.data) return;
+  try { await conditionalSetJSON(store, EXCHANGE_KEYS.breaker, breaker, previousEntry); }
+  catch { /* Keep newer failures or an unavailable breaker without failing publication. */ }
 }
 
 /** An authorized collector can fetch one whitelisted branch. A persistent CAS lease
@@ -253,7 +250,7 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
     // A published quote clears consecutive failures in both breakers, but
     // keeps block escalation and active block time so challenges still escalate.
     quotePublished = true;
-    await clearBreakerFailedRuns(store, version);
+    await clearBreakerFailedRuns(store, version, breakerEntry);
     if (sourceLease) {
       try { await clearSourceFailedRuns({ store: sourceGuardStore, lease: sourceLease, nowMs: nowImpl() }); } catch { /* Best effort. */ }
     }

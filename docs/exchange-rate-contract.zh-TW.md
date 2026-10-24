@@ -73,7 +73,8 @@ Notion 仍是位置系統來源；匯率與營業時間不寫入位置 snapshot�
 background worker 逐店發布；GitHub Actions 保留手動備援，沒有 cron。
 橘標沿用共同 source guard、冷卻、lease、CAS 與 operation ledger；正式部署更換後
 必須核對並重新綁定，不清除來源保護歷史。單店報價發布成功只清除連續失敗計數，
-封鎖等級與未到期封鎖時間不變。操作及 token 逾時重試的明確例外見
+封鎖等級與未到期封鎖時間不變。目標 breaker 的清理僅以該次來源工作前讀取的版本做一次
+CAS；遇到衝突便保留較新紀錄，不影響已發布的報價。操作及 token 逾時重試的明確例外見
 [Netlify 維運手冊](superrich1965-netlify-runbook.zh-TW.md)。
 
 修改契約時需檢查來源 parser、兩品牌 state／輪詢、公開 API、控制／collector、
