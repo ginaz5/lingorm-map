@@ -303,6 +303,33 @@ test('invalid telemetry fails closed without crediting a fabricated source or pu
   }
 });
 
+test('a token GET retried after a timeout counts three source requests and keeps every diagnostic', async () => {
+  const retried = { ...success(true, 3), diagnostics: [{ stage: 'token', status: null, reason: 'timeout' },
+    { stage: 'token', status: 200 }, { stage: 'rate', status: 200 }] };
+  const h = harness();
+  const result = await h.run({ mode: 'publish', scope: 'all', collectorImpl: async args => {
+    h.calls.push({ slug: args.slug });
+    return h.calls.length === 1 ? retried : success(args.publishQuote, 1);
+  } });
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.published, 38);
+  assert.equal(result.sourceRequestCount, 40);
+  assert.equal(result.sourceValidated, true);
+  assert.equal(result.results[0].status, 'published');
+  assert.equal(result.results[0].sourceRequestCount, 3);
+  assert.deepEqual(result.results[0].diagnostics.map(entry => [entry.stage, entry.status, entry.reason]),
+    [['token', null, 'timeout'], ['token', 200, null], ['rate', 200, null]]);
+  const replay = await h.run({ mode: 'publish', scope: 'all', collectorImpl: () => { throw new Error('must not request source again'); } });
+  assert.equal(replay.exitCode, 0);
+  assert.equal(replay.historicalSourceRequestCount, 40);
+  for (const count of [4, 999]) {
+    const over = harness();
+    const rejected = await over.run({ collectorImpl: async () => ({ ...success(false, count) }) });
+    assert.equal(rejected.results[0].status, 'source_unknown');
+    assert.equal(rejected.exitCode, 1);
+  }
+});
+
 test('storage failure and missing deployed ETags prevent source acquisition and hide exception content', async () => {
   const h = harness();
   h.store.getWithMetadata = async () => { throw new Error('PRIVATE_STORAGE'); };
