@@ -1,5 +1,6 @@
 import { lang, t } from '../core/i18n.js';
 import { state } from '../core/state.js';
+import { fitMapToVisibleLocations } from '../map/map.js';
 import {
   trackLocateResult,
   trackLocationAction,
@@ -37,6 +38,7 @@ export function switchTab(tab) {
   if (isMap && state.map) {
     if (state.provider === 'google') google.maps.event.trigger(state.map, 'resize');
     else state.map.getViewPort().resize();
+    if (state.pendingDestinationFit) fitMapToVisibleLocations();
   }
 }
 

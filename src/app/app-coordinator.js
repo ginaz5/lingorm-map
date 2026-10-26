@@ -28,10 +28,15 @@ export function applyFiltersAndSyncMap(options = {}) {
   syncVisibleMarkers();
   if (options.fitMap) fitMapToVisibleLocations();
   if (options.exchangeSortChanged && DENOMS.includes(/** @type {any} */ (state.exchangeSort))) {
-    switchTab('list');
-    const list = document.getElementById('loc-list');
-    if (list) list.scrollTop = 0;
+    showListFromTop();
   }
+}
+
+/** Show the list tab scrolled back to its first card. */
+export function showListFromTop() {
+  switchTab('list');
+  const list = document.getElementById('loc-list');
+  if (list) list.scrollTop = 0;
 }
 
 export function toggleLang() {

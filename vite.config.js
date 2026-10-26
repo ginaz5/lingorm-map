@@ -34,6 +34,7 @@ export default defineConfig({
       input: {
         main: resolve(ROOT_DIR, 'index.html'),
         changelog: resolve(ROOT_DIR, 'changelog.html'),
+        notfound: resolve(ROOT_DIR, '404.html'),
       },
       output: {
         manualChunks: undefined,
