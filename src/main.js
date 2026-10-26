@@ -383,6 +383,7 @@ window.addEventListener('resize', () => {
   if (!state.map) return;
   if (state.provider === 'google') google.maps.event.trigger(state.map, 'resize');
   else state.map.getViewPort().resize();
+  if (state.pendingDestinationFit) fitMapToVisibleLocations();
 });
 
 // ─── Boot sequence ───────────────────────────────

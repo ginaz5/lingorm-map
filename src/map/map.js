@@ -63,11 +63,12 @@ function boundsFromPoints(points) {
 /**
  * Fit the active map provider to every currently visible location.
  * A single result uses a useful place-level zoom; no results preserve the
- * current viewport.
+ * current viewport. Defer until the map is initialized and has a usable size.
  * @returns {boolean} whether the viewport changed
  */
 export function fitMapToVisibleLocations() {
-  if (!state.map) {
+  const mapElement = typeof document === 'undefined' ? null : document.getElementById('map');
+  if (!state.map || (mapElement && (mapElement.clientWidth === 0 || mapElement.clientHeight === 0))) {
     state.pendingDestinationFit = true;
     return false;
   }
