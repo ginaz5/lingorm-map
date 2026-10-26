@@ -145,6 +145,20 @@ test('exchange-rate sort menu exposes both brands without a separate toggle', as
   }
 });
 
+test('exchange-rate sort labels distinguish brands by color and text in both languages', () => {
+  const labels = [
+    ['fx_sort_usd_100', '🟢 綠標 USD 100', '🟢 Green USD 100'],
+    ['fx_sort_usd_50', '🟢 綠標 USD 50', '🟢 Green USD 50'],
+    ['fx_sort_twd', '🟢 綠標 TWD', '🟢 Green TWD'],
+    ['fx_sort_usd_1965', '🟠 橘標 USD', '🟠 Orange USD'],
+    ['fx_sort_twd_1965', '🟠 橘標 TWD', '🟠 Orange TWD'],
+  ];
+  for (const [key, zh, en] of labels) {
+    assert.equal(T.zh[key], zh);
+    assert.equal(T.en[key], en);
+  }
+});
+
 test('orange rate refresh explains unavailable quotes without promising a source query', () => {
   assert.equal(T.zh.fx_query, '重新整理匯率');
   assert.equal(T.en.fx_query, 'Refresh rates');
