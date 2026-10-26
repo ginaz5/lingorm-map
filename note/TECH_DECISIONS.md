@@ -647,6 +647,12 @@ pilot 與 Node 傳輸模式，以及 workflow 從未啟用的 GitHub schedule �
   既有 `publish-all-python` 紀錄（含 stale job 回收路徑）照常可讀。
 - CLI 拒絕任何 schedule 事件（含 inspect），不再讀
   `EXCHANGE_RATES_1965_SCHEDULE_ENABLED`；來源固定為 Python 傳輸。
+- `queryBranchRates()` 移除兩個 collector 都不會走的參數與分支：
+  `requireExistingControl`、`refreshDue`、`publishQuote`、`enabledDefault`
+  改為固定行為（必須已有 control 且版本相符、必須帶 source guard 與
+  operation／owner、同一 UTC 半小時內的 quote 才重用、成功即發布、
+  缺 control 視為 disabled）。只供舊公開取價入口使用的 `ensureFetchControl()` 一併移除。
+  公開唯讀路徑 `readBranchRates()`／`serveBranchCache()` 不受影響。
 - 來源保護、lease、breaker、source guard、逐店 cache key 與有效期不變。
 
 若 `exchange-rates-1965/actions/job` 停在一筆舊模式的 running 紀錄，回收時會因

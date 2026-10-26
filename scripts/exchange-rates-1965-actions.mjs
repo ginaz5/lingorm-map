@@ -119,8 +119,7 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
           return stopped;
         }
         return queryImpl({ ...options, store, sourceGuardStore,
-        requireExistingControl: true, enabledDefault: 'false', expectedControlVersion: effective.control.controlVersion,
-        refreshDue: true, nowImpl, fetchImpl: sourceFetch, sourceProfile: { ...ANONYMOUS_SOURCE_PROFILE, name: 'anonymous-python-safari' },
+        expectedControlVersion: effective.control.controlVersion, nowImpl, fetchImpl: sourceFetch, sourceProfile: { ...ANONYMOUS_SOURCE_PROFILE, name: 'anonymous-python-safari' },
         prepareSource: async () => {
           const readyAtMs = session.getReadyAtMs();
           if (readyAtMs <= nowImpl()) return null;

@@ -3,7 +3,7 @@ import { branchCacheKey, branchResponse } from './exchange-rates-1965-branch-cac
 export { branchCacheKey, branchResponse } from './exchange-rates-1965-branch-cache.mjs';
 import { BRANCH_API_SCHEMA_VERSION, ORANGE_BRANCHES, isValidBranchQuote } from '../../../src/data/exchange-rates-1965-branch.js';
 import { EXCHANGE_KEYS, createBreaker, isValidBreaker, sanitizeDiagnostics } from './exchange-rates-1965-contract.mjs';
-import { autoDisable, ensureFetchControl, readEffectiveControl } from './exchange-rates-1965-control.mjs';
+import { autoDisable, readEffectiveControl } from './exchange-rates-1965-control.mjs';
 import { breakerBlocks, clearFailedRuns, nextBreakerState } from './exchange-rates-1965-breaker.mjs';
 import { conditionalSetJSON, readEntry } from './exchange-rates-1965-storage.mjs';
 import { collectSourceQuotes } from './exchange-rates-1965-source.mjs';
@@ -36,13 +36,18 @@ async function clearBreakerFailedRuns(store, version, previousEntry) {
   catch { /* Keep newer failures or an unavailable breaker without failing publication. */ }
 }
 
-/** An authorized collector can fetch one whitelisted branch. A persistent CAS lease
- * serializes cold requests across server instances; warm cache hits bypass it.
- * @param {{store:any, slug:string, enabledDefault?:unknown, fetchImpl?:typeof fetch, nowImpl?:()=>number, randomUUIDImpl?:()=>string, refreshDue?:boolean, expectedControlVersion?:string, sourceProfile?:import('./exchange-rates-1965-source.mjs').SourceProfile, requireExistingControl?:boolean, publishQuote?:boolean, sourceGuardStore?:any, operationId?:string, ownerId?:string, signal?:AbortSignal, prepareSource?:()=>Promise<{reason:string,retryAtMs?:number|null}|null>, beforeSource?:()=>Promise<boolean>, beforePublish?:()=>Promise<boolean>, canContinue?:()=>boolean, onResult?:(result:any)=>void}} input
+// Collectors never create control and treat a missing one as disabled.
+const ENABLED_DEFAULT = 'false';
+
+/** An authorized collector fetches and publishes one whitelisted branch. It requires an
+ * existing control at the expected version and the shared source guard. A persistent CAS
+ * lease serializes cold requests across server instances; a quote from the current
+ * UTC half hour is reused without a source request.
+ * @param {{store:any, slug:string, fetchImpl?:typeof fetch, nowImpl?:()=>number, randomUUIDImpl?:()=>string, expectedControlVersion?:string, sourceProfile?:import('./exchange-rates-1965-source.mjs').SourceProfile, sourceGuardStore?:any, operationId?:string, ownerId?:string, signal?:AbortSignal, prepareSource?:()=>Promise<{reason:string,retryAtMs?:number|null}|null>, beforeSource?:()=>Promise<boolean>, beforePublish?:()=>Promise<boolean>, canContinue?:()=>boolean, onResult?:(result:any)=>void}} input
  */
-export async function queryBranchRates({ store, slug, enabledDefault = process.env.EXCHANGE_RATES_1965_ENABLED,
-  fetchImpl = fetch, nowImpl = Date.now, randomUUIDImpl = randomUUID, refreshDue = false, expectedControlVersion, sourceProfile = PROFILE,
-  requireExistingControl = false, publishQuote = true, sourceGuardStore, operationId, ownerId, signal, prepareSource, beforeSource, beforePublish, canContinue, onResult }) {
+export async function queryBranchRates({ store, slug,
+  fetchImpl = fetch, nowImpl = Date.now, randomUUIDImpl = randomUUID, expectedControlVersion, sourceProfile = PROFILE,
+  sourceGuardStore, operationId, ownerId, signal, prepareSource, beforeSource, beforePublish, canContinue, onResult }) {
   if (!Object.hasOwn(ORANGE_BRANCHES, slug)) return branchResponse(slug, nowImpl(), { status: 400, reason: 'invalid_request' });
   /** @type {any|null} */
   let lease = null;
@@ -58,7 +63,7 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
   // Private Function logs only. Never attach source details to public envelopes.
   const startedAtMs = nowImpl();
   /** @type {any} */
-  const diagnostic = { event: 'exchange_rates_1965_branch', trigger: refreshDue ? 'background' : 'manual',
+  const diagnostic = { event: 'exchange_rates_1965_branch', trigger: 'background',
     slug, attemptedAt: new Date(startedAtMs).toISOString(), httpStatus: null, reason: null,
     sourceOutcome: null, sourceRequestCount: 0, blockedStatus: null, diagnostics: [],
     cooldownSource: null, retryAt: null, sourceProfile: sourceProfile.name };
@@ -76,24 +81,23 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
   });
   try {
     if (signal?.aborted) return reply('cancelled', 503);
-    const effective = requireExistingControl ? await readEffectiveControl(store, 'false')
-      : await ensureFetchControl(store, { enabledDefault, nowMs: nowImpl(), randomUUIDImpl });
+    const effective = await readEffectiveControl(store, ENABLED_DEFAULT);
     control = effective.control;
     if (!effective.enabled || !control) return reply('disabled', 503, nowImpl() + BRANCH_FAILURE_DELAY_MS);
-    if (requireExistingControl && (!sourceGuardStore || !operationId || !ownerId || !expectedControlVersion)) {
+    if (!sourceGuardStore || !operationId || !ownerId || !expectedControlVersion) {
       return reply('invalid_configuration', 503);
     }
     const version = control.controlVersion;
-    if (expectedControlVersion && version !== expectedControlVersion) return reply('stale_control', 503);
+    if (version !== expectedControlVersion) return reply('stale_control', 503);
     const cached = await readEntry(store, branchCacheKey(slug));
     let quote = cached?.data;
     const usable = (/** @type {any} */ candidate) => isValidBranchQuote(candidate) && candidate.slug === slug &&
       candidate.controlVersion === version && Date.parse(candidate.attemptedAt) >= Date.parse(control.enabledAt) &&
       Date.parse(candidate.expiresAt) > nowImpl();
     const reusable = (/** @type {any} */ candidate) => usable(candidate) &&
-      (!refreshDue || nowImpl() < nextUtcHalfHour(Date.parse(candidate.attemptedAt)));
+      nowImpl() < nextUtcHalfHour(Date.parse(candidate.attemptedAt));
     if (reusable(quote)) {
-      const latest = await readEffectiveControl(store, enabledDefault);
+      const latest = await readEffectiveControl(store, ENABLED_DEFAULT);
       if (!latest.enabled || latest.control?.controlVersion !== version) {
         control = latest.control;
         return reply(latest.enabled ? 'stale_control' : 'disabled', 503, nowImpl() + BRANCH_FAILURE_DELAY_MS);
@@ -131,7 +135,7 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
 
     // A disable, re-enable or breaker update during lease acquisition must
     // prevent a new upstream request, not just prevent cache publication.
-    const before = await readEffectiveControl(store, enabledDefault);
+    const before = await readEffectiveControl(store, ENABLED_DEFAULT);
     control = before.control;
     if (!before.enabled || control?.controlVersion !== version) return reply('stale_control', 503);
     breakerEntry = await readEntry(store, EXCHANGE_KEYS.breaker);
@@ -144,21 +148,18 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
     const refreshedCache = (await readEntry(store, branchCacheKey(slug)))?.data;
     if (reusable(refreshedCache)) return respond({ enabled: true, controlVersion: version, quote: refreshedCache });
     if (signal?.aborted || (canContinue && !canContinue()) || (beforeSource && !await beforeSource())) return reply(signal?.aborted ? 'cancelled' : 'lease_lost', 503);
-    if (sourceGuardStore) {
-      if (!operationId || !ownerId) return reply('invalid_configuration', 503);
-      const begun = await beginSourceAttempt({ store: sourceGuardStore, operationId, ownerId, slug,
-        nowMs: nowImpl(), leaseMs: Math.max(24_000, leaseMs), randomUUIDImpl });
-      if (!begun.ok) return reply(begun.reason ?? 'source_guard_unavailable', begun.reason === 'busy' ? 202 : 503, begun.retryAtMs);
-      sourceLease = begun.lease;
-      const ownership = await validateSourceAttemptLease({ store: sourceGuardStore, lease: sourceLease, nowMs: nowImpl() });
-      if (!ownership.ok) return reply(ownership.reason ?? 'lease_lost', 503, ownership.retryAtMs);
-      const guardedControl = await readEffectiveControl(store, 'false');
-      if (!guardedControl.enabled || guardedControl.control?.controlVersion !== version || signal?.aborted ||
-          (beforeSource && !await beforeSource())) return reply(signal?.aborted ? 'cancelled' : 'stale_control', 503);
-      const targetGate = (await readEntry(store, BRANCH_GATE_KEY))?.data;
-      if (targetGate?.leaseId !== lease.data.leaseId || nowImpl() + sourceProfile.deadlineMs >= targetGate.leaseUntilMs ||
-          nowImpl() + sourceProfile.deadlineMs >= sourceLease.leaseUntilMs) return reply('lease_lost', 503);
-    }
+    const begun = await beginSourceAttempt({ store: sourceGuardStore, operationId, ownerId, slug,
+      nowMs: nowImpl(), leaseMs: Math.max(24_000, leaseMs), randomUUIDImpl });
+    if (!begun.ok) return reply(begun.reason ?? 'source_guard_unavailable', begun.reason === 'busy' ? 202 : 503, begun.retryAtMs);
+    sourceLease = begun.lease;
+    const ownership = await validateSourceAttemptLease({ store: sourceGuardStore, lease: sourceLease, nowMs: nowImpl() });
+    if (!ownership.ok) return reply(ownership.reason ?? 'lease_lost', 503, ownership.retryAtMs);
+    const guardedControl = await readEffectiveControl(store, ENABLED_DEFAULT);
+    if (!guardedControl.enabled || guardedControl.control?.controlVersion !== version || signal?.aborted ||
+        (beforeSource && !await beforeSource())) return reply(signal?.aborted ? 'cancelled' : 'stale_control', 503);
+    const targetGate = (await readEntry(store, BRANCH_GATE_KEY))?.data;
+    if (targetGate?.leaseId !== lease.data.leaseId || nowImpl() + sourceProfile.deadlineMs >= targetGate.leaseUntilMs ||
+        nowImpl() + sourceProfile.deadlineMs >= sourceLease.leaseUntilMs) return reply('lease_lost', 503);
     if (signal?.aborted || (canContinue && !canContinue())) return reply(signal?.aborted ? 'cancelled' : 'deadline', 503);
     const attemptedAtMs = nowImpl();
     collectionStarted = true;
@@ -171,22 +172,20 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
     diagnostic.blockedStatus = collection.blockedStatus;
     diagnostic.diagnostics = sanitizeDiagnostics(collection.diagnostics);
     sourceSucceeded = collection.outcome === 'complete';
-    if (sourceGuardStore) {
-      const guardOutcome = collection.outcome === 'blocked' ? 'blocked' : collection.requestCount === 0 ? 'complete' : signal?.aborted ? 'unknown'
-        : collection.outcome === 'complete' ? 'complete' : 'failed';
-      const finished = await finishSourceAttempt({ store: sourceGuardStore, lease: sourceLease,
-        outcome: guardOutcome,
-        nowMs: nowImpl(), retryAfterMs: collection.retryAfterMs });
-      sourcePaused = finished.state?.paused === true;
-      sourceRetryAtMs = finished.retryAtMs ?? null;
-      sourceSettled = finished.ok;
-      if (!finished.ok || signal?.aborted) {
-        sourceUnknown = !finished.ok || guardOutcome === 'unknown';
-        return reply(signal?.aborted ? 'cancelled' : 'source_guard_unavailable', 503, finished.retryAtMs);
-      }
+    const guardOutcome = collection.outcome === 'blocked' ? 'blocked' : collection.requestCount === 0 ? 'complete' : signal?.aborted ? 'unknown'
+      : collection.outcome === 'complete' ? 'complete' : 'failed';
+    const finished = await finishSourceAttempt({ store: sourceGuardStore, lease: sourceLease,
+      outcome: guardOutcome,
+      nowMs: nowImpl(), retryAfterMs: collection.retryAfterMs });
+    sourcePaused = finished.state?.paused === true;
+    sourceRetryAtMs = finished.retryAtMs ?? null;
+    sourceSettled = finished.ok;
+    if (!finished.ok || signal?.aborted) {
+      sourceUnknown = !finished.ok || guardOutcome === 'unknown';
+      return reply(signal?.aborted ? 'cancelled' : 'source_guard_unavailable', 503, finished.retryAtMs);
     }
     if (collection.outcome === 'blocked') diagnostic.cooldownSource = 'source_blocked';
-    const latest = await readEffectiveControl(store, enabledDefault);
+    const latest = await readEffectiveControl(store, ENABLED_DEFAULT);
     control = latest.control;
     if (!latest.enabled || control?.controlVersion !== version || Date.parse(control.enabledAt) > attemptedAtMs) {
       return reply(latest.enabled ? 'stale_control' : 'disabled', 503);
@@ -206,7 +205,7 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
         if (!write.modified) continue;
         if (transition.autoDisable) {
           await autoDisable(store, latest.entry, control, { data: transition.breaker, etag: write.etag }, nowImpl(), randomUUIDImpl);
-          control = (await readEffectiveControl(store, enabledDefault)).control;
+          control = (await readEffectiveControl(store, ENABLED_DEFAULT)).control;
         }
         // A target can be at its first block while the shared source is already
         // at its second. Report the actual longer restriction, or an explicit
@@ -227,11 +226,9 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
     if (signal?.aborted || (beforePublish && !await beforePublish())) return reply(signal?.aborted ? 'cancelled' : 'lease_lost', 503);
     const targetLease = await readEntry(store, BRANCH_GATE_KEY);
     if (targetLease?.data.leaseId !== lease.data.leaseId || targetLease.data.leaseUntilMs <= nowImpl()) return reply('lease_lost', 503);
-    if (sourceGuardStore) {
-      const owned = await validateSourceAttemptLease({ store: sourceGuardStore, lease: sourceLease, nowMs: nowImpl() });
-      if (!owned.ok) return reply(owned.reason ?? 'lease_lost', 503, owned.retryAtMs);
-    }
-    const publishControl = await readEffectiveControl(store, 'false');
+    const owned = await validateSourceAttemptLease({ store: sourceGuardStore, lease: sourceLease, nowMs: nowImpl() });
+    if (!owned.ok) return reply(owned.reason ?? 'lease_lost', 503, owned.retryAtMs);
+    const publishControl = await readEffectiveControl(store, ENABLED_DEFAULT);
     if (!publishControl.enabled || publishControl.control?.controlVersion !== version || Date.parse(publishControl.control.enabledAt) > attemptedAtMs) {
       control = publishControl.control;
       return reply(publishControl.enabled ? 'stale_control' : 'disabled', 503);
@@ -241,10 +238,9 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
         lease.data.leaseUntilMs <= nowImpl() || (sourceLease && sourceLease.leaseUntilMs <= nowImpl())) {
       return reply(signal?.aborted ? 'cancelled' : 'deadline', 503);
     }
-    if (!publishQuote) return respond({ enabled: true, controlVersion: version, quote });
     const write = await conditionalSetJSON(store, branchCacheKey(slug), quote, cached);
     if (!write.modified) return reply('busy', 202, nowImpl() + 2_000);
-    const finalControl = await readEffectiveControl(store, enabledDefault);
+    const finalControl = await readEffectiveControl(store, ENABLED_DEFAULT);
     control = finalControl.control;
     if (!finalControl.enabled || control?.controlVersion !== version) return reply(finalControl.enabled ? 'stale_control' : 'disabled', 503);
     // A published quote clears consecutive failures in both breakers, but
@@ -281,7 +277,7 @@ export async function queryBranchRates({ store, slug, enabledDefault = process.e
     } catch { /* Logging must not change a quote, lease or breaker result. */ }
     try {
       onResult?.({ status: sourceUnknown ? 'source_unknown' : sourceSucceeded
-        ? (quotePublished ? 'published' : diagnostic.httpStatus === 200 && !publishQuote ? 'probe_succeeded' : 'publication_failed')
+        ? (quotePublished ? 'published' : 'publication_failed')
         : diagnostic.httpStatus === 200 ? 'cache_hit' : diagnostic.sourceRequestCount > 0 ? 'source_failed' : 'not_attempted',
         sourceSucceeded, sourceRequestCount: diagnostic.sourceRequestCount, reason: diagnostic.reason,
         retryAt: diagnostic.retryAt, diagnostics: diagnostic.diagnostics, sourceOutcome: diagnostic.sourceOutcome });

@@ -226,6 +226,16 @@ test('every resources label and accessible link name is translated by updateLang
   assert.ok(keys.includes('fan_resources_news_aria'));
   assert.ok(keys.includes('fan_resources_pics_desc'));
   assert.ok(keys.includes('fan_resources_pics_aria'));
+  assert.ok(keys.includes('fan_resources_music_subtitle'));
+  assert.ok(keys.includes('fan_resources_music_desc'));
+  assert.ok(keys.includes('fan_resources_music_source'));
+  assert.ok(keys.includes('fan_resources_music_source_aria'));
+  assert.ok(keys.includes('fan_resources_music_aria'));
+  assert.ok(keys.includes('fan_resources_fym_subtitle'));
+  assert.ok(keys.includes('fan_resources_fym_desc'));
+  assert.ok(keys.includes('fan_resources_fym_source'));
+  assert.ok(keys.includes('fan_resources_fym_source_aria'));
+  assert.ok(keys.includes('fan_resources_fym_aria'));
   for (const language of ['zh', 'en']) {
     const elements = bindings.map(([, aria, key]) => ({
       dataset: aria ? { i18nAria: key } : { i18n: key },
