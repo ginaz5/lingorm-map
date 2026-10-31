@@ -392,11 +392,13 @@ validation and therefore blocks the build/deploy path. Paused and inactive
 drafts may remain unclassified until they are ready to publish.
 
 The supported countries are Thailand (`TH`), Vietnam (`VN`), Taiwan (`TW`),
-Hong Kong (`HK`), Macau (`MO`), and Japan (`JP`). Taiwan destinations are `taipei`,
+Hong Kong (`HK`), Macau (`MO`), Japan (`JP`), and the United Arab Emirates (`AE`).
+Taiwan destinations are `taipei`,
 `taichung`, `kaohsiung`, `tainan`, and `hualien`; Hong Kong and Macau use
-`hong-kong` and `macau` respectively; Japan currently supports `tokyo` (東京 / Tokyo).
-The existing Thailand and Vietnam keys
-remain stable.
+`hong-kong` and `macau` respectively; Japan currently supports `tokyo` (東京 / Tokyo),
+and the United Arab Emirates supports `dubai` (杜拜 / Dubai).
+Thailand also supports `nakhon-pathom` (佛統府 / Nakhon Pathom), including
+Sam Phran. The existing Thailand and Vietnam keys remain stable.
 
 `Type` is exported as public location metadata and accepts `LingOrm`,
 `JKR Picks`, `JKR Fan Projects`, `Admin Picks`, or `Currency Exchange`. A blank Type remains
