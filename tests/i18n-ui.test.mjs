@@ -145,6 +145,20 @@ test('exchange-rate sort menu exposes both brands without a separate toggle', as
   }
 });
 
+test('exchange-rate sort labels distinguish brands by color and text in both languages', () => {
+  const labels = [
+    ['fx_sort_usd_100', '🟢 綠標 USD 100', '🟢 Green USD 100'],
+    ['fx_sort_usd_50', '🟢 綠標 USD 50', '🟢 Green USD 50'],
+    ['fx_sort_twd', '🟢 綠標 TWD', '🟢 Green TWD'],
+    ['fx_sort_usd_1965', '🟠 橘標 USD', '🟠 Orange USD'],
+    ['fx_sort_twd_1965', '🟠 橘標 TWD', '🟠 Orange TWD'],
+  ];
+  for (const [key, zh, en] of labels) {
+    assert.equal(T.zh[key], zh);
+    assert.equal(T.en[key], en);
+  }
+});
+
 test('orange rate refresh explains unavailable quotes without promising a source query', () => {
   assert.equal(T.zh.fx_query, '重新整理匯率');
   assert.equal(T.en.fx_query, 'Refresh rates');
@@ -226,6 +240,16 @@ test('every resources label and accessible link name is translated by updateLang
   assert.ok(keys.includes('fan_resources_news_aria'));
   assert.ok(keys.includes('fan_resources_pics_desc'));
   assert.ok(keys.includes('fan_resources_pics_aria'));
+  assert.ok(keys.includes('fan_resources_music_subtitle'));
+  assert.ok(keys.includes('fan_resources_music_desc'));
+  assert.ok(keys.includes('fan_resources_music_source'));
+  assert.ok(keys.includes('fan_resources_music_source_aria'));
+  assert.ok(keys.includes('fan_resources_music_aria'));
+  assert.ok(keys.includes('fan_resources_fym_subtitle'));
+  assert.ok(keys.includes('fan_resources_fym_desc'));
+  assert.ok(keys.includes('fan_resources_fym_source'));
+  assert.ok(keys.includes('fan_resources_fym_source_aria'));
+  assert.ok(keys.includes('fan_resources_fym_aria'));
   for (const language of ['zh', 'en']) {
     const elements = bindings.map(([, aria, key]) => ({
       dataset: aria ? { i18nAria: key } : { i18n: key },

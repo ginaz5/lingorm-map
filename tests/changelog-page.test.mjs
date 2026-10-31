@@ -19,8 +19,8 @@ test('changelog data is newest-first and has bilingual copy', () => {
 
   const latest = CHANGELOG[0];
   assert.equal(new Date(latest.publishTime).getUTCFullYear(), 2026);
-  assert.equal(localizeChangelogItem(latest, 'zh').title, '手機版新增篩選面板');
-  assert.equal(localizeChangelogItem(latest, 'en').title, 'A new filter sheet on mobile');
+  assert.equal(localizeChangelogItem(latest, 'zh').title, '新增 SuperRich 1965 橘標分店與匯率');
+  assert.equal(localizeChangelogItem(latest, 'en').title, 'SuperRich 1965 branches and rates are now on the map');
   assert.equal(new Set(CHANGELOG.map(item => item.id)).size, CHANGELOG.length);
   for (const item of CHANGELOG) {
     for (const language of ['zh', 'en']) {
@@ -32,10 +32,15 @@ test('changelog data is newest-first and has bilingual copy', () => {
   const currentReleaseItems = CHANGELOG.filter(
     item => item.releaseId === CURRENT_CHANGELOG_RELEASE_ID,
   );
-  assert.deepEqual(currentReleaseItems.map(item => item.id), ['feat-016', 'feat-017', 'feat-018', 'fix-006', 'feat-019']);
+  assert.deepEqual(currentReleaseItems.map(item => item.id), ['feat-020', 'feat-021', 'feat-022', 'feat-023']);
   assert.ok(currentReleaseItems.every(item => item.publishTime === latest.publishTime));
   assert.ok(currentReleaseItems.every(item =>
     item.title.zh && item.title.en && item.description.zh && item.description.en));
+  assert.deepEqual(
+    CHANGELOG.filter(item => item.releaseId === '2026-09-28-mobile-filters-and-map-updates')
+      .map(item => item.id),
+    ['feat-016', 'feat-017', 'feat-018', 'fix-006', 'feat-019'],
+  );
   assert.equal(
     CHANGELOG.filter(item => item.releaseId === '2026-09-25-exchange-and-resources').length,
     3,
@@ -49,14 +54,16 @@ test('changelog data is newest-first and has bilingual copy', () => {
 test('changelog entries with the same UTC date share one group', () => {
   const groups = groupChangelogByDate(CHANGELOG);
 
-  assert.equal(groups[0].dateKey, '2026-09-28');
-  assert.equal(groups[0].items.length, 5);
-  assert.equal(groups[1].dateKey, '2026-09-25');
-  assert.equal(groups[1].items.length, 3);
-  assert.equal(groups[2].dateKey, '2026-08-09');
+  assert.equal(groups[0].dateKey, '2026-10-31');
+  assert.equal(groups[0].items.length, 4);
+  assert.equal(groups[1].dateKey, '2026-09-28');
+  assert.equal(groups[1].items.length, 5);
+  assert.equal(groups[2].dateKey, '2026-09-25');
   assert.equal(groups[2].items.length, 3);
-  assert.equal(groups[3].dateKey, '2026-07-30');
-  assert.equal(groups[3].items.length, 7);
+  assert.equal(groups[3].dateKey, '2026-08-09');
+  assert.equal(groups[3].items.length, 3);
+  assert.equal(groups[4].dateKey, '2026-07-30');
+  assert.equal(groups[4].items.length, 7);
   assert.equal(groups.length < CHANGELOG.length, true);
 });
 

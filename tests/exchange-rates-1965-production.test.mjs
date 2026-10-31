@@ -2,16 +2,18 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import FIXTURE from './fixtures/superrich1965/exchange-rate-00.json' with { type: 'json' };
-import { parseActionsArgs, runActionsCommand, ACTIONS_SCHEDULE } from '../scripts/exchange-rates-1965-actions.mjs';
+import { parseActionsArgs, runActionsCommand } from '../scripts/exchange-rates-1965-actions.mjs';
 import { openActionsTarget, resolveActionsTarget, PROJECT_SITE_ID, PRODUCTION_COMMIT_ENV } from '../netlify/functions/_shared/exchange-rates-1965-actions-target.mjs';
 import { EXCHANGE_KEYS, createControl } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { SOURCE_GUARD_KEY, bootstrapSourceGuard, setSourceGuardPaused } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
 import { branchCacheKey } from '../netlify/functions/_shared/exchange-rates-1965-branch-cache.mjs';
 import { FakeBlobStore, uuid } from './helpers/exchange-rates-store.mjs';
 import { NETLIFY_CONTROL_KEY } from '../netlify/functions/_shared/exchange-rates-1965-netlify.mjs';
+import { ORANGE_BRANCHES } from '../src/data/exchange-rates-1965-branch.js';
 
 const SHA = 'a'.repeat(40), DEPLOY_SHA = 'b'.repeat(40), DEPLOY = '1'.repeat(24);
 const START = Date.parse('2026-10-22T01:00:00Z');
+const FIRST_SLUG = Object.keys(ORANGE_BRANCHES)[0];
 const ENV = { GITHUB_ACTIONS: 'true', GITHUB_REPOSITORY: 'ginaz5/lingorm-map', GITHUB_RUN_ID: '5678',
   GITHUB_SHA: SHA, GITHUB_REF: 'refs/heads/main', GITHUB_EVENT_NAME: 'workflow_dispatch' };
 const policy = { kind: 'production', branch: 'main', commitPolicy: 'environment-reviewed', context: 'production' };
@@ -35,7 +37,7 @@ async function harness(t) {
     pythonFetchImpl: async (url, options) => { h.http.push({ url, options }); return Response.json(String(url).includes('oauth2/callback')
       ? { accessToken: 'PRIVATE_TEST_TOKEN', expires_in: 3600 } : FIXTURE); },
   };
-  h.run = (mode = 'publish-python') => runActionsCommand([mode, '--target', 'production'], h.input);
+  h.run = (mode = 'publish-all-python') => runActionsCommand([mode, '--target', 'production'], h.input);
   return h;
 }
 
@@ -52,15 +54,17 @@ test('an enabled Netlify collector blocks GitHub source work while allowing read
   assert.equal(h.http.length, 0);
 });
 
-test('production Python modes preserve fixed scopes and reject caller overrides or Node source', () => {
-  for (const [mode, scope] of [['probe-python','single'], ['publish-python','single'], ['publish-five-python','five'], ['publish-all-python','all']]) {
-    assert.deepEqual(parseActionsArgs([mode, '--target','production']), { mode, alias:'production', scope });
+test('production accepts only inspect and the full Python publish, without caller overrides', () => {
+  for (const mode of ['inspect', 'publish-all-python']) {
+    assert.deepEqual(parseActionsArgs([mode, '--target','production']), { mode, alias:'production', scope: 'all' });
     for (const extra of [['--scope','all'], ['--slug','superrich1965-56'], ['--url','https://example.test'], ['--force','true']]) {
       assert.throws(() => parseActionsArgs([mode,'--target','production',...extra]));
     }
   }
-  assert.throws(() => parseActionsArgs(['probe','--target','production']));
-  assert.throws(() => parseActionsArgs(['publish','--target','production','--scope','all']));
+  // Retired rollout modes are rejected outright.
+  for (const mode of ['probe', 'probe-python', 'publish', 'publish-python', 'publish-five-python']) {
+    assert.throws(() => parseActionsArgs([mode,'--target','production']));
+  }
 });
 
 test('production commit policy binds only the selected target and rejects invalid or mixed configuration', async () => {
@@ -89,35 +93,36 @@ test('production metadata revalidation rejects a changed deployment and keeps cr
   assert.equal(JSON.stringify(opened).includes('PRIVATE_ADMIN_TOKEN'),false);
 });
 
-for(const enabled of [undefined,'','false','TRUE','1']) test(`schedule disabled (${enabled}) never opens stores or sends HTTP`,async()=>{
-  const result=await runActionsCommand(['publish-all-python','--target','production'],{
-    env:{...ENV,GITHUB_EVENT_NAME:'schedule',GITHUB_EVENT_SCHEDULE:ACTIONS_SCHEDULE,EXCHANGE_RATES_1965_SCHEDULE_ENABLED:enabled},
-    openTargetImpl:async()=>assert.fail('disabled schedule cannot open target'),pythonFetchImpl:async()=>assert.fail('zero source')});
-  assert.equal(result.exitCode,3);assert.equal(result.summary.reason,'schedule_disabled');assert.equal(result.summary.sourceRequestCount,0);
+test('a schedule event is rejected in every mode before opening stores or sending HTTP',async()=>{
+  // The Netlify scheduler owns collection; the workflow has no cron, even if the old variable is set.
+  const scheduled={...ENV,GITHUB_EVENT_NAME:'schedule',GITHUB_EVENT_SCHEDULE:'0,30 1-15 * * *',EXCHANGE_RATES_1965_SCHEDULE_ENABLED:'true'};
+  for(const [mode,target] of [['inspect','production'],['publish-all-python','production'],['publish-all-python','preview-reviewed']]) {
+    const result=await runActionsCommand([mode,'--target',target],{env:scheduled,
+      openTargetImpl:async()=>assert.fail('a schedule must not open target'),pythonFetchImpl:async()=>assert.fail('zero source')});
+    assert.equal(result.exitCode,2);assert.equal(result.summary.reason,'invalid_actions_identity');assert.equal(result.summary.sourceRequestCount,0);
+  }
 });
 
-test('schedule cannot select a different mode, target, cron, ref or repository',async()=>{
-  const scheduled={...ENV,GITHUB_EVENT_NAME:'schedule',GITHUB_EVENT_SCHEDULE:ACTIONS_SCHEDULE,EXCHANGE_RATES_1965_SCHEDULE_ENABLED:'true'};
-  for(const [mode,target,extra] of [['inspect','production',{}],['probe-python','production',{}],['publish-python','production',{}],
-    ['publish-five-python','production',{}],['publish-all-python','preview-reviewed',{}],
-    ['publish-all-python','production',{GITHUB_EVENT_SCHEDULE:'* * * * *'}],['publish-all-python','production',{GITHUB_REF:'refs/heads/other'}],
-    ['publish-all-python','production',{GITHUB_REPOSITORY:'other/repo'}]]) {
-    const result=await runActionsCommand([mode,'--target',target],{env:{...scheduled,...extra},openTargetImpl:async()=>assert.fail('invalid schedule must not open target')});
+test('a manual run outside main or this repository is rejected before opening stores',async()=>{
+  for(const extra of [{GITHUB_REF:'refs/heads/other'},{GITHUB_REPOSITORY:'other/repo'},{GITHUB_EVENT_NAME:'push'}]) {
+    const result=await runActionsCommand(['publish-all-python','--target','production'],{env:{...ENV,...extra},
+      openTargetImpl:async()=>assert.fail('invalid identity must not open target')});
     assert.equal(result.exitCode,2);assert.equal(result.summary.reason,'invalid_actions_identity');
   }
 });
 
-test('production manual single publishes with independent exact workflow/deployment identities and zero-HTTP replay',async t=>{
-  const h=await harness(t);const result=await h.run();assert.equal(result.exitCode,0);assert.equal(result.summary.published,1);
-  assert.equal(result.summary.commit,SHA);assert.equal(result.summary.target.commit,DEPLOY_SHA);assert.equal(h.http.length,2);assert.equal(h.verified,2);
+test('production manual publish keeps independent exact workflow/deployment identities and zero-HTTP replay',async t=>{
+  const h=await harness(t);const result=await h.run();assert.equal(result.exitCode,0);assert.equal(result.summary.published,38);
+  assert.equal(result.summary.commit,SHA);assert.equal(result.summary.target.commit,DEPLOY_SHA);assert.equal(h.http.length,39);
+  const verified=h.verified;assert.ok(verified>=76);
   await setSourceGuardPaused({store:h.sourceGuardStore,paused:true,nowMs:START});
   const replay=await h.run();assert.equal(replay.exitCode,0);assert.equal(replay.summary.replayed,true);
-  assert.equal(replay.summary.sourceRequestCount,0);assert.equal(h.http.length,2);assert.equal(h.verified,2);
-  h.input.env.GITHUB_SHA='c'.repeat(40);const conflict=await h.run();assert.equal(conflict.exitCode,2);assert.equal(h.http.length,2);
+  assert.equal(replay.summary.sourceRequestCount,0);assert.equal(h.http.length,39);assert.equal(h.verified,verified);
+  h.input.env.GITHUB_SHA='c'.repeat(40);const conflict=await h.run();assert.equal(conflict.exitCode,2);assert.equal(h.http.length,39);
 });
 
-test('enabled production schedule publishes all 38 serially and preserves guard history',async t=>{
-  const h=await harness(t);Object.assign(h.input.env,{GITHUB_EVENT_NAME:'schedule',GITHUB_EVENT_SCHEDULE:ACTIONS_SCHEDULE,EXCHANGE_RATES_1965_SCHEDULE_ENABLED:'true'});
+test('production publish of all 38 runs serially and preserves guard history',async t=>{
+  const h=await harness(t);
   const guard=h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data;guard.breaker.blockLevel=2;h.sourceGuardStore.seed(SOURCE_GUARD_KEY,guard);
   const result=await h.run('publish-all-python');assert.equal(result.exitCode,0);assert.equal(result.summary.published,38);
   assert.equal(result.summary.sourceRequestCount,39);assert.equal(result.summary.cacheHit,0);assert.equal(h.http.length,39);
@@ -126,13 +131,13 @@ test('enabled production schedule publishes all 38 serially and preserves guard 
 
 test('deployment mismatch before source stops without source HTTP or quote publication',async t=>{
   const h=await harness(t);h.verify=()=>false;const result=await h.run();assert.equal(result.exitCode,1);
-  assert.equal(result.summary.reason,'stale_target');assert.equal(h.http.length,0);assert.equal(h.store.entries.has(branchCacheKey('superrich1965-58')),false);
+  assert.equal(result.summary.reason,'stale_target');assert.equal(h.http.length,0);assert.equal(h.store.entries.has(branchCacheKey(FIRST_SLUG)),false);
 });
 
 test('deployment change during source HTTP prevents publication and settles the known source attempt',async t=>{
   const h=await harness(t);h.verify=count=>count===1;const result=await h.run();assert.equal(result.exitCode,1);
   assert.equal(result.summary.sourceSucceeded,1);assert.equal(result.summary.published,0);assert.equal(h.http.length,2);
-  assert.equal(h.store.entries.has(branchCacheKey('superrich1965-58')),false);assert.equal(h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data.unresolvedAttempt,null);
+  assert.equal(h.store.entries.has(branchCacheKey(FIRST_SLUG)),false);assert.equal(h.sourceGuardStore.entries.get(SOURCE_GUARD_KEY).data.unresolvedAttempt,null);
 });
 
 test('missing control or paused guard keeps production source untouched',async t=>{
@@ -152,4 +157,7 @@ test('workflow retains manual fallback, main-only Environment and concurrency af
   assert.match(workflow,/environment: superrich1965-preview/);assert.match(workflow,/github.ref == 'refs\/heads\/main'/);
   assert.ok(workflow.indexOf('NETLIFY_AUTH_TOKEN:')>workflow.indexOf('Verify Python stdlib transport offline'));
   assert.doesNotMatch(workflow,/GITHUB_EVENT_SCHEDULE:/);
+  // Only the two remaining modes are offered or accepted.
+  assert.doesNotMatch(workflow,/probe|publish-python|publish-five-python/);
+  assert.match(workflow,/inspect\|publish-all-python\) ;;/);
 });

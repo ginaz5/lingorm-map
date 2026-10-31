@@ -22,7 +22,7 @@
 - 來源延用共同 source guard、原 epoch、冷卻／breaker 歷史、CAS lease 與 unresolved
   marker；不因切換平台而 bootstrap、輪替或清冷卻。
 - 單店報價發布成功後，共用 breaker 與 source guard 的連續失敗計數歸零；
-  封鎖等級與未到期的封鎖時間保留。快取命中、未發布的 probe 不清除計數。
+  封鎖等級與未到期的封鎖時間保留。快取命中、來源未發出請求不清除計數。
 - Python／Safari helper 固定使用現有 38 店 mapping、parser、token 生命週期、
   逐店 2～5 秒間隔，遇失敗即停、不新增來源 retry 或 Node fallback。唯一例外：
   token callback GET 若因單次 25 秒逾時失敗，同一 quote 內重試一次（見
@@ -66,8 +66,8 @@ failed／notAttempted 等摘要，判斷完成須看 receipt 與公開 cache。
 
 1. 功能分支完成測試與 Deploy Preview；綁定、啟用 Preview 並人工派送全店，
    核對 38 店逐店發布、公開 cache、來源保護及零來源重播。
-2. 記錄 production control、共同 guard 與目前正式 deploy。停用 GitHub repository
-   variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED`，確認沒有執行中的 Actions。
+2. 記錄 production control、共同 guard 與目前正式 deploy，確認沒有執行中的 Actions。
+   （GitHub workflow 沒有 cron，CLI 也拒絕 schedule 事件。）
 3. 發布 main 新部署；新 Netlify collector 尚未綁定時不會取價。
 4. 驗證正式 runtime API、公開 cache、前端，bind／enable 新正式 deploy。
 5. 人工派送驗證正式發布，再核對至少兩輪真正的 schedule receipt 與 38 店公開 cache。

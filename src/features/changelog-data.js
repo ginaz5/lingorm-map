@@ -12,7 +12,7 @@
  */
 /** @typedef {{ dateKey: string, publishTime: number, items: ChangelogItem[] }} ChangelogDateGroup */
 
-export const CURRENT_CHANGELOG_RELEASE_ID = '2026-09-28-mobile-filters-and-map-updates';
+export const CURRENT_CHANGELOG_RELEASE_ID = '2026-10-31-orange-rates-home-and-resources';
 
 /**
  * Shared release history for the What's New preview and the full changelog.
@@ -21,6 +21,62 @@ export const CURRENT_CHANGELOG_RELEASE_ID = '2026-09-28-mobile-filters-and-map-u
  * @type {ChangelogItem[]}
  */
 export const CHANGELOG = [
+  {
+    id: 'feat-020',
+    title: {
+      zh: '新增 SuperRich 1965 橘標分店與匯率',
+      en: 'SuperRich 1965 branches and rates are now on the map',
+    },
+    description: {
+      zh: '地圖新增 38 間 SuperRich 1965 橘標分店，可查看 USD／TWD 買入匯率，並依有效報價排序；排序選單也以顏色與文字區分綠標、橘標。橘標匯率於泰國時間 08:00～22:30 每半小時排程更新，「重新整理匯率」顯示最新快取報價。匯率僅供參考，實際以櫃檯為準。',
+      en: 'Browse 38 SuperRich 1965 orange branches, compare USD/TWD buying rates, and sort branches with valid quotes. The sort menu identifies green and orange brands with both color and text. Orange rates update on a half-hour schedule from 08:00 to 22:30 Thailand time; Refresh rates shows the latest cached quotes. Rates are indicative; counter rates apply.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-10-31T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-021',
+    title: {
+      zh: '點頁首標題，回到完整地圖',
+      en: 'Return to the full map from the header',
+    },
+    description: {
+      zh: '點選頁首的 LingOrm Map，即可清除搜尋、篩選與匯率排序，回到完整清單與地圖；已儲存的收藏、語言和主題設定都會保留。找不到頁面時，也能從 404 頁返回首頁。',
+      en: 'Click LingOrm Map in the header to clear search, filters, and rate sorting and return to the full list and map. Saved favorites, language, and theme are kept. The 404 page also links back to the home page.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-10-31T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-022',
+    title: {
+      zh: '粉絲資源新增音樂與同人文網站',
+      en: 'Concert audio and fan fiction in Fan Resources',
+    },
+    description: {
+      zh: '粉絲資源新增 LingOrm Music Archive 演唱會音檔整理，以及 LingOrm · Feed Your Mind 同人文圖書館，附上中英文介紹與原始分享連結。',
+      en: 'Fan Resources now includes the LingOrm Music Archive for concert audio and LingOrm · Feed Your Mind for fan fiction, with Chinese and English introductions and links to the original posts.',
+    },
+    badge: { zh: '內容', en: 'Content' },
+    publishTime: Date.parse('2026-10-31T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-023',
+    title: {
+      zh: '新增杜拜與佛統府目的地支援',
+      en: 'Destination support for Dubai and Nakhon Pathom',
+    },
+    description: {
+      zh: '新增阿拉伯聯合大公國／杜拜與泰國／佛統府（含 Sam Phran）的目的地分類。這些地區有地點發布後，就能在目的地選單中篩選。',
+      en: 'Added destination categories for Dubai in the United Arab Emirates and Nakhon Pathom, including Sam Phran, in Thailand. They appear in the destination filter once locations there are published.',
+    },
+    badge: { zh: '內容', en: 'Content' },
+    publishTime: Date.parse('2026-10-31T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
   {
     id: 'feat-016',
     title: {
@@ -33,7 +89,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-09-28T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-28-mobile-filters-and-map-updates',
   },
   {
     id: 'feat-017',
@@ -47,7 +103,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-09-28T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-28-mobile-filters-and-map-updates',
   },
   {
     id: 'feat-018',
@@ -61,7 +117,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '內容', en: 'Content' },
     publishTime: Date.parse('2026-09-28T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-28-mobile-filters-and-map-updates',
   },
   {
     id: 'fix-006',
@@ -75,7 +131,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '改善', en: 'Improvement' },
     publishTime: Date.parse('2026-09-28T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-28-mobile-filters-and-map-updates',
   },
   {
     id: 'feat-019',
@@ -89,7 +145,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '內容', en: 'Content' },
     publishTime: Date.parse('2026-09-28T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-28-mobile-filters-and-map-updates',
   },
   {
     id: 'feat-014',

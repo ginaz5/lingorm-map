@@ -20,30 +20,6 @@ export async function readEffectiveControl(store, enabledDefault = process.env.E
   return { entry, control: entry.data, enabled: entry.data.enabled };
 }
 
-/** Initialize a true default exactly once; false defaults remain storage-free. */
-/**
- * @param {any} store
- * @param {{enabledDefault?:unknown, nowMs?:number, randomUUIDImpl?:()=>string}} [input]
- */
-export async function ensureFetchControl(store, {
-  enabledDefault = process.env.EXCHANGE_RATES_1965_ENABLED,
-  nowMs = Date.now(),
-  randomUUIDImpl = randomUUID,
-} = {}) {
-  let current = await readEffectiveControl(store, enabledDefault);
-  if (current.control || !current.enabled) return current;
-  const control = createControl({ enabled: true, nowMs, controlVersion: randomUUIDImpl(), updatedBy: 'manual' });
-  const created = await conditionalSetJSON(store, EXCHANGE_KEYS.control, control, null);
-  // Re-read even after a successful first write. The fetch must use the
-  // strongly-consistent stored version, never an assumed in-memory version.
-  current = await readEffectiveControl(store, enabledDefault);
-  if (!current.control) throw new Error('control_initialization_conflict');
-  if (created.modified && current.control.controlVersion !== control.controlVersion) {
-    throw new Error('control_initialization_conflict');
-  }
-  return current;
-}
-
 /** @param {any} store @param {string} controlVersion @param {any|null} previousBreakerEntry @param {string|null} [blockedUntil] */
 export async function resetBreakerForControl(store, controlVersion, previousBreakerEntry, blockedUntil = null) {
   const breaker = createBreaker(controlVersion, blockedUntil);

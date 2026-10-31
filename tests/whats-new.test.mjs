@@ -93,16 +93,18 @@ test('checkWhatsNew previews the current release with general update copy', () =
     );
     assert.equal(env.dom.modalClasses.has('open'), true);
     assert.equal(WHATS_NEW_PREVIEW_LIMIT, 3);
-    assert.equal(currentReleaseItems.length, 5);
+    assert.equal(currentReleaseItems.length, 4);
     assert.equal(env.dom.elements['wn-title'].textContent, '✨ 最近更新');
     assert.equal(env.dom.elements['wn-desc'].textContent, '來看看上次造訪後的更新。');
     assert.equal(
       env.dom.elements['wn-list'].innerHTML.match(/class="wn-feat"/g)?.length,
       3,
     );
-    assert.match(env.dom.elements['wn-list'].innerHTML, /手機版新增篩選面板/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /從「換匯」標籤找分店與比較匯率/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /新增JKR資源區/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /新增 SuperRich 1965 橘標分店與匯率/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /點頁首標題，回到完整地圖/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /粉絲資源新增音樂與同人文網站/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增杜拜與佛統府目的地支援/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /手機版新增篩選面板/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /手機地圖彈窗置中，地點筆記更好讀/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增東京目的地與更多踩點/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增 SuperRich Thailand 換匯地圖/);
@@ -115,10 +117,10 @@ test('checkWhatsNew previews the current release with general update copy', () =
   }
 });
 
-test('checkWhatsNew shows the new release after September 25 and refreshes its preview in English', () => {
+test('checkWhatsNew shows the catch-up release after September 28 and refreshes its preview in English', () => {
   const env = installEnvironment({
-    lastVisit: String(Date.parse('2026-09-25T12:00:00Z')),
-    seenRelease: '2026-09-25-exchange-and-resources',
+    lastVisit: String(Date.parse('2026-10-30T12:00:00Z')),
+    seenRelease: '2026-09-28-mobile-filters-and-map-updates',
   });
   try {
     checkWhatsNew();
@@ -128,9 +130,11 @@ test('checkWhatsNew shows the new release after September 25 and refreshes its p
     updateWhatsNewLangUI();
     const html = env.dom.elements['wn-list'].innerHTML;
     assert.equal(html.match(/class="wn-feat"/g)?.length, WHATS_NEW_PREVIEW_LIMIT);
-    assert.match(html, /A new filter sheet on mobile/);
-    assert.match(html, /Find exchange branches with the Currency Exchange label/);
-    assert.match(html, /Add JKR resources/);
+    assert.match(html, /SuperRich 1965 branches and rates are now on the map/);
+    assert.match(html, /Return to the full map from the header/);
+    assert.match(html, /Concert audio and fan fiction in Fan Resources/);
+    assert.doesNotMatch(html, /Destination support for Dubai and Nakhon Pathom/);
+    assert.doesNotMatch(html, /A new filter sheet on mobile/);
     assert.doesNotMatch(html, /Tokyo and more locations added/);
     assert.equal(env.dom.elements['wn-title'].textContent, '✨ Latest updates');
     assert.equal(env.dom.elements['wn-changelog-link'].textContent, 'View full changelog');

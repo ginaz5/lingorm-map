@@ -120,6 +120,7 @@ const TEXT_SEARCH_FIELD_MASK = PLACE_FIELD_MASK
 
 const DESTINATION_ADDRESS_ALIASES = Object.freeze({
   tokyo: ['Tokyo', 'Tokyo-to', '東京都', '東京'],
+  dubai: ['Dubai', 'دبي', '杜拜', '迪拜'],
   bangkok: [
     'Bangkok',
     'Krung Thep Maha Nakhon',
@@ -131,6 +132,7 @@ const DESTINATION_ADDRESS_ALIASES = Object.freeze({
   'koh-samui': ['Ko Samui', 'Koh Samui', 'เกาะสมุย'],
   pattaya: ['Pattaya', 'Pattaya City', 'พัทยา'],
   'ubon-ratchathani': ['Ubon Ratchathani', 'อุบลราชธานี'],
+  'nakhon-pathom': ['Nakhon Pathom', 'นครปฐม', '佛統府'],
   'ho-chi-minh-city': [
     'Ho Chi Minh City',
     'Ho Chi Minh',
