@@ -6,6 +6,7 @@ import { queryBranchRates, branchCacheKey, BRANCH_GATE_KEY, BRANCH_LEASE_MS } fr
 import { EXCHANGE_KEYS, createBreaker, createControl } from '../netlify/functions/_shared/exchange-rates-1965-contract.mjs';
 import { serveBranchCache } from '../netlify/functions/exchange-rates-1965-cache.mjs';
 import { ORANGE_BRANCHES, isValidBranchQuote } from '../src/data/exchange-rates-1965-branch.js';
+import { bootstrapSourceGuard, setSourceGuardPaused } from '../netlify/functions/_shared/exchange-rates-1965-source-guard.mjs';
 import { FakeBlobStore, uuid } from './helpers/exchange-rates-store.mjs';
 
 const START = Date.parse('2026-10-19T01:00:00.000Z');
@@ -19,10 +20,15 @@ function token(expiryMs, sequence) {
   return `${part({ alg: 'RS256', typ: 'JWT' })}.${part({ exp: Math.floor(expiryMs / 1000), marker: `PRIVATE_TOKEN_${sequence}` })}.mock-signature`;
 }
 
-function harness() {
-  const store = new FakeBlobStore();
+// Collector calls carry the existing control version, shared source guard and an
+// operation/owner identity, as the Netlify worker and Actions fallback do.
+async function harness() {
+  const store = new FakeBlobStore(), sourceGuardStore = new FakeBlobStore();
   store.seed(EXCHANGE_KEYS.control, createControl({ enabled: true, nowMs: START - 1000,
     controlVersion: uuid(1), updatedBy: 'manual' }));
+  await bootstrapSourceGuard({ store: sourceGuardStore, legacyBreakers: [null], legacyReviewed: true,
+    nowMs: START - 1000, randomUUIDImpl: () => uuid(90) });
+  await setSourceGuardPaused({ store: sourceGuardStore, paused: false, nowMs: START - 1000 });
   let now = START, sequence = 10;
   const calls = [], tokens = [];
   const h = { store, calls, tokens,
@@ -45,7 +51,9 @@ function harness() {
       return h.rateResponse();
     } }) };
   h.source = source;
-  h.input = { store, ...source, nowImpl: h.nowImpl, randomUUIDImpl: h.randomUUIDImpl };
+  h.sourceGuardStore = sourceGuardStore;
+  h.input = { store, sourceGuardStore, operationId: 'ginaz5/lingorm-map/1234', ownerId: uuid(91),
+    expectedControlVersion: uuid(1), ...source, nowImpl: h.nowImpl, randomUUIDImpl: h.randomUUIDImpl };
   h.query = async (target = slug) => {
     const response = await queryBranchRates({ ...h.input, slug: target });
     return { response, body: await response.json() };
@@ -67,7 +75,7 @@ function assertPrivate(h, values) {
 
 test('anonymous cold query counts token GET and rate POST, publishes complete rates, and leaks no credentials', async t => {
   const logs = captureLogs(t);
-  const h = harness();
+  const h = await harness();
   t.after(h.source.close);
   assert.equal(h.calls.length, 0);
   const first = await h.query();
@@ -99,7 +107,7 @@ test('anonymous cold query counts token GET and rate POST, publishes complete ra
 test('anonymous transport stays lazy for disabled control, active breaker, busy lease, CAS loss, or control changes during lease acquisition', async t => {
   const logs = captureLogs(t);
   for (const mode of ['disabled', 'breaker', 'busy', 'cas_loss', 'control_change']) {
-    const h = harness();
+    const h = await harness();
     t.after(h.source.close);
     if (mode === 'disabled') h.store.seed(EXCHANGE_KEYS.control, createControl({ enabled: false,
       nowMs: START, controlVersion: uuid(2), updatedBy: 'manual', disabledReason: 'manual' }));
@@ -125,7 +133,7 @@ test('anonymous transport stays lazy for disabled control, active breaker, busy 
 for (const status of [403, 200]) {
   test(`anonymous callback challenge (${status}) enters existing breaker after one GET and suppresses subsequent clicks`, async t => {
     const logs = captureLogs(t);
-    const h = harness();
+    const h = await harness();
     t.after(h.source.close);
     h.tokenResponse = () => new Response('PRIVATE_CHALLENGE_BODY', { status,
       headers: { 'cf-mitigated': 'challenge', 'content-type': 'text/html', 'set-cookie': 'PRIVATE_COOKIE' } });
@@ -151,7 +159,7 @@ for (const status of [403, 200]) {
 
 test('anonymous rate challenge counts both requests and preserves an expired quote without extending expiry or refreshing again', async t => {
   const logs = captureLogs(t);
-  const h = harness();
+  const h = await harness();
   t.after(h.source.close);
   await h.query();
   const old = structuredClone(h.store.entries.get(branchCacheKey(slug)).data);
@@ -178,7 +186,7 @@ test('anonymous rate challenge counts both requests and preserves an expired quo
 for (const mode of ['invalid_token', 'rate_401']) {
   test(`anonymous ${mode} fails closed with accurate request count and no retry`, async t => {
     const logs = captureLogs(t);
-    const h = harness();
+    const h = await harness();
     t.after(h.source.close);
     if (mode === 'invalid_token') h.tokenResponse = () => Response.json({ accessToken: 'PRIVATE_MALFORMED_TOKEN with invalid whitespace' });
     else h.rateResponse = () => new Response('PRIVATE_UNAUTHORIZED_BODY', { status: 401 });
@@ -199,7 +207,7 @@ for (const mode of ['invalid_token', 'rate_401']) {
 for (const expiredBetweenBranches of [false, true]) {
   test(`anonymous branch queries ${expiredBetweenBranches ? 'renew an expired token' : 'reuse one token'} while retaining breaker history`, async t => {
     const logs = captureLogs(t);
-    const h = harness();
+    const h = await harness();
     t.after(h.source.close);
     h.store.seed(EXCHANGE_KEYS.breaker, { ...createBreaker(uuid(1)), blockLevel: 1 });
     if (expiredBetweenBranches) h.tokenExpiry = () => h.nowImpl() + 61_000;

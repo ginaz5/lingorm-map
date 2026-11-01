@@ -12,17 +12,23 @@ import { FakeBlobStore, uuid } from './helpers/exchange-rates-store.mjs';
 
 const START = Date.parse('2026-10-17T01:00:00.000Z');
 const [slug, otherSlug] = Object.keys(ORANGE_BRANCHES);
-function harness() {
-  const store = new FakeBlobStore();
+// Every collector call carries an existing control version, the shared source guard
+// and an operation/owner identity, exactly as the Netlify worker and Actions fallback do.
+async function harness() {
+  const store = new FakeBlobStore(), sourceGuardStore = new FakeBlobStore();
   store.seed(EXCHANGE_KEYS.control, createControl({ enabled: true, nowMs: START - 1000, controlVersion: uuid(1), updatedBy: 'manual' }));
+  await bootstrapSourceGuard({ store: sourceGuardStore, legacyBreakers: [null], legacyReviewed: true,
+    nowMs: START - 1000, randomUUIDImpl: () => uuid(90) });
+  await setSourceGuardPaused({ store: sourceGuardStore, paused: false, nowMs: START - 1000 });
   let now = START;
   let calls = [];
   let sequence = 10;
-  const input = { store, slug, nowImpl: () => now, randomUUIDImpl: () => uuid(sequence++), fetchImpl: async (url, options) => {
-    calls.push({ url, options });
-    return Response.json(FIXTURE);
-  } };
-  return { store, input, calls, advance: ms => { now += ms; } };
+  const input = { store, slug, sourceGuardStore, operationId: 'ginaz5/lingorm-map/1234', ownerId: uuid(91),
+    expectedControlVersion: uuid(1), nowImpl: () => now, randomUUIDImpl: () => uuid(sequence++), fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return Response.json(FIXTURE);
+    } };
+  return { store, sourceGuardStore, input, calls, advance: ms => { now += ms; } };
 }
 
 async function fetchBody(input) {
@@ -34,7 +40,7 @@ for (const status of [403, 429, 200]) {
   test(`private diagnostics distinguish upstream ${status} from our cooldown response without exposing source data`, async t => {
     const messages = [];
     t.mock.method(console, 'info', text => messages.push(JSON.parse(text)));
-    const h = harness();
+    const h = await harness();
     h.input.fetchImpl = async () => {
       h.calls.push({});
       return new Response('PRIVATE_CHALLENGE_BODY', { status, headers: {
@@ -47,7 +53,7 @@ for (const status of [403, 429, 200]) {
     const log = messages[0];
     assert.equal(first.response.status, 429);
     assert.equal(log.event, 'exchange_rates_1965_branch');
-    assert.equal(log.trigger, 'manual');
+    assert.equal(log.trigger, 'background');
     assert.equal(log.slug, slug);
     assert.equal(log.httpStatus, 429);
     assert.equal(log.blockedStatus, status);
@@ -78,7 +84,7 @@ for (const status of [403, 429, 200]) {
 test('private diagnostics distinguish warm cache and gate cooldown from source requests', async t => {
   const messages = [];
   t.mock.method(console, 'info', text => messages.push(JSON.parse(text)));
-  const h = harness();
+  const h = await harness();
   await fetchBody(h.input);
   await fetchBody(h.input);
   await fetchBody({ ...h.input, slug: otherSlug });
@@ -96,7 +102,7 @@ test('private diagnostics distinguish warm cache and gate cooldown from source r
 test('network failures record only fixed diagnostic reasons, never exception text', async t => {
   const messages = [];
   t.mock.method(console, 'info', text => messages.push(JSON.parse(text)));
-  const h = harness();
+  const h = await harness();
   h.input.fetchImpl = async () => { throw new Error('PRIVATE_EXCEPTION_TOKEN'); };
   assert.equal((await fetchBody(h.input)).response.status, 503);
   assert.equal(messages[0].sourceOutcome, 'failed');
@@ -108,7 +114,7 @@ test('network failures record only fixed diagnostic reasons, never exception tex
 
 test('a logging failure does not change cached quotes or leave the lease held', async t => {
   t.mock.method(console, 'info', () => { throw new Error('logger unavailable'); });
-  const h = harness();
+  const h = await harness();
   assert.equal((await fetchBody(h.input)).response.status, 200);
   assert.ok(isValidBranchQuote(h.store.entries.get(branchCacheKey(slug)).data));
   assert.equal(h.store.entries.get(BRANCH_GATE_KEY).data.leaseId, null);
@@ -117,7 +123,7 @@ test('a logging failure does not change cached quotes or leave the lease held', 
 });
 
 test('one click fetches exactly one mapped branch, caches complete USD/TWD and reuses across visitors', async () => {
-  const h = harness();
+  const h = await harness();
   const first = await fetchBody(h.input);
   assert.equal(first.response.status, 200);
   assert.equal(h.calls.length, 1);
@@ -145,7 +151,7 @@ test('one click fetches exactly one mapped branch, caches complete USD/TWD and r
 });
 
 test('collector ignores legacy snapshots and obtains a new per-branch quote', async () => {
-  const h = harness();
+  const h = await harness();
   const initial = (await fetchBody(h.input)).body.quote;
   h.store.entries.delete(branchCacheKey(slug));
   const legacy = { ...initial, branches: [initial.branch] };
@@ -160,7 +166,7 @@ test('collector ignores legacy snapshots and obtains a new per-branch quote', as
 });
 
 test('persistent lease suppresses duplicate cold queries and other branches while a fetch is pending', async () => {
-  const h = harness();
+  const h = await harness();
   let finish;
   let started;
   const requested = new Promise(resolve => { started = resolve; });
@@ -188,7 +194,7 @@ test('persistent lease suppresses duplicate cold queries and other branches whil
 });
 
 test('competing lease CAS and expired lease recovery never duplicate a request', async () => {
-  const h = harness();
+  const h = await harness();
   let raced = false;
   h.store.beforeSet = ({ key, store }) => {
     if (key === BRANCH_GATE_KEY && !raced) {
@@ -209,7 +215,7 @@ for (const [label, makeResponse] of [
   ['challenge header', () => new Response('challenge secret', { status: 200, headers: { 'cf-mitigated': 'challenge' } })],
 ]) {
   test(`${label} stops after one request and shares breaker cooldown across branches and users`, async () => {
-    const h = harness();
+    const h = await harness();
     h.input.fetchImpl = async () => { h.calls.push({}); return makeResponse(); };
     const first = await fetchBody(h.input);
     assert.equal(first.response.status, 429);
@@ -231,7 +237,7 @@ for (const [label, fail] of [
   ['partial rates', async () => { const value = structuredClone(FIXTURE); value.data.datas = value.data.datas.filter(row => row.currency_code !== 'TWD'); return Response.json(value); }],
 ]) {
   test(`${label} never retries or caches an incomplete quote and applies shared failure cooldown`, async () => {
-    const h = harness();
+    const h = await harness();
     h.input.fetchImpl = async () => { h.calls.push({}); return fail(); };
     const first = await fetchBody(h.input);
     assert.equal(first.response.status, 503);
@@ -245,7 +251,7 @@ for (const [label, fail] of [
 
 test('disabled, missing/invalid control, active breaker and unknown slugs make zero source requests', async () => {
   for (const mode of ['disabled', 'missing', 'invalid', 'blocked', 'unknown']) {
-    const h = harness();
+    const h = await harness();
     if (mode === 'disabled') h.store.seed(EXCHANGE_KEYS.control, createControl({ enabled: false, nowMs: START, controlVersion: uuid(2), updatedBy: 'manual', disabledReason: 'manual' }));
     if (mode === 'missing') h.store.entries.delete(EXCHANGE_KEYS.control);
     if (mode === 'invalid') h.store.seed(EXCHANGE_KEYS.control, { enabled: true });
@@ -257,7 +263,7 @@ test('disabled, missing/invalid control, active breaker and unknown slugs make z
 });
 
 test('third challenged attempt auto-disables without overwriting a newer control', async () => {
-  const h = harness();
+  const h = await harness();
   h.store.seed(EXCHANGE_KEYS.breaker, { ...createBreaker(uuid(1)), blockLevel: 2 });
   h.input.fetchImpl = async () => new Response('', { status: 403 });
   const result = await fetchBody(h.input);
@@ -268,7 +274,7 @@ test('third challenged attempt auto-disables without overwriting a newer control
 
 for (const enabled of [false, true]) {
   test(`control ${enabled ? 're-enable' : 'disable'} during source fetch discards the quote`, async () => {
-    const h = harness();
+    const h = await harness();
     h.input.fetchImpl = async () => {
       h.store.seed(EXCHANGE_KEYS.control, createControl({ enabled, nowMs: START, controlVersion: uuid(2), updatedBy: 'manual', disabledReason: enabled ? null : 'manual' }));
       return Response.json(FIXTURE);
@@ -281,14 +287,15 @@ for (const enabled of [false, true]) {
 }
 
 test('cache uses control generation, respects expiry, and remains usable during a source cooldown', async () => {
-  const h = harness();
+  const h = await harness();
   await fetchBody(h.input);
   h.store.seed(EXCHANGE_KEYS.breaker, { ...createBreaker(uuid(1)), blockedUntil: new Date(START + 60_000).toISOString() });
   assert.equal((await fetchBody(h.input)).response.status, 200);
   assert.equal(h.calls.length, 1);
   h.store.seed(EXCHANGE_KEYS.control, createControl({ enabled: true, nowMs: START, controlVersion: uuid(2), updatedBy: 'manual' }));
   h.store.seed(EXCHANGE_KEYS.breaker, createBreaker(uuid(2), new Date(START + 60_000).toISOString()));
-  const result = await fetchBody(h.input);
+  // A collector bound to the new generation must not reuse the old generation's quote.
+  const result = await fetchBody({ ...h.input, expectedControlVersion: uuid(2) });
   assert.equal(result.body.quote, null);
   assert.equal(result.response.status, 429);
   assert.equal(h.calls.length, 1);
@@ -309,7 +316,7 @@ test('API rejects non-POST, cross-site, extra IDs/URLs, malformed and oversized 
 });
 
 test('storage errors and lost cache CAS fail closed and never report a fresh quote', async () => {
-  const h = harness();
+  const h = await harness();
   h.store.beforeSet = ({ key }) => { if (key === branchCacheKey(slug)) throw new Error('storage'); };
   assert.equal((await fetchBody(h.input)).body.quote, null);
   assert.equal(h.calls.length, 1);
@@ -320,7 +327,7 @@ test('storage errors and lost cache CAS fail closed and never report a fresh quo
 });
 
 test('cache write conflicts do not return an uncommitted quote or erase the other writer', async () => {
-  const h = harness();
+  const h = await harness();
   let winner;
   h.store.beforeSet = ({ key, data, store }) => {
     if (key === branchCacheKey(slug) && !winner) {
@@ -336,7 +343,7 @@ test('cache write conflicts do not return an uncommitted quote or erase the othe
 });
 
 test('a disable during lease acquisition prevents the source request', async () => {
-  const h = harness();
+  const h = await harness();
   h.store.beforeSet = ({ key, store }) => {
     if (key === BRANCH_GATE_KEY) store.seed(EXCHANGE_KEYS.control, createControl({ enabled: false,
       nowMs: START, controlVersion: uuid(2), updatedBy: 'manual', disabledReason: 'manual' }));
@@ -379,7 +386,7 @@ test('Netlify Dev without ETags can refresh an expired quote and still suppress 
   const before = process.env.NETLIFY_DEV;
   process.env.NETLIFY_DEV = 'true';
   t.after(() => { if (before === undefined) delete process.env.NETLIFY_DEV; else process.env.NETLIFY_DEV = before; });
-  const h = harness();
+  const h = await harness();
   const get = h.store.getWithMetadata.bind(h.store), set = h.store.setJSON.bind(h.store);
   h.store.getWithMetadata = async (...args) => {
     const entry = await get(...args); if (entry) delete entry.etag; return entry;
@@ -421,7 +428,7 @@ test('clearing failed runs keeps block escalation and an active block time', () 
 
 test('a published quote resets spread-out failures in both breakers so they never trip the cooldown', async t => {
   t.mock.method(console, 'info', () => {});
-  const h = harness();
+  const h = await harness();
   const sourceGuardStore = new FakeBlobStore();
   await bootstrapSourceGuard({ store: sourceGuardStore, legacyBreakers: [null], legacyReviewed: true, nowMs: START - 1000, randomUUIDImpl: () => uuid(2) });
   await setSourceGuardPaused({ store: sourceGuardStore, paused: false, nowMs: START - 1000 });
@@ -444,7 +451,7 @@ test('a published quote resets spread-out failures in both breakers so they neve
 });
 
 test('a published quote keeps block level and an expired block time while clearing failures', async () => {
-  const h = harness();
+  const h = await harness();
   const breaker = { ...createBreaker(uuid(1)), consecutiveFailedRuns: 2, blockLevel: 1,
     blockedUntil: new Date(START - 1000).toISOString(), lastStatus: 'failed', lastError: 'source_failed' };
   h.store.seed(EXCHANGE_KEYS.breaker, breaker);
@@ -452,16 +459,18 @@ test('a published quote keeps block level and an expired block time while cleari
   assert.deepEqual(h.store.entries.get(EXCHANGE_KEYS.breaker).data, { ...breaker, consecutiveFailedRuns: 0 });
 });
 
-test('a probe that does not publish leaves the failure count unchanged', async () => {
-  const h = harness();
+test('a cache hit that makes no source request leaves the failure count unchanged', async () => {
+  const h = await harness();
+  assert.equal((await fetchBody(h.input)).response.status, 200);
   const breaker = { ...createBreaker(uuid(1)), consecutiveFailedRuns: 2 };
   h.store.seed(EXCHANGE_KEYS.breaker, breaker);
-  assert.equal((await fetchBody({ ...h.input, publishQuote: false })).response.status, 200);
+  assert.equal((await fetchBody(h.input)).response.status, 200);
+  assert.equal(h.calls.length, 1);
   assert.deepEqual(h.store.entries.get(EXCHANGE_KEYS.breaker).data, breaker);
 });
 
 test('a failed breaker reset after publication still returns the published quote', async () => {
-  const h = harness();
+  const h = await harness();
   h.store.seed(EXCHANGE_KEYS.breaker, { ...createBreaker(uuid(1)), consecutiveFailedRuns: 2 });
   h.store.beforeSet = ({ key }) => { if (key === EXCHANGE_KEYS.breaker) throw new Error('storage down'); };
   const { response, body } = await fetchBody(h.input);
@@ -473,7 +482,7 @@ test('a failed breaker reset after publication still returns the published quote
 for (const timing of ['during reset CAS', 'before reset starts']) {
   test(`an old published quote preserves a later collector failure ${timing}`, async t => {
     t.mock.method(console, 'info', () => {});
-    const h = harness();
+    const h = await harness();
     const sourceGuardStore = new FakeBlobStore();
     h.store.seed(EXCHANGE_KEYS.breaker, { ...createBreaker(uuid(1)), consecutiveFailedRuns: 1 });
     await bootstrapSourceGuard({ store: sourceGuardStore,

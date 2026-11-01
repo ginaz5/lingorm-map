@@ -21,7 +21,7 @@ import { lang, setLang, t } from '../src/core/i18n.js';
 import { state } from '../src/core/state.js';
 
 test('destination taxonomy exposes stable countries and valid pairs', () => {
-  assert.deepEqual(COUNTRY_CODES, ['TH', 'VN', 'TW', 'HK', 'MO', 'JP']);
+  assert.deepEqual(COUNTRY_CODES, ['TH', 'VN', 'TW', 'HK', 'MO', 'JP', 'AE']);
   assert.deepEqual(DESTINATION_KEYS, [
     'bangkok',
     'khon-kaen',
@@ -32,6 +32,7 @@ test('destination taxonomy exposes stable countries and valid pairs', () => {
     'chonburi',
     'si-racha',
     'ubon-ratchathani',
+    'nakhon-pathom',
     'ho-chi-minh-city',
     'taipei',
     'taichung',
@@ -41,10 +42,13 @@ test('destination taxonomy exposes stable countries and valid pairs', () => {
     'hong-kong',
     'macau',
     'tokyo',
+    'dubai',
   ]);
   assert.equal(isValidDestinationPair('TH', 'bangkok'), true);
   assert.equal(isValidDestinationPair('TH', 'chonburi'), true);
   assert.equal(isValidDestinationPair('TH', 'si-racha'), true);
+  assert.equal(isValidDestinationPair('TH', 'nakhon-pathom'), true);
+  assert.equal(isValidDestinationPair('VN', 'nakhon-pathom'), false);
   assert.equal(isValidDestinationPair('VN', 'si-racha'), false);
   assert.equal(isValidDestinationPair('VN', 'bangkok'), false);
   assert.equal(isValidDestinationPair('TW', 'kaohsiung'), true);
@@ -54,6 +58,9 @@ test('destination taxonomy exposes stable countries and valid pairs', () => {
   assert.equal(isValidDestinationPair('JP', 'tokyo'), true);
   assert.equal(isValidDestinationPair('TH', 'tokyo'), false);
   assert.equal(isValidDestinationPair('JP', 'bangkok'), false);
+  assert.equal(isValidDestinationPair('AE', 'dubai'), true);
+  assert.equal(isValidDestinationPair('TH', 'dubai'), false);
+  assert.equal(isValidDestinationPair('AE', 'bangkok'), false);
 });
 
 test('destination menu height stays above the mobile panel boundary', () => {
@@ -165,7 +172,11 @@ test('destination selections persist across reload and ignore unknown keys', () 
   }
 });
 
-test('Tokyo appears under Japan in both languages only after a location is published', () => {
+for (const [countryCode, destinationKey, translations] of [
+  ['TH', 'nakhon-pathom', [['zh', '泰國', '佛統府'], ['en', 'Thailand', 'Nakhon Pathom']]],
+  ['JP', 'tokyo', [['zh', '日本', '東京'], ['en', 'Japan', 'Tokyo']]],
+  ['AE', 'dubai', [['zh', '阿拉伯聯合大公國', '杜拜'], ['en', 'United Arab Emirates', 'Dubai']]],
+]) test(`${destinationKey} appears under its country in both languages only after a location is published`, () => {
   const groups = { innerHTML: '', querySelectorAll: () => [] };
   const elements = new Map([
     ['dest-filter-label', { textContent: '' }],
@@ -185,28 +196,25 @@ test('Tokyo appears under Japan in both languages only after a location is publi
     configurable: true,
     value: { setItem() {} },
   });
-  state.data = [{ status: 'Paused', countryCode: 'JP', destinationKey: 'tokyo' }];
+  state.data = [{ status: 'Paused', countryCode, destinationKey }];
   state.selectedDestinations = new Set();
 
   try {
     renderDestinationFilter();
-    assert.doesNotMatch(groups.innerHTML, /data-country-code="JP"/);
+    assert.doesNotMatch(groups.innerHTML, new RegExp(`data-country-code="${countryCode}"`));
     state.data[0].status = 'Published';
-    for (const [language, country, destination] of [
-      ['zh', '日本', '東京'],
-      ['en', 'Japan', 'Tokyo'],
-    ]) {
+    for (const [language, country, destination] of translations) {
       setLang(language);
       renderDestinationFilter();
-      assert.match(groups.innerHTML, /data-country-code="JP"/);
-      assert.match(groups.innerHTML, /value="tokyo"/);
+      assert.match(groups.innerHTML, new RegExp(`data-country-code="${countryCode}"`));
+      assert.match(groups.innerHTML, new RegExp(`value="${destinationKey}"`));
       assert.ok(groups.innerHTML.includes(`<span>${country}</span>`));
       assert.ok(groups.innerHTML.includes(`<span>${destination}</span>`));
     }
-    toggleCountryDestinations('JP', new Set(['bangkok', 'tokyo']));
-    assert.deepEqual([...state.selectedDestinations], ['tokyo']);
-    assert.equal(countrySelectionState('JP', new Set(['tokyo'])).checked, true);
-    toggleCountryDestinations('JP', new Set(['bangkok', 'tokyo']));
+    toggleCountryDestinations(countryCode, new Set([destinationKey]));
+    assert.deepEqual([...state.selectedDestinations], [destinationKey]);
+    assert.equal(countrySelectionState(countryCode, new Set([destinationKey])).checked, true);
+    toggleCountryDestinations(countryCode, new Set([destinationKey]));
     assert.equal(state.selectedDestinations.size, 0);
   } finally {
     setLang(previousLanguage);

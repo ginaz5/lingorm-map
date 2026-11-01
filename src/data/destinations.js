@@ -16,6 +16,7 @@ export const COUNTRIES = Object.freeze([
   { code: 'HK', en: 'Hong Kong', zh: '香港', flag: '🇭🇰' },
   { code: 'MO', en: 'Macau', zh: '澳門', flag: '🇲🇴' },
   { code: 'JP', en: 'Japan', zh: '日本', flag: '🇯🇵' },
+  { code: 'AE', en: 'United Arab Emirates', zh: '阿拉伯聯合大公國', flag: '🇦🇪' },
 ]);
 
 /** @type {readonly Destination[]} */
@@ -29,6 +30,7 @@ export const DESTINATIONS = Object.freeze([
   { key: 'chonburi', countryCode: 'TH', en: 'Chonburi', zh: '春武里' },
   { key: 'si-racha', countryCode: 'TH', en: 'Si Racha', zh: '是拉差' },
   { key: 'ubon-ratchathani', countryCode: 'TH', en: 'Ubon Ratchathani', zh: '烏汶' },
+  { key: 'nakhon-pathom', countryCode: 'TH', en: 'Nakhon Pathom', zh: '佛統府' },
   { key: 'ho-chi-minh-city', countryCode: 'VN', en: 'Ho Chi Minh City', zh: '胡志明市' },
   { key: 'taipei', countryCode: 'TW', en: 'Taipei', zh: '台北' },
   { key: 'taichung', countryCode: 'TW', en: 'Taichung', zh: '台中' },
@@ -38,6 +40,7 @@ export const DESTINATIONS = Object.freeze([
   { key: 'hong-kong', countryCode: 'HK', en: 'Hong Kong', zh: '香港' },
   { key: 'macau', countryCode: 'MO', en: 'Macau', zh: '澳門' },
   { key: 'tokyo', countryCode: 'JP', en: 'Tokyo', zh: '東京' },
+  { key: 'dubai', countryCode: 'AE', en: 'Dubai', zh: '杜拜' },
 ]);
 
 export const COUNTRY_CODES = Object.freeze(COUNTRIES.map(country => country.code));

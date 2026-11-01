@@ -83,6 +83,7 @@ const COUNTRY_OPTION_COLORS = Object.freeze({
   HK: 'yellow',
   MO: 'orange',
   JP: 'red',
+  AE: 'green',
 });
 
 /** @type {Readonly<Record<string, string>>} */
@@ -96,6 +97,7 @@ const DESTINATION_OPTION_COLORS = Object.freeze({
   chonburi: 'orange',
   'si-racha': 'green',
   'ubon-ratchathani': 'pink',
+  'nakhon-pathom': 'brown',
   'ho-chi-minh-city': 'red',
   taipei: 'pink',
   taichung: 'orange',
@@ -105,6 +107,7 @@ const DESTINATION_OPTION_COLORS = Object.freeze({
   'hong-kong': 'purple',
   macau: 'red',
   tokyo: 'pink',
+  dubai: 'orange',
 });
 
 export const CURRENT_FORMAL_COUNTRY_OPTIONS = Object.freeze(

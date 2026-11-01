@@ -201,12 +201,14 @@ test('production snapshot validator rejects mismatched country and destination',
   );
 });
 
-test('production snapshot validator accepts TW, HK, MO, and JP geography pairs', () => {
+test('production snapshot validator accepts supported international and Nakhon Pathom geography pairs', () => {
   const pairs = [
+    ['TH', 'nakhon-pathom'],
     ['TW', 'taipei'],
     ['HK', 'hong-kong'],
     ['MO', 'macau'],
     ['JP', 'tokyo'],
+    ['AE', 'dubai'],
   ];
 
   for (const [countryCode, destinationKey] of pairs) {
@@ -223,10 +225,10 @@ test('production snapshot validator accepts TW, HK, MO, and JP geography pairs',
   }
 });
 
-test('production snapshot validator rejects Tokyo paired with another country', () => {
+for (const [destination, wrongCountry] of [['tokyo', 'TH'], ['dubai', 'TH'], ['nakhon-pathom', 'VN']]) test(`production snapshot validator rejects ${destination} paired with another country`, () => {
   const invalid = changedRow(snapshotRows[1], {
-    'Country Code': 'TH',
-    'Destination Key': 'tokyo',
+    'Country Code': wrongCountry,
+    'Destination Key': destination,
   });
   const changedCsv = [
     csvRow(snapshotRows[0]),

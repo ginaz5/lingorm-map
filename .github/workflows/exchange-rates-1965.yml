@@ -6,16 +6,12 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Inspect, probe, or publish a fixed single/five/all scope
+        description: Inspect, or publish all 38 branches
         type: choice
         required: true
         default: inspect
         options:
           - inspect
-          - probe
-          - probe-python
-          - publish-python
-          - publish-five-python
           - publish-all-python
       target:
         description: Explicit reviewed quote target
@@ -56,7 +52,7 @@ jobs:
         run: npm ci
 
       - name: Verify Python stdlib transport offline
-        if: endsWith(inputs.action, '-python')
+        if: inputs.action == 'publish-all-python'
         run: |
           python3 --version
           python3 -I -B tests/exchange-rates-1965-python-http.test.py
@@ -72,7 +68,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$ACTION_MODE" in
-            inspect|probe|probe-python|publish-python|publish-five-python|publish-all-python) ;;
+            inspect|publish-all-python) ;;
             *) exit 2 ;;
           esac
           case "$ACTION_TARGET" in

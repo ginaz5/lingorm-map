@@ -12,7 +12,7 @@
  */
 /** @typedef {{ dateKey: string, publishTime: number, items: ChangelogItem[] }} ChangelogDateGroup */
 
-export const CURRENT_CHANGELOG_RELEASE_ID = '2026-09-28-mobile-filters-and-map-updates';
+export const CURRENT_CHANGELOG_RELEASE_ID = '2026-10-31-orange-rates-home-and-resources';
 
 /**
  * Shared release history for the What's New preview and the full changelog.
@@ -21,6 +21,62 @@ export const CURRENT_CHANGELOG_RELEASE_ID = '2026-09-28-mobile-filters-and-map-u
  * @type {ChangelogItem[]}
  */
 export const CHANGELOG = [
+  {
+    id: 'feat-020',
+    title: {
+      zh: '新增橘標分店與匯率',
+      en: 'SuperRich 1965 joins the map',
+    },
+    description: {
+      zh: '新增 38 間橘標分店，可比較 USD／TWD 買入匯率。',
+      en: 'Browse 38 orange branches and compare USD/TWD buying rates.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-10-31T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-021',
+    title: {
+      zh: '點標題回到完整地圖',
+      en: 'Tap the title to reset the map',
+    },
+    description: {
+      zh: '點頁首「LingOrm Map」清除搜尋與篩選，收藏會保留。',
+      en: 'Tap LingOrm Map to clear search and filters. Your favorites stay saved.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-10-31T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-022',
+    title: {
+      zh: '新增音樂與同人文資源',
+      en: 'More music and fan fiction',
+    },
+    description: {
+      zh: '粉絲資源新增 LingOrm Music Archive 與 Feed Your Mind。',
+      en: 'Explore LingOrm Music Archive and Feed Your Mind in Fan Resources.',
+    },
+    badge: { zh: '內容', en: 'Content' },
+    publishTime: Date.parse('2026-10-31T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-023',
+    title: {
+      zh: '新增杜拜與佛統府目的地支援',
+      en: 'Destination support for Dubai and Nakhon Pathom',
+    },
+    description: {
+      zh: '新增阿拉伯聯合大公國／杜拜與泰國／佛統府（含 Sam Phran）的目的地分類。這些地區有地點發布後，就能在目的地選單中篩選。',
+      en: 'Added destination categories for Dubai in the United Arab Emirates and Nakhon Pathom, including Sam Phran, in Thailand. They appear in the destination filter once locations there are published.',
+    },
+    badge: { zh: '內容', en: 'Content' },
+    publishTime: Date.parse('2026-10-31T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
   {
     id: 'feat-016',
     title: {
@@ -33,7 +89,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-09-28T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-28-mobile-filters-and-map-updates',
   },
   {
     id: 'feat-017',
@@ -47,7 +103,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-09-28T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-28-mobile-filters-and-map-updates',
   },
   {
     id: 'feat-018',
@@ -61,7 +117,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '內容', en: 'Content' },
     publishTime: Date.parse('2026-09-28T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-28-mobile-filters-and-map-updates',
   },
   {
     id: 'fix-006',
@@ -75,7 +131,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '改善', en: 'Improvement' },
     publishTime: Date.parse('2026-09-28T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-28-mobile-filters-and-map-updates',
   },
   {
     id: 'feat-019',
@@ -89,7 +145,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '內容', en: 'Content' },
     publishTime: Date.parse('2026-09-28T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: '2026-09-28-mobile-filters-and-map-updates',
   },
   {
     id: 'feat-014',

@@ -222,11 +222,13 @@ header {
 .search-input:focus{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
 .search-input::placeholder{color:var(--text-muted)}
 .filter-row{display:flex;gap:8px;flex-wrap:wrap}
-.exchange-toolbar{display:flex;align-items:center;gap:8px;min-width:0}
+.exchange-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
 .exchange-sort-label{font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap;flex:0 0 auto}
 .exchange-sort-label[hidden]{display:none}
-.exchange-sort{flex:0 1 145px;max-width:145px}
+.filter-sel.exchange-sort{flex:0 1 auto;width:auto;max-width:100%}
 .exchange-sort[hidden]{display:none}
+.exchange-sort-hint{flex-basis:100%;margin:0;font-size:11px;line-height:1.4;color:var(--text-muted)}
+.exchange-sort-hint[hidden]{display:none}
 .filter-sel{flex:1;min-width:0;height:35px;background:var(--canvas);border:1px solid var(--border);
   border-radius:8px;padding:7px 28px 7px 8px;color:var(--primary);font-size:13px;outline:none;cursor:pointer;
   appearance:none;-webkit-appearance:none;
@@ -383,6 +385,7 @@ header {
   .filter-sheet .exchange-toolbar{flex-direction:column;align-items:stretch;gap:6px}
   .filter-sheet .exchange-sort-label{font-size:13px;white-space:normal}
   .filter-sheet .exchange-sort{flex:0 0 auto;width:100%;max-width:none}
+  .filter-sheet .exchange-sort-hint{flex-basis:auto}
 }
 
 /* Cards */
@@ -421,13 +424,10 @@ header {
 }
 .b-exchange{background:rgba(22,131,91,.1);color:#11724f;border-color:rgba(22,131,91,.28)}
 .b-exchange.is-exchange-orange{background:rgba(235,121,35,.12);color:#a94700;border-color:rgba(235,121,35,.35)}
-.fx-panel.is-exchange-orange{border-color:rgba(235,121,35,.3);background:rgba(235,121,35,.06)}
-.fx-panel{margin-top:10px;padding:10px;border:1px solid rgba(22,131,91,.22);border-radius:9px;background:rgba(22,131,91,.045);color:var(--primary);overflow-wrap:anywhere}
-.fx-query{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}
-.fx-query-btn{max-width:100%;white-space:normal;overflow-wrap:anywhere;border:1px solid rgba(235,121,35,.4);border-radius:6px;padding:7px 10px;background:var(--surface);color:var(--primary);font:inherit;cursor:pointer}
-.fx-query-btn:disabled{opacity:.6;cursor:default}
-.fx-query-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-.fx-query-status,.fx-query-scope{font-size:10px;line-height:1.4;color:var(--muted)}
+.fx-panel{--fx-accent:#16835b;--fx-status-color:#11724f;margin-top:10px;padding:10px;border:1px solid rgba(22,131,91,.22);border-radius:9px;background:rgba(22,131,91,.045);color:var(--primary);overflow-wrap:anywhere}
+.fx-panel.is-exchange-orange{--fx-accent:#a94700;--fx-status-color:#a94700;border-color:rgba(235,121,35,.3);background:rgba(235,121,35,.06)}
+:root[data-theme="dark"] .fx-panel{--fx-status-color:#70d9ad}
+:root[data-theme="dark"] .fx-panel.is-exchange-orange{--fx-status-color:#ffad70}
 .fx-brand{margin-bottom:7px;font-size:10px;line-height:1.35;font-weight:700;color:var(--primary)}
 .fx-rates{display:flex;flex-direction:column;gap:6px}
 .fx-rates.is-loading{opacity:.48}
@@ -435,8 +435,8 @@ header {
 .fx-denom{color:var(--text-muted)}
 .fx-value{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .fx-value.is-unavailable{color:var(--text-muted);font-weight:500}
-.fx-best{display:inline-block;margin-right:3px;padding:1px 5px;border-radius:999px;background:#16835b;color:#fff;font-size:9px;line-height:1.45;vertical-align:1px}
-.fx-loading{margin-bottom:7px;font-size:11px;font-weight:600;color:#11724f}
+.fx-best{display:inline-block;margin-right:3px;padding:1px 5px;border-radius:999px;background:var(--fx-accent);color:#fff;font-size:9px;line-height:1.45;vertical-align:1px}
+.fx-loading{margin-bottom:7px;font-size:11px;font-weight:600;color:var(--fx-status-color)}
 .fx-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;margin-top:7px;font-size:10px;line-height:1.4;color:var(--text-muted)}
 .fx-meta>*+*::before{content:"·";margin-right:6px;color:var(--text-muted)}
 .fx-meta a{color:var(--brand-accent);text-decoration:none}

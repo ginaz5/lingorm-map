@@ -274,7 +274,7 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
    ```
 
    預期 `enabled: true`、`snapshot` 非 `null`；前台以「換匯」標籤篩選後，26 個
-   分店都能看到三列報價（或明確的「暫無報價」，不是空白或錯誤畫面）。
+   分店都能看到報價（USD 50、100 同價時合併，異價或缺價時分開；無報價顯示「暫無報價」，不是空白或錯誤畫面）。
 
 5. **再驗證更新時段內接下來兩個排定批次**（每 30 分鐘一次；即等 30～60 分鐘後重
    查一次 API 的 `checkedAt`／`snapshot.completedAt` 有沒有前進），確認
@@ -395,8 +395,8 @@ PR #18 於 2026-10-24 正式部署，兩輪自動排程與後續追加回查通�
 ### 只讀 API 本機驗收
 
 使用 `netlify dev` 與本機 store，先確認不會連到正式控制資料。
-頁面每 60 秒 GET `/api/exchange-rates-1965-cache`；單店「重新整理匯率」POST
-也只讀快取，不會派送工作或向來源取價。例如：
+頁面每 60 秒 GET `/api/exchange-rates-1965-cache`。卡片已移除單店刷新操作；
+既有單店 POST API 仍只讀快取，不會派送工作或向來源取價，可用以下指令驗收：
 
 ```bash
 curl -sS http://localhost:8888/api/exchange-rates-1965-cache
@@ -426,13 +426,20 @@ netlify functions:build --src netlify/functions --functions /private/tmp/lingorm
 operation ledger、38 店有效 quote 與目前 binding，細節見 Netlify 維運手冊。
 有 snapshot 或 mapping 變更時，另跑位置、收藏相容性與兩品牌 mapping validators。
 
-### 橘標 UI 本機驗收
+### 綠標／橘標 UI 本機驗收
 
-開啟 `/tests/fixtures/orange-branch-query.html`。第一店顯示模擬快取、沒有按鈕；
-第二店顯示「重新整理匯率」，點擊只有一次 POST，成功後撤下按鈕。
-列表與 popup 共用結果。`lang=en` 測英文、`delay=1500` 測載入及重複點擊；
-`fail=1` 模擬舊 429 的前端相容處理，不代表新版 cache API 會建立冷卻。
-fixture 在記憶體攔截請求，不碰來源、正式 Blobs 或 CSV。
+開啟 `/tests/fixtures/orange-branch-query.html`，並排比較綠標與橘標的正式卡片及 popup renderer。
+確認兩品牌使用相同資訊順序與精簡底部資訊；預設 USD 同價時，兩品牌都顯示 USD 50/100 與 TWD 兩列。
+橘標品牌名為 SuperRich 1965（橘標），面額不再重複品牌前綴。
+卡片與 popup 均不顯示刷新按鈕、重試時間或重複的排序提示。
+排序選單旁僅有一份有效報價範圍提示，所有報價不可用時一起隱藏。
+
+- `lang=en` 測英文，`theme=dark` 測深色模式。
+- `usd=split` 測綠標異價；`usd=missing50`、`usd=missing100` 測單一面額缺價。三種情況皆恢復綠標 USD 100／USD 50 分開顯示與排序；缺價幣別停用。預設同價時選單只保留綠標 USD 50/100，`sort=USD_50` 應轉到合併選項，排名不變。
+- `state=missing`、`state=loading`、`state=expired` 分別測缺報價、載入中與過期。
+- `width=320`、`width=390` 可固定狹窄卡片寬度；另測桌機寬度，檢查面額、數字及底部連結不溢出，「最佳」與載入提示跟隨品牌色。
+
+fixture 使用模擬報價與本機地點資料，不連來源或正式 Blobs；不修改 CSV。
 
 用模擬時鐘檢查背景、離線及 API 請求跨到期後撤價；Google／HERE 與列表均應一致。
 橘標 branch／cache API 只讀逐店報價，runtime API 只讀部署身分。Netlify Function 的來源工作

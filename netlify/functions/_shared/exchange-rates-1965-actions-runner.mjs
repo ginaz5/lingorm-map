@@ -6,15 +6,12 @@ import { TOKEN_FAILURE_REASONS } from './exchange-rates-1965-source-telemetry.mj
 
 export const ACTIONS_BUDGET_MS = 12 * 60_000;
 export const ACTIONS_JOB_KEY = 'exchange-rates-1965/actions/job';
-export const ACTIONS_SINGLE_SLUG = 'superrich1965-58';
-export const ACTIONS_PILOT_SLUGS = Object.freeze([ACTIONS_SINGLE_SLUG, 'superrich1965-56', 'superrich1965-57']);
-export const ACTIONS_FIVE_SLUGS = Object.freeze([...ACTIONS_PILOT_SLUGS, 'superrich1965-59', 'superrich1965-60']);
-/** @type {Readonly<Record<string, 'single'|'five'|'all'>>} */
-export const ACTIONS_PYTHON_PUBLISH_SCOPES = Object.freeze({
-  'publish-python': 'single', 'publish-five-python': 'five', 'publish-all-python': 'all',
-});
-export const ACTIONS_BRANCH_STATUSES = Object.freeze([
-  'cache_hit', 'probe_succeeded', 'published', 'source_failed', 'source_unknown', 'publication_failed', 'not_attempted',
+// The only collection mode left after the staged rollout. Ledger identities keep
+// the mode/scope fields, so publish-all-python records written before the trim stay valid.
+export const ACTIONS_MODE = 'publish-all-python';
+export const ACTIONS_SCOPE = 'all';
+const ACTIONS_BRANCH_STATUSES = Object.freeze([
+  'cache_hit', 'published', 'source_failed', 'source_unknown', 'publication_failed', 'not_attempted',
 ]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA = /^[0-9a-f]{40}$/;
@@ -36,17 +33,12 @@ const safeReason = value => SAFE_REASONS.has(value) ? value : 'unavailable';
 const isoOrNull = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) &&
   new Date(value).toISOString() === value ? value : null;
 
-/** The runner accepts reviewed scopes, never a caller-supplied inventory.
- * @param {string} scope @returns {string[]}
+/** The runner collects the reviewed inventory, never a caller-supplied list.
+ * @returns {string[]}
  */
-export function actionsScopeSlugs(scope) {
-  const slugs = scope === 'single' ? [ACTIONS_SINGLE_SLUG] : scope === 'pilot' ? [...ACTIONS_PILOT_SLUGS]
-    : scope === 'five' ? [...ACTIONS_FIVE_SLUGS]
-    : scope === 'all' ? Object.keys(ORANGE_BRANCHES) : [];
-  if (!slugs.length || new Set(slugs).size !== slugs.length ||
-      slugs.some(slug => !Object.hasOwn(ORANGE_BRANCHES, slug)) || (scope === 'five' && slugs.length !== 5) || (scope === 'all' && slugs.length !== 38)) {
-    throw new Error('invalid_configuration');
-  }
+export function actionsSlugs() {
+  const slugs = Object.keys(ORANGE_BRANCHES);
+  if (slugs.length !== 38) throw new Error('invalid_configuration');
   return slugs;
 }
 
@@ -60,9 +52,7 @@ function identityFor(input) {
   const { repository, runId, mode, scope, commit, controlVersion, target } = input;
   if (typeof repository !== 'string' || !/^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/.test(repository) ||
       typeof runId !== 'string' || !/^[1-9][0-9]{0,19}$/.test(runId) || !SHA.test(commit ?? '') ||
-      !UUID.test(controlVersion ?? '') || !['probe', 'probe-python', 'publish', ...Object.keys(ACTIONS_PYTHON_PUBLISH_SCOPES)].includes(mode) ||
-      !['single', 'pilot', 'five', 'all'].includes(scope) ||
-      (mode === 'publish' ? scope === 'five' : scope !== (ACTIONS_PYTHON_PUBLISH_SCOPES[mode] ?? 'single')) || !isObject(target) ||
+      !UUID.test(controlVersion ?? '') || mode !== ACTIONS_MODE || scope !== ACTIONS_SCOPE || !isObject(target) ||
       !['preview-reviewed', 'production'].includes(target.alias) || !UUID.test(target.siteID ?? '') ||
       typeof target.branch !== 'string' || !/^[A-Za-z0-9_./-]{1,255}$/.test(target.branch) ||
       !SHA.test(target.commit ?? '') || !['deploy-preview', 'branch-deploy', 'production'].includes(target.context) ||
@@ -94,17 +84,15 @@ function safeDiagnostics(value) {
     })) : [];
 }
 
-/** @param {unknown} value @param {string} slug @param {string} mode */
-function branchResult(value, slug, mode) {
+/** @param {unknown} value @param {string} slug */
+function branchResult(value, slug) {
   const invalid = { ...untouched(slug, 'invalid_result'), status: 'source_unknown' };
   if (!isObject(value) || !ACTIONS_BRANCH_STATUSES.includes(value.status) || typeof value.sourceSucceeded !== 'boolean' ||
       !Number.isSafeInteger(value.sourceRequestCount) || value.sourceRequestCount < 0 || value.sourceRequestCount > MAX_BRANCH_SOURCE_REQUESTS) return invalid;
-  const success = ['probe_succeeded', 'published', 'publication_failed'].includes(value.status);
+  const success = ['published', 'publication_failed'].includes(value.status);
   if ((success && !value.sourceSucceeded) || (value.sourceSucceeded && !success && value.status !== 'source_unknown') ||
       (['cache_hit', 'not_attempted'].includes(value.status) && value.sourceRequestCount !== 0) ||
-      (value.sourceSucceeded && value.sourceRequestCount === 0) ||
-      (value.status === 'published' && mode !== 'publish' && !Object.hasOwn(ACTIONS_PYTHON_PUBLISH_SCOPES, mode)) ||
-      (value.status === 'probe_succeeded' && !['probe', 'probe-python'].includes(mode))) return invalid;
+      (value.sourceSucceeded && value.sourceRequestCount === 0)) return invalid;
   return { slug, status: value.status, sourceSucceeded: value.sourceSucceeded, sourceRequestCount: value.sourceRequestCount,
     reason: value.reason === null || value.reason === undefined ? null : safeReason(value.reason),
     retryAt: isoOrNull(value.retryAt), diagnostics: safeDiagnostics(value.diagnostics) };
@@ -126,7 +114,7 @@ function summarize(identity, results, { reason = null, exitCode = 0, replayed = 
     attemptSourceRequestCount: replayed ? 0 : sourceRequestCount,
     ...(replayed ? { historicalSourceRequestCount: sourceRequestCount, historicalSourceValidated: requested > 0 && sourceSucceeded === requested } : {}),
     sourceValidated: !replayed && requested > 0 && sourceSucceeded === requested,
-    stoppedSlug: results.find(result => !['cache_hit', 'probe_succeeded', 'published'].includes(result.status))?.slug ?? null,
+    stoppedSlug: results.find(result => !['cache_hit', 'published'].includes(result.status))?.slug ?? null,
     outcome: exitCode === 0 ? 'complete' : exitCode === 2 ? 'invalid_configuration' : exitCode === 3 ? 'skipped' : 'stopped',
     reason, retryAt, exitCode, replayed,
     results: replayed ? results.map(result => ({ ...result, historicalSourceRequestCount: result.sourceRequestCount, sourceRequestCount: 0 })) : results };
@@ -150,7 +138,7 @@ function validOperation(value, identity, slugs, nowMs) {
     value.deadlineAtMs === value.createdAtMs + ACTIONS_BUDGET_MS && Array.isArray(value.results) &&
     value.results.length === slugs.length && value.results.every((/** @type {any} */ result, /** @type {number} */ index) => {
       if (!isObject(result) || !exactKeys(result, RESULT_KEYS) || result.slug !== slugs[index]) return false;
-      const normalized = branchResult(result, slugs[index], identity.mode);
+      const normalized = branchResult(result, slugs[index]);
       return normalized.status === result.status && normalized.sourceSucceeded === result.sourceSucceeded &&
         normalized.sourceRequestCount === result.sourceRequestCount && normalized.reason === result.reason &&
         normalized.retryAt === result.retryAt && JSON.stringify(normalized.diagnostics) === JSON.stringify(result.diagnostics);
@@ -163,7 +151,7 @@ function validOperation(value, identity, slugs, nowMs) {
         value.completedAtMs === null && value.reason === null
         : finiteTime(value.completedAtMs) && value.completedAtMs >= value.createdAtMs && value.completedAtMs <= nowMs &&
           (value.status === 'complete' ? UUID.test(value.ownerId) && value.currentSlug === null && value.reason === null && value.exitCode === 0 &&
-            value.results.every((/** @type {any} */ result) => ['cache_hit', 'probe_succeeded', 'published'].includes(result.status))
+            value.results.every((/** @type {any} */ result) => ['cache_hit', 'published'].includes(result.status))
             : value.status === 'stopped' ? UUID.test(value.ownerId) && value.currentSlug === null &&
               typeof value.reason === 'string' && SAFE_REASONS.has(value.reason) && [1, 2, 3].includes(value.exitCode)
               : value.reason === 'unknown_outcome' && value.exitCode === 3));
@@ -181,7 +169,7 @@ function validJob(value, nowMs) {
 
 /** Durable invocation ledger and bounded serial collector. The caller supplies a reviewed
  * branch collector and its target/source stores; this module never opens a network client.
- * @param {{store:any,repository:string,runId:string,commit:string,controlVersion:string,target:any,mode:'probe'|'probe-python'|'publish'|'publish-python'|'publish-five-python'|'publish-all-python',scope:'single'|'pilot'|'five'|'all',
+ * @param {{store:any,repository:string,runId:string,commit:string,controlVersion:string,target:any,mode:'publish-all-python',scope:'all',
  * collectorImpl:(input:any)=>Promise<any>,signal?:AbortSignal,nowImpl?:()=>number,randomUUIDImpl?:()=>string,
  * randomImpl?:()=>number,sleepImpl?:(ms:number,signal:AbortSignal)=>Promise<void>}} input
  */
@@ -189,7 +177,7 @@ export async function runActionsCollector(input) {
   const identity = identityFor(input);
   if (!identity || typeof input.collectorImpl !== 'function' || !input.store) return summarize(null, [], { reason: 'invalid_configuration', exitCode: 2 });
   let slugs;
-  try { slugs = actionsScopeSlugs(identity.scope); } catch { return summarize(identity, [], { reason: 'invalid_configuration', exitCode: 2 }); }
+  try { slugs = actionsSlugs(); } catch { return summarize(identity, [], { reason: 'invalid_configuration', exitCode: 2 }); }
   const { store, collectorImpl, nowImpl = Date.now, randomUUIDImpl = randomUUID, randomImpl = Math.random,
     sleepImpl = async (ms, signal) => { await delay(ms, undefined, { signal }); } } = input;
   const operationKey = actionsOperationKey(identity.repository, identity.runId);
@@ -255,7 +243,7 @@ export async function runActionsCollector(input) {
     }
     if (!entry || !validOperation(entry.data, identity, slugs, nowImpl())) return summarize(identity, results, { reason: 'operation_conflict', exitCode: 2 });
     operation = entry.data;
-    results = operation.results.map((/** @type {any} */ result, /** @type {number} */ index) => branchResult(result, slugs[index], identity.mode));
+    results = operation.results.map((/** @type {any} */ result, /** @type {number} */ index) => branchResult(result, slugs[index]));
     if (['complete', 'stopped'].includes(operation.status)) {
       return summarize(identity, results, { reason: operation.reason === null ? null : safeReason(operation.reason),
         exitCode: [0, 1, 2, 3].includes(operation.exitCode) ? operation.exitCode : 1, replayed: true });
@@ -280,7 +268,7 @@ export async function runActionsCollector(input) {
     if (oldJob?.data.status === 'running') {
       const oldOperation = await readEntry(store, oldJob.data.operationKey);
       const oldIdentity = identityFor(oldOperation?.data?.identity ?? {});
-      if (!oldOperation || !oldIdentity || !validOperation(oldOperation.data, oldIdentity, actionsScopeSlugs(oldIdentity.scope), nowImpl()) ||
+      if (!oldOperation || !oldIdentity || !validOperation(oldOperation.data, oldIdentity, actionsSlugs(), nowImpl()) ||
           oldOperation.data.ownerId !== oldJob.data.ownerId || !['running', 'complete', 'stopped', 'abandoned'].includes(oldOperation.data.status)) {
         return await finish('invalid_operation', 1);
       }
@@ -305,7 +293,7 @@ export async function runActionsCollector(input) {
       let observed = null;
       let returned, collectorThrew = false;
       try {
-        returned = await collectorImpl({ slug, publishQuote: identity.mode === 'publish' || Object.hasOwn(ACTIONS_PYTHON_PUBLISH_SCOPES, identity.mode), signal,
+        returned = await collectorImpl({ slug, signal,
           operationId, operationKey, ownerId, beforeSource: () => owns(15_000, slug), beforePublish: () => owns(0, slug),
           canContinue: () => !signal.aborted && nowImpl() < operation.deadlineAtMs,
           onResult: (/** @type {any} */ result) => { observed = result; } });
@@ -314,11 +302,11 @@ export async function runActionsCollector(input) {
         observed ??= { status: 'source_unknown', sourceSucceeded: false, sourceRequestCount: 0,
           reason: signal.aborted ? 'aborted' : 'unknown_outcome' };
       }
-      results[index] = branchResult(observed ?? returned, slug, identity.mode);
+      results[index] = branchResult(observed ?? returned, slug);
       await persistOperation({ ...operation, currentSlug: null, results });
       const result = results[index];
       if (collectorThrew) return await finish(signal.aborted ? 'aborted' : 'unknown_outcome', 1);
-      if (!['cache_hit', 'probe_succeeded', 'published'].includes(result.status)) {
+      if (!['cache_hit', 'published'].includes(result.status)) {
         const sourceStarted = results.some(item => item.sourceRequestCount > 0 || item.status === 'source_unknown');
         return await finish(result.reason ?? 'unavailable', result.status === 'not_attempted' && !sourceStarted && SKIP_REASONS.has(result.reason) ? 3 : 1);
       }

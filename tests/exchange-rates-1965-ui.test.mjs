@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import GREEN_MAPPING from '../data/superrich-branches.json' with { type: 'json' };
 import { state } from '../src/core/state.js';
+import { lang, setLang, t as translate } from '../src/core/i18n.js';
 import { ORANGE_BRANCHES } from '../src/data/exchange-rates-1965-branch.js';
 import { quoteExpiryMs } from '../src/data/exchange-rate-timing.js';
 import {
@@ -18,7 +19,7 @@ import {
   initBranchQueries,
   loadCachedBranchQuotes,
 } from '../src/features/exchange-rates-1965-branch.js';
-import { renderExchangeRates, sortVisibleIndexes } from '../src/ui/render.js';
+import { buildPopupContent, renderExchangeRates, renderList, sortVisibleIndexes } from '../src/ui/render.js';
 
 const START = Date.parse('2026-10-17T01:00:00.000Z');
 const greenSlugs = Object.keys(GREEN_MAPPING.branches);
@@ -94,7 +95,7 @@ test('brand detection supports slugs and location rows without changing the bool
   assert.equal(isExchangeLocation('regular'), false);
 });
 
-test('a cached orange branch panel uses its two buckets, company name, and official URL', async t => {
+test('a cached orange panel uses two compact denomination rows and the shared metadata layout', async t => {
   harness(t);
   t.mock.method(globalThis, 'fetch', async url => {
     assert.equal(url, BRANCH_CACHE_API);
@@ -106,17 +107,94 @@ test('a cached orange branch panel uses its two buckets, company name, and offic
   state.visIdx = [0];
   const html = renderExchangeRates(row);
 
-  assert.match(html, /SuperRich Currency Exchange \(1965\) Company Limited\./);
-  assert.match(html, /SuperRich 1965：USD 100＋50/);
-  assert.match(html, /SuperRich 1965：TWD 1,000–100/);
+  assert.match(html, /SuperRich 1965（橘標）/);
+  assert.match(html, /<span class="fx-denom">USD 50\/100<\/span>/);
+  assert.match(html, /<span class="fx-denom">TWD 100–1,000<\/span>/);
   assert.match(html, /1 TWD = 1\.02 THB/);
   assert.doesNotMatch(html, /1 USD = 1\.02 THB/);
   assert.equal((html.match(/fx-rate-row/g) || []).length, 2);
   assert.match(html, /superrich1965\.com\/en\/exchange-rate/);
   assert.doesNotMatch(html, /superrichthailand\.com/);
-  assert.match(html, /各分店可接受的鈔票面額可能不同/);
+  assert.match(html, /<span class="fx-disclaimer">非即時匯率，以櫃檯為準<\/span>/);
+  assert.match(html, /aria-label="SuperRich 1965 官網"[^>]*>官網<\/a>/);
+  assert.doesNotMatch(html, /Company Limited|SuperRich 1965：|fx-query|data-orange-query/);
   assert.equal(getExchangeRateCell1965(orangeSlugs[1], 'USD_1965'), null);
 });
+
+for (const language of ['zh', 'en']) {
+  test(`${language} list cards and map popups share compact metadata while preserving each brand's denominations`, async t => {
+    const { document } = harness(t);
+    const previousLanguage = lang;
+    const previousStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { setItem() {} } });
+    setLang(language);
+    t.after(() => {
+      setLang(previousLanguage);
+      if (previousStorage) Object.defineProperty(globalThis, 'localStorage', previousStorage);
+      else delete globalThis.localStorage;
+    });
+    const fetch = t.mock.method(globalThis, 'fetch', async url => {
+      assert.equal(url, BRANCH_CACHE_API);
+      return Response.json(cachePayload([orangeQuote()]));
+    });
+    await loadCachedBranchQuotes();
+    const list = { innerHTML: '' };
+    document.getElementById = id => id === 'loc-list' ? list : null;
+    state.isLoading = false;
+    state.data = [greenSlugs[0], orangeSlugs[0]].map(id => ({
+      id, nameEn: 'Fixture branch', nameZh: '測試分店', icon: '💱',
+      notesEn: 'Ground floor', notesZh: '地面層', alt: '', catEn: '', catZh: '',
+      type: 'Currency Exchange', status: 'Published', maps: '',
+    }));
+    state.exchangeRatesEnabled = true;
+    state.exchangeHasUsableSnapshot = true;
+    state.exchangeCompletedAt = new Date(START).toISOString();
+    state.exchangeRatesBySlug = { [greenSlugs[0]]: { rates: {
+      USD_100: { rateScaledE6: 33_000_000, displayDecimals: 2 },
+      USD_50: { rateScaledE6: 32_900_000, displayDecimals: 2 },
+      TWD: { rateScaledE6: 1_010_000, displayDecimals: 2 },
+    } } };
+
+    for (const [index, rowCount, officialHost] of [[0, 3, 'superrichthailand.com'], [1, 2, 'superrich1965.com']]) {
+      state.visIdx = [index];
+      renderList();
+      const popup = buildPopupContent(index);
+      const cardPanel = list.innerHTML.match(/<section class="fx-panel[\s\S]*?<\/section>/)?.[0];
+      const popupPanel = popup.match(/<section class="fx-panel[\s\S]*?<\/section>/)?.[0];
+      assert.ok(cardPanel);
+      assert.equal(cardPanel, popupPanel, 'cards and popups expose the same rate panel');
+      assert.equal((cardPanel.match(/class="fx-rate-row"/g) || []).length, rowCount);
+      assert.ok(cardPanel.includes(officialHost));
+      assert.ok(cardPanel.includes(`>${translate('fx_source_link')}</a>`));
+      assert.ok(cardPanel.includes(`<span class="fx-disclaimer">${translate('fx_disclaimer')}</span>`));
+      assert.match(cardPanel, /class="fx-checked"/);
+      assert.doesNotMatch(cardPanel, /fx-query|data-orange-query|Company Limited|SuperRich 1965[:：]/);
+    }
+    assert.equal(fetch.mock.callCount(), 1, 'rendering never requests a manual branch refresh');
+  });
+}
+
+for (const unavailableState of ['missing', 'expired', 'disabled', 'loading']) {
+  test(`orange ${unavailableState} state keeps the common panel without manual refresh controls`, t => {
+    harness(t);
+    const row = { id: orangeSlugs[0], nameEn: 'Fixture branch' };
+    if (unavailableState !== 'missing') {
+      state.exchange1965Branches[row.id] = {
+        quote: unavailableState === 'expired' ? orangeQuote() : null,
+        expiresAtMs: unavailableState === 'expired' ? START - 1 : null,
+        loading: unavailableState === 'loading',
+        reason: unavailableState === 'disabled' ? 'disabled' : null,
+        retryAtMs: START + 60_000,
+      };
+    }
+    const html = renderExchangeRates(row);
+    assert.equal((html.match(/暫無報價/g) || []).length, 2);
+    assert.match(html, /非即時匯率，以櫃檯為準/);
+    assert.match(html, /superrich1965\.com\/en\/exchange-rate/);
+    assert.doesNotMatch(html, /fx-query|data-orange-query|class="fx-checked"|33\.04 THB/);
+    if (unavailableState === 'loading') assert.match(html, /匯率載入中/);
+  });
+}
 
 test('mixed-brand sorting compares only the selected brand bucket from cached branch quotes', async t => {
   harness(t);
@@ -146,7 +224,8 @@ test('shared controls keep cached orange sorting usable while green is disabled'
   const options = ['default', 'USD_100', 'USD_50', 'TWD', 'USD_1965', 'TWD_1965']
     .map(value => ({ value, disabled: false }));
   const sort = { hidden: true, value: '', options };
-  document.getElementById = id => id === 'exchange-sort' ? sort : null;
+  const hint = { hidden: true };
+  document.getElementById = id => id === 'exchange-sort' ? sort : id === 'exchange-sort-hint' ? hint : null;
   state.exchangeSort = 'USD_1965';
   applyExchangeRatesPayload({ enabled: false, controlVersion: 'green-off', snapshot: null }, {
     requestStartedAtMs: START, responseReceivedAtMs: START, waitingForNewRun: false,
@@ -154,10 +233,16 @@ test('shared controls keep cached orange sorting usable while green is disabled'
   syncExchangeControls();
 
   assert.equal(sort.hidden, false);
+  assert.equal(hint.hidden, false);
   assert.equal(sort.value, 'USD_1965');
   assert.equal(options.find(option => option.value === 'USD_100').disabled, true);
   assert.equal(options.find(option => option.value === 'USD_1965').disabled, false);
   assert.equal(getExchangeRateCell1965(orangeSlugs[0], 'USD_1965').rateScaledE6, 33_040_000);
+
+  state.exchange1965Branches = {};
+  syncExchangeControls();
+  assert.equal(sort.hidden, true);
+  assert.equal(hint.hidden, true);
 });
 
 test('orange cache disable removes its selected sort without clearing green rates', async t => {

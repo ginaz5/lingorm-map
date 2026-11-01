@@ -3,85 +3,134 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Orange branch query — local mock</title>
+  <title>Exchange cards — local mock</title>
   <link rel="stylesheet" href="/styles.css">
   <style>
-    body{display:block;height:auto;overflow:auto;padding:12px}
-    main{width:min(100%,390px);margin:auto}
-    h1{font:600 16px/1.4 sans-serif;margin-bottom:8px}
-    .fixture-note{font:12px/1.5 sans-serif;margin-bottom:12px}
+    body{display:block;height:auto;overflow:auto;padding:16px}
+    main{width:100%;max-width:900px;margin:auto;box-sizing:border-box}
+    h1{font:600 18px/1.4 sans-serif;margin-bottom:8px}
+    h2{font:600 14px/1.4 sans-serif;margin:24px 0 8px}
+    .fixture-note{font:12px/1.5 sans-serif;margin-bottom:12px;color:var(--text-muted)}
+    .comparison-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;align-items:start}
     .loc-card{margin:0}
-    #mock-popup{margin-top:16px;padding:12px;border:1px solid var(--hairline);border-radius:8px}
+    .mock-popup-frame{padding:12px;border:1px solid var(--hairline);border-radius:12px;background:var(--canvas);min-width:0}
     #request-count{font:12px/1.5 monospace;margin:8px 0}
   </style>
 </head>
 <body>
 <main>
-  <h1>Orange branch query — local mock</h1>
-  <p class="fixture-note">Local mock only. First branch has a scheduled cache quote; second branch needs a manual query. Add ?lang=en, ?fail=1 or ?delay=1500.</p>
-  <div id="request-count">Requests: 0</div>
-  <div id="loc-list"></div>
-  <section id="mock-popup" aria-label="Mock map popup"></section>
+  <h1>Green and orange exchange cards</h1>
+  <p class="fixture-note">Local mock using the production card and popup renderers. No map SDK or remote API is loaded. Parameters: lang=en, state=missing/loading/expired, usd=split/missing50/missing100, theme=dark, width=320/390, sort=USD_100/USD_50/USD_1965. USD 50 and 100 have equal rates by default.</p>
+  <div class="exchange-toolbar">
+    <label class="exchange-sort-label" for="exchange-sort" id="exchange-sort-label" data-i18n="fx_sort_label" hidden></label>
+    <select class="filter-sel exchange-sort" id="exchange-sort" aria-describedby="exchange-sort-hint" hidden>
+      <option value="default" data-i18n="fx_sort_default"></option>
+      <option value="USD_100" data-i18n="fx_sort_usd_100"></option>
+      <option value="USD_50" data-i18n="fx_sort_usd_50"></option>
+      <option value="TWD" data-i18n="fx_sort_twd"></option>
+      <option value="USD_1965" data-i18n="fx_sort_usd_1965"></option>
+      <option value="TWD_1965" data-i18n="fx_sort_twd_1965"></option>
+    </select>
+    <p class="exchange-sort-hint" id="exchange-sort-hint" data-i18n="fx_sort_scope" hidden></p>
+  </div>
+  <div id="request-count" role="status">API requests: 0</div>
+  <h2>List cards</h2>
+  <div id="loc-list" class="comparison-grid"></div>
+  <h2>Map popup content (shared by Google and HERE)</h2>
+  <div id="mock-popups" class="comparison-grid"></div>
 </main>
 <script type="module">
+  import GREEN_MAPPING from '/data/superrich-branches.json' with { type: 'json' };
   import { state } from '/src/core/state.js';
-  import { setLang } from '/src/core/i18n.js';
+  import { setLang, t } from '/src/core/i18n.js';
   import { parseCSV } from '/src/data/csv-parser.js';
   import { ORANGE_BRANCHES } from '/src/data/exchange-rates-1965-branch.js';
   import { quoteExpiryMs } from '/src/data/exchange-rate-timing.js';
-  import { initBranchQueries } from '/src/features/exchange-rates-1965-branch.js';
   import { syncExchangeControls } from '/src/features/exchange-rates.js';
   import { renderList, buildPopupContent } from '/src/ui/render.js';
 
   const query = new URLSearchParams(location.search);
+  const language = query.get('lang') === 'en' ? 'en' : 'zh';
   const previousLanguage = localStorage.getItem('lang');
-  setLang(query.get('lang') === 'en' ? 'en' : 'zh');
+  setLang(language);
   if (previousLanguage === null) localStorage.removeItem('lang');
   else localStorage.setItem('lang', previousLanguage);
+  document.documentElement.lang = language === 'zh' ? 'zh-Hant' : 'en';
+  document.documentElement.dataset.theme = query.get('theme') === 'dark' ? 'dark' : 'light';
+  if (['320', '390'].includes(query.get('width'))) {
+    document.querySelector('main').style.maxWidth = `${query.get('width')}px`;
+  }
+  for (const element of document.querySelectorAll('[data-i18n]')) {
+    element.textContent = t(element.dataset.i18n);
+  }
+
   const rows = parseCSV(await (await fetch('/data/locations.csv')).text());
-  const slug = Object.keys(ORANGE_BRANCHES)[0];
-  const slugs = Object.keys(ORANGE_BRANCHES).slice(0, 2);
-  state.data = slugs.map(id => ({ ...rows.find(row => row.id === id), status: 'Published' }));
-  state.visIdx = state.data.map((_row, index) => index); state.isLoading = false;
-  let count = 0;
-  const controlVersion = '00000000-0000-4000-8000-000000000001';
-  const quoteFor = target => {
-    const now = Date.now();
-    return { schemaVersion: 1, slug: target, controlVersion,
-      attemptedAt: new Date(now).toISOString(), completedAt: new Date(now).toISOString(),
-      expiresAt: new Date(quoteExpiryMs(now)).toISOString(),
-      branch: { slug: target, ...ORANGE_BRANCHES[target], status: 'ok', rates: {
-        USD_1965: { denom: 'USD_1965', rateScaledE6: 32_770_000, displayDecimals: 2, unavailableReason: null },
-        TWD_1965: { denom: 'TWD_1965', rateScaledE6: 995_000, displayDecimals: 5, unavailableReason: null },
-      } },
+  const green = Object.keys(GREEN_MAPPING.branches)[0];
+  const orange = Object.keys(ORANGE_BRANCHES)[0];
+  state.data = [green, orange].map(id => ({ ...rows.find(row => row.id === id), status: 'Published' }));
+  state.visIdx = [0, 1];
+  state.isLoading = false;
+  state.favorites = new Set();
+  const now = Date.now();
+  const mode = query.get('state') || 'available';
+  const available = mode === 'available';
+  const loading = mode === 'loading';
+  const cell = (denom, value, decimals = 2) => ({ denom, rateScaledE6: value, displayDecimals: decimals, unavailableReason: null });
+  state.exchangeRatesEnabled = true;
+  state.exchangeHasUsableSnapshot = available;
+  state.exchangeRatesLoading = loading;
+  state.exchangeCompletedAt = new Date(now).toISOString();
+  state.exchangeRatesBySlug = { [green]: { rates: {
+    USD_100: cell('USD_100', 32_830_000),
+    USD_50: cell('USD_50', query.get('usd') === 'split' ? 32_780_000 : 32_830_000),
+    TWD: cell('TWD', 995_000, 5),
+  } } };
+  const missingDenom = { missing50: 'USD_50', missing100: 'USD_100' }[query.get('usd')];
+  if (missingDenom) {
+    state.exchangeRatesBySlug[green].rates[missingDenom] = {
+      denom: missingDenom, rateScaledE6: null, displayDecimals: null, unavailableReason: 'missing',
     };
+  }
+  const orangeQuote = {
+    schemaVersion: 1, slug: orange, controlVersion: 'fixture-orange',
+    attemptedAt: new Date(now).toISOString(), completedAt: new Date(now).toISOString(),
+    expiresAt: new Date(quoteExpiryMs(now)).toISOString(),
+    branch: { slug: orange, ...ORANGE_BRANCHES[orange], status: 'ok', rates: {
+      USD_1965: cell('USD_1965', 32_770_000),
+      TWD_1965: cell('TWD_1965', 990_000, 5),
+    } },
   };
-  const quotes = [quoteFor(slug)];
-  const nativeFetch = window.fetch;
-  window.fetch = async (url, options) => {
-    if (url === '/api/exchange-rates-1965-cache') return Response.json({ schemaVersion: 1,
-      checkedAt: new Date().toISOString(), enabled: true, controlVersion, quotes });
-    if (url !== '/api/exchange-rates-1965-branch') return nativeFetch(url, options);
-    const target = JSON.parse(options.body).slug;
-    count++;
-    document.getElementById('request-count').textContent = `Requests: ${count}`;
-    await new Promise(resolve => setTimeout(resolve, Number(query.get('delay') || 400)));
-    const fail = query.has('fail');
-    const quote = quoteFor(target);
-    if (!fail) quotes.push(quote);
-    return Response.json({ schemaVersion: 1, slug: target, checkedAt: new Date().toISOString(), enabled: true,
-      controlVersion, quote: fail ? null : quote, reason: fail ? 'cooldown' : null, retryAfterSeconds: fail ? 5 : 0 }, { status: fail ? 429 : 200 });
+  state.exchange1965Branches = mode === 'missing' ? {} : { [orange]: {
+    quote: available || mode === 'expired' ? orangeQuote : null,
+    expiresAtMs: mode === 'expired' ? now - 1 : quoteExpiryMs(now),
+    loading, reason: null, retryAtMs: null,
+  } };
+  const selected = query.get('sort');
+  state.exchangeSort = ['USD_100', 'USD_50', 'USD_1965'].includes(selected) ? selected : 'default';
+
+  // Any unexpected API call fails locally and is visible in the counter.
+  let count = 0;
+  window.fetch = async () => {
+    document.getElementById('request-count').textContent = `API requests: ${++count}`;
+    throw new Error('Fixture rendering must not request remote APIs');
   };
   const render = () => {
     syncExchangeControls();
     renderList();
-    document.getElementById('mock-popup').innerHTML = buildPopupContent(0);
+    document.getElementById('mock-popups').innerHTML = state.data.map((_row, index) =>
+      `<section class="mock-popup-frame" aria-label="${index === 0 ? 'Green' : 'Orange'} map popup">${buildPopupContent(index)}</section>`
+    ).join('');
   };
-  initBranchQueries(render);
-  render();
-  // Existing card actions are intentionally inert in this fixture.
+  document.getElementById('exchange-sort').addEventListener('change', event => {
+    state.exchangeSort = event.target.value;
+    render();
+  });
+  // Card actions remain inert; only local sorting is interactive in this fixture.
   window.activateCard = () => {};
   window.toggleFavorite = event => event?.stopPropagation?.();
+  window.openInGoogleMaps = () => {};
+  window.navigateTo = () => {};
+  render();
 </script>
 </body>
 </html>

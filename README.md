@@ -14,17 +14,20 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 - Popup with Navigate + Open in Google Maps buttons (responsive: icon-only on mobile)
 - zh / en bilingual UI with one-click toggle
 - Light / dark theme
-- Bilingual Fan Resources dialog with Abu Chicken Kwong (epoh)’s Google Maps list and source attribution, LingOrm Fanpage, its schedule shortcut, LOism, LingOrmNews, and LingOrm Pics
+- Bilingual Fan Resources dialog with Abu Chicken Kwong (epoh)’s Google Maps list and source attribution, LingOrm Fanpage, its schedule shortcut, LOism, LingOrmNews, LingOrm Pics, LingOrm Music Archive, and LingOrm · Feed Your Mind
 - Low-friction issue reporting via Netlify Forms
 - Mobile-responsive with map / list tab switching and scroll
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
-- SuperRich Thailand currency-exchange overlay: 26 branches shown like any other location, with USD 100 / USD 50 / TWD buying rates updated every 30 minutes from 08:00 to 22:30 Thailand time and best-rate sorting when quotes are available (rate fetching is gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
+- SuperRich Thailand currency-exchange overlay: 26 branches shown like any other location, with USD 50/100 (combined when equal) / TWD buying rates updated every 30 minutes from 08:00 to 22:30 Thailand time and best-rate sorting when quotes are available (rate fetching is gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
 
 SuperRich 1965（橘標）沿用同一個「換匯」標籤、卡片與排序選單，提供
 USD／TWD 指定面額買入價、橘色 marker／群聚，以及 Google／HERE popup。
-頁面及單店「重新整理匯率」按鈕只讀快取，不會向官網取價。有效期與綠標相同，
-排序只比較已有有效報價的分店。38 家橘標位置由 Notion 管理；報價由綁定部署的
+兩品牌的卡片與 popup 採用相同版型：精簡品牌名稱、面額、更新時間、聲明與官網連結；
+綠標 USD 50、100 同價時合併顯示 USD 50/100，異價或缺價時分開；橘標固定顯示 USD 50/100。
+兩品牌 TWD 各自保留指定面額。頁面自動只讀快取，不會向官網取價；
+卡片不提供單店刷新按鈕。有效期與綠標相同，排序選單旁統一說明只比較所選品牌
+已有有效報價的分店。38 家橘標位置由 Notion 管理；報價由綁定部署的
 Netlify scheduler／Python background worker 每半小時更新，時段為泰國 08:00～22:30。
 2026-10-24 PR #18 正式部署已通過兩輪自動排程驗收，後續追加回查也成功；實際部署與
 各輪來源／發布數量見[最新上線紀錄](docs/superrich1965-netlify-pr18-release-2026-10-24.zh-TW.md)。
@@ -392,11 +395,13 @@ validation and therefore blocks the build/deploy path. Paused and inactive
 drafts may remain unclassified until they are ready to publish.
 
 The supported countries are Thailand (`TH`), Vietnam (`VN`), Taiwan (`TW`),
-Hong Kong (`HK`), Macau (`MO`), and Japan (`JP`). Taiwan destinations are `taipei`,
+Hong Kong (`HK`), Macau (`MO`), Japan (`JP`), and the United Arab Emirates (`AE`).
+Taiwan destinations are `taipei`,
 `taichung`, `kaohsiung`, `tainan`, and `hualien`; Hong Kong and Macau use
-`hong-kong` and `macau` respectively; Japan currently supports `tokyo` (東京 / Tokyo).
-The existing Thailand and Vietnam keys
-remain stable.
+`hong-kong` and `macau` respectively; Japan currently supports `tokyo` (東京 / Tokyo),
+and the United Arab Emirates supports `dubai` (杜拜 / Dubai).
+Thailand also supports `nakhon-pathom` (佛統府 / Nakhon Pathom), including
+Sam Phran. The existing Thailand and Vietnam keys remain stable.
 
 `Type` is exported as public location metadata and accepts `LingOrm`,
 `JKR Picks`, `JKR Fan Projects`, `Admin Picks`, or `Currency Exchange`. A blank Type remains

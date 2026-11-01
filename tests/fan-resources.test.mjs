@@ -30,6 +30,8 @@ function makeEnvironment() {
     ['lingorm_fanpage', 'source'], ['lingorm_fanpage', 'schedule'], ['lingorm_fanpage', 'website'],
     ['loism', 'source'], ['loism', 'website'], ['lingorm_news', 'source'], ['lingorm_news', 'website'],
     ['lingorm_pics', 'source'], ['lingorm_pics', 'website'],
+    ['lingorm_music', 'source'], ['lingorm_music', 'website'],
+    ['lingorm_feed_your_mind', 'source'], ['lingorm_feed_your_mind', 'website'],
   ].map(([resourceId, linkType]) => {
     const card = element();
     card.setAttribute('data-resource-id', resourceId);
@@ -161,14 +163,15 @@ test('each resource link queues its card and link type without preventing naviga
         ui_language: 'zh', interaction_source: 'desktop_header',
       });
     }
-    assert.equal(globalThis.window.dataLayer.length, 13, 'one open plus exactly eleven clicks');
+    const trackedClicks = links.length + 2; // Initial event, one open, and one click per link.
+    assert.equal(globalThis.window.dataLayer.length, trackedClicks, 'one open plus exactly one click per link');
     dialog.close();
     links[0].dispatchEvent(new Event('click'));
-    assert.equal(globalThis.window.dataLayer.length, 13, 'closed dialog does not track');
+    assert.equal(globalThis.window.dataLayer.length, trackedClicks, 'closed dialog does not track');
     setLang('en');
     controller.open(more);
     links[3].dispatchEvent(Object.assign(new Event('auxclick'), { button: 2 }));
-    assert.equal(globalThis.window.dataLayer.length, 14, 'right click does not track');
+    assert.equal(globalThis.window.dataLayer.length, trackedClicks + 1, 'right click does not track');
     links[3].dispatchEvent(Object.assign(new Event('auxclick'), { button: 1 }));
     assert.deepEqual(globalThis.window.dataLayer.at(-1), {
       event: 'fan_resource_click', resource_id: 'lingorm_fanpage', link_type: 'schedule',
@@ -177,7 +180,7 @@ test('each resource link queues its card and link type without preventing naviga
     const cancelled = new Event('click', { cancelable: true });
     cancelled.preventDefault();
     links[3].dispatchEvent(cancelled);
-    assert.equal(globalThis.window.dataLayer.length, 15, 'cancelled navigation does not track');
+    assert.equal(globalThis.window.dataLayer.length, trackedClicks + 2, 'cancelled navigation does not track');
   } finally {
     setLang('zh');
     globalThis.localStorage = previousStorage;
@@ -185,11 +188,12 @@ test('each resource link queues its card and link type without preventing naviga
   }
 });
 
-test('all five cards have stable analytics IDs and all eleven links have a defined type', async () => {
+test('all seven cards have stable analytics IDs and all fifteen links have a defined type', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const cards = [...html.matchAll(/<article class="fan-resource" data-resource-id="([^"]+)">([\s\S]*?)<\/article>/g)];
   assert.deepEqual(cards.map(card => card[1]), [
-    'lingorm_google_maps', 'lingorm_fanpage', 'loism', 'lingorm_news', 'lingorm_pics',
+    'lingorm_google_maps', 'lingorm_fanpage', 'loism', 'lingorm_news', 'lingorm_pics', 'lingorm_music',
+    'lingorm_feed_your_mind',
   ]);
   for (const card of cards) {
     for (const link of card[2].matchAll(/<a\b[^>]*>/g)) {
@@ -206,7 +210,7 @@ test('resource links distinguish the Fanpage homepage from its schedule shortcut
   const dialog = html.match(/<dialog\b[\s\S]*?<\/dialog>/)?.[0];
   assert.ok(dialog);
   const links = [...dialog.matchAll(/<a\b[^>]*>/g)].map(match => match[0]);
-  assert.equal(links.length, 11);
+  assert.equal(links.length, 15);
   for (const [url, className] of [
     ['https://maps.app.goo.gl/eSnPtMYzPsqS3PjU7?g_st=i', 'fan-resource-visit'],
     ['https://www.threads.com/@___epoh___/post/DPv0bDVieSE', 'fan-resource-source'],
@@ -219,6 +223,10 @@ test('resource links distinguish the Fanpage homepage from its schedule shortcut
     ['https://www.threads.com/@lingormcrew', 'fan-resource-source'],
     ['https://lingorm.pics/', 'fan-resource-visit'],
     ['https://x.com/_rr0715', 'fan-resource-source'],
+    ['https://orm2527.github.io/my-music/', 'fan-resource-visit'],
+    ['https://www.threads.com/share/FL9IREfmh/', 'fan-resource-source'],
+    ['https://lingormfeedyourmind.com/', 'fan-resource-visit'],
+    ['https://www.threads.com/share/DZSk9W9bZ/', 'fan-resource-source'],
   ]) {
     const link = links.find(markup => markup.includes(`href="${url}"`));
     assert.ok(link, url);
@@ -227,6 +235,30 @@ test('resource links distinguish the Fanpage homepage from its schedule shortcut
     assert.match(link, /rel="noopener noreferrer"/);
     assert.match(link, /data-i18n-aria="fan_resources_/);
   }
+});
+
+test('the music archive card keeps its original Threads source beside the website', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const card = html.match(/<article class="fan-resource" data-resource-id="lingorm_music">[\s\S]*?<\/article>/)?.[0];
+  assert.ok(card);
+  assert.match(card, /<h3>LingOrm Music Archive<\/h3>/);
+  assert.match(card, /data-i18n="fan_resources_music_subtitle"/);
+  assert.match(card, /data-i18n="fan_resources_music_desc"/);
+  assert.match(card, /data-i18n="fan_resources_music_source"/);
+  assert.match(card, /href="https:\/\/www\.threads\.com\/share\/FL9IREfmh\/"/);
+  assert.match(card, /href="https:\/\/orm2527\.github\.io\/my-music\/"/);
+});
+
+test('the fiction index card keeps its original Threads source beside the website', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const card = html.match(/<article class="fan-resource" data-resource-id="lingorm_feed_your_mind">[\s\S]*?<\/article>/)?.[0];
+  assert.ok(card);
+  assert.match(card, /<h3>LingOrm · Feed Your Mind<\/h3>/);
+  assert.match(card, /data-i18n="fan_resources_fym_subtitle"/);
+  assert.match(card, /data-i18n="fan_resources_fym_desc"/);
+  assert.match(card, /data-i18n="fan_resources_fym_source"/);
+  assert.match(card, /href="https:\/\/www\.threads\.com\/share\/DZSk9W9bZ\/"/);
+  assert.match(card, /href="https:\/\/lingormfeedyourmind\.com\/"/);
 });
 
 test('the original map card keeps its author source beside the complete Google Maps list', async () => {

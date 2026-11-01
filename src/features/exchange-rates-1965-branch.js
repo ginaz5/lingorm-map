@@ -216,15 +216,6 @@ export function cancelBranchQueries() {
 /** @param {()=>void} listener */
 export function initBranchQueries(listener) {
   onChange = listener;
-  // Capture avoids activating the surrounding list card before its button
-  // handles the event; works for re-rendered list cards and both map popups.
-  document.addEventListener('click', event => {
-    const button = event.target instanceof Element ? event.target.closest('[data-orange-query]') : null;
-    if (!(button instanceof HTMLButtonElement)) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (!button.disabled) void queryOrangeBranch(button.dataset.orangeQuery || '');
-  }, true);
   const resume = () => {
     expireBranchQueries();
     if (canReadCache()) void loadCachedBranchQuotes();

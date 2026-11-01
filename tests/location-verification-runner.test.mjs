@@ -334,8 +334,22 @@ test('Candidate address evidence suggests supported Country Code and Destination
   );
 });
 
-test('Candidate address evidence maps TW, HK, MO, and JP destinations', () => {
+test('Candidate address evidence maps supported international and Nakhon Pathom destinations', () => {
   const cases = [
+    ...['Nakhon Pathom', 'นครปฐม', '佛統府'].map(name => ({
+      countryCode: 'TH',
+      destinationKey: 'nakhon-pathom',
+      formattedAddress: `43/3, Sam Phran, ${name}, Thailand`,
+      area: { longText: name, shortText: name, types: ['administrative_area_level_1'] },
+      country: { longText: 'Thailand', shortText: 'TH', types: ['country'] },
+    })),
+    ...['Dubai', 'دبي'].map(name => ({
+      countryCode: 'AE',
+      destinationKey: 'dubai',
+      formattedAddress: `Dubai International Airport, ${name}, United Arab Emirates`,
+      area: { longText: name, shortText: name, types: ['administrative_area_level_1'] },
+      country: { longText: 'United Arab Emirates', shortText: 'AE', types: ['country'] },
+    })),
     ...['Tokyo', 'Tokyo-to', '東京都'].map(name => ({
       countryCode: 'JP',
       destinationKey: 'tokyo',
