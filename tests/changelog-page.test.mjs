@@ -19,8 +19,8 @@ test('changelog data is newest-first and has bilingual copy', () => {
 
   const latest = CHANGELOG[0];
   assert.equal(new Date(latest.publishTime).getUTCFullYear(), 2026);
-  assert.equal(localizeChangelogItem(latest, 'zh').title, '新增 SuperRich 1965 橘標分店與匯率');
-  assert.equal(localizeChangelogItem(latest, 'en').title, 'SuperRich 1965 branches and rates are now on the map');
+  assert.equal(localizeChangelogItem(latest, 'zh').title, '新增橘標分店與匯率');
+  assert.equal(localizeChangelogItem(latest, 'en').title, 'SuperRich 1965 joins the map');
   assert.equal(new Set(CHANGELOG.map(item => item.id)).size, CHANGELOG.length);
   for (const item of CHANGELOG) {
     for (const language of ['zh', 'en']) {

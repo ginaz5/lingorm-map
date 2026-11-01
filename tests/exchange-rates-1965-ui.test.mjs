@@ -108,7 +108,7 @@ test('a cached orange panel uses two compact denomination rows and the shared me
   const html = renderExchangeRates(row);
 
   assert.match(html, /SuperRich 1965（橘標）/);
-  assert.match(html, /<span class="fx-denom">USD 100＋50<\/span>/);
+  assert.match(html, /<span class="fx-denom">USD 50\/100<\/span>/);
   assert.match(html, /<span class="fx-denom">TWD 100–1,000<\/span>/);
   assert.match(html, /1 TWD = 1\.02 THB/);
   assert.doesNotMatch(html, /1 USD = 1\.02 THB/);

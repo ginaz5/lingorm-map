@@ -212,7 +212,7 @@ header {
 .exchange-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
 .exchange-sort-label{font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap;flex:0 0 auto}
 .exchange-sort-label[hidden]{display:none}
-.exchange-sort{flex:0 1 145px;max-width:145px}
+.filter-sel.exchange-sort{flex:0 1 auto;width:auto;max-width:100%}
 .exchange-sort[hidden]{display:none}
 .exchange-sort-hint{flex-basis:100%;margin:0;font-size:11px;line-height:1.4;color:var(--text-muted)}
 .exchange-sort-hint[hidden]{display:none}

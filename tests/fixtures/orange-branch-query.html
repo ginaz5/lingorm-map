@@ -20,7 +20,7 @@
 <body>
 <main>
   <h1>Green and orange exchange cards</h1>
-  <p class="fixture-note">Local mock using the production card and popup renderers. No map SDK or remote API is loaded. Parameters: lang=en, state=missing/loading/expired, theme=dark, width=320/390, sort=USD_100/USD_1965.</p>
+  <p class="fixture-note">Local mock using the production card and popup renderers. No map SDK or remote API is loaded. Parameters: lang=en, state=missing/loading/expired, usd=split/missing50/missing100, theme=dark, width=320/390, sort=USD_100/USD_50/USD_1965. USD 50 and 100 have equal rates by default.</p>
   <div class="exchange-toolbar">
     <label class="exchange-sort-label" for="exchange-sort" id="exchange-sort-label" data-i18n="fx_sort_label" hidden></label>
     <select class="filter-sel exchange-sort" id="exchange-sort" aria-describedby="exchange-sort-hint" hidden>
@@ -82,9 +82,15 @@
   state.exchangeCompletedAt = new Date(now).toISOString();
   state.exchangeRatesBySlug = { [green]: { rates: {
     USD_100: cell('USD_100', 32_830_000),
-    USD_50: cell('USD_50', 32_780_000),
+    USD_50: cell('USD_50', query.get('usd') === 'split' ? 32_780_000 : 32_830_000),
     TWD: cell('TWD', 995_000, 5),
   } } };
+  const missingDenom = { missing50: 'USD_50', missing100: 'USD_100' }[query.get('usd')];
+  if (missingDenom) {
+    state.exchangeRatesBySlug[green].rates[missingDenom] = {
+      denom: missingDenom, rateScaledE6: null, displayDecimals: null, unavailableReason: 'missing',
+    };
+  }
   const orangeQuote = {
     schemaVersion: 1, slug: orange, controlVersion: 'fixture-orange',
     attemptedAt: new Date(now).toISOString(), completedAt: new Date(now).toISOString(),
@@ -100,7 +106,7 @@
     loading, reason: null, retryAtMs: null,
   } };
   const selected = query.get('sort');
-  state.exchangeSort = ['USD_100', 'USD_1965'].includes(selected) ? selected : 'default';
+  state.exchangeSort = ['USD_100', 'USD_50', 'USD_1965'].includes(selected) ? selected : 'default';
 
   // Any unexpected API call fails locally and is visible in the counter.
   let count = 0;

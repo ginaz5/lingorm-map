@@ -1,6 +1,7 @@
 import BRANCH_MAPPING from '../../data/superrich-branches.json' with { type: 'json' };
 
 import { state } from '../core/state.js';
+import { t } from '../core/i18n.js';
 import { DENOMS } from '../data/exchange-rates.js';
 import { cancelBranchQueries, getBranchQueryState } from './exchange-rates-1965-branch.js';
 import { DENOMS_1965 } from '../data/exchange-rates-1965.js';
@@ -195,6 +196,25 @@ export function isSupportedLocation(row) {
 /** @param {string} slug @param {'USD_100'|'USD_50'|'TWD'} denom */
 export function getExchangeRateCell(slug, denom) {
   return state.exchangeRatesBySlug[slug]?.rates?.[denom] ?? null;
+}
+
+/** @param {string} slug */
+export function canCombineGreenUsd(slug) {
+  if (state.exchangeRatesEnabled !== true || !state.exchangeHasUsableSnapshot) return false;
+  const hundred = getExchangeRateCell(slug, 'USD_100');
+  const fifty = getExchangeRateCell(slug, 'USD_50');
+  return Number.isSafeInteger(hundred?.rateScaledE6) &&
+    Number.isInteger(hundred?.displayDecimals) && Number.isInteger(fifty?.displayDecimals) &&
+    hundred.rateScaledE6 === fifty?.rateScaledE6;
+}
+
+// A combined sort represents both denominations only when they have identical
+// coverage and rates across the snapshot, independent of the current filters.
+export function shouldCombineGreenUsdSort() {
+  const quotedSlugs = Object.keys(state.exchangeRatesBySlug).filter(slug =>
+    ['USD_100', 'USD_50'].some(denom =>
+      Number.isSafeInteger(state.exchangeRatesBySlug[slug]?.rates?.[denom]?.rateScaledE6)));
+  return quotedSlugs.length > 0 && quotedSlugs.every(canCombineGreenUsd);
 }
 
 /** @param {ExchangeSort|string} value @returns {value is ExchangeSort} */
@@ -411,6 +431,10 @@ export function scheduleExchangeAction() {
 }
 
 export function syncExchangeControls() {
+  const combinedUsd = shouldCombineGreenUsdSort();
+  // The two rankings are identical while combined; retain a selected USD 50
+  // ranking using the visible USD 100 option rather than a hidden option.
+  if (combinedUsd && state.exchangeSort === 'USD_50') state.exchangeSort = 'USD_100';
   if (state.exchangeSort !== 'default' && !isExchangeSortAvailable(state.exchangeSort)) {
     state.exchangeSort = 'default';
   }
@@ -422,10 +446,26 @@ export function syncExchangeControls() {
   sort.hidden = sortHidden;
   if (sortLabel) sortLabel.hidden = sortHidden;
   if (sortHint) sortHint.hidden = sortHidden;
-  sort.value = state.exchangeSort;
+  const usd50 = Array.from(sort.options).find(option => option.value === 'USD_50');
+  if (combinedUsd) {
+    usd50?.remove();
+  } else if (!usd50) {
+    const usd100 = Array.from(sort.options).find(option => option.value === 'USD_100');
+    if (usd100) {
+      const option = document.createElement('option');
+      option.value = 'USD_50';
+      option.dataset.i18n = 'fx_sort_usd_50';
+      option.textContent = t('fx_sort_usd_50');
+      usd100.after(option);
+    }
+  }
   for (const option of sort.options) {
+    if (option.value === 'USD_100') {
+      option.textContent = t(combinedUsd ? 'fx_sort_usd_combined' : 'fx_sort_usd_100');
+    }
     if (option.value !== 'default') option.disabled = !isExchangeSortAvailable(option.value);
   }
+  sort.value = state.exchangeSort;
 }
 
 /** @param {(change:{sortChanged?:boolean})=>void} onChange */

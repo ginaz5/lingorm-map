@@ -19,12 +19,13 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 - Mobile-responsive with map / list tab switching and scroll
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
-- SuperRich Thailand currency-exchange overlay: 26 branches shown like any other location, with USD 100 / USD 50 / TWD buying rates updated every 30 minutes from 08:00 to 22:30 Thailand time and best-rate sorting when quotes are available (rate fetching is gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
+- SuperRich Thailand currency-exchange overlay: 26 branches shown like any other location, with USD 50/100 (combined when equal) / TWD buying rates updated every 30 minutes from 08:00 to 22:30 Thailand time and best-rate sorting when quotes are available (rate fetching is gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
 
 SuperRich 1965（橘標）沿用同一個「換匯」標籤、卡片與排序選單，提供
 USD／TWD 指定面額買入價、橘色 marker／群聚，以及 Google／HERE popup。
 兩品牌的卡片與 popup 採用相同版型：精簡品牌名稱、面額、更新時間、聲明與官網連結；
-綠標保留三列、橘標保留兩列指定面額。頁面自動只讀快取，不會向官網取價；
+綠標 USD 50、100 同價時合併顯示 USD 50/100，異價或缺價時分開；橘標固定顯示 USD 50/100。
+兩品牌 TWD 各自保留指定面額。頁面自動只讀快取，不會向官網取價；
 卡片不提供單店刷新按鈕。有效期與綠標相同，排序選單旁統一說明只比較所選品牌
 已有有效報價的分店。38 家橘標位置由 Notion 管理；報價由綁定部署的
 Netlify scheduler／Python background worker 每半小時更新，時段為泰國 08:00～22:30。

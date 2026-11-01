@@ -112,7 +112,7 @@ test('currency exchange rate panel notices are bilingual', () => {
 
   // Denomination labels are plain currency/amount strings (no "banknote"
   // wording in either language), so zh and en are identical by design.
-  const denomKeys = ['fx_denom_usd_100', 'fx_denom_usd_50', 'fx_denom_twd'];
+  const denomKeys = ['fx_denom_usd_100', 'fx_denom_usd_50', 'fx_denom_usd_combined', 'fx_denom_twd'];
   for (const key of denomKeys) {
     assert.equal(typeof T.zh[key], 'string', `missing zh ${key}`);
     assert.equal(typeof T.en[key], 'string', `missing en ${key}`);
@@ -151,8 +151,9 @@ test('exchange-rate sort labels distinguish brands by color and text in both lan
   const labels = [
     ['fx_sort_usd_100', '🟢 綠標 USD 100', '🟢 Green USD 100'],
     ['fx_sort_usd_50', '🟢 綠標 USD 50', '🟢 Green USD 50'],
+    ['fx_sort_usd_combined', '🟢 綠標 USD 50/100', '🟢 Green USD 50/100'],
     ['fx_sort_twd', '🟢 綠標 TWD', '🟢 Green TWD'],
-    ['fx_sort_usd_1965', '🟠 橘標 USD', '🟠 Orange USD'],
+    ['fx_sort_usd_1965', '🟠 橘標 USD 50/100', '🟠 Orange USD 50/100'],
     ['fx_sort_twd_1965', '🟠 橘標 TWD', '🟠 Orange TWD'],
   ];
   for (const [key, zh, en] of labels) {
@@ -164,8 +165,9 @@ test('exchange-rate sort labels distinguish brands by color and text in both lan
 test('both brands use compact translated headings, denomination labels and common notices', () => {
   assert.equal(T.zh.fx_brand_orange, 'SuperRich 1965（橘標）');
   assert.equal(T.en.fx_brand_orange, 'SuperRich 1965 (orange)');
-  assert.equal(T.zh.fx_denom_usd_1965, 'USD 100＋50');
-  assert.equal(T.en.fx_denom_usd_1965, 'USD 100+50');
+  assert.equal(T.zh.fx_denom_usd_1965, 'USD 50/100');
+  assert.equal(T.en.fx_denom_usd_1965, 'USD 50/100');
+  assert.equal(T.zh.fx_denom_usd_combined, 'USD 50/100');
   assert.equal(T.zh.fx_denom_twd_1965, 'TWD 100–1,000');
   assert.equal(T.en.fx_denom_twd_1965, 'TWD 100–1,000');
   assert.equal(T.zh.fx_source_link, '官網');

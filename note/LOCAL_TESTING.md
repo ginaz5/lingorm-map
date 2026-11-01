@@ -274,7 +274,7 @@ Deploy Preview 與 branch deploy **不會自動排程**，只能手動觸發；�
    ```
 
    預期 `enabled: true`、`snapshot` 非 `null`；前台以「換匯」標籤篩選後，26 個
-   分店都能看到三列報價（或明確的「暫無報價」，不是空白或錯誤畫面）。
+   分店都能看到報價（USD 50、100 同價時合併，異價或缺價時分開；無報價顯示「暫無報價」，不是空白或錯誤畫面）。
 
 5. **再驗證更新時段內接下來兩個排定批次**（每 30 分鐘一次；即等 30～60 分鐘後重
    查一次 API 的 `checkedAt`／`snapshot.completedAt` 有沒有前進），確認
@@ -429,12 +429,13 @@ operation ledger、38 店有效 quote 與目前 binding，細節見 Netlify 維�
 ### 綠標／橘標 UI 本機驗收
 
 開啟 `/tests/fixtures/orange-branch-query.html`，並排比較綠標與橘標的正式卡片及 popup renderer。
-確認兩品牌使用相同資訊順序與精簡底部資訊，綠標三列、橘標兩列面額；
+確認兩品牌使用相同資訊順序與精簡底部資訊；預設 USD 同價時，兩品牌都顯示 USD 50/100 與 TWD 兩列。
 橘標品牌名為 SuperRich 1965（橘標），面額不再重複品牌前綴。
 卡片與 popup 均不顯示刷新按鈕、重試時間或重複的排序提示。
 排序選單旁僅有一份有效報價範圍提示，所有報價不可用時一起隱藏。
 
 - `lang=en` 測英文，`theme=dark` 測深色模式。
+- `usd=split` 測綠標異價；`usd=missing50`、`usd=missing100` 測單一面額缺價。三種情況皆恢復綠標 USD 100／USD 50 分開顯示與排序；缺價幣別停用。預設同價時選單只保留綠標 USD 50/100，`sort=USD_50` 應轉到合併選項，排名不變。
 - `state=missing`、`state=loading`、`state=expired` 分別測缺報價、載入中與過期。
 - `width=320`、`width=390` 可固定狹窄卡片寬度；另測桌機寬度，檢查面額、數字及底部連結不溢出，「最佳」與載入提示跟隨品牌色。
 

@@ -100,11 +100,11 @@ test('checkWhatsNew previews the current release with general update copy', () =
       env.dom.elements['wn-list'].innerHTML.match(/class="wn-feat"/g)?.length,
       3,
     );
-    assert.match(env.dom.elements['wn-list'].innerHTML, /新增 SuperRich 1965 橘標分店與匯率/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /卡片與地圖彈窗採用一致版型/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /新增橘標分店與匯率/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /新增 38 間橘標分店，可比較 USD／TWD 買入匯率。/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /重新整理匯率/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /點頁首標題，回到完整地圖/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /粉絲資源新增音樂與同人文網站/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /點標題回到完整地圖/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /新增音樂與同人文資源/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增杜拜與佛統府目的地支援/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /手機版新增篩選面板/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /手機地圖彈窗置中，地點筆記更好讀/);
@@ -132,11 +132,11 @@ test('checkWhatsNew shows the catch-up release after September 28 and refreshes 
     updateWhatsNewLangUI();
     const html = env.dom.elements['wn-list'].innerHTML;
     assert.equal(html.match(/class="wn-feat"/g)?.length, WHATS_NEW_PREVIEW_LIMIT);
-    assert.match(html, /SuperRich 1965 branches and rates are now on the map/);
-    assert.match(html, /Cards and map popups share one layout/);
+    assert.match(html, /SuperRich 1965 joins the map/);
+    assert.match(html, /Browse 38 orange branches and compare USD\/TWD buying rates\./);
     assert.doesNotMatch(html, /Refresh rates/);
-    assert.match(html, /Return to the full map from the header/);
-    assert.match(html, /Concert audio and fan fiction in Fan Resources/);
+    assert.match(html, /Tap the title to reset the map/);
+    assert.match(html, /More music and fan fiction/);
     assert.doesNotMatch(html, /Destination support for Dubai and Nakhon Pathom/);
     assert.doesNotMatch(html, /A new filter sheet on mobile/);
     assert.doesNotMatch(html, /Tokyo and more locations added/);

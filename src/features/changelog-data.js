@@ -24,12 +24,12 @@ export const CHANGELOG = [
   {
     id: 'feat-020',
     title: {
-      zh: '新增 SuperRich 1965 橘標分店與匯率',
-      en: 'SuperRich 1965 branches and rates are now on the map',
+      zh: '新增橘標分店與匯率',
+      en: 'SuperRich 1965 joins the map',
     },
     description: {
-      zh: '地圖新增 38 間 SuperRich 1965 橘標分店，可查看 USD／TWD 買入匯率。兩品牌的卡片與地圖彈窗採用一致版型，保留各自面額與顏色；排序只比較所選品牌有有效報價的分店。橘標匯率於泰國時間 08:00～22:30 每半小時排程更新，頁面會自動載入報價。匯率非即時，以櫃檯為準。',
-      en: 'Browse 38 SuperRich 1965 orange branches and compare USD/TWD buying rates. Cards and map popups share one layout while keeping each brand’s denominations and colors. Sorting compares branches of the selected brand with valid quotes. Orange rates update on a half-hour schedule from 08:00 to 22:30 Thailand time and load automatically. Rates are not real-time; counter rates apply.',
+      zh: '新增 38 間橘標分店，可比較 USD／TWD 買入匯率。',
+      en: 'Browse 38 orange branches and compare USD/TWD buying rates.',
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-10-31T00:00:00Z'),
@@ -38,12 +38,12 @@ export const CHANGELOG = [
   {
     id: 'feat-021',
     title: {
-      zh: '點頁首標題，回到完整地圖',
-      en: 'Return to the full map from the header',
+      zh: '點標題回到完整地圖',
+      en: 'Tap the title to reset the map',
     },
     description: {
-      zh: '點選頁首的 LingOrm Map，即可清除搜尋、篩選與匯率排序，回到完整清單與地圖；已儲存的收藏、語言和主題設定都會保留。找不到頁面時，也能從 404 頁返回首頁。',
-      en: 'Click LingOrm Map in the header to clear search, filters, and rate sorting and return to the full list and map. Saved favorites, language, and theme are kept. The 404 page also links back to the home page.',
+      zh: '點頁首「LingOrm Map」清除搜尋與篩選，收藏會保留。',
+      en: 'Tap LingOrm Map to clear search and filters. Your favorites stay saved.',
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-10-31T00:00:00Z'),
@@ -52,12 +52,12 @@ export const CHANGELOG = [
   {
     id: 'feat-022',
     title: {
-      zh: '粉絲資源新增音樂與同人文網站',
-      en: 'Concert audio and fan fiction in Fan Resources',
+      zh: '新增音樂與同人文資源',
+      en: 'More music and fan fiction',
     },
     description: {
-      zh: '粉絲資源新增 LingOrm Music Archive 演唱會音檔整理，以及 LingOrm · Feed Your Mind 同人文圖書館，附上中英文介紹與原始分享連結。',
-      en: 'Fan Resources now includes the LingOrm Music Archive for concert audio and LingOrm · Feed Your Mind for fan fiction, with Chinese and English introductions and links to the original posts.',
+      zh: '粉絲資源新增 LingOrm Music Archive 與 Feed Your Mind。',
+      en: 'Explore LingOrm Music Archive and Feed Your Mind in Fan Resources.',
     },
     badge: { zh: '內容', en: 'Content' },
     publishTime: Date.parse('2026-10-31T00:00:00Z'),

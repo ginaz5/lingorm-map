@@ -2,6 +2,7 @@ import { lang, t } from '../core/i18n.js';
 import { state } from '../core/state.js';
 import {
   getExchangeRateCell,
+  canCombineGreenUsd,
   getExchangeBrand,
   isExchangeSortAvailable,
   isExchangeLocation,
@@ -190,7 +191,8 @@ export function renderExchangeRates(row) {
     ratesLoading: state.exchangeRatesLoading,
     hasUsableSnapshot: state.exchangeHasUsableSnapshot,
   };
-  const denoms = orange ? DENOMS_1965 : DENOMS;
+  const combinedUsd = !orange && canCombineGreenUsd(row.id);
+  const denoms = orange ? DENOMS_1965 : DENOMS.filter(denom => !combinedUsd || denom !== 'USD_50');
   const checked = formatExchangeCheckedAt(brandState.completedAt);
   const activeSort = brandState.enabled === true && brandForSort(state.exchangeSort) === brand
     ? state.exchangeSort : null;
@@ -202,9 +204,11 @@ export function renderExchangeRates(row) {
       ? (cell.rateScaledE6 / 1_000_000).toFixed(cell.displayDecimals)
       : t('fx_unavailable');
     const currency = denom === 'TWD' || denom === 'TWD_1965' ? 'TWD' : 'USD';
-    const isBest = activeSort === denom && valid && best !== null && cell.rateScaledE6 === best;
+    const matchesSort = activeSort === denom || (combinedUsd && denom === 'USD_100' && activeSort === 'USD_50');
+    const isBest = matchesSort && valid && best !== null && cell.rateScaledE6 === best;
+    const denomLabel = combinedUsd && denom === 'USD_100' ? 'fx_denom_usd_combined' : `fx_denom_${denom.toLowerCase()}`;
     return `<div class="fx-rate-row">
-      <span class="fx-denom">${t(`fx_denom_${denom.toLowerCase()}`)}</span>
+      <span class="fx-denom">${t(denomLabel)}</span>
       <span class="fx-value${valid ? '' : ' is-unavailable'}">${isBest ? `<span class="fx-best">${t('fx_best')}</span> ` : ''}${valid ? t('fx_rate_value', currency, value) : value}</span>
     </div>`;
   }).join('');
