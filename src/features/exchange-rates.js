@@ -416,10 +416,12 @@ export function syncExchangeControls() {
   }
   const sort = /** @type {HTMLSelectElement|null} */ (document.getElementById('exchange-sort'));
   const sortLabel = document.getElementById('exchange-sort-label');
+  const sortHint = document.getElementById('exchange-sort-hint');
   if (!sort) return;
   const sortHidden = !EXCHANGE_SORT_VALUES.some(isExchangeSortAvailable);
   sort.hidden = sortHidden;
   if (sortLabel) sortLabel.hidden = sortHidden;
+  if (sortHint) sortHint.hidden = sortHidden;
   sort.value = state.exchangeSort;
   for (const option of sort.options) {
     if (option.value !== 'default') option.disabled = !isExchangeSortAvailable(option.value);

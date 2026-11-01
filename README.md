@@ -23,8 +23,10 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 
 SuperRich 1965（橘標）沿用同一個「換匯」標籤、卡片與排序選單，提供
 USD／TWD 指定面額買入價、橘色 marker／群聚，以及 Google／HERE popup。
-頁面及單店「重新整理匯率」按鈕只讀快取，不會向官網取價。有效期與綠標相同，
-排序只比較已有有效報價的分店。38 家橘標位置由 Notion 管理；報價由綁定部署的
+兩品牌的卡片與 popup 採用相同版型：精簡品牌名稱、面額、更新時間、聲明與官網連結；
+綠標保留三列、橘標保留兩列指定面額。頁面自動只讀快取，不會向官網取價；
+卡片不提供單店刷新按鈕。有效期與綠標相同，排序選單旁統一說明只比較所選品牌
+已有有效報價的分店。38 家橘標位置由 Notion 管理；報價由綁定部署的
 Netlify scheduler／Python background worker 每半小時更新，時段為泰國 08:00～22:30。
 2026-10-24 PR #18 正式部署已通過兩輪自動排程驗收，後續追加回查也成功；實際部署與
 各輪來源／發布數量見[最新上線紀錄](docs/superrich1965-netlify-pr18-release-2026-10-24.zh-TW.md)。

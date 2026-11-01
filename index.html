@@ -199,7 +199,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </div>
           <div class="exchange-toolbar">
             <label class="exchange-sort-label" for="exchange-sort" id="exchange-sort-label" data-i18n="fx_sort_label" hidden></label>
-            <select class="filter-sel exchange-sort" id="exchange-sort" hidden>
+            <select class="filter-sel exchange-sort" id="exchange-sort" aria-describedby="exchange-sort-hint" hidden>
               <option value="default" data-i18n="fx_sort_default"></option>
               <option value="USD_100" data-i18n="fx_sort_usd_100"></option>
               <option value="USD_50" data-i18n="fx_sort_usd_50"></option>
@@ -207,6 +207,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <option value="USD_1965" data-i18n="fx_sort_usd_1965"></option>
               <option value="TWD_1965" data-i18n="fx_sort_twd_1965"></option>
             </select>
+            <p class="exchange-sort-hint" id="exchange-sort-hint" data-i18n="fx_sort_scope" hidden></p>
           </div>
         </div>
       </div>

@@ -362,6 +362,7 @@ test('exchange panel contains three rows and compact metadata without a duplicat
   // The disclaimer already says rates are not real-time; no separate update-window label.
   assert.doesNotMatch(html, /報價更新時段|fx-update-window/);
   assert.match(html, /superrichthailand\.com\/exchange-rate/);
+  assert.match(html, /aria-label="SuperRich Thailand 官網"[^>]*>官網<\/a>/);
   assert.doesNotMatch(html, /https:\/\/maps\.google\.com\/example|Google Maps/);
   assert.doesNotMatch(html, /\(UTC\)/);
   assert.match(html, /官網分店 · Ratchadamri 1/);
@@ -388,6 +389,7 @@ test('exchange panel contains three rows and compact metadata without a duplicat
     assert.match(enHtml, /TWD 100–2,000/);
     assert.doesNotMatch(enHtml, /banknote/);
     assert.doesNotMatch(enHtml, /Rate updates/);
+    assert.match(enHtml, />Official website<\/a>/);
   } finally {
     setLang(previousLang);
     if (previousLocalStorage === undefined) delete globalThis.localStorage;
@@ -450,6 +452,7 @@ for (const provider of ['google', 'here']) {
       'loc-list': { innerHTML: '' }, 'result-info': { textContent: '' },
       'exchange-sort': { value: 'USD_100', options: ['default', 'USD_100', 'USD_50', 'TWD'].map(value => ({ value })), addEventListener() {} },
       'exchange-sort-label': { hidden: false },
+      'exchange-sort-hint': { hidden: false },
     };
     let popupHtml = '';
     const popup = { setContent: html => { popupHtml = html; } };
@@ -482,6 +485,7 @@ for (const provider of ['google', 'here']) {
     }
     assert.equal(elements['exchange-sort'].hidden, true);
     assert.equal(elements['exchange-sort-label'].hidden, true);
+    assert.equal(elements['exchange-sort-hint'].hidden, true);
     assert.equal(state.exchangeSort, 'default');
     assert.deepEqual(state.visIdx, [0, 1]);
 
@@ -497,6 +501,7 @@ for (const provider of ['google', 'here']) {
     }
     assert.equal(elements['exchange-sort'].hidden, false);
     assert.equal(elements['exchange-sort-label'].hidden, false);
+    assert.equal(elements['exchange-sort-hint'].hidden, false);
     assert.equal(state.exchangeRunId, 'recovered-run');
     assert.deepEqual(state.visIdx, [0, 1]);
   });

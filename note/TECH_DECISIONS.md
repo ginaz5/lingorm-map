@@ -661,3 +661,15 @@ pilot 與 Node 傳輸模式，以及 workflow 從未啟用的 GitHub schedule �
 identity 不合而以 `invalid_operation` 停止，需人工檢查。Netlify collector 每輪都以
 `publish-all-python` 寫入該 key，因此正常排程下不會遇到；此點依程式行為推斷，
 未直接讀取正式 Blobs 確認。
+
+### 2026-10-31：兩品牌匯率卡片統一
+
+列表與 Google／HERE popup 共用 `renderExchangeRates()`，以綠標的資訊層級統一呈現。
+品牌列使用 SuperRich Thailand（綠標）與 SuperRich 1965（橘標）；面額列移除重複品牌字樣，
+綠標保留三列，橘標保留 USD 100＋50、TWD 100–1,000 兩列來源報價。底部共用更新時間、
+簡短聲明與官網連結；官網 URL 與無障礙名稱仍依品牌區分。
+
+移除橘標卡片的單店刷新、狀態、重試時間與排序範圍區塊。缺價或過期時沿用原報價列的
+「暫無報價」，排序選單旁統一說明只比較所選品牌中有有效報價的分店。
+背景快取輪詢、到期撤價、兩品牌排序隔離及來源 collector 行為不變；單店 POST API 仍保留
+只讀相容契約，卡片不再呼叫。正式地點名稱、筆記與 Notion／CSV 資料未更動。

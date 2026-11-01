@@ -60,8 +60,9 @@ test('rendering, resume and expiry only read shared cache and never POST a branc
   });
   const { listeners } = harness(t);
   const html = renderExchangeRates(row);
-  assert.match(html, /data-orange-query=/);
-  assert.match(html, /重新整理匯率/);
+  assert.doesNotMatch(html, /data-orange-query|fx-query/);
+  assert.equal((html.match(/暫無報價/g) || []).length, 2);
+  assert.equal(listeners.click, undefined, 'manual refresh has no delegated click handler');
   listeners.visibilitychange.fn();
   listeners.pageshow.fn();
   listeners.online.fn();
@@ -108,7 +109,7 @@ test('single-branch and shared-cache reads both abort after twelve seconds', asy
   await cache;
 });
 
-test('cache reads render rates without progress or a manual button; missing branches retain single-branch buttons', async t => {
+test('cache reads render rates while missing branches use the same unavailable rows without manual controls', async t => {
   harness(t);
   const fetch = t.mock.method(globalThis, 'fetch', async url => {
     assert.equal(url, BRANCH_CACHE_API);
@@ -117,14 +118,16 @@ test('cache reads render rates without progress or a manual button; missing bran
   await loadCachedBranchQuotes();
   assert.match(renderExchangeRates(row), /32\.77 THB/);
   assert.doesNotMatch(renderExchangeRates(row), /data-orange-query|附近報價|查詢已暫停/);
-  assert.match(renderExchangeRates({ ...row, id: otherSlug }), /data-orange-query=/);
+  const missing = renderExchangeRates({ ...row, id: otherSlug });
+  assert.doesNotMatch(missing, /data-orange-query|fx-query/);
+  assert.equal((missing.match(/暫無報價/g) || []).length, 2);
   assert.equal(isExchangeSortAvailable('USD_1965'), true);
   t.mock.timers.tick(60_000);
   await loadCachedBranchQuotes();
   assert.equal(fetch.mock.callCount(), 2);
 });
 
-test('cache-read failures retain valid quotes and expiry restores the per-branch fallback button', async t => {
+test('cache-read failures retain valid quotes and expiry restores the common unavailable state', async t => {
   harness(t);
   t.mock.method(globalThis, 'fetch', async () => Response.json(cachePayload()));
   await loadCachedBranchQuotes();
@@ -135,7 +138,9 @@ test('cache-read failures retain valid quotes and expiry restores the per-branch
   assert.ok(getBranchQueryState(slug).quote);
   t.mock.timers.setTime(expires + 1);
   assert.equal(getBranchQueryState(slug).quote, null);
-  assert.match(renderExchangeRates(row), /data-orange-query=/);
+  const expired = renderExchangeRates(row);
+  assert.doesNotMatch(expired, /data-orange-query|fx-query|class="fx-checked"/);
+  assert.equal((expired.match(/暫無報價/g) || []).length, 2);
 });
 
 test('cache disable invalidates orange quotes without touching green quotes', async t => {
@@ -189,7 +194,7 @@ for (const newGeneration of [false, true]) {
   });
 }
 
-test('duplicate clicks share a request; cards and popups use only that branch’s rates and time', async t => {
+test('programmatic duplicate reads share a request; cards and popups use only that branch’s rates and time', async t => {
   harness(t);
   let finish;
   const fetch = t.mock.method(globalThis, 'fetch', (url, options) => {
@@ -202,7 +207,8 @@ test('duplicate clicks share a request; cards and popups use only that branch’
   assert.equal(queryOrangeBranch(slug), first);
   await Promise.resolve();
   assert.equal(fetch.mock.callCount(), 1);
-  assert.match(renderExchangeRates(row), /data-orange-query="[^"]+" disabled/);
+  assert.match(renderExchangeRates(row), /匯率載入中/);
+  assert.doesNotMatch(renderExchangeRates(row), /data-orange-query|fx-query/);
   finish(Response.json(payload()));
   await first;
   assert.equal(getExchangeRateCell1965(slug, 'USD_1965').rateScaledE6, 32_770_000);
@@ -214,7 +220,7 @@ test('duplicate clicks share a request; cards and popups use only that branch’
     assert.match(html, /0\.99500 THB/);
     assert.match(html, /fx-best/);
     assert.match(html, /class="fx-checked"/);
-    assert.match(html, /只比較已取得有效報價/);
+    assert.doesNotMatch(html, /只比較已取得有效報價|fx-query/);
   }
   await queryOrangeBranch(slug);
   assert.equal(fetch.mock.callCount(), 1);
@@ -242,7 +248,8 @@ for (const provider of ['google', 'here']) {
     assert.equal(state.exchangeHasUsableSnapshot, true);
     assert.equal(state.exchangeRatesBySlug.green.rates.USD_100.rateScaledE6, 33_000_000);
     assert.equal(fetch.mock.callCount(), 1);
-    assert.match(html, /data-orange-query="[^"]+">/);
+    assert.doesNotMatch(html, /data-orange-query|fx-query/);
+    assert.equal((html.match(/暫無報價/g) || []).length, 2);
   });
 }
 
@@ -317,7 +324,7 @@ test('orange sorting puts quoted branches first without inventing rates for unqu
   state.data = [{ ...row, id: otherSlug }, row, { ...row, id: 'regular' }];
   state.visIdx = [0, 1, 2];
   assert.deepEqual(sortVisibleIndexes(state.visIdx, 'USD_1965'), [1, 0, 2]);
-  for (const key of ['fx_query', 'fx_query_loading', 'fx_query_cached', 'fx_query_hint', 'fx_query_wait', 'fx_query_busy', 'fx_query_disabled', 'fx_query_failed', 'fx_query_sort_scope']) {
+  for (const key of ['fx_sort_scope', 'fx_loading', 'fx_unavailable', 'fx_source_link']) {
     assert.equal(typeof T.zh[key], 'string');
     assert.equal(typeof T.en[key], 'string');
   }

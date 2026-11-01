@@ -101,6 +101,8 @@ test('checkWhatsNew previews the current release with general update copy', () =
       3,
     );
     assert.match(env.dom.elements['wn-list'].innerHTML, /新增 SuperRich 1965 橘標分店與匯率/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /卡片與地圖彈窗採用一致版型/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /重新整理匯率/);
     assert.match(env.dom.elements['wn-list'].innerHTML, /點頁首標題，回到完整地圖/);
     assert.match(env.dom.elements['wn-list'].innerHTML, /粉絲資源新增音樂與同人文網站/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增杜拜與佛統府目的地支援/);
@@ -131,6 +133,8 @@ test('checkWhatsNew shows the catch-up release after September 28 and refreshes 
     const html = env.dom.elements['wn-list'].innerHTML;
     assert.equal(html.match(/class="wn-feat"/g)?.length, WHATS_NEW_PREVIEW_LIMIT);
     assert.match(html, /SuperRich 1965 branches and rates are now on the map/);
+    assert.match(html, /Cards and map popups share one layout/);
+    assert.doesNotMatch(html, /Refresh rates/);
     assert.match(html, /Return to the full map from the header/);
     assert.match(html, /Concert audio and fan fiction in Fan Resources/);
     assert.doesNotMatch(html, /Destination support for Dubai and Nakhon Pathom/);

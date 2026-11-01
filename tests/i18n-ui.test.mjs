@@ -102,7 +102,7 @@ test('currency exchange rate panel notices are bilingual', () => {
   const keys = [
     'fx_loading', 'fx_unavailable',
     'fx_sort_default', 'fx_sort_usd_100', 'fx_sort_usd_50', 'fx_sort_twd',
-    'fx_brand_green', 'fx_disclaimer', 'fx_source_note',
+    'fx_brand_green', 'fx_disclaimer', 'fx_source_note', 'fx_source_link', 'fx_sort_scope',
   ];
   for (const key of keys) {
     assert.equal(typeof T.zh[key], 'string', `missing zh ${key}`);
@@ -139,6 +139,8 @@ test('exchange-rate sort menu exposes both brands without a separate toggle', as
     ['default', 'USD_100', 'USD_50', 'TWD', 'USD_1965', 'TWD_1965'],
   );
   assert.doesNotMatch(html, /id="exchange-toggle"/);
+  assert.match(select, /aria-describedby="exchange-sort-hint"/);
+  assert.match(html, /id="exchange-sort-hint"[^>]*data-i18n="fx_sort_scope"[^>]*hidden/);
   for (const key of ['fx_brand_orange', 'fx_denom_usd_1965', 'fx_denom_twd_1965', 'fx_sort_usd_1965', 'fx_sort_twd_1965', 'fx_disclaimer_1965', 'fx_source_note_1965']) {
     assert.equal(typeof T.zh[key], 'string');
     assert.equal(typeof T.en[key], 'string');
@@ -159,19 +161,19 @@ test('exchange-rate sort labels distinguish brands by color and text in both lan
   }
 });
 
-test('orange rate refresh explains unavailable quotes without promising a source query', () => {
-  assert.equal(T.zh.fx_query, '重新整理匯率');
-  assert.equal(T.en.fx_query, 'Refresh rates');
-  assert.equal(T.zh.fx_query_loading, '重新整理中…');
-  assert.equal(T.en.fx_query_loading, 'Refreshing…');
-  assert.match(T.zh.fx_query_hint, /尚無有效報價.*稍後查看/);
-  assert.match(T.en.fx_query_hint, /No valid quote yet.*Check back later/);
-  assert.match(T.zh.fx_query_failed, /稍後查看或前往官網/);
-  assert.match(T.en.fx_query_failed, /Check back later or visit the official website/);
-  for (const lang of ['zh', 'en']) {
-    assert.doesNotMatch(T[lang].fx_query_hint, /手動查詢|manually|cache/i);
-    assert.doesNotMatch(T[lang].fx_query_sort_scope, /queried/);
-  }
+test('both brands use compact translated headings, denomination labels and common notices', () => {
+  assert.equal(T.zh.fx_brand_orange, 'SuperRich 1965（橘標）');
+  assert.equal(T.en.fx_brand_orange, 'SuperRich 1965 (orange)');
+  assert.equal(T.zh.fx_denom_usd_1965, 'USD 100＋50');
+  assert.equal(T.en.fx_denom_usd_1965, 'USD 100+50');
+  assert.equal(T.zh.fx_denom_twd_1965, 'TWD 100–1,000');
+  assert.equal(T.en.fx_denom_twd_1965, 'TWD 100–1,000');
+  assert.equal(T.zh.fx_source_link, '官網');
+  assert.equal(T.en.fx_source_link, 'Official website');
+  assert.equal(T.zh.fx_sort_scope, '僅比較所選品牌中有有效報價的分店。');
+  assert.equal(T.en.fx_sort_scope, 'Compares only branches of the selected brand with valid quotes.');
+  assert.match(T.zh.fx_source_note, /SuperRich Thailand/);
+  assert.match(T.en.fx_source_note_1965, /SuperRich 1965/);
 });
 
 test('unrestricted filters show their category and label prompts', () => {

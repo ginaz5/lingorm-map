@@ -216,31 +216,11 @@ export function renderExchangeRates(row) {
     <div class="fx-rates${loading ? ' is-loading' : ''}">${rows}</div>
     <div class="fx-meta">
       ${checked && brandState.hasUsableSnapshot ? `<time class="fx-checked" datetime="${escapeAttribute(brandState.completedAt || '')}">${t('fx_checked', checked)}</time>` : ''}
-      <span class="fx-disclaimer">${t(orange ? 'fx_disclaimer_1965' : 'fx_disclaimer')}</span>
-      <a href="${OFFICIAL_EXCHANGE_URLS[brand]}" target="_blank" rel="noopener" aria-label="${t(orange ? 'fx_source_note_1965' : 'fx_source_note')}" onclick="event.stopPropagation()">${t(orange ? 'fx_source_note_1965' : 'fx_source_note')}</a>
+      <span class="fx-disclaimer">${t('fx_disclaimer')}</span>
+      <a href="${OFFICIAL_EXCHANGE_URLS[brand]}" target="_blank" rel="noopener" aria-label="${t(orange ? 'fx_source_note_1965' : 'fx_source_note')}" onclick="event.stopPropagation()">${t('fx_source_link')}</a>
     </div>
-    ${orange ? renderBranchQuery(row.id) : ''}
     <div class="fx-branch-hint">${t('fx_branch_hint', escapeAttribute(row.nameEn))}</div>
   </section>`;
-}
-
-/** @param {string} slug */
-function renderBranchQuery(slug) {
-  const entry = getBranchQueryState(slug);
-  if (entry?.quote) return `<div class="fx-query-scope">${t('fx_query_sort_scope')}</div>`;
-  const waiting = (entry?.retryAtMs ?? 0) > Date.now();
-  const disabled = entry?.loading || waiting;
-  const label = entry?.loading ? 'fx_query_loading' : 'fx_query';
-  const message = entry?.reason === 'disabled' ? 'fx_query_disabled' :
-    entry?.reason === 'busy' ? 'fx_query_busy' : waiting ? 'fx_query_wait' :
-    entry?.reason ? 'fx_query_failed' : 'fx_query_hint';
-  const retryHint = waiting && entry?.retryAtMs
-    ? t('fx_query_retry_at', formatExchangeCheckedAt(new Date(entry.retryAtMs).toISOString())) : '';
-  return `<div class="fx-query">
-    <button type="button" class="fx-query-btn" data-orange-query="${escapeAttribute(slug)}"${disabled ? ' disabled' : ''}>${t(label)}</button>
-    <span class="fx-query-status" role="status">${t(message)}${retryHint ? ` ${retryHint}` : ''}</span>
-    <span class="fx-query-scope">${t('fx_query_sort_scope')}</span>
-  </div>`;
 }
 
 /**

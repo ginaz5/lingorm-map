@@ -28,8 +28,8 @@ export const CHANGELOG = [
       en: 'SuperRich 1965 branches and rates are now on the map',
     },
     description: {
-      zh: '地圖新增 38 間 SuperRich 1965 橘標分店，可查看 USD／TWD 買入匯率，並依有效報價排序；排序選單也以顏色與文字區分綠標、橘標。橘標匯率於泰國時間 08:00～22:30 每半小時排程更新，「重新整理匯率」顯示最新快取報價。匯率僅供參考，實際以櫃檯為準。',
-      en: 'Browse 38 SuperRich 1965 orange branches, compare USD/TWD buying rates, and sort branches with valid quotes. The sort menu identifies green and orange brands with both color and text. Orange rates update on a half-hour schedule from 08:00 to 22:30 Thailand time; Refresh rates shows the latest cached quotes. Rates are indicative; counter rates apply.',
+      zh: '地圖新增 38 間 SuperRich 1965 橘標分店，可查看 USD／TWD 買入匯率。兩品牌的卡片與地圖彈窗採用一致版型，保留各自面額與顏色；排序只比較所選品牌有有效報價的分店。橘標匯率於泰國時間 08:00～22:30 每半小時排程更新，頁面會自動載入報價。匯率非即時，以櫃檯為準。',
+      en: 'Browse 38 SuperRich 1965 orange branches and compare USD/TWD buying rates. Cards and map popups share one layout while keeping each brand’s denominations and colors. Sorting compares branches of the selected brand with valid quotes. Orange rates update on a half-hour schedule from 08:00 to 22:30 Thailand time and load automatically. Rates are not real-time; counter rates apply.',
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-10-31T00:00:00Z'),
