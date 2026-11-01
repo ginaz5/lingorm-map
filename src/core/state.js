@@ -92,7 +92,7 @@ export const state = {
 
   // Destination filter — empty means every destination.
   selectedDestinations: new Set(),
-  // Fit the map after it becomes available (used when restoring a saved filter).
+  // Fit after the map is initialized or visible (saved filters and home reset).
   pendingDestinationFit: false,
 
   exchangeSort: 'default',

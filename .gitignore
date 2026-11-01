@@ -32,6 +32,7 @@ migration-output/
 data/locations.next.csv
 
 .claude
+.playwright-mcp
 
 # Local-only demo/preview renders (map update walkthrough videos, etc.)
 demo-output/

@@ -16,11 +16,13 @@ import {
   loadMapScript,
   updateMapTheme,
   buildMarkers,
+  clearActiveLocation,
   fitMapToVisibleLocations,
   refreshActivePopup,
 } from './map/map.js';
 import {
   applyFiltersAndSyncMap,
+  showListFromTop,
   toggleLang,
 } from './app/app-coordinator.js';
 import {
@@ -33,6 +35,7 @@ import { checkWhatsNew, closeWhatsNew } from './features/whats-new.js';
 import {
   trackFavoriteToggle,
   trackFilterApply,
+  trackHomeReset,
   trackSearchComplete,
   trackTabView,
 } from './services/analytics.js';
@@ -44,6 +47,7 @@ import {
   saveDestinationFilter,
 } from './features/destination-filter.js';
 import { initFilterSheet } from './features/filter-sheet.js';
+import { initHomeReset } from './features/home-reset.js';
 import { initCollectionInfo } from './features/collection-info.js';
 import { initFanResources } from './features/fan-resources.js';
 import { initExchangeRates, syncExchangeControls } from './features/exchange-rates.js';
@@ -174,6 +178,13 @@ function handleSearchInput() {
   }, 700);
 }
 
+/** Empty the search box without a rebuild, dropping any pending search event. */
+function clearSearch() {
+  if (searchAnalyticsTimer !== null) clearTimeout(searchAnalyticsTimer);
+  searchAnalyticsTimer = null;
+  /** @type {HTMLInputElement} */ (document.getElementById('search')).value = '';
+}
+
 /** @param {'category'|'type'} filterType @param {HTMLSelectElement} select */
 function handleSelectFilter(filterType, select) {
   applyFiltersAndSyncMap();
@@ -218,18 +229,24 @@ function handleDestinationChange(change) {
   );
 }
 
-/** @param {'category'|'type'} filterType */
-function clearSelectFilter(filterType) {
+/**
+ * @param {'category'|'type'} filterType
+ * @param {{silent?: boolean}} [options] silent skips the rebuild and analytics
+ */
+function clearSelectFilter(filterType, { silent = false } = {}) {
   const select = /** @type {HTMLSelectElement|null} */ (
     document.getElementById(filterType === 'category' ? 'cat-filter' : 'label-filter')
   );
   if (!select || !select.value) return;
   select.value = '';
-  handleSelectFilter(filterType, select);
+  if (!silent) handleSelectFilter(filterType, select);
 }
 
-/** @param {string} [key] Remove one destination, or all when omitted. */
-function clearDestinationFilter(key) {
+/**
+ * @param {string} [key] Remove one destination, or all when omitted.
+ * @param {{silent?: boolean}} [options] silent skips the rebuild and analytics
+ */
+function clearDestinationFilter(key, { silent = false } = {}) {
   if (key === undefined) {
     if (state.selectedDestinations.size === 0) return;
     state.selectedDestinations.clear();
@@ -238,9 +255,51 @@ function clearDestinationFilter(key) {
   }
   saveDestinationFilter();
   renderDestinationFilter();
+  if (silent) return;
   handleDestinationChange(key === undefined
     ? { filterValue: 'all', filterAction: 'clear' }
     : { filterValue: `destination:${key}`, filterAction: 'deselect' });
+}
+
+function clearAllFilters() {
+  clearSelectFilter('category');
+  clearSelectFilter('type');
+  clearDestinationFilter();
+}
+
+/** Home reset: every narrowing control back to default, without rebuilding. */
+function clearAllFiltersSilently() {
+  const silent = { silent: true };
+  clearSelectFilter('category', silent);
+  clearSelectFilter('type', silent);
+  clearDestinationFilter(undefined, silent);
+  setFavoritesFilter(false, silent);
+  state.exchangeSort = 'default';
+  syncExchangeControls();
+}
+
+/**
+ * Single owner of the favorites-only control, shared by its button and the
+ * header reset, so the class, aria-pressed, icon and analytics stay in step.
+ * @param {boolean} on
+ * @param {{silent?: boolean}} [options] silent skips the rebuild and analytics
+ */
+function setFavoritesFilter(on, { silent = false } = {}) {
+  if (state.favFilterOn === on) return;
+  state.favFilterOn = on;
+  const favBtn = document.getElementById('fav-filter-btn');
+  favBtn.classList.toggle('active', on);
+  favBtn.setAttribute('aria-pressed', String(on));
+  favBtn.innerHTML = heartSVG(on);
+  if (silent) return;
+  applyFiltersAndSyncMap();
+  trackFilterApply(
+    'favorites',
+    on ? 'on' : 'off',
+    state.visIdx.length,
+    on ? 'enable' : 'disable',
+    on ? state.favorites.size : 0,
+  );
 }
 
 initDestinationFilter(handleDestinationChange);
@@ -250,11 +309,15 @@ initFilterSheet({
     if (filter === 'destination') clearDestinationFilter(value);
     else clearSelectFilter(filter);
   },
-  onClearAll: () => {
-    clearSelectFilter('category');
-    clearSelectFilter('type');
-    clearDestinationFilter();
-  },
+  onClearAll: clearAllFilters,
+});
+initHomeReset({
+  clearSearch,
+  clearFilters: clearAllFiltersSilently,
+  clearActiveLocation,
+  showListFromTop,
+  applyFilters: () => applyFiltersAndSyncMap({ fitMap: true }),
+  trackReset: () => trackHomeReset(state.visIdx.length),
 });
 initCollectionInfo();
 const fanResources = initFanResources();
@@ -271,19 +334,7 @@ initBranchQueries(() => {
 
 // Static event listeners
 document.getElementById('fav-filter-btn').addEventListener('click', event => {
-  state.favFilterOn = !state.favFilterOn;
-  const favBtn = document.getElementById('fav-filter-btn');
-  favBtn.classList.toggle('active', state.favFilterOn);
-  favBtn.setAttribute('aria-pressed', String(state.favFilterOn));
-  favBtn.innerHTML = heartSVG(state.favFilterOn);
-  applyFiltersAndSyncMap();
-  trackFilterApply(
-    'favorites',
-    state.favFilterOn ? 'on' : 'off',
-    state.visIdx.length,
-    state.favFilterOn ? 'enable' : 'disable',
-    state.favFilterOn ? state.favorites.size : 0,
-  );
+  setFavoritesFilter(!state.favFilterOn);
   releasePointerFocus(event);
 });
 document.getElementById('search').addEventListener('input', handleSearchInput);
@@ -332,6 +383,7 @@ window.addEventListener('resize', () => {
   if (!state.map) return;
   if (state.provider === 'google') google.maps.event.trigger(state.map, 'resize');
   else state.map.getViewPort().resize();
+  if (state.pendingDestinationFit) fitMapToVisibleLocations();
 });
 
 // ─── Boot sequence ───────────────────────────────

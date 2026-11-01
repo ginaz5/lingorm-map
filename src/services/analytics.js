@@ -118,6 +118,14 @@ export function trackSearchComplete(queryLength, resultCount) {
   });
 }
 
+/** @param {number} resultCount */
+export function trackHomeReset(resultCount) {
+  return trackEvent('home_reset', {
+    ...interactionParameters(),
+    result_count: resultCount,
+  });
+}
+
 /** @param {LocateResult} result */
 export function trackLocateResult(result) {
   return trackEvent('locate_result', {
