@@ -1,20 +1,34 @@
-# SuperRich 1965：GitHub Actions 手動備援
+# SuperRich 1965：GitHub Actions 排程與手動取價
 
-更新：2026-10-24。現行自動取價由 [Netlify scheduler／Python background worker](superrich1965-netlify-runbook.zh-TW.md)
-執行。GitHub workflow 僅保留 main-only 手動操作，沒有 cron；CLI 也拒絕任何 schedule
-事件，舊 repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 已不再讀取。正常維運入口見
+更新：2026-11-04。為節省 Netlify compute credits，自動取價改由本 workflow 的 cron 執行
+（UTC `7,37 1-15 * * *`＝泰國 08:07～22:37，每半小時）。Repository 為 public，
+GitHub-hosted 標準 runner 分鐘數不計費。排程須 repository variable
+`EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 精確為 `true`，job 與 CLI 兩層檢查；
+排程只能執行 `publish-all-python --target production`。
+[Netlify scheduler／worker](superrich1965-netlify-runbook.zh-TW.md) 保留為備援，平時 collector 保持 disabled。正常維運入口見
 [文件索引](README.md)，歷史 rollout 與失敗調查見[封存索引](archive/README.md)。
 
 ## 身分與執行邊界
 
-- Workflow：`.github/workflows/exchange-rates-1965.yml`，只接受 `workflow_dispatch`、固定 repository 與 main。
+- Workflow：`.github/workflows/exchange-rates-1965.yml`，接受 `workflow_dispatch` 與受 variable 控制的 `schedule`，固定 repository 與 main。
 - Environment 沿用 `superrich1965-preview` 名稱；Secret `NETLIFY_AUTH_TOKEN` 與 variable `NETLIFY_SITE_ID` 使用既有專用設定。名稱不代表 PAT 權限只限 Preview 或單一 store。
 - `preview-reviewed` 綁定已審閱的 immutable Preview；`production` 必須符合 site／main／production，並以 Environment variable `EXCHANGE_RATES_1965_PRODUCTION_COMMIT` 綁定目前已核對、實際發布的 40 字元 commit。
 - 不從目前 main 自動推導正式網站 SHA。網站換版後先核對 production metadata，再更新 GitHub binding；metadata 不符便停止。
+  **排程期間每次正式部署後都必須更新此 variable**，否則下一輪以 exit 2（`target_metadata_mismatch`）失敗、不取來源；舊報價依原時間到期。
 - Netlify collector 啟用時，Actions 以 `netlify_collector_active` 零來源略過。兩者共用 source guard、epoch、冷卻、lease、unresolved marker 與 operation ledger。
 - Token 只留在記憶體；HTTP 使用 Python／Safari helper，JS 管理 parser、mapping、token 生命週期與逐店發布。本機只保留管理控制工具；舊 `fx:1965:fetch` 完整快照取價 CLI 已退役。
 
-## 切換至手動備援
+## 從 Netlify collector 切換至 Actions 排程
+
+1. 依 Netlify 手冊 `status`／`disable` 停用目前正式 deploy 的 collector，等待既有 worker 結束。
+2. 核對正式網站實際 SHA，更新 Environment variable `EXCHANGE_RATES_1965_PRODUCTION_COMMIT`。
+3. 執行一次 production inspect，再手動 `publish-all-python`，核對 38 店公開 cache。
+4. 將 repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 設為 `true`，核對下一輪真正的 `schedule` run。
+
+停用排程：把該 variable 改為 `false`（或刪除）即可，不需 commit。GitHub cron 可能延遲數分鐘至數十分鐘，
+public repository 60 天沒有活動也會自動停用 scheduled workflow；請留意 Actions 失敗通知。
+
+## 手動取價
 
 1. 依 Netlify 手冊核對目前正式 deploy，停用其 collector。確認既有 worker 已結束，沒有未結案來源、有效 lease 或尚未結束的冷卻。
 2. 核對正式網站的 ready／main／production／實際 SHA，更新 GitHub Environment 的 production binding。保持既有 quote control 與 source guard 歷史，不重新 bootstrap。
@@ -80,9 +94,10 @@ npm run fx:1965:actions:control -- source-status --target production
 管理工具不自動載入日常 `.env`；憑證不放命令參數或 Git。必要的 source-pause／
 source-resume／人工 reconciliation，須先查明實際來源結果與精確 epoch／lease 身分。
 
-## 恢復 Netlify 排程
+## 改回 Netlify 排程（備援）
 
-等待 Actions 完成，核對共同 guard 沒有 lease／unresolved，依 Netlify 手冊核對
-目前部署與 collector binding；部署或 quote controlVersion 改變時重新 bind，再 enable。
-確認下一個真正 schedule receipt 與 38 店公開 cache。GitHub 維持手動。
+先將 `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 改為 `false`，等待 Actions 完成，核對共同 guard
+沒有 lease／unresolved，依 Netlify 手冊核對目前部署與 collector binding；部署或 quote
+controlVersion 改變時重新 bind，再 enable。確認下一個真正 schedule receipt 與 38 店公開 cache。
+Netlify collector 啟用時 Actions 會以 `netlify_collector_active` 零來源略過，不會兩邊發布。
 網站回滾不會停止來源工作或還原 Blobs；先停止 collector，需要中止來源時另 source-pause。

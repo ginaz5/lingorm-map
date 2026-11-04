@@ -2,7 +2,17 @@ name: SuperRich 1965 rates
 
 # This workflow publishes quotes, never website deployments. The existing
 # Environment name is retained; its dedicated site PAT remains main-only.
+#
+# The cron replaces the Netlify scheduler/background worker to save Netlify
+# compute credits (public repository: standard runner minutes are free).
+# Schedules run from main only and stay idle unless the repository variable
+# EXCHANGE_RATES_1965_SCHEDULE_ENABLED is exactly 'true'; the CLI checks it again.
+# Minutes 7/37 avoid GitHub's top-of-hour cron congestion. UTC 01:07–15:37 =
+# Asia/Bangkok 08:07–22:37. Quotes expire at the next half-hour + 35 min, so one
+# late or dropped run does not blank the map.
 on:
+  schedule:
+    - cron: '7,37 1-15 * * *'
   workflow_dispatch:
     inputs:
       action:
@@ -33,7 +43,10 @@ concurrency:
 
 jobs:
   verify:
-    if: github.repository == 'ginaz5/lingorm-map' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    if: >-
+      github.repository == 'ginaz5/lingorm-map' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'schedule' && vars.EXCHANGE_RATES_1965_SCHEDULE_ENABLED == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: superrich1965-preview
@@ -52,7 +65,7 @@ jobs:
         run: npm ci
 
       - name: Verify Python stdlib transport offline
-        if: inputs.action == 'publish-all-python'
+        if: github.event_name == 'schedule' || inputs.action == 'publish-all-python'
         run: |
           python3 --version
           python3 -I -B tests/exchange-rates-1965-python-http.test.py
@@ -60,8 +73,10 @@ jobs:
       - name: Run the reviewed Preview operation
         shell: bash
         env:
-          ACTION_MODE: ${{ inputs.action }}
-          ACTION_TARGET: ${{ inputs.target }}
+          # A scheduled run has no inputs: it is always the full production publish.
+          ACTION_MODE: ${{ github.event_name == 'schedule' && 'publish-all-python' || inputs.action }}
+          ACTION_TARGET: ${{ github.event_name == 'schedule' && 'production' || inputs.target }}
+          EXCHANGE_RATES_1965_SCHEDULE_ENABLED: ${{ vars.EXCHANGE_RATES_1965_SCHEDULE_ENABLED }}
           EXCHANGE_RATES_1965_PRODUCTION_COMMIT: ${{ vars.EXCHANGE_RATES_1965_PRODUCTION_COMMIT }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}

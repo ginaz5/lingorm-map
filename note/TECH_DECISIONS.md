@@ -673,3 +673,22 @@ identity 不合而以 `invalid_operation` 停止，需人工檢查。Netlify col
 「暫無報價」，排序選單旁統一說明只比較所選品牌中有有效報價的分店。
 背景快取輪詢、到期撤價、兩品牌排序隔離及來源 collector 行為不變；單店 POST API 仍保留
 只讀相容契約，卡片不再呼叫。正式地點名稱、筆記與 Notion／CSV 資料未更動。
+
+### 2026-11-04：橘標自動取價改回 GitHub Actions 排程以節省 Netlify credits
+
+Netlify credit-based plan 以 10 credits／GB-hour 計 function compute。橘標 background
+worker 每輪約 245 秒（逐店 2～5 秒間隔佔約一半），每天 30 輪、預設 1 GB 記憶體，
+約 61 GB-hour／月 ≈ 610 credits／月，遠高於綠標排程（每輪約 8 秒，約 20 credits／月）
+與公開快取讀取。Repository 為 public，GitHub-hosted 標準 runner 分鐘數不計費，
+且 10/22 Actions Python 傳輸已有正式 38 店成功紀錄。
+
+- Workflow 新增 cron `7,37 1-15 * * *`（避開整點壅塞）；job 與 CLI 兩層都要求
+  repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 精確為 `true`。
+- CLI 只接受 schedule 執行 `publish-all-python --target production`；scheduled inspect、
+  Preview 與 variable 非 `true` 仍以 `invalid_actions_identity` 在開 store 前拒絕。
+- 來源保護、ledger、production SHA 綁定與 `netlify_collector_active` 互斥不變。
+  Netlify scheduler／worker 程式保留為備援；collector disabled 時 scheduler 每次只做
+  約 1 秒的檢查，不派送 worker。
+- 代價：GitHub cron 可能延遲或在高峰被略過；報價有效至下一個半小時加 35 分鐘，
+  單輪延遲不會清空地圖。Public repository 60 天無活動會停用排程。每次正式部署後
+  須更新 `EXCHANGE_RATES_1965_PRODUCTION_COMMIT`（與原 Netlify rebind 負擔相同）。
