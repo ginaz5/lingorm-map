@@ -19,7 +19,7 @@ import {
   initBranchQueries,
   loadCachedBranchQuotes,
 } from '../src/features/exchange-rates-1965-branch.js';
-import { buildPopupContent, renderExchangeRates, renderList, sortVisibleIndexes } from '../src/ui/render.js';
+import { buildPlaceDetailContent, renderExchangeRates, renderList, sortVisibleIndexes } from '../src/ui/render.js';
 
 const START = Date.parse('2026-10-17T01:00:00.000Z');
 const greenSlugs = Object.keys(GREEN_MAPPING.branches);
@@ -158,7 +158,7 @@ for (const language of ['zh', 'en']) {
     for (const [index, rowCount, officialHost] of [[0, 3, 'superrichthailand.com'], [1, 2, 'superrich1965.com']]) {
       state.visIdx = [index];
       renderList();
-      const popup = buildPopupContent(index);
+      const popup = buildPlaceDetailContent(index);
       const cardPanel = list.innerHTML.match(/<section class="fx-panel[\s\S]*?<\/section>/)?.[0];
       const popupPanel = popup.match(/<section class="fx-panel[\s\S]*?<\/section>/)?.[0];
       assert.ok(cardPanel);
@@ -287,7 +287,7 @@ for (const selected of ['TWD_1965', 'USD_100']) {
 test('orange legacy rows use the shared label filter and retain their publication state', async () => {
   const { readFileSync } = await import('node:fs');
   const { parseCSV } = await import('../src/data/csv-parser.js');
-  const { isPublicLocation, matchesLocationFilters, buildPopupContent } = await import('../src/ui/render.js');
+  const { isPublicLocation, matchesLocationFilters, buildPlaceDetailContent } = await import('../src/ui/render.js');
   const rows = parseCSV(readFileSync(new URL('../data/locations.csv', import.meta.url), 'utf8'));
   const orange = rows.filter(row => getExchangeBrand(row) === 'orange');
   assert.equal(orange.length, 38);
@@ -314,8 +314,8 @@ test('orange legacy rows use the shared label filter and retain their publicatio
   state.favorites.add(published.id);
   assert.equal(matchesLocationFilters(published, '', '', 'Currency Exchange'), true);
   state.data = [published];
-  assert.match(buildPopupContent(0), /badge b-exchange is-exchange-orange/);
-  assert.doesNotMatch(buildPopupContent(0), /badge b-cat/);
+  assert.match(buildPlaceDetailContent(0), /badge b-exchange is-exchange-orange/);
+  assert.doesNotMatch(buildPlaceDetailContent(0), /badge b-cat/);
 });
 
 test('both map providers distinguish orange-only clusters from green and mixed clusters', async t => {

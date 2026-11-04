@@ -1,7 +1,15 @@
 import { state } from '../core/state.js';
 import { getEffectiveTheme } from '../ui/ui.js';
-import { buildPopupContent, activateCard, isPublicLocation } from '../ui/render.js';
-import { cancelPopupCenter, openLocationPopup } from './popup.js';
+import { activateCard, isPublicLocation } from '../ui/render.js';
+import { closePlaceDetail } from '../ui/place-detail.js';
+import { isMobileLayout } from '../ui/layout.js';
+import {
+  cancelPendingFocus,
+  centerMapOn,
+  fitPadding,
+  flushPendingFocus,
+  getMapInsets,
+} from './viewport.js';
 import { isExchangeLocation, getExchangeBrand } from '../features/exchange-rates.js';
 // MarkerClusterer is loaded lazily to avoid CJS/ESM issues in Node.js test env
 /** @type {typeof import('@googlemaps/markerclusterer').MarkerClusterer|null} */
@@ -61,7 +69,8 @@ function boundsFromPoints(points) {
 }
 
 /**
- * Fit the active map provider to every currently visible location.
+ * Fit the active map provider to every currently visible location, inside
+ * the part of the map not covered by the search bar and results panel.
  * A single result uses a useful place-level zoom; no results preserve the
  * current viewport. Defer until the map is initialized and has a usable size.
  * @returns {boolean} whether the viewport changed
@@ -78,15 +87,15 @@ export function fitMapToVisibleLocations() {
   if (!points.length) return false;
 
   if (points.length === 1) {
-    state.map.setCenter(points[0]);
-    state.map.setZoom(14);
+    centerMapOn(points[0], { zoom: 14 });
     return true;
   }
 
   const bounds = boundsFromPoints(points);
+  const padding = fitPadding(48, getMapInsets());
 
   if (state.provider === 'google') {
-    state.map.fitBounds(bounds, 48);
+    state.map.fitBounds(bounds, padding);
   } else if (state.provider === 'here') {
     const rect = new H.geo.Rect(
       bounds.north,
@@ -94,10 +103,7 @@ export function fitMapToVisibleLocations() {
       bounds.south,
       bounds.east
     );
-    state.map.getViewModel().setLookAtData({
-      bounds: rect,
-      padding: { top: 48, right: 48, bottom: 48, left: 48 },
-    }, true);
+    state.map.getViewModel().setLookAtData({ bounds: rect, padding }, true);
   }
   return true;
 }
@@ -197,36 +203,13 @@ export function syncVisibleMarkers() {
   }
 }
 
-/**
- * Re-render the currently open provider popup, for example after a language or
- * favorites change.
- * @returns {boolean} whether an active popup was updated
- */
-export function refreshActivePopup() {
-  if (state.activeIdx < 0) return false;
-
-  const html = buildPopupContent(state.activeIdx);
-  if (state.provider === 'google' && state.infoWindow) {
-    state.infoWindow.setContent(html);
-    return true;
-  }
-  if (state.provider === 'here' && state.infoBubble) {
-    state.infoBubble.setContent(html);
-    return true;
-  }
-  return false;
-}
-
+/** Deselect the current place: detail view, highlighted card and marker. */
 export function clearActiveLocation() {
-  cancelPopupCenter();
+  cancelPendingFocus();
   state.activeIdx = -1;
+  closePlaceDetail();
   document.querySelectorAll('.loc-card').forEach(card => card.classList.remove('active'));
   state.markers.forEach(marker => marker?.__markerContent?.classList.remove('active'));
-  if (state.provider === 'google') state.infoWindow?.close?.();
-  if (state.provider === 'here' && state.infoBubble && state.hereUi) {
-    state.hereUi.removeBubble(state.infoBubble);
-    state.infoBubble = null;
-  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -515,8 +498,7 @@ export async function buildMarkers(options = {}) {
       });
       m.__markerContent = el;
       m.addListener('click', () => {
-        openLocationPopup(i, buildPopupContent(i));
-        activateCard(i, { centerMap: false, source: 'map_marker' });
+        activateCard(i, { zoomToPlace: false, source: 'map_marker' });
       });
       state.markers[i] = m;
     });
@@ -575,8 +557,7 @@ export async function buildMarkers(options = {}) {
         const pointData = data;
         const i = pointData?.index;
         if (i != null) {
-          openLocationPopup(i, buildPopupContent(i));
-          activateCard(i, { centerMap: false, source: 'map_marker' });
+          activateCard(i, { zoomToPlace: false, source: 'map_marker' });
         }
       }
     });
@@ -631,9 +612,8 @@ function initWithGoogle(cfg, view = {}) {
     mapId: cfg.googleMapId,
     colorScheme: getGoogleColorScheme(state.mapTheme),
     backgroundColor: state.mapTheme === 'dark' ? '#111827' : '#e5e7eb',
-    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_CENTER },
+    ...getGoogleMapUiOptions(isMobileLayout()),
   });
-  state.infoWindow = new google.maps.InfoWindow();
 
   // Watch for Google quota-exceeded error overlay
   const mapEl = requiredElement('map');
@@ -650,6 +630,24 @@ function initWithGoogle(cfg, view = {}) {
   updateProviderBadge('google');
   buildMarkers();
   if (state.pendingDestinationFit) fitMapToVisibleLocations();
+  flushPendingFocus();
+}
+
+/**
+ * Map chrome for the full-screen layout: one-finger panning (no "use two
+ * fingers" overlay), no map-type / Street View / fullscreen buttons competing
+ * with the floating UI, zoom buttons only where there is no pinch zoom, and
+ * Google's own POI popups off so taps reach LingOrm places.
+ * @param {boolean} mobile
+ */
+export function getGoogleMapUiOptions(mobile) {
+  return {
+    gestureHandling: 'greedy',
+    disableDefaultUI: true,
+    zoomControl: !mobile,
+    zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
+    clickableIcons: false,
+  };
 }
 
 /**
@@ -668,7 +666,6 @@ function reinitializeGoogleMap(theme) {
   }
   state.markers.forEach(marker => { if (marker) marker.map = null; });
   state.markers.length = 0;
-  if (state.infoWindow) state.infoWindow.close();
   if (state.userLocationMarker) {
     state.userLocationMarker.map = null;
     state.userLocationMarker = null;
@@ -726,10 +723,32 @@ function initWithHere(apiKey) {
   );
   new H.mapevents.Behavior(new H.mapevents.MapEvents(state.map));
   state.hereUi = H.ui.UI.createDefault(state.map, layers, uiLocale);
+  arrangeHereControls(state.hereUi, isMobileLayout());
 
   updateProviderBadge('here');
   buildMarkers();
   if (state.pendingDestinationFit) fitMapToVisibleLocations();
+  flushPendingFocus();
+}
+
+/**
+ * HERE's default controls sit bottom-right, under the mobile bottom sheet.
+ * Keep zoom where Google puts it on desktop and drop the controls a phone
+ * covers or does not need (pinch zoom, and the floating UI owns the corners).
+ * @param {any} ui
+ * @param {boolean} mobile
+ */
+function arrangeHereControls(ui, mobile) {
+  const zoom = ui?.getControl?.('zoom');
+  const settings = ui?.getControl?.('mapsettings');
+  const scale = ui?.getControl?.('scalebar');
+  if (mobile) {
+    zoom?.setVisibility?.(false);
+    settings?.setVisibility?.(false);
+    scale?.setVisibility?.(false);
+  } else {
+    settings?.setVisibility?.(false);
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -748,7 +767,6 @@ async function fallbackToHere(cfg) {
   }
   state.markers.forEach(m => { if (m) m.map = null; });
   state.markers.length = 0;
-  if (state.infoWindow) { state.infoWindow.close(); state.infoWindow = null; }
   if (state.userLocationMarker) { state.userLocationMarker.map = null; state.userLocationMarker = null; }
   state.map = null;
   state.provider = null;

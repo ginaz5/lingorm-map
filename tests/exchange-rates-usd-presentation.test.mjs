@@ -10,8 +10,8 @@ import {
   shouldCombineGreenUsdSort,
   syncExchangeControls,
 } from '../src/features/exchange-rates.js';
-import { buildPopupContent, renderExchangeRates, renderList, sortVisibleIndexes } from '../src/ui/render.js';
-import { refreshActivePopup } from '../src/map/map.js';
+import { buildPlaceDetailContent, renderExchangeRates, renderList, sortVisibleIndexes } from '../src/ui/render.js';
+import { refreshPlaceDetail } from '../src/ui/place-detail.js';
 
 const slugs = Object.keys(MAPPING.branches);
 const cell = (denom, value, displayDecimals = 2) => ({
@@ -36,6 +36,8 @@ function setup(t) {
     'exchange-sort': { value: 'default', options },
     'exchange-sort-label': { hidden: false }, 'exchange-sort-hint': { hidden: false },
     'loc-list': { innerHTML: '' },
+    'place-detail': { hidden: false },
+    'place-detail-body': { innerHTML: '', scrollTop: 0 },
   };
   const globals = {
     document: { getElementById: id => elements[id] ?? null, createElement: () => makeOption('') },
@@ -171,20 +173,19 @@ test('combined labels survive language switching and expiry restores unavailable
 });
 
 for (const provider of ['google', 'here']) {
-  test(`${provider} popup and list share merged and split USD presentation in both languages`, t => {
+  test(`${provider} place detail and list share merged and split USD presentation in both languages`, t => {
     const { elements } = setup(t);
-    let popup = '';
     state.provider = provider;
     state.activeIdx = 0;
-    state.infoWindow = state.infoBubble = { setContent: html => { popup = html; } };
     state.exchangeSort = 'USD_100';
     for (const language of ['zh', 'en']) {
       setLang(language);
       for (const same of [true, false]) {
         state.exchangeRatesBySlug[slugs[0]] = quote(33_000_000, same ? 33_000_000 : 32_000_000);
         renderList();
-        refreshActivePopup();
-        const panel = buildPopupContent(0).match(/<section class="fx-panel[\s\S]*?<\/section>/)[0];
+        assert.equal(refreshPlaceDetail(), true);
+        const popup = elements['place-detail-body'].innerHTML;
+        const panel = buildPlaceDetailContent(0).match(/<section class="fx-panel[\s\S]*?<\/section>/)[0];
         assert.ok(elements['loc-list'].innerHTML.includes(panel));
         assert.ok(popup.includes(panel));
         assert.equal((panel.match(/class="fx-rate-row"/g) || []).length, same ? 2 : 3);

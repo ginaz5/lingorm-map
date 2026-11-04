@@ -12,7 +12,8 @@
  */
 /** @typedef {{ dateKey: string, publishTime: number, items: ChangelogItem[] }} ChangelogDateGroup */
 
-export const CURRENT_CHANGELOG_RELEASE_ID = '2026-10-31-orange-rates-home-and-resources';
+export const CURRENT_CHANGELOG_RELEASE_ID = '2026-11-04-map-first-layout';
+const ORANGE_RATES_RELEASE_ID = '2026-10-31-orange-rates-home-and-resources';
 
 /**
  * Shared release history for the What's New preview and the full changelog.
@@ -21,6 +22,48 @@ export const CURRENT_CHANGELOG_RELEASE_ID = '2026-10-31-orange-rates-home-and-re
  * @type {ChangelogItem[]}
  */
 export const CHANGELOG = [
+  {
+    id: 'feat-024',
+    title: {
+      zh: '像地圖 App 一樣瀏覽',
+      en: 'Browse like a maps app',
+    },
+    description: {
+      zh: '地圖改為全螢幕，搜尋列與快速篩選浮在上方。手機可上下拖曳地點清單，點地點即可查看詳細資訊。',
+      en: 'The map now fills the screen, with search and quick filters on top. On phones, drag the list up or down and tap a place for details.',
+    },
+    badge: { zh: '設計', en: 'Design' },
+    publishTime: Date.parse('2026-11-04T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-025',
+    title: {
+      zh: '加到主畫面',
+      en: 'Add it to your home screen',
+    },
+    description: {
+      zh: '從左上角選單或瀏覽器選單「加到主畫面」，就能像 App 一樣全螢幕開啟地圖。',
+      en: 'Use Add to Home Screen in the top-left menu or your browser to open the map full-screen like an app.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-11-04T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
+  {
+    id: 'feat-026',
+    title: {
+      zh: '分享單一地點',
+      en: 'Share a place',
+    },
+    description: {
+      zh: '在地點資訊按「分享」，朋友打開連結就會直接看到這個地點。',
+      en: 'Tap Share on a place to send a link that opens it directly.',
+    },
+    badge: { zh: '功能', en: 'Feature' },
+    publishTime: Date.parse('2026-11-04T00:00:00Z'),
+    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+  },
   {
     id: 'feat-020',
     title: {
@@ -33,7 +76,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-10-31T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: ORANGE_RATES_RELEASE_ID,
   },
   {
     id: 'feat-021',
@@ -47,7 +90,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '功能', en: 'Feature' },
     publishTime: Date.parse('2026-10-31T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: ORANGE_RATES_RELEASE_ID,
   },
   {
     id: 'feat-022',
@@ -61,7 +104,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '內容', en: 'Content' },
     publishTime: Date.parse('2026-10-31T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: ORANGE_RATES_RELEASE_ID,
   },
   {
     id: 'feat-023',
@@ -75,7 +118,7 @@ export const CHANGELOG = [
     },
     badge: { zh: '內容', en: 'Content' },
     publishTime: Date.parse('2026-10-31T00:00:00Z'),
-    releaseId: CURRENT_CHANGELOG_RELEASE_ID,
+    releaseId: ORANGE_RATES_RELEASE_ID,
   },
   {
     id: 'feat-016',

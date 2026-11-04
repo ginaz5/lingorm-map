@@ -2,8 +2,12 @@ import { lang } from '../core/i18n.js';
 import { state } from '../core/state.js';
 
 /** @typedef {import('../data/csv-parser.js').LocationRow} LocationRow */
-/** @typedef {'list_card'|'map_marker'|'popup'|'unknown'} InteractionSource */
-/** @typedef {'directions'|'open_google_maps'} LocationAction */
+/**
+ * `popup` is the place detail view (it replaced the map InfoWindow and keeps
+ * the value so reports stay comparable); `shared_link` is a `?place=` link.
+ * @typedef {'list_card'|'map_marker'|'popup'|'shared_link'|'unknown'} InteractionSource
+ */
+/** @typedef {'directions'|'open_google_maps'|'share'} LocationAction */
 /** @typedef {'add'|'remove'} FavoriteAction */
 /** @typedef {'category'|'type'|'destination'|'favorites'} FilterType */
 /** @typedef {'set'|'select'|'deselect'|'clear'|'enable'|'disable'} FilterAction */
@@ -134,15 +138,21 @@ export function trackLocateResult(result) {
   });
 }
 
-/** @param {'map'|'list'} tab */
-export function trackTabView(tab) {
-  return trackEvent('tab_view', {
+/**
+ * A user-initiated move of the mobile results sheet (replaces the retired
+ * map/list `tab_view` event).
+ * @param {'peek'|'half'|'full'} sheetState
+ * @param {'drag'|'handle'} source
+ */
+export function trackSheetView(sheetState, source) {
+  return trackEvent('sheet_view', {
     ...interactionParameters(),
-    tab,
+    sheet_state: sheetState,
+    interaction_source: source,
   });
 }
 
-/** @param {'desktop_header'|'mobile_menu'|'unknown'} source */
+/** @param {'side_menu'|'unknown'} source */
 export function trackFanResourcesOpen(source) {
   return trackEvent('fan_resources_open', {
     ui_language: lang,
@@ -153,7 +163,7 @@ export function trackFanResourcesOpen(source) {
 /**
  * @param {string} resourceId
  * @param {'website'|'source'|'schedule'} linkType
- * @param {'desktop_header'|'mobile_menu'|'unknown'} source
+ * @param {'side_menu'|'unknown'} source
  */
 export function trackFanResourceClick(resourceId, linkType, source) {
   return trackEvent('fan_resource_click', {

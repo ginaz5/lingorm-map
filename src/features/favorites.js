@@ -73,11 +73,18 @@ export function toggleFavorite(id, event) {
 
   saveFavorites();
 
-  // Update all fav buttons that reference this id (card + popup may both exist)
+  // Update all fav buttons that reference this id (list card + place detail)
   const isFav = state.favorites.has(id);
   document.querySelectorAll(`[data-fav-id="${id}"]`).forEach(btn => {
     btn.classList.toggle('fav-active', isFav);
     btn.setAttribute('aria-pressed', String(isFav));
+    // Labelled place-detail actions keep their visible text as the name and
+    // swap only the icon; icon-only card hearts carry an aria-label.
+    const icon = typeof btn.querySelector === 'function' ? btn.querySelector('.place-action-icon') : null;
+    if (icon) {
+      icon.innerHTML = heartSVG(isFav);
+      return;
+    }
     btn.setAttribute('aria-label', isFav ? '移除最愛' : '加入最愛');
     btn.innerHTML = heartSVG(isFav);
   });

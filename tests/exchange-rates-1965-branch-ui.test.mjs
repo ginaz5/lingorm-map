@@ -7,8 +7,8 @@ import { parseCSV } from '../src/data/csv-parser.js';
 import { ORANGE_BRANCHES, BRANCH_QUOTE_TTL_MS, parseBranchQueryPayload } from '../src/data/exchange-rates-1965-branch.js';
 import { queryOrangeBranch, loadCachedBranchQuotes, getBranchQueryState, getExchangeRateCell1965, initBranchQueries, cancelBranchQueries, BRANCH_QUERY_API, BRANCH_CACHE_API } from '../src/features/exchange-rates-1965-branch.js';
 import { cancelExchangeScheduling, isExchangeSortAvailable, syncExchangeControls } from '../src/features/exchange-rates.js';
-import { renderExchangeRates, buildPopupContent, sortVisibleIndexes } from '../src/ui/render.js';
-import { refreshActivePopup } from '../src/map/map.js';
+import { renderExchangeRates, buildPlaceDetailContent, sortVisibleIndexes } from '../src/ui/render.js';
+import { refreshPlaceDetail } from '../src/ui/place-detail.js';
 import { uuid } from './helpers/exchange-rates-store.mjs';
 
 const START = Date.parse('2026-10-17T01:00:00.000Z');
@@ -215,7 +215,7 @@ test('programmatic duplicate reads share a request; cards and popups use only th
   assert.equal(getExchangeRateCell1965(otherSlug, 'USD_1965'), null);
   assert.equal(isExchangeSortAvailable('USD_1965'), true);
   state.exchangeSort = 'USD_1965';
-  for (const html of [renderExchangeRates(row), buildPopupContent(0)]) {
+  for (const html of [renderExchangeRates(row), buildPlaceDetailContent(0)]) {
     assert.match(html, /32\.77 THB/);
     assert.match(html, /0\.99500 THB/);
     assert.match(html, /fx-best/);
@@ -227,29 +227,29 @@ test('programmatic duplicate reads share a request; cards and popups use only th
 });
 
 for (const provider of ['google', 'here']) {
-  test(`${provider} popup loses expired manual quotes without touching green rates or fetching again`, async t => {
-    const { listeners } = harness(t, () => refreshActivePopup());
-    let html = '';
-    const popup = { setContent: value => { html = value; } };
+  test(`${provider} place detail loses expired manual quotes without touching green rates or fetching again`, async t => {
+    const { listeners, document } = harness(t, () => refreshPlaceDetail());
+    const body = { innerHTML: '', scrollTop: 0 };
+    const detailElements = { 'place-detail': { hidden: false }, 'place-detail-body': body };
+    document.getElementById = id => detailElements[id] ?? null;
     Object.assign(state, { provider, activeIdx: 0, map: null,
-      infoWindow: provider === 'google' ? popup : null, infoBubble: provider === 'here' ? popup : null,
       exchangeRatesBySlug: { green: { rates: { USD_100: { rateScaledE6: 33_000_000 } } } }, exchangeHasUsableSnapshot: true });
     const fetch = t.mock.method(globalThis, 'fetch', async () => Response.json(payload()));
     await queryOrangeBranch(slug);
     state.exchangeSort = 'USD_1965';
-    refreshActivePopup();
-    assert.match(html, /32\.77 THB/);
+    refreshPlaceDetail();
+    assert.match(body.innerHTML, /32\.77 THB/);
     // A suspended browser's render guard rejects old data even before timers run.
     t.mock.timers.setTime(START + BRANCH_QUOTE_TTL_MS + 1);
     assert.equal(getExchangeRateCell1965(slug, 'USD_1965'), null);
     listeners.visibilitychange.fn();
-    assert.doesNotMatch(html, /32\.77 THB|fx-best|class="fx-checked"/);
+    assert.doesNotMatch(body.innerHTML, /32\.77 THB|fx-best|class="fx-checked"/);
     assert.equal(state.exchangeSort, 'default');
     assert.equal(state.exchangeHasUsableSnapshot, true);
     assert.equal(state.exchangeRatesBySlug.green.rates.USD_100.rateScaledE6, 33_000_000);
     assert.equal(fetch.mock.callCount(), 1);
-    assert.doesNotMatch(html, /data-orange-query|fx-query/);
-    assert.equal((html.match(/暫無報價/g) || []).length, 2);
+    assert.doesNotMatch(body.innerHTML, /data-orange-query|fx-query/);
+    assert.equal((body.innerHTML.match(/暫無報價/g) || []).length, 2);
   });
 }
 

@@ -45,5 +45,13 @@ test('configures strict JavaScript type checking', async () => {
     'src/map/map.js',
     'src/features/forms.js',
     'src/map/map-globals.d.ts',
+    'src/ui/layout.js',
+    'src/ui/bottom-sheet.js',
+    'src/ui/side-panel.js',
+    'src/ui/side-menu.js',
+    'src/ui/place-detail.js',
+    'src/map/viewport.js',
+    'src/features/filter-chips.js',
+    'src/features/install-app.js',
   ]);
 });

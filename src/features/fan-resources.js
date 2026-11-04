@@ -10,31 +10,31 @@ export function initFanResources(documentRoot = document) {
   const dialog = dialogElement;
   const closeButton = closeElement;
 
-  const desktopTrigger = documentRoot.getElementById('fan-resources-btn');
-  const mobileTrigger = documentRoot.querySelector('[data-mobile-action="fan-resources"]');
-  const moreButton = documentRoot.getElementById('mobile-actions-btn');
+  // The entry lives in the side menu, which closes before this dialog opens;
+  // focus then returns to the menu button that opened the menu.
+  const menuTrigger = documentRoot.getElementById('fan-resources-btn');
+  const menuButton = documentRoot.getElementById('menu-btn');
   /** @type {HTMLElement|null} */
   let returnFocus = null;
   let startedOnBackdrop = false;
-  /** @type {'desktop_header'|'mobile_menu'|'unknown'} */
+  /** @type {'side_menu'|'unknown'} */
   let interactionSource = 'unknown';
 
   /** @param {boolean} expanded */
   function setExpanded(expanded) {
-    for (const trigger of [desktopTrigger, mobileTrigger]) {
-      trigger?.setAttribute('aria-expanded', String(expanded));
-    }
+    menuTrigger?.setAttribute('aria-expanded', String(expanded));
   }
 
-  /** @param {HTMLElement|null} [trigger] */
-  function open(trigger = desktopTrigger) {
+  /**
+   * @param {HTMLElement|null} [returnTo] element focused again on close
+   * @param {'side_menu'|'unknown'} [source]
+   */
+  function open(returnTo = menuButton, source = 'side_menu') {
     if (dialog.open) return;
-    returnFocus = trigger;
+    returnFocus = returnTo;
     startedOnBackdrop = false;
     dialog.showModal();
-    interactionSource = trigger && trigger === desktopTrigger ? 'desktop_header'
-      : trigger && (trigger === moreButton || trigger === mobileTrigger) ? 'mobile_menu'
-      : 'unknown';
+    interactionSource = source;
     trackFanResourcesOpen(interactionSource);
     setExpanded(true);
     closeButton.focus();
@@ -52,7 +52,6 @@ export function initFanResources(documentRoot = document) {
       || event.clientY < rect.top || event.clientY > rect.bottom;
   }
 
-  desktopTrigger?.addEventListener('click', () => open(desktopTrigger));
   const resourceLinks = /** @type {NodeListOf<HTMLAnchorElement>} */ (dialog.querySelectorAll('a[data-resource-link]'));
   for (const link of resourceLinks) {
     const resourceId = link.closest('[data-resource-id]')?.getAttribute('data-resource-id');
@@ -78,7 +77,7 @@ export function initFanResources(documentRoot = document) {
   // Native Escape dismissal also fires close, keeping focus/ARIA in sync.
   dialog.addEventListener('close', () => {
     setExpanded(false);
-    const target = [returnFocus, desktopTrigger, moreButton].find(element =>
+    const target = [returnFocus, menuButton].find(element =>
       element?.isConnected && element.getClientRects().length > 0
     );
     target?.focus();

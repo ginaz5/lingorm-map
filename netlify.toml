@@ -27,3 +27,9 @@
   # It is only the fallback default used until a runtime control exists in
   # Blobs; day-to-day on/off is `npm run fx:control -- enable|disable` (takes
   # effect immediately, no redeploy). Changing this variable needs a redeploy.
+
+# Web app manifest (public/manifest.webmanifest): installable, no service worker.
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"

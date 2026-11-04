@@ -14,11 +14,9 @@
  * @property {any} map
  * @property {any} mapConfig
  * @property {'light'|'dark'} mapTheme
- * @property {any} infoWindow
  * @property {MutationObserver|null} googleErrorObserver
  * @property {any} hereUi
  * @property {any} hereLayers
- * @property {any} infoBubble
  * @property {any[]} markers
  * @property {any} markerClusterer
  * @property {any} userLocationMarker
@@ -52,7 +50,7 @@ export const state = {
   data: [],
   // Indices into data[] that pass the current filter
   visIdx: [],
-  // Index of the currently active/highlighted card
+  // Index of the selected place (detail view, highlighted card and marker)
   activeIdx: -1,
 
   // Active map provider: 'google' | 'here' | null
@@ -64,13 +62,11 @@ export const state = {
   mapTheme: 'light',
 
   // Google Maps-specific
-  infoWindow: null,
   googleErrorObserver: null,
 
   // HERE Maps-specific
   hereUi: null,
   hereLayers: null,
-  infoBubble: null,
 
   // Sparse array: markers[i] corresponds to data[i]
   markers: [],

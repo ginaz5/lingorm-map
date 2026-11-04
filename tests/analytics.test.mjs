@@ -13,7 +13,7 @@ import {
   trackLocationAction,
   trackLocationOpen,
   trackSearchComplete,
-  trackTabView,
+  trackSheetView,
 } from '../src/services/analytics.js';
 
 const location = {
@@ -132,9 +132,9 @@ test('discovery and preference analytics exclude raw search and location data', 
     trackFilterApply('destination', 'destination:bangkok', 12, 'select', 2);
     trackSearchComplete(7, 0);
     trackLocateResult('denied');
-    trackTabView('map');
+    trackSheetView('peek', 'drag');
     trackLanguageChange('zh', 'en');
-    trackFanResourcesOpen('mobile_menu');
+    trackFanResourcesOpen('side_menu');
 
     assert.deepEqual(globalThis.window.dataLayer, [
       {
@@ -152,14 +152,15 @@ test('discovery and preference analytics exclude raw search and location data', 
         event: 'locate_result',
       },
       {
-        map_provider: 'here', ui_language: 'zh', tab: 'map', event: 'tab_view',
+        map_provider: 'here', ui_language: 'zh', sheet_state: 'peek',
+        interaction_source: 'drag', event: 'sheet_view',
       },
       {
         map_provider: 'here', ui_language: 'zh', from_language: 'zh',
         to_language: 'en', event: 'language_change',
       },
       {
-        ui_language: 'zh', interaction_source: 'mobile_menu', event: 'fan_resources_open',
+        ui_language: 'zh', interaction_source: 'side_menu', event: 'fan_resources_open',
       },
     ]);
 
