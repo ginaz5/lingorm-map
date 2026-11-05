@@ -189,21 +189,59 @@ HERE Maps 主題同步：依 `getHereBaseLayer()` 切換可用的日間／夜間
 
 ---
 
-## 手機版架構
+## 介面：地圖優先版面（2026-11-04 起，取代手機 Tab 導航）
 
-**Layout：**
-```css
-@media(max-width:700px) {
-  .app-body { flex-direction: column }
-  .panel { flex: 1; min-height: 0 }   /* 必須，否則 overflow-y:auto 失效 */
-}
-```
+**背景：** 原本桌機是「左清單 + 右地圖」分割，手機用底部「地圖／清單」Tab 切換，
+點地點開 Google InfoWindow／HERE InfoBubble。使用者希望操作像 Google Maps，
+同時維持網頁（同一個 Netlify 網址、無需安裝商店 App）。
 
-**Tab 導航邏輯：**
-- 點地圖 marker → 停留在地圖 tab，開 info window
-- 點清單卡片 → 切到地圖 tab，pan 到地點並開 info window
+**決策：**
+- **全螢幕地圖 + 浮動控制**：搜尋列（選單鍵、搜尋、清除、收藏）與篩選 chip 列浮在地圖上方；
+  原本的 header 按鈕（語言、主題、粉絲資源、更新紀錄、問題回報）移到左側抽屜
+  `<dialog class="side-menu">`。
+- **同一個 `#panel` 兩種形態**：≤700px 是可拖曳 bottom sheet（peek 112px／half 45%／full 到搜尋列下方，
+  `src/ui/bottom-sheet.js`），開啟時為 peek，地圖為主，如同地圖 App 首頁；>700px 是可收合的左側面板（`src/ui/side-panel.js`）。
+- **地點詳細面板取代 popup**：選取地點時 panel 從清單切成詳細資訊（`src/ui/place-detail.js`），
+  Google 與 HERE 共用同一份 UI；provider 專屬邏輯只剩地圖平移與控制項位置。
+- **拖曳地圖時收起 sheet**：使用者開始拖曳地圖（Google／HERE `dragstart`，程式平移不觸發）時，手機 sheet 降到 peek，
+  地點頁在 peek 只顯示一行名稱；點把手依 peek→half→full 回升。
+- **深色模式 marker 用淺色**：原本深色模式一般 marker 為珊瑚橘 `#ff6b35`，與橘標 `#eb7923` 幾乎同色；改為淺色底深色字，
+  與綠標、橘標、使用者位置藍點都能區分。
+- **已選取地點圖釘**：密集區在 zoom 15 仍可能被群聚，因此選取地點另畫一個較大的圖釘
+  （`showSelectedMarker`，Google `AdvancedMarkerElement`／HERE `DomMarker`，`zIndex` 2000），不參與群聚。
+- **地圖 insets**：`src/map/viewport.js` 依「目標」sheet 高度／面板狀態計算被浮動 UI 蓋住的區域，
+  置中（Google `panBy`、HERE `screenToGeo` 後 `setCenter`）與 `fitBounds` padding 都對準可見區域。
+- **Chip 只是 select 的鏡像**：`#cat-filter`／`#label-filter` 仍是唯一狀態來源；chip 設值後派發 `change`，
+  沿用既有篩選與 analytics 路徑。完整篩選集中在 Filters sheet（手機 bottom sheet、桌機置中 dialog）。
+- **可安裝但不加 service worker**：只加 `manifest.webmanifest` 與 icon。Chrome 108+（手機）／112+（桌機）
+  與 Safari 可從瀏覽器選單安裝並全螢幕開啟；不快取 `/api/locations`，避免舊資料。
+  代價是 Chrome 不會觸發 `beforeinstallprompt`（需要 fetch handler），所以選單項目在沒有 prompt 時改顯示操作說明。
+- **單一地點連結**：分享產生 `?place=<slug>`；首次載入資料後開啟並移除參數。
 
-`min-height: 0` 是關鍵：flex item 預設 `min-height: auto`，不設為 0 則 `.loc-list` 父層不會有固定高度，`overflow-y: auto` 無法生效。
+**Gesture 實作取捨：**
+- sheet 用 `transform` 移動（不改高度），避免拖曳時每幀 layout／地圖 resize。
+- 標頭區（grip、結果數、返回列）用 pointer events + `touch-action:none`；
+  內容區用 touch events，只有在非 full 狀態、或 full 且已捲到頂往下拉時才接手並 `preventDefault`，
+  其餘交給原生捲動。非 full 狀態清單 `overflow-y:hidden`，避免原生捲動先搶到手勢。
+
+**Provider 條款與可見性：**
+- 地圖不延伸到面板下方：桌機 `#map-wrap` 從面板右側開始（收合時才全寬），
+  手機地圖底部停在 peek sheet 上緣，且開啟時 sheet 為 peek，確保 Google／HERE logo 與條款連結在預設狀態可見。
+  sheet 拉到 half／full（含開啟地點時的 half）會暫時蓋住，屬已知取捨；若要完全避免，
+  需讓地圖容器跟著 sheet 改變高度並補償中心點，代價是每次切換都 resize 地圖。
+- Google：`gestureHandling:'greedy'`（單指拖曳）、`disableDefaultUI`、手機不顯示縮放鍵、
+  `clickableIcons:false`（避免 Google POI 彈窗搶走點擊）。HERE：手機隱藏預設控制項。
+
+**Analytics 相容性：**
+- 地點詳細面板沿用 `interaction_source: 'popup'`，與 InfoWindow 時期的報表可比較。
+- 退役 `tab_view`，改為 `sheet_view`（`sheet_state`, `interaction_source: drag|handle`）。
+- `fan_resources_open`／`fan_resource_click` 的來源改為 `side_menu`（原 `desktop_header`／`mobile_menu`）。
+- 新增 `location_action.action = 'share'` 與 `location_open.interaction_source = 'shared_link'`。
+
+**未採用：**
+- 原生 App／Capacitor 包裝：需上架與雙平台維護，使用者需求是「網頁但體驗像 App」。
+- Service worker 離線快取：可帶來安裝提示與離線，但要處理快照與匯率的 cache busting，風險大於效益。
+- 保留 InfoWindow 並另加 sheet：同一地點兩套 UI，且 InfoWindow 在手機會被 sheet 遮住。
 
 ---
 

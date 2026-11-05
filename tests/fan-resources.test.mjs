@@ -8,7 +8,6 @@ function makeEnvironment() {
   const documentRoot = {
     activeElement: null,
     getElementById: id => elements.get(id) ?? null,
-    querySelector: () => mobileTrigger,
   };
   function element() {
     return Object.assign(new EventTarget(), {
@@ -21,9 +20,10 @@ function makeEnvironment() {
       focus() { documentRoot.activeElement = this; },
     });
   }
+  // The entry is a side-menu item; the menu closes first, so focus returns
+  // to the search bar's menu button.
   const trigger = element();
-  const mobileTrigger = element();
-  const more = element();
+  const menuButton = element();
   const closeButton = element();
   const links = [
     ['lingorm_google_maps', 'source'], ['lingorm_google_maps', 'website'],
@@ -48,47 +48,42 @@ function makeEnvironment() {
     querySelectorAll: () => links,
   });
   const elements = new Map([
-    ['fan-resources-btn', trigger], ['mobile-actions-btn', more],
+    ['fan-resources-btn', trigger], ['menu-btn', menuButton],
     ['fan-resources-modal', dialog], ['fan-resources-close', closeButton],
   ]);
   const controller = initFanResources(documentRoot);
-  return { documentRoot, trigger, mobileTrigger, more, closeButton, dialog, controller, links };
+  return { documentRoot, trigger, menuButton, closeButton, dialog, controller, links };
 }
 
 function pointerEvent(type, clientX, clientY) {
   return Object.assign(new Event(type), { clientX, clientY });
 }
 
-test('desktop resources opens with close-button focus and restores the opener', () => {
-  const { documentRoot, trigger, mobileTrigger, closeButton, dialog, controller, more } = makeEnvironment();
-  trigger.dispatchEvent(new Event('click'));
+test('resources opens with close-button focus and returns focus to the menu button', () => {
+  const { documentRoot, trigger, menuButton, closeButton, dialog, controller } = makeEnvironment();
+  controller.open();
   assert.equal(dialog.open, true);
   assert.equal(documentRoot.activeElement, closeButton);
   assert.equal(trigger.getAttribute('aria-expanded'), 'true');
-  assert.equal(mobileTrigger.getAttribute('aria-expanded'), 'true');
-  controller.open(more); // Repeated opens must not replace the original focus target.
+  controller.open(trigger); // Repeated opens must not replace the original focus target.
   closeButton.dispatchEvent(new Event('click'));
   assert.equal(dialog.open, false);
-  assert.equal(documentRoot.activeElement, trigger);
+  assert.equal(documentRoot.activeElement, menuButton);
   assert.equal(trigger.getAttribute('aria-expanded'), 'false');
-  assert.equal(mobileTrigger.getAttribute('aria-expanded'), 'false');
 });
 
-test('mobile dismissal restores More instead of a hidden menu item', () => {
-  const { documentRoot, controller, more, dialog, mobileTrigger } = makeEnvironment();
-  mobileTrigger.visible = false;
-  controller.open(more);
-  dialog.close(); // Also exercises the native Escape close-event path.
-  assert.equal(documentRoot.activeElement, more);
-  assert.equal(mobileTrigger.getAttribute('aria-expanded'), 'false');
-});
-
-test('focus falls back to More if the desktop opener disappears at a breakpoint', () => {
-  const { documentRoot, controller, trigger, more, dialog } = makeEnvironment();
+test('focus falls back to the menu button when the requested opener is hidden', () => {
+  const { documentRoot, controller, trigger, menuButton, dialog } = makeEnvironment();
   controller.open(trigger);
-  trigger.visible = false;
-  dialog.close();
-  assert.equal(documentRoot.activeElement, more);
+  trigger.visible = false; // The side menu closed around it.
+  dialog.close(); // Also exercises the native Escape close-event path.
+  assert.equal(documentRoot.activeElement, menuButton);
+});
+
+test('the side menu item does not open the dialog on its own', () => {
+  const { trigger, dialog } = makeEnvironment();
+  trigger.dispatchEvent(new Event('click'));
+  assert.equal(dialog.open, false, 'main.js closes the menu first, then calls open()');
 });
 
 test('only a gesture starting and ending outside the dialog dismisses it', () => {
@@ -109,21 +104,21 @@ test('missing resources markup is safe on pages without the feature', () => {
   assert.equal(initFanResources({ getElementById: () => null }), null);
 });
 
-test('resources tracks each successful open once across desktop and mobile entry points', () => {
+test('resources tracks each successful open once with its entry point', () => {
   const previousWindow = globalThis.window;
   globalThis.window = { dataLayer: [{ event: 'location_open', location_id: 'previous-place' }] };
   try {
-    const { trigger, more, dialog, controller, closeButton } = makeEnvironment();
-    trigger.dispatchEvent(new Event('click'));
-    controller.open(more);
+    const { menuButton, dialog, controller, closeButton } = makeEnvironment();
+    controller.open();
+    controller.open(menuButton);
     dialog.dispatchEvent(pointerEvent('click', 200, 200));
     closeButton.dispatchEvent(new Event('click'));
-    controller.open(more);
+    controller.open(menuButton);
     dialog.close();
-    controller.open(null);
+    controller.open(null, 'unknown');
     assert.deepEqual(globalThis.window.dataLayer.slice(1), [
-      { event: 'fan_resources_open', ui_language: 'zh', interaction_source: 'desktop_header' },
-      { event: 'fan_resources_open', ui_language: 'zh', interaction_source: 'mobile_menu' },
+      { event: 'fan_resources_open', ui_language: 'zh', interaction_source: 'side_menu' },
+      { event: 'fan_resources_open', ui_language: 'zh', interaction_source: 'side_menu' },
       { event: 'fan_resources_open', ui_language: 'zh', interaction_source: 'unknown' },
     ]);
   } finally {
@@ -150,7 +145,7 @@ test('each resource link queues its card and link type without preventing naviga
   globalThis.localStorage = { setItem() {} };
   globalThis.window = { dataLayer: [{ event: 'location_open', location_id: 'previous-place' }] };
   try {
-    const { controller, links, dialog, more } = makeEnvironment();
+    const { controller, links, dialog } = makeEnvironment();
     controller.open();
     for (const link of links) {
       const click = new Event('click', { cancelable: true });
@@ -160,7 +155,7 @@ test('each resource link queues its card and link type without preventing naviga
         event: 'fan_resource_click',
         resource_id: link.closest().getAttribute('data-resource-id'),
         link_type: link.getAttribute('data-resource-link'),
-        ui_language: 'zh', interaction_source: 'desktop_header',
+        ui_language: 'zh', interaction_source: 'side_menu',
       });
     }
     const trackedClicks = links.length + 2; // Initial event, one open, and one click per link.
@@ -169,13 +164,13 @@ test('each resource link queues its card and link type without preventing naviga
     links[0].dispatchEvent(new Event('click'));
     assert.equal(globalThis.window.dataLayer.length, trackedClicks, 'closed dialog does not track');
     setLang('en');
-    controller.open(more);
+    controller.open(null, 'unknown');
     links[3].dispatchEvent(Object.assign(new Event('auxclick'), { button: 2 }));
     assert.equal(globalThis.window.dataLayer.length, trackedClicks + 1, 'right click does not track');
     links[3].dispatchEvent(Object.assign(new Event('auxclick'), { button: 1 }));
     assert.deepEqual(globalThis.window.dataLayer.at(-1), {
       event: 'fan_resource_click', resource_id: 'lingorm_fanpage', link_type: 'schedule',
-      ui_language: 'en', interaction_source: 'mobile_menu',
+      ui_language: 'en', interaction_source: 'unknown',
     });
     const cancelled = new Event('click', { cancelable: true });
     cancelled.preventDefault();
@@ -207,7 +202,7 @@ test('all seven cards have stable analytics IDs and all fifteen links have a def
 
 test('resource links distinguish the Fanpage homepage from its schedule shortcut', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  const dialog = html.match(/<dialog\b[\s\S]*?<\/dialog>/)?.[0];
+  const dialog = html.match(/<dialog class="fan-resources-dialog"[\s\S]*?<\/dialog>/)?.[0];
   assert.ok(dialog);
   const links = [...dialog.matchAll(/<a\b[^>]*>/g)].map(match => match[0]);
   assert.equal(links.length, 15);

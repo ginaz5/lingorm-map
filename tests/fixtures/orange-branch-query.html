@@ -20,7 +20,7 @@
 <body>
 <main>
   <h1>Green and orange exchange cards</h1>
-  <p class="fixture-note">Local mock using the production card and popup renderers. No map SDK or remote API is loaded. Parameters: lang=en, state=missing/loading/expired, usd=split/missing50/missing100, theme=dark, width=320/390, sort=USD_100/USD_50/USD_1965. USD 50 and 100 have equal rates by default.</p>
+  <p class="fixture-note">Local mock using the production card and place detail renderers. No map SDK or remote API is loaded. Parameters: lang=en, state=missing/loading/expired, usd=split/missing50/missing100, theme=dark, width=320/390, sort=USD_100/USD_50/USD_1965. USD 50 and 100 have equal rates by default.</p>
   <div class="exchange-toolbar">
     <label class="exchange-sort-label" for="exchange-sort" id="exchange-sort-label" data-i18n="fx_sort_label" hidden></label>
     <select class="filter-sel exchange-sort" id="exchange-sort" aria-describedby="exchange-sort-hint" hidden>
@@ -36,7 +36,7 @@
   <div id="request-count" role="status">API requests: 0</div>
   <h2>List cards</h2>
   <div id="loc-list" class="comparison-grid"></div>
-  <h2>Map popup content (shared by Google and HERE)</h2>
+  <h2>Place detail content (shared by Google and HERE)</h2>
   <div id="mock-popups" class="comparison-grid"></div>
 </main>
 <script type="module">
@@ -47,7 +47,7 @@
   import { ORANGE_BRANCHES } from '/src/data/exchange-rates-1965-branch.js';
   import { quoteExpiryMs } from '/src/data/exchange-rate-timing.js';
   import { syncExchangeControls } from '/src/features/exchange-rates.js';
-  import { renderList, buildPopupContent } from '/src/ui/render.js';
+  import { renderList, buildPlaceDetailContent } from '/src/ui/render.js';
 
   const query = new URLSearchParams(location.search);
   const language = query.get('lang') === 'en' ? 'en' : 'zh';
@@ -118,7 +118,7 @@
     syncExchangeControls();
     renderList();
     document.getElementById('mock-popups').innerHTML = state.data.map((_row, index) =>
-      `<section class="mock-popup-frame" aria-label="${index === 0 ? 'Green' : 'Orange'} map popup">${buildPopupContent(index)}</section>`
+      `<section class="mock-popup-frame" aria-label="${index === 0 ? 'Green' : 'Orange'} place detail">${buildPlaceDetailContent(index)}</section>`
     ).join('');
   };
   document.getElementById('exchange-sort').addEventListener('change', event => {

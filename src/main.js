@@ -2,11 +2,11 @@ import { setLang, t } from './core/i18n.js';
 import { state } from './core/state.js';
 import {
   updateLangUI, buildCatFilter, buildTypeFilter,
-  applyFilters, activateCard,
+  applyFilters, activateCard, isPublicLocation,
 } from './ui/render.js';
 import {
-  getEffectiveTheme, switchTab,
-  showSnackbar, locateMe, openNavigation, openInGoogleMaps,
+  getEffectiveTheme,
+  showSnackbar, locateMe, openNavigation, openInGoogleMaps, sharePlace,
 } from './ui/ui.js';
 import {
   openIssueModal, closeIssueModal, submitIssueReport,
@@ -18,7 +18,6 @@ import {
   buildMarkers,
   clearActiveLocation,
   fitMapToVisibleLocations,
-  refreshActivePopup,
 } from './map/map.js';
 import {
   applyFiltersAndSyncMap,
@@ -37,10 +36,11 @@ import {
   trackFilterApply,
   trackHomeReset,
   trackSearchComplete,
-  trackTabView,
+  trackSheetView,
 } from './services/analytics.js';
 import {
   closeDestinationFilter,
+  openDestinationFilter,
   initDestinationFilter,
   reconcileDestinationFilter,
   renderDestinationFilter,
@@ -52,6 +52,18 @@ import { initCollectionInfo } from './features/collection-info.js';
 import { initFanResources } from './features/fan-resources.js';
 import { initExchangeRates, syncExchangeControls } from './features/exchange-rates.js';
 import { initBranchQueries } from './features/exchange-rates-1965-branch.js';
+import { initFilterChips } from './features/filter-chips.js';
+import { initInstallApp } from './features/install-app.js';
+import { initBottomSheet, setSheetSnap } from './ui/bottom-sheet.js';
+import { initSidePanel } from './ui/side-panel.js';
+import { initSideMenu } from './ui/side-menu.js';
+import {
+  initPlaceDetail,
+  isPlaceDetailOpen,
+  refreshPlaceDetail,
+} from './ui/place-detail.js';
+import { isMobileLayout } from './ui/layout.js';
+import { resizeMap, shiftCenterByPixels } from './map/viewport.js';
 
 // ═══════════════════════════════════════════════════
 // REBUILD — called after data loads or changes
@@ -92,6 +104,27 @@ function rebuild() {
   // Intentionally do not await: fitting reads only data/visIdx, not markers.
   if (state.map) void buildMarkers();
   if (state.selectedDestinations.size > 0) fitMapToVisibleLocations();
+  openPlaceFromUrl();
+}
+
+// ═══════════════════════════════════════════════════
+// SHARED PLACE LINK — ?place=<slug>
+// ═══════════════════════════════════════════════════
+let placeLinkHandled = false;
+
+/** Open a shared place once, after the first snapshot load, then drop the parameter. */
+function openPlaceFromUrl() {
+  if (placeLinkHandled || state.isLoading) return;
+  placeLinkHandled = true;
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('place');
+  if (slug === null) return;
+  params.delete('place');
+  const query = params.toString();
+  window.history.replaceState(window.history.state, '',
+    `${query ? `?${query}` : window.location.pathname}${window.location.hash}`);
+  const index = state.data.findIndex(row => row.id === slug && isPublicLocation(row));
+  if (index >= 0) activateCard(index, { source: 'shared_link' });
 }
 
 // ═══════════════════════════════════════════════════
@@ -103,37 +136,24 @@ function cycleTheme() {
   applyTheme();
 }
 
+const THEME_COLORS = Object.freeze({ light: '#ffffff', dark: '#111214' });
+
 function applyTheme() {
   const theme = getEffectiveTheme();
   document.documentElement.dataset.theme = theme;
 
+  // The menu shows both themes and highlights the current one (CSS reads
+  // <html data-theme>); the label states the current theme and the action,
+  // and reads through data-i18n-aria so a language switch relabels it too.
   const themeBtn = document.getElementById('theme-btn');
-  if (themeBtn) themeBtn.setAttribute('aria-pressed', String(theme === 'dark'));
+  if (themeBtn) {
+    themeBtn.dataset.i18nAria = theme === 'dark' ? 'menu_theme_aria_dark' : 'menu_theme_aria_light';
+    themeBtn.setAttribute('aria-label', t(themeBtn.dataset.i18nAria));
+  }
+  // Browser / installed-app chrome follows the in-app theme, not the OS one.
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLORS[theme]);
 
   updateMapTheme();
-}
-
-function closeMobileActions() {
-  const btn = document.getElementById('mobile-actions-btn');
-  const menu = document.getElementById('mobile-actions-menu');
-  btn.setAttribute('aria-expanded', 'false');
-  menu.hidden = true;
-}
-
-function toggleMobileActions(event) {
-  event.stopPropagation();
-  const btn = document.getElementById('mobile-actions-btn');
-  const menu = document.getElementById('mobile-actions-menu');
-  const isOpen = !menu.hidden;
-  menu.hidden = isOpen;
-  btn.setAttribute('aria-expanded', String(!isOpen));
-}
-
-function runMobileAction(event) {
-  const action = event.currentTarget.dataset.mobileAction;
-  closeMobileActions();
-  if (action === 'issue') openIssueModal();
-  if (action === 'fan-resources') fanResources?.open(document.getElementById('mobile-actions-btn'));
 }
 
 /**
@@ -183,6 +203,14 @@ function clearSearch() {
   if (searchAnalyticsTimer !== null) clearTimeout(searchAnalyticsTimer);
   searchAnalyticsTimer = null;
   /** @type {HTMLInputElement} */ (document.getElementById('search')).value = '';
+  syncSearchClear();
+}
+
+/** The clear (×) button shows only while the search box has text. */
+function syncSearchClear() {
+  const input = /** @type {HTMLInputElement} */ (document.getElementById('search'));
+  const clearBtn = document.getElementById('search-clear-btn');
+  if (clearBtn) clearBtn.hidden = input.value.length === 0;
 }
 
 /** @param {'category'|'type'} filterType @param {HTMLSelectElement} select */
@@ -201,11 +229,12 @@ function handleSelectFilter(filterType, select) {
 
 // ═══════════════════════════════════════════════════
 // EXPOSE FUNCTIONS USED IN TEMPLATE onclick STRINGS
-// (inside JS template literals in renderList / buildPopupContent)
+// (inside JS template literals in renderList / buildPlaceDetailContent)
 // ═══════════════════════════════════════════════════
 window.activateCard = activateCard;
 window.openNavigation = openNavigation;
 window.openInGoogleMaps = openInGoogleMaps;
+window.sharePlace = sharePlace;
 window.toggleFavorite = handleFavoriteClick;
 
 
@@ -303,14 +332,38 @@ function setFavoritesFilter(on, { silent = false } = {}) {
 }
 
 initDestinationFilter(handleDestinationChange);
-initFilterSheet({
+const filterSheet = initFilterSheet({
   beforeOpen: closeDestinationFilter,
-  onRemove: ({ filter, value }) => {
-    if (filter === 'destination') clearDestinationFilter(value);
-    else clearSelectFilter(filter);
-  },
   onClearAll: clearAllFilters,
 });
+initFilterChips({
+  onDestinationClick: () => {
+    const destChip = document.getElementById('dest-chip');
+    filterSheet?.open(destChip ?? undefined);
+    openDestinationFilter();
+    document.getElementById('dest-filter-btn')?.scrollIntoView({ block: 'nearest' });
+  },
+});
+initBottomSheet({
+  initialSnap: 'peek',
+  onSnapChange: (snap, source) => {
+    if (source === 'drag' || source === 'handle') trackSheetView(snap, source);
+  },
+});
+// The map sits beside the open desktop panel, so toggling it resizes the map.
+// Shift the centre by half the panel first so the map content stays put.
+initSidePanel({
+  beforeToggle: nextCollapsed => {
+    if (isMobileLayout()) return;
+    const half = (document.getElementById('panel')?.offsetWidth ?? 0) / 2;
+    shiftCenterByPixels(nextCollapsed ? -half : half);
+  },
+  onToggle: () => {
+    if (!isMobileLayout()) requestAnimationFrame(resizeMap);
+  },
+});
+initPlaceDetail({ onClose: clearActiveLocation });
+const sideMenu = initSideMenu();
 initHomeReset({
   clearSearch,
   clearFilters: clearAllFiltersSilently,
@@ -321,10 +374,14 @@ initHomeReset({
 });
 initCollectionInfo();
 const fanResources = initFanResources();
+initInstallApp({
+  showHint: message => showSnackbar(message, 9000),
+  beforeOpen: () => sideMenu?.close(),
+});
 /** @param {{sortChanged?: boolean}} change */
 const handleExchangeChange = change => {
   applyFiltersAndSyncMap({ exchangeSortChanged: change.sortChanged });
-  refreshActivePopup();
+  refreshPlaceDetail();
 };
 initExchangeRates(handleExchangeChange);
 initBranchQueries(() => {
@@ -337,32 +394,55 @@ document.getElementById('fav-filter-btn').addEventListener('click', event => {
   setFavoritesFilter(!state.favFilterOn);
   releasePointerFocus(event);
 });
-document.getElementById('search').addEventListener('input', handleSearchInput);
+const searchInput = /** @type {HTMLInputElement} */ (document.getElementById('search'));
+searchInput.addEventListener('input', () => {
+  syncSearchClear();
+  handleSearchInput();
+});
+// Searching works like a maps app: typing shows the results list over the
+// map (full sheet on mobile), and submitting returns to the half sheet.
+searchInput.addEventListener('focus', () => {
+  if (isPlaceDetailOpen()) clearActiveLocation();
+  if (isMobileLayout()) setSheetSnap('full');
+});
+searchInput.addEventListener('keydown', event => {
+  if (event.key !== 'Enter') return;
+  searchInput.blur();
+  if (isMobileLayout()) setSheetSnap('half');
+});
+document.getElementById('search-clear-btn')?.addEventListener('click', () => {
+  clearSearch();
+  applyFiltersAndSyncMap();
+  searchInput.focus();
+});
 document.getElementById('cat-filter').addEventListener('change', event => {
   handleSelectFilter('category', /** @type {HTMLSelectElement} */ (event.currentTarget));
 });
 document.getElementById('label-filter').addEventListener('change', event => {
   handleSelectFilter('type', /** @type {HTMLSelectElement} */ (event.currentTarget));
 });
-document.getElementById('issue-btn').addEventListener('click', openIssueModal);
 document.getElementById('locate-btn').addEventListener('click', locateMe);
+
+// Side menu items. Language and theme apply in place (the menu stays open to
+// show the change); the others hand focus to a dialog or reset the view.
 document.getElementById('lang-btn').addEventListener('click', toggleLang);
 document.getElementById('theme-btn')?.addEventListener('click', cycleTheme);
-document.getElementById('mobile-actions-btn').addEventListener('click', toggleMobileActions);
-document.querySelectorAll('[data-mobile-action]').forEach(btn => {
-  btn.addEventListener('click', runMobileAction);
+document.getElementById('issue-btn').addEventListener('click', () => {
+  if (sideMenu) sideMenu.closeThen(openIssueModal);
+  else openIssueModal();
 });
-document.addEventListener('click', closeMobileActions);
-document.getElementById('mobile-actions-menu').addEventListener('click', e => e.stopPropagation());
+document.getElementById('fan-resources-btn')?.addEventListener('click', () => {
+  const open = () => fanResources?.open(document.getElementById('menu-btn'));
+  if (sideMenu) sideMenu.closeThen(open);
+  else open();
+});
+document.getElementById('home-btn')?.addEventListener('click', () => sideMenu?.close());
 
-// Mobile tabs
-document.getElementById('tab-map').addEventListener('click', () => {
-  switchTab('map');
-  trackTabView('map');
-});
-document.getElementById('tab-list').addEventListener('click', () => {
-  switchTab('list');
-  trackTabView('list');
+// Escape closes an open place when no dialog or modal is in front of it.
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || event.defaultPrevented || !isPlaceDetailOpen()) return;
+  if (document.querySelector('dialog[open], .modal-overlay.open')) return;
+  clearActiveLocation();
 });
 
 // Modal backdrops (click outside = close)
@@ -381,8 +461,7 @@ document.getElementById('wn-got-it-btn').addEventListener('click', closeWhatsNew
 // Map resize on window resize
 window.addEventListener('resize', () => {
   if (!state.map) return;
-  if (state.provider === 'google') google.maps.event.trigger(state.map, 'resize');
-  else state.map.getViewPort().resize();
+  resizeMap();
   if (state.pendingDestinationFit) fitMapToVisibleLocations();
 });
 

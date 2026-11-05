@@ -8,22 +8,24 @@ Lingorm 曼谷踩點地圖 — An interactive map of Bangkok locations spotted i
 
 ## Features
 
+- Map-first layout in the style of a maps app: full-screen map, floating search bar with one-tap collection / category chips, a draggable bottom sheet on phones (peek / half / full) and a collapsible side panel on desktop
 - Interactive map with consistent brand-color emoji category markers
-- Card list with search, category, label (stored as `Type`), destination, and favorites filters
+- Card list with search, category, label (stored as `Type`), destination, and favorites filters; the full filter set lives in one Filters sheet
 - Country-grouped destination multi-select with persisted choices and automatic map fitting
-- Popup with Navigate + Open in Google Maps buttons (responsive: icon-only on mobile)
+- Place detail view (replaces the map InfoWindow / InfoBubble popups) with Navigate, Save, Open in Google Maps and Share; `?place=<slug>` links open a place directly
 - zh / en bilingual UI with one-click toggle
 - Light / dark theme
 - Bilingual Fan Resources dialog with Abu Chicken Kwong (epoh)’s Google Maps list and source attribution, LingOrm Fanpage, its schedule shortcut, LOism, LingOrmNews, LingOrm Pics, LingOrm Music Archive, and LingOrm · Feed Your Mind
 - Low-friction issue reporting via Netlify Forms
-- Mobile-responsive with map / list tab switching and scroll
+- Side menu for home reset, language, theme, Fan Resources, changelog, issue reporting and Add to Home Screen
+- Installable to the home screen through a web app manifest (no service worker, so it stays a normal web app on the same URL and never serves cached location data)
 - Google Maps primary; HERE Maps fallback if Google Maps is unavailable
 - Analytics via Google Tag Manager (GTM-NVNXGP44) + GA4 (G-31MF79LHFM)
 - SuperRich Thailand currency-exchange overlay: 26 branches shown like any other location, with USD 50/100 (combined when equal) / TWD buying rates updated every 30 minutes from 08:00 to 22:30 Thailand time and best-rate sorting when quotes are available (rate fetching is gated behind a runtime control flag — see [note/LOCAL_TESTING.md](note/LOCAL_TESTING.md#換匯功能上線與維運手冊))
 
 SuperRich 1965（橘標）沿用同一個「換匯」標籤、卡片與排序選單，提供
-USD／TWD 指定面額買入價、橘色 marker／群聚，以及 Google／HERE popup。
-兩品牌的卡片與 popup 採用相同版型：精簡品牌名稱、面額、更新時間、聲明與官網連結；
+USD／TWD 指定面額買入價、橘色 marker／群聚，以及地點資訊面板。
+兩品牌的卡片與地點資訊面板採用相同版型：精簡品牌名稱、面額、更新時間、聲明與官網連結；
 綠標 USD 50、100 同價時合併顯示 USD 50/100，異價或缺價時分開；橘標固定顯示 USD 50/100。
 兩品牌 TWD 各自保留指定面額。頁面自動只讀快取，不會向官網取價；
 卡片不提供單店刷新按鈕。有效期與綠標相同，排序選單旁統一說明只比較所選品牌
@@ -65,10 +67,11 @@ flowchart TD
         STATE[("core/state.js\nshared state")]
         I18N["core/i18n.js\ntranslations"]
         CSV["data/csv-parser.js\npure CSV functions"]
-        RENDER["ui/render.js\ncard list · popup · filters"]
+        RENDER["ui/render.js\ncard list · place detail · filters"]
         MAP["map/map.js\nmap init · markers"]
         COORD["app/app-coordinator.js\nfilter/map · language orchestration"]
-        UI["ui/ui.js\ntheme · tabs · snackbar"]
+        UI["ui/ui.js\ntheme · share · snackbar"]
+        PANEL["ui/bottom-sheet.js · side-panel.js\nplace-detail.js · side-menu.js"]
         FORMS["features/forms.js\nissue report · data loading"]
         SUBMIT["services/submit.js\nNetlify Forms POST"]
         FAV["features/favorites.js\nlocal favorites"]
@@ -96,7 +99,9 @@ flowchart TD
     STATE -->|"data"| RENDER
     STATE -->|"data"| MAP
     COORD -->|"filter/list updates"| RENDER
-    COORD -->|"marker sync · popup refresh"| MAP
+    COORD -->|"marker sync"| MAP
+    COORD -->|"results / place panel"| PANEL
+    MAP -->|"insets for centring · fit"| PANEL
 
     MAIN -->|"loadMapScript"| CFG
     CFG -->|"key + mapId"| GMAPS
@@ -156,17 +161,26 @@ graph LR
 | `data/csv-parser.js` | CSV tokeniser + `parseCSV` + `normalizeStatus` (pure functions) |
 | `data/destinations.js` | Canonical country and destination taxonomy |
 | `services/submit.js` | Shared Netlify Forms POST and feedback reset |
-| `map/map.js` | Google / HERE map init, marker synchronization, popup refresh, and theme sync |
+| `map/map.js` | Google / HERE map init, marker synchronization, selection clearing, and theme sync |
+| `map/viewport.js` | Map insets from the floating UI; centring and fit padding inside the uncovered map area; deferred focus until a provider is ready |
 | `map/map-globals.d.ts` | Ambient types for dynamically loaded Google and HERE SDK globals |
 | `features/destination-filter.js` | Destination multi-select UI, country grouping, and persisted selection |
 | `features/collection-info.js` | Label guide hover, focus, click, and dismissal behavior |
+| `features/filter-chips.js` | Collection / category chip row that mirrors the filter selects |
+| `features/filter-sheet.js` | All-filters dialog (bottom sheet on mobile, centered on desktop) and the Filters badge |
+| `features/install-app.js` | Add to Home Screen menu entry: browser install prompt when offered, otherwise platform hint |
 | `features/favorites.js` | Favorite persistence and toggle behavior |
 | `features/forms.js` | Issue report modal, validation, and location-data loading |
 | `features/changelog-data.js` | Shared bilingual changelog release data |
 | `features/whats-new.js` | Three-item changelog modal preview state and rendering |
 | `changelog-page.js` | Full changelog page rendering, language, and theme controls |
-| `ui/render.js` | Card list HTML, popup content, and map-independent filter rendering |
-| `ui/ui.js` | Theme primitives, tab switching, snackbar, locate-me, and navigation |
+| `ui/render.js` | Card list HTML, place detail content, place selection, and map-independent filter rendering |
+| `ui/ui.js` | Theme primitives, snackbar, locate-me, navigation, and place sharing |
+| `ui/layout.js` | Shared 700px mobile breakpoint |
+| `ui/bottom-sheet.js` | Mobile results sheet: snap points, drag gestures, CSS geometry variables |
+| `ui/side-panel.js` | Desktop side panel collapse |
+| `ui/place-detail.js` | Results ↔ place detail view switching inside the panel |
+| `ui/side-menu.js` | Navigation drawer dialog |
 
 ### Key constraints
 
@@ -212,17 +226,29 @@ lingorm_bangkok_map/
 │   │   └── submit.js       # Shared Netlify Forms submit transport
 │   ├── map/
 │   │   ├── map.js          # Google/HERE integration and marker synchronization
+│   │   ├── viewport.js     # Insets, centring and fit padding around floating UI
 │   │   └── map-globals.d.ts # Ambient map SDK globals
 │   ├── features/
 │   │   ├── favorites.js    # Favorite persistence and toggles
 │   │   ├── destination-filter.js # Destination multi-select and persistence
 │   │   ├── collection-info.js # Label guide interactions
+│   │   ├── filter-chips.js # Collection / category chip row
+│   │   ├── filter-sheet.js # All-filters dialog and badge
+│   │   ├── install-app.js  # Add to Home Screen entry
 │   │   ├── forms.js        # Issue report modal and location-data loading
 │   │   ├── changelog-data.js # Shared bilingual release data
 │   │   └── whats-new.js    # Changelog modal
 │   └── ui/
-│       ├── render.js       # Card list, popup content, filter helpers
-│       └── ui.js           # Theme, tabs, snackbar, locate me, navigation
+│       ├── render.js       # Card list, place detail content, filter helpers
+│       ├── ui.js           # Theme, snackbar, locate me, navigation, share
+│       ├── layout.js       # Mobile breakpoint
+│       ├── bottom-sheet.js # Mobile draggable results sheet
+│       ├── side-panel.js   # Desktop panel collapse
+│       ├── place-detail.js # Place detail view in the panel
+│       └── side-menu.js    # Navigation drawer
+├── public/
+│   ├── manifest.webmanifest # Web app manifest (installable, no service worker)
+│   └── icons/              # App icons (192/512, maskable, apple-touch-icon)
 ├── netlify/
 │   └── functions/
 │       ├── config.mjs      # /api/config — returns Maps key + map ID
@@ -485,7 +511,11 @@ node --test tests/*.test.mjs
 | `parsecsv.test.mjs` | CSV tokenizer, parser, status normalizer, source helpers |
 | `source-tags.test.mjs` | `renderSources` — Threads handle extraction, platform URL mapping |
 | `i18n-ui.test.mjs` | `updateLangUI`, `buildCatFilter`, `rebuildSelect` |
-| `ui-events.test.mjs` | No inline `onclick`; `switchTab` state alignment |
+| `ui-events.test.mjs` | No inline handlers in the search bar / side menu; side menu order and dialog hand-off |
+| `bottom-sheet.test.mjs` | Sheet snap heights, fling/nearest snapping, handle toggle, header drag, desktop no-op |
+| `place-focus.test.mjs` | Marker / card selection opens the place detail and centres it inside the uncovered map area |
+| `filter-chips.test.mjs` | Chip ordering, de-duplicated labels, select mirroring through `change` events |
+| `side-menu.test.mjs` | Drawer focus and backdrop dismissal; install entry; manifest contract |
 | `view-first-ui.test.mjs` | Removed UI contracts, status-free rendering, uniform markers |
 | `submit.test.mjs` | Netlify local mock, production success, and failure recovery |
 | `favorites.test.mjs` | Favorite state persistence and rendering behavior |

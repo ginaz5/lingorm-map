@@ -1,72 +1,39 @@
-// Updated for Option B modularisation:
-//   - switchTab extracted from src/ui/ui.js (uses state.map instead of bare map)
-//   - static markup check: split on /<script\b[^>]*>/ to handle <script type="module">
+// Map-first layout: the header and mobile tab bar are replaced by a floating
+// search bar, a side menu <dialog>, and a bottom sheet / side panel.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-async function loadSwitchTab(deps) {
-  const src = await readFile(new URL('../src/ui/ui.js', import.meta.url), 'utf8');
-  const switchMatch = src.match(/(?:export\s+)?function switchTab\(tab\)\s*\{[\s\S]*?\n\}/);
-  assert.ok(switchMatch, 'switchTab function should exist in src/ui/ui.js');
-
-  const code = switchMatch[0].replace(/\bexport\s+/g, '');
-  return Function(
-    'document',
-    'state',
-    'requiredElement',
-    `${code}; return { switchTab };`,
-  )(
-    deps.document,
-    deps.state,
-    (id) => {
-      const el = deps.document.getElementById(id);
-      if (!el) throw new Error(`Missing required element #${id}`);
-      return el;
-    },
-  );
-}
-
-function makeElement() {
-  const attrs = {};
-  const classToggles = [];
-  return {
-    attrs,
-    classToggles,
-    setAttribute: (name, value) => { attrs[name] = value; },
-    classList: {
-      toggle: (name, value) => { classToggles.push([name, value]); },
-    },
-  };
-}
-
 test('static HTML controls are wired without inline event attributes', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  const headerMatch = html.match(/<header>[\s\S]*?<\/header>/);
-  assert.ok(headerMatch, 'header markup should exist');
-  const staticMarkup = headerMatch[0];
+  const menuMatch = html.match(/<dialog class="side-menu"[\s\S]*?<\/dialog>/);
+  const appMatch = html.match(/<main class="app-body"[\s\S]*?<\/main>/);
+  assert.ok(menuMatch, 'side menu markup should exist');
+  assert.ok(appMatch, 'app body markup should exist');
+  const menu = menuMatch[0];
+  const app = appMatch[0];
 
-  assert.doesNotMatch(staticMarkup, /id="add-btn"/);
-  assert.match(staticMarkup, /id="issue-btn"/);
-  assert.match(staticMarkup, /id="locate-btn"[\s\S]*?class="locate-icon"[\s\S]*?M12 8c-2\.21 0-4 1\.79-4 4/);
-  assert.match(staticMarkup, /id="changelog-btn"/);
-  assert.match(staticMarkup, /id="theme-btn"/);
-  assert.match(staticMarkup, /class="theme-icon-sun"/);
-  assert.match(staticMarkup, /class="theme-icon-moon"/);
-  assert.doesNotMatch(staticMarkup, /☀️|🌙/);
-  assert.equal(/\son(?:click|keydown)=/i.test(staticMarkup), false);
+  assert.doesNotMatch(html, /id="add-btn"/);
+  assert.doesNotMatch(html, /<header>|class="tab-bar"|id="mobile-actions-btn"/);
+  for (const id of ['home-btn', 'lang-btn', 'theme-btn', 'fan-resources-btn', 'changelog-btn', 'issue-btn', 'install-btn']) {
+    assert.match(menu, new RegExp(`id="${id}"`), id);
+  }
+  assert.match(menu, /class="theme-icon-sun"/);
+  assert.match(menu, /class="theme-icon-moon"/);
+  assert.match(app, /id="menu-btn"[^>]*aria-controls="side-menu"/);
+  assert.match(app, /id="locate-btn"[\s\S]*?class="locate-icon"[\s\S]*?M12 8c-2\.21 0-4 1\.79-4 4/);
+  assert.match(app, /id="locate-btn"[^>]*data-i18n-aria="locate_btn_label"/);
+  for (const markup of [menu, app]) {
+    assert.doesNotMatch(markup, /☀️|🌙/);
+    assert.equal(/\son(?:click|keydown|input|change)=/i.test(markup), false);
+  }
 });
 
 test('search and select filters use module listeners instead of inline analytics wiring', async () => {
-  const [html, mainSrc] = await Promise.all([
-    readFile(new URL('../index.html', import.meta.url), 'utf8'),
-    readFile(new URL('../src/main.js', import.meta.url), 'utf8'),
-  ]);
-  const filtersMatch = html.match(/<div class="filters">[\s\S]*?<div class="result-meta">/);
-  assert.ok(filtersMatch, 'filter markup should exist');
+  const mainSrc = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');
 
-  assert.doesNotMatch(filtersMatch[0], /\son(?:input|change)=/i);
-  assert.match(mainSrc, /getElementById\('search'\)\.addEventListener\('input'/);
+  assert.match(mainSrc, /const searchInput = [^;]*getElementById\('search'\)/);
+  assert.match(mainSrc, /searchInput\.addEventListener\('input'/);
   assert.match(mainSrc, /trackSearchComplete\(queryLength, state\.visIdx\.length\)/);
   assert.doesNotMatch(mainSrc, /const resultCount = state\.visIdx\.length/);
   assert.match(mainSrc, /}, 700\)/);
@@ -86,63 +53,19 @@ test('collection guide exposes accessible static markup', async () => {
   assert.match(html, /data-i18n="collection_info_admin"/);
 });
 
-test('mobile header keeps locate, language, and theme visible while secondary actions use overflow', async () => {
-  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  const mainSrc = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');
-  const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
-  const menuMatch = html.match(/id="mobile-actions-menu"[\s\S]*?<\/div>\s*<\/div>/);
-  assert.ok(menuMatch, 'mobile overflow menu should exist');
-  const menuMarkup = menuMatch[0];
-
-  assert.match(html, /id="mobile-actions-btn"/);
-  assert.match(html, /id="mobile-actions-menu"/);
-  assert.match(menuMarkup, /href="\.\/changelog\.html"/);
-  assert.match(menuMarkup, /data-mobile-action="issue"/);
-  assert.doesNotMatch(menuMarkup, /data-mobile-action="locate"/);
-  assert.doesNotMatch(menuMarkup, /data-mobile-action="lang"/);
-  assert.doesNotMatch(menuMarkup, /data-mobile-action="theme"/);
-  assert.match(html, /id="locate-btn"[^>]*data-i18n-aria="locate_btn_label"/);
-  assert.ok(
-    menuMarkup.indexOf('href="./changelog.html"') < menuMarkup.indexOf('data-mobile-action="issue"'),
-    'changelog should be the first overflow action',
-  );
-  assert.match(styles, /#locate-btn,#lang-btn,#theme-btn\{display:flex/);
-  assert.match(styles, /#locate-btn>\[data-i18n="locate_btn_label"\]/);
-  assert.match(mainSrc, /mobile-actions-btn/);
-  assert.match(mainSrc, /data-mobile-action/);
-  assert.doesNotMatch(mainSrc, /action === 'locate'/);
-});
-
-test('switchTab keeps panel and map visibility states aligned', async () => {
-  const elements = {
-    panel: makeElement(),
-    'map-wrap': makeElement(),
-    'tab-map': makeElement(),
-    'tab-list': makeElement(),
-  };
-  let resizeCount = 0;
-  const { switchTab } = await loadSwitchTab({
-    document: { getElementById: (id) => elements[id] },
-    state: {
-      map: {
-        getViewPort: () => ({
-          resize: () => { resizeCount += 1; },
-        }),
-      },
-    },
-  });
-
-  switchTab('map');
-  assert.equal(elements.panel.attrs['data-mobile-tab'], 'map');
-  assert.equal(elements['map-wrap'].attrs['data-mobile-tab'], 'map');
-  assert.deepEqual(elements['tab-map'].classToggles.at(-1), ['active', true]);
-  assert.deepEqual(elements['tab-list'].classToggles.at(-1), ['active', false]);
-  assert.equal(resizeCount, 1);
-
-  switchTab('list');
-  assert.equal(elements.panel.attrs['data-mobile-tab'], 'list');
-  assert.equal(elements['map-wrap'].attrs['data-mobile-tab'], 'list');
-  assert.deepEqual(elements['tab-map'].classToggles.at(-1), ['active', false]);
-  assert.deepEqual(elements['tab-list'].classToggles.at(-1), ['active', true]);
-  assert.equal(resizeCount, 1);
+test('side menu orders settings before secondary pages and closes before opening dialogs', async () => {
+  const [html, mainSrc] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../src/main.js', import.meta.url), 'utf8'),
+  ]);
+  const menu = html.match(/<nav class="side-menu-list"[\s\S]*?<\/nav>/)?.[0] ?? '';
+  const order = ['lang-btn', 'theme-btn', 'fan-resources-btn', 'changelog-btn', 'issue-btn', 'install-btn']
+    .map(id => menu.indexOf(`id="${id}"`));
+  assert.ok(order.every(index => index >= 0));
+  assert.deepEqual([...order].sort((a, b) => a - b), order);
+  assert.match(menu, /id="changelog-btn" href="\.\/changelog\.html"/);
+  // Dialog entries close the menu first so focus moves to the new dialog.
+  assert.match(mainSrc, /sideMenu\.closeThen\(openIssueModal\)/);
+  assert.match(mainSrc, /sideMenu\.closeThen\(open\)/);
+  assert.doesNotMatch(mainSrc, /data-mobile-action|switchTab|tab-map|tab-list/);
 });

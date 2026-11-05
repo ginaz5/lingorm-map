@@ -353,3 +353,17 @@ test('setLang normalizes unsupported stored languages to zh', async () => {
     delete globalThis.localStorage;
   }
 });
+
+test('updateLangUI keeps the page language in sync for assistive tech and the menu switch', async () => {
+  for (const language of ['zh', 'en']) {
+    const root = { lang: '', dataset: {} };
+    const { updateLangUI } = await loadUiHelpers({
+      document: { querySelectorAll: () => [], getElementById: () => null, documentElement: root },
+      t: key => key, state: { data: [] }, lang: language,
+    });
+    // The map page no longer has #lang-btn-label; its absence must not throw.
+    assert.doesNotThrow(() => updateLangUI());
+    assert.equal(root.lang, language === 'zh' ? 'zh-TW' : 'en');
+    assert.equal(root.dataset.lang, language);
+  }
+});

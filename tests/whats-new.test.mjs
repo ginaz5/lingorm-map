@@ -93,18 +93,19 @@ test('checkWhatsNew previews the current release with general update copy', () =
     );
     assert.equal(env.dom.modalClasses.has('open'), true);
     assert.equal(WHATS_NEW_PREVIEW_LIMIT, 3);
-    assert.equal(currentReleaseItems.length, 4);
+    assert.equal(currentReleaseItems.length, 3);
     assert.equal(env.dom.elements['wn-title'].textContent, '✨ 最近更新');
     assert.equal(env.dom.elements['wn-desc'].textContent, '來看看上次造訪後的更新。');
     assert.equal(
       env.dom.elements['wn-list'].innerHTML.match(/class="wn-feat"/g)?.length,
       3,
     );
-    assert.match(env.dom.elements['wn-list'].innerHTML, /新增橘標分店與匯率/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /新增 38 間橘標分店，可比較 USD／TWD 買入匯率。/);
-    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /重新整理匯率/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /點標題回到完整地圖/);
-    assert.match(env.dom.elements['wn-list'].innerHTML, /新增音樂與同人文資源/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /像地圖 App 一樣瀏覽/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /手機可上下拖曳地點清單/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /加到主畫面/);
+    assert.match(env.dom.elements['wn-list'].innerHTML, /分享單一地點/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增橘標分店與匯率/);
+    assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /點標題回到完整地圖/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /新增杜拜與佛統府目的地支援/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /手機版新增篩選面板/);
     assert.doesNotMatch(env.dom.elements['wn-list'].innerHTML, /手機地圖彈窗置中，地點筆記更好讀/);
@@ -119,10 +120,10 @@ test('checkWhatsNew previews the current release with general update copy', () =
   }
 });
 
-test('checkWhatsNew shows the catch-up release after September 28 and refreshes its preview in English', () => {
+test('checkWhatsNew shows the catch-up release after October 31 and refreshes its preview in English', () => {
   const env = installEnvironment({
-    lastVisit: String(Date.parse('2026-10-30T12:00:00Z')),
-    seenRelease: '2026-09-28-mobile-filters-and-map-updates',
+    lastVisit: String(Date.parse('2026-11-01T12:00:00Z')),
+    seenRelease: '2026-10-31-orange-rates-home-and-resources',
   });
   try {
     checkWhatsNew();
@@ -132,11 +133,11 @@ test('checkWhatsNew shows the catch-up release after September 28 and refreshes 
     updateWhatsNewLangUI();
     const html = env.dom.elements['wn-list'].innerHTML;
     assert.equal(html.match(/class="wn-feat"/g)?.length, WHATS_NEW_PREVIEW_LIMIT);
-    assert.match(html, /SuperRich 1965 joins the map/);
-    assert.match(html, /Browse 38 orange branches and compare USD\/TWD buying rates\./);
-    assert.doesNotMatch(html, /Refresh rates/);
-    assert.match(html, /Tap the title to reset the map/);
-    assert.match(html, /More music and fan fiction/);
+    assert.match(html, /Browse like a maps app/);
+    assert.match(html, /drag the list up or down and tap a place for details\./);
+    assert.match(html, /Add it to your home screen/);
+    assert.match(html, /Share a place/);
+    assert.doesNotMatch(html, /SuperRich 1965 joins the map/);
     assert.doesNotMatch(html, /Destination support for Dubai and Nakhon Pathom/);
     assert.doesNotMatch(html, /A new filter sheet on mobile/);
     assert.doesNotMatch(html, /Tokyo and more locations added/);

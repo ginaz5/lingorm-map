@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { applyFiltersAndSyncMap } from '../src/app/app-coordinator.js';
-import { refreshActivePopup, syncVisibleMarkers } from '../src/map/map.js';
+import { syncVisibleMarkers } from '../src/map/map.js';
+import { refreshPlaceDetail } from '../src/ui/place-detail.js';
 import { state } from '../src/core/state.js';
 
 function makeLocation() {
@@ -34,8 +35,6 @@ function resetMapState() {
   state.visIdx = [];
   state.provider = null;
   state.map = null;
-  state.infoWindow = null;
-  state.infoBubble = null;
   state.markers = [];
   state.markerClusterer = null;
   state.pendingDestinationFit = false;
@@ -54,47 +53,47 @@ test('syncVisibleMarkers is a no-op before map initialization', () => {
   resetMapState();
 });
 
-test('refreshActivePopup updates the active Google info window', () => {
-  const contents = [];
-  resetMapState();
-  state.activeIdx = 0;
-  state.data = [makeLocation()];
-  state.provider = 'google';
-  state.infoWindow = {
-    setContent: html => contents.push(html),
+/** @param {boolean} open */
+function withDetailDocument(open, run) {
+  const previousDocument = globalThis.document;
+  const elements = {
+    'place-detail': { hidden: !open },
+    'place-detail-body': { innerHTML: 'stale', scrollTop: 120 },
   };
-
+  globalThis.document = { getElementById: id => elements[id] ?? null };
   try {
-    assert.equal(refreshActivePopup(), true);
-    assert.equal(contents.length, 1);
-    assert.match(contents[0], /目前地點/);
+    run(elements);
   } finally {
+    globalThis.document = previousDocument;
     resetMapState();
   }
-});
+}
 
-test('refreshActivePopup updates the active HERE info bubble', () => {
-  const contents = [];
-  resetMapState();
-  state.activeIdx = 0;
-  state.data = [makeLocation()];
-  state.provider = 'here';
-  state.infoBubble = {
-    setContent: html => contents.push(html),
-  };
+for (const provider of ['google', 'here']) {
+  test(`refreshPlaceDetail re-renders the open place for ${provider} and keeps its scroll`, () => {
+    withDetailDocument(true, elements => {
+      resetMapState();
+      state.activeIdx = 0;
+      state.data = [makeLocation()];
+      state.provider = provider;
+      assert.equal(refreshPlaceDetail(), true);
+      assert.match(elements['place-detail-body'].innerHTML, /目前地點/);
+      assert.equal(elements['place-detail-body'].scrollTop, 120);
+    });
+  });
+}
 
-  try {
-    assert.equal(refreshActivePopup(), true);
-    assert.equal(contents.length, 1);
-    assert.match(contents[0], /目前地點/);
-  } finally {
-    resetMapState();
-  }
-});
-
-test('refreshActivePopup reports when no provider popup is open', () => {
-  resetMapState();
-  assert.equal(refreshActivePopup(), false);
+test('refreshPlaceDetail reports when no place is open', () => {
+  withDetailDocument(false, elements => {
+    state.activeIdx = 0;
+    state.data = [makeLocation()];
+    assert.equal(refreshPlaceDetail(), false);
+    assert.equal(elements['place-detail-body'].innerHTML, 'stale');
+  });
+  withDetailDocument(true, () => {
+    state.activeIdx = -1;
+    assert.equal(refreshPlaceDetail(), false);
+  });
 });
 
 test('coordinated fit delegates pending-map behavior to map.js', () => {

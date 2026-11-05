@@ -165,44 +165,40 @@ test('map markers use the same public status allowlist', async () => {
   }
 });
 
-test('activateCard centers HERE map and opens info bubble', async () => {
+test('activateCard opens the place detail and centers the HERE map at place zoom', async () => {
   const { state } = await import('../src/core/state.js');
   const { activateCard } = await import('../src/ui/render.js');
 
   const previousDocument = globalThis.document;
   const previousWindow = globalThis.window;
-  const previousHere = globalThis.H;
   const centers = [];
   const zooms = [];
-  const bubbles = [];
   const activeClassOps = [];
   const cardClassOps = [];
   const markerClassOps = [];
-  const cardScrollOps = [];
+  const detailElements = {
+    panel: { dataset: {} },
+    'panel-results': { hidden: false },
+    'place-detail': { hidden: true },
+    'place-detail-body': { innerHTML: '', scrollTop: 40 },
+    'loc-list': { scrollTop: 300 },
+    'card-0': { classList: { add: (name) => cardClassOps.push(['add', name]) } },
+  };
 
   globalThis.document = {
     querySelectorAll: () => [
       { classList: { remove: (name) => activeClassOps.push(['remove', name]) } },
     ],
-    getElementById: (id) => {
-      if (id !== 'card-0') return null;
-      return {
-        classList: { add: (name) => cardClassOps.push(['add', name]) },
-        scrollIntoView: (options) => cardScrollOps.push(options),
-      };
-    },
+    getElementById: (id) => detailElements[id] ?? null,
   };
   globalThis.window = { innerWidth: 1024 };
-  globalThis.H = {
-    ui: {
-      InfoBubble: class {
-        constructor(position, options) {
-          this.position = position;
-          this.options = options;
-        }
-      },
-    },
-  };
+  const previousHere = globalThis.H;
+  const objects = [];
+  globalThis.H = { map: {
+    DomIcon: class { constructor(element) { this.element = element; } },
+    DomMarker: class { constructor(position, options) { Object.assign(this, { position, options }); } },
+  } };
+  globalThis.document.createElement = () => ({ className: '', textContent: '', classList: { add() {} } });
 
   try {
     state.activeIdx = -1;
@@ -211,12 +207,9 @@ test('activateCard centers HERE map and opens info bubble', async () => {
     state.map = {
       setCenter: (position) => centers.push(position),
       setZoom: (zoom) => zooms.push(zoom),
+      addObject: (object) => objects.push(object),
+      removeObject() {},
     };
-    state.hereUi = {
-      addBubble: (bubble) => bubbles.push(bubble),
-      removeBubble: () => {},
-    };
-    state.infoBubble = null;
     state.markers = [{
       id: 'marker-0',
       __markerContent: {
@@ -229,13 +222,16 @@ test('activateCard centers HERE map and opens info bubble', async () => {
     assert.equal(state.activeIdx, 0);
     assert.deepEqual(centers, [{ lat: 13.7, lng: 100.5 }]);
     assert.deepEqual(zooms, [15]);
-    assert.equal(bubbles.length, 1);
-    assert.deepEqual(bubbles[0].position, { lat: 13.7, lng: 100.5 });
-    assert.match(bubbles[0].options.content, /Visible published/);
+    assert.equal(detailElements['place-detail'].hidden, false);
+    assert.equal(detailElements['panel-results'].hidden, true);
+    assert.equal(detailElements.panel.dataset.view, 'place');
+    assert.match(detailElements['place-detail-body'].innerHTML, /Visible published/);
+    assert.equal(detailElements['place-detail-body'].scrollTop, 0);
     assert.deepEqual(activeClassOps, [['remove', 'active']]);
     assert.deepEqual(cardClassOps, [['add', 'active']]);
     assert.deepEqual(markerClassOps, [['active', true]]);
-    assert.deepEqual(cardScrollOps, [{ behavior: 'smooth', block: 'center' }]);
+    assert.equal(objects.length, 1, 'selected-place pin added to the HERE map');
+    assert.deepEqual(objects[0].position, { lat: 13.7, lng: 100.5 });
   } finally {
     globalThis.document = previousDocument;
     globalThis.window = previousWindow;
@@ -244,8 +240,6 @@ test('activateCard centers HERE map and opens info bubble', async () => {
     state.provider = null;
     state.data = [];
     state.map = null;
-    state.hereUi = null;
-    state.infoBubble = null;
     state.markers = [];
   }
 });

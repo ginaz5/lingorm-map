@@ -11,7 +11,7 @@ import {
 } from '../src/data/location-types.js';
 import {
   applyFilters,
-  buildPopupContent,
+  buildPlaceDetailContent,
   buildTypeFilter,
   renderList,
 } from '../src/ui/render.js';
@@ -179,16 +179,16 @@ test('map popup adds the localized Type badge and omits it when Type is blank', 
       makeLocation({ id: 'blank-type', type: '' }),
     ];
 
-    const zhPopup = buildPopupContent(0);
+    const zhPopup = buildPlaceDetailContent(0);
     assert.match(zhPopup, /<span class="badge b-cat">咖啡廳<\/span>/);
     assert.match(zhPopup, /<span class="badge b-label">JKR 推薦<\/span>/);
 
     setLang('en');
-    const enPopup = buildPopupContent(0);
+    const enPopup = buildPlaceDetailContent(0);
     assert.match(enPopup, /<span class="badge b-cat">Cafe<\/span>/);
     assert.match(enPopup, /<span class="badge b-label">JKR Picks<\/span>/);
 
-    assert.doesNotMatch(buildPopupContent(1), /b-label/);
+    assert.doesNotMatch(buildPlaceDetailContent(1), /b-label/);
   } finally {
     restore();
   }
@@ -203,12 +203,12 @@ test('exchange locations have no Category badge and carry the green styling on t
       makeLocation({ id: exchangeSlug, catEn: '', catZh: '', type: 'Currency Exchange' }),
     ];
 
-    const zhPopup = buildPopupContent(0);
+    const zhPopup = buildPlaceDetailContent(0);
     assert.doesNotMatch(zhPopup, /badge b-cat/);
     assert.match(zhPopup, /<span class="badge b-exchange">換匯<\/span>/);
 
     setLang('en');
-    const enPopup = buildPopupContent(0);
+    const enPopup = buildPlaceDetailContent(0);
     assert.doesNotMatch(enPopup, /badge b-cat/);
     assert.match(enPopup, /<span class="badge b-exchange">Currency Exchange<\/span>/);
   } finally {
@@ -284,35 +284,31 @@ test('public filter controls are ordered category, label, then destination', asy
   assert.ok(destinationIndex > themeIndex);
 });
 
-test('filter layout uses content-aware widths so selected labels are not clipped', async () => {
+test('the filter sheet stacks full-width controls so selected labels are not clipped', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-  assert.match(css, /\.panel\{width:400px;min-width:340px;/);
-  assert.match(css, /\.filter-row\{display:flex;gap:8px;flex-wrap:wrap\}/);
-  assert.match(
-    css,
-    /#cat-filter,\.label-filter\{flex:1 1 calc\(50% - 4px\);min-width:max-content;max-width:100%\}/,
-  );
-  assert.match(
-    css,
-    /\.destination-filter\{position:relative;flex:1 1 calc\(100% - 48px\);min-width:0\}/,
-  );
+  assert.match(css, /\.filter-row\{display:flex;flex-direction:column;gap:16px\}/);
+  assert.match(css, /#cat-filter,\.label-filter\{width:100%;min-width:0\}/);
+  assert.match(css, /\.destination-filter\{position:relative;min-width:0\}/);
+  assert.match(css, /\.filter-field-label\{font-size:13px;font-weight:600/);
   assert.doesNotMatch(css, /#label-filter\{flex:0 0 70px\}/);
 });
 
-test('all filter-row controls share a 35px height', async () => {
+test('filter sheet controls share a 44px touch height and 16px text', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-  assert.match(css, /\.filter-sel\{[^}]*height:35px/);
-  assert.match(css, /\.label-info-btn\{[^}]*height:35px/);
-  assert.match(css, /\.dest-filter-btn\{[^}]*height:35px/);
-  assert.match(css, /\.fav-filter-btn\{[^}]*height:\s*35px/);
+  assert.match(css, /\.filter-sel\{[^}]*height:44px/);
+  assert.match(css, /\.filter-sel\{[^}]*font-size:16px/);
+  assert.match(css, /\.label-info-btn\{[^}]*height:44px/);
+  assert.match(css, /\.dest-filter-btn\{[^}]*height:44px/);
+  assert.match(css, /\.dest-option\{min-height:44px;/);
 });
 
-test('search and select filters share the destination hover border', async () => {
+test('search box and select filters keep visible hover and focus states', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-  assert.match(css, /\.search-input:hover\{border-color:var\(--primary\)\}/);
+  assert.match(css, /\.search-bar:focus-within\{box-shadow:var\(--float-shadow-strong\)\}/);
+  assert.match(css, /\.search-input\{[^}]*font-size:16px/);
   assert.match(css, /\.filter-sel:hover\{border-color:var\(--primary\)\}/);
   assert.match(css, /\.dest-filter-btn:hover\{border-color:var\(--primary\)\}/);
 });
@@ -331,15 +327,12 @@ test('all three public filters use the same dropdown arrow geometry', async () =
   assert.match(css, /\.dest-filter-btn svg\{width:16px;height:16px;fill:var\(--muted\);/);
 });
 
-test('narrow mobile filters can give category and label their own rows', async () => {
+test('filter chips and the filter sheet use the shared mobile breakpoint', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
+  assert.match(css, /\.chip\.is-selected\{background:var\(--primary\);border-color:var\(--primary\);color:var\(--canvas\)\}/);
   assert.match(
     css,
-    /@media\(max-width:700px\)\{[\s\S]*?\.panel\{width:100%;min-width:0;/,
-  );
-  assert.match(
-    css,
-    /@media\(max-width:340px\)\{\s*#cat-filter,\.label-filter\{flex-basis:100%\}/,
+    /@media\(max-width:700px\)\{\s*\.filter-sheet\{position:fixed;inset:auto 0 0;width:100%;margin:0;/,
   );
 });

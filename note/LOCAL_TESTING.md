@@ -149,19 +149,26 @@ http://localhost:8888
 - 地圖正常載入
 - 卡片名稱、類別、說明正常顯示，且不顯示審核狀態
 - 沒有空白卡片
-- marker popup 不再顯示「在 Google Maps 開啟 / Open in Google Maps」
+- 地圖填滿整個視窗；搜尋列與篩選 chip 浮在上方；Google／HERE 的 logo 與條款連結在預設狀態可見（手機開啟時 sheet 在 peek；桌機面板展開或收合時）
 - 語言切換正常
 - 篩選順序為「類別／標籤／目的地」；預設選項為「所有標籤／All label」，中文標籤顯示 LingOrm、JKR 推薦、JKR 應援、留友看，英文維持正式 Type 值
 - 標籤旁的資訊按鈕可透過桌機 hover／focus 或點擊開啟分類說明，並能以點擊外部、再次點擊或 Escape 關閉；手機點擊可正常操作
 - 標籤可與搜尋、類別、目的地及收藏條件正確交集篩選
-- Google Maps 與 HERE Maps popup 都同時顯示類別與 Type badge
+- 點 marker 或卡片會在面板開啟地點詳細資訊（不再出現 InfoWindow／InfoBubble），同時顯示類別與 Type badge；「返回清單」或 Escape 回到原本的清單位置。Google Maps 與 HERE 都要確認
 - 手機版以 `Bar / Rooftop Club`、`JKR Fan Projects`、`酒吧/天台俱樂部` 等最長篩選文字檢查，320px 與一般手機寬度都不裁切或水平溢出
-- 手機版定位按鈕固定顯示於 header，且不再出現在「更多操作」選單
-- 「更多操作」選單在 320px、390px 與 768px 寬度下，中英文文字完整顯示，選單不超出螢幕；放大文字時允許換行且圖示不被擠壓。可開啟本機 [版面回歸測試頁](../tests/fixtures/mobile-actions-width.html)（英文；網址加上 `?lang=zh` 測中文），以實際選單 markup、翻譯和樣式驗證 52px 放大文字，預期顯示 `PASS`。這是瀏覽器測試，`npm test` 不會執行。
+- 定位按鈕浮在地圖右下（手機跟著 sheet 上下移動，sheet 全開時隱藏），桌機不與 Google／HERE 縮放鍵重疊
+- 左上角選單（抽屜）在 320px、390px 與桌機寬度下，中英文完整顯示；開啟時搜尋列、chip 與定位鍵淡出，抽屜旁不露出半截元件；語言（中文｜English）與主題（淺色｜深色）兩個選項都顯示、目前值反白，切換即時生效且選單保持開啟，關閉後焦點回到 ☰；粉絲資源、問題回報會先關閉選單再開啟對話框；Escape／點背景可關閉
 - 目的地可跨國複選，國家 checkbox 能全選／取消子目的地，部分選取時顯示 indeterminate
 - 目的地變更立即套用，重新整理後保留，且地圖自動縮放至全部篩選結果
-- 手機版 map/list tab 正常
-- 手機版 320px／390px：點地圖標記或列表卡片後，資訊卡片本體在地圖可視範圍置中；測試長短內容、連續選取及關閉後重開。Google Maps 與 HERE 都要確認；點標記維持原縮放，桌機維持原有行為。回歸測試：`node --test tests/mobile-popup.test.mjs`。
+- 手機版 bottom sheet：拖曳把手或標頭可在 peek／half／full 間切換，快速滑動會跳到下一段；half 時在清單上往上滑會展開，full 時清單可捲動、捲到頂再往下拉會收合；點把手切換 half／full。實機（iOS Safari、Android Chrome）都要測
+- 點列表卡片後，即使該地點在 zoom 15 仍落在群聚內，也會出現較大的「已選取」圖釘；返回清單後圖釘消失
+- 手機版 320px／390px：點地圖標記或列表卡片後，sheet 升到 half，地點落在 sheet 與搜尋列之間的可見地圖中央；點標記維持原縮放、點卡片縮放到 15。Google Maps 與 HERE 都要確認。回歸測試：`node --test tests/place-focus.test.mjs tests/bottom-sheet.test.mjs`
+- 手機開啟地點後單指拖曳地圖：sheet 降到 peek，只顯示一行地點名稱；點把手回到 half（peek→half→full）
+- 深色模式：一般地點 marker／群聚為淺色，與綠標（綠）、橘標（橘）、使用者位置（藍）四者可清楚區分
+- 桌機：左側面板可用右緣按鈕收合／展開，收合時地圖全寬；chip 列在搜尋列右側可水平捲動
+- 搜尋：手機點搜尋框時 sheet 展開到 full、按 Enter 回到 half；有文字時顯示清除（×）
+- 分享：地點資訊的「分享」在手機開啟系統分享面板、桌機複製連結；開啟 `/?place=<slug>` 會直接顯示該地點，網址參數隨即移除
+- 安裝：Android Chrome「安裝應用程式」與 iOS Safari「加入主畫面」後以全螢幕開啟；已安裝開啟時選單不顯示「加到主畫面」；DevTools → Application → Manifest 無錯誤
 - 問題回報可開啟、驗證必填欄位並完成本機 mock 送出
 - 列表與地圖只顯示 `Published`
 
@@ -428,10 +435,10 @@ operation ledger、38 店有效 quote 與目前 binding，細節見 Netlify 維�
 
 ### 綠標／橘標 UI 本機驗收
 
-開啟 `/tests/fixtures/orange-branch-query.html`，並排比較綠標與橘標的正式卡片及 popup renderer。
+開啟 `/tests/fixtures/orange-branch-query.html`，並排比較綠標與橘標的正式卡片及地點詳細資訊 renderer。
 確認兩品牌使用相同資訊順序與精簡底部資訊；預設 USD 同價時，兩品牌都顯示 USD 50/100 與 TWD 兩列。
 橘標品牌名為 SuperRich 1965（橘標），面額不再重複品牌前綴。
-卡片與 popup 均不顯示刷新按鈕、重試時間或重複的排序提示。
+卡片與地點詳細資訊均不顯示刷新按鈕、重試時間或重複的排序提示。
 排序選單旁僅有一份有效報價範圍提示，所有報價不可用時一起隱藏。
 
 - `lang=en` 測英文，`theme=dark` 測深色模式。

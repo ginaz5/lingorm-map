@@ -71,8 +71,7 @@ function makeDocument(ids) {
 }
 
 const SUMMARY_IDS = [
-  'cat-filter', 'label-filter', 'filter-count-badge', 'filter-open-btn',
-  'active-chips', 'active-chips-list', 'filter-sheet-done',
+  'cat-filter', 'label-filter', 'filter-count-badge', 'filter-open-btn', 'filter-sheet-done',
 ];
 
 test('active filters follow control order and localize labels', () => {
@@ -86,7 +85,7 @@ test('active filters follow control order and localize labels', () => {
   assert.equal(listActiveFilters({ category: '', type: '', destinations: [] }, 'en').length, 0);
 });
 
-test('summary renders badge, chips, and result count from current controls', () => {
+test('summary renders the Filters chip badge and result count from current controls', () => {
   const { documentRoot, elements } = makeDocument(SUMMARY_IDS);
   elements.get('cat-filter').value = '餐廳';
   state.selectedDestinations = new Set(['bangkok']);
@@ -99,20 +98,13 @@ test('summary renders badge, chips, and result count from current controls', () 
   assert.equal(badge.hidden, false);
   assert.equal(badge.textContent, '2');
   assert.ok(elements.get('filter-open-btn').classes.has('is-active'));
-  assert.equal(elements.get('active-chips').hidden, false);
-  const chips = elements.get('active-chips-list').children;
-  assert.deepEqual(chips.map(chip => [chip.dataset.filter, chip.dataset.value]), [
-    ['category', '餐廳'], ['destination', 'bangkok'],
-  ]);
-  assert.equal(chips[0].getAttribute('aria-label'), '移除篩選：餐廳');
   assert.equal(elements.get('filter-sheet-done').textContent, '顯示 3 個地點');
 
   elements.get('cat-filter').value = '';
   state.selectedDestinations = new Set();
   renderActiveFilters(documentRoot);
   assert.equal(badge.hidden, true);
-  assert.equal(elements.get('active-chips').hidden, true);
-  assert.equal(elements.get('active-chips-list').children.length, 0);
+  assert.equal(elements.get('filter-open-btn').classes.has('is-active'), false);
 });
 
 test('summary rendering is a no-op when filter controls are absent', () => {
@@ -122,8 +114,8 @@ test('summary rendering is a no-op when filter controls are absent', () => {
 
 function makeSheet() {
   const { documentRoot, elements } = makeDocument([
-    ...SUMMARY_IDS, 'filter-sheet', 'filter-sheet-body', 'filter-controls-slot',
-    'filter-controls', 'filter-sheet-reset', 'active-chips-clear',
+    ...SUMMARY_IDS, 'filter-sheet', 'filter-sheet-body', 'filter-controls',
+    'filter-sheet-reset', 'dest-chip',
   ]);
   const dialog = Object.assign(elements.get('filter-sheet'), {
     open: false,
@@ -131,20 +123,17 @@ function makeSheet() {
     close() { this.open = false; this.dispatchEvent(new Event('close')); },
     getBoundingClientRect: () => ({ left: 0, top: 300, right: 375, bottom: 800 }),
   });
-  elements.get('filter-controls-slot').append(elements.get('filter-controls'));
+  elements.get('filter-sheet-body').append(elements.get('filter-controls'));
   const calls = [];
-  const mobileQuery = new EventTarget();
   const controller = initFilterSheet({
     documentRoot,
-    mobileQuery,
     beforeOpen: () => calls.push(['beforeOpen']),
-    onRemove: filter => calls.push(['remove', filter]),
     onClearAll: () => calls.push(['clearAll']),
   });
-  return { documentRoot, elements, dialog, controller, calls, mobileQuery };
+  return { documentRoot, elements, dialog, controller, calls };
 }
 
-test('opening moves the single controls node into the sheet and closing restores it', () => {
+test('the Filters chip opens the sheet and Done restores focus to it', () => {
   const { documentRoot, elements, dialog, calls } = makeSheet();
   const trigger = elements.get('filter-open-btn');
   const controls = elements.get('filter-controls');
@@ -157,17 +146,23 @@ test('opening moves the single controls node into the sheet and closing restores
 
   elements.get('filter-sheet-done').dispatchEvent(new Event('click'));
   assert.equal(dialog.open, false);
-  assert.equal(controls.parent, elements.get('filter-controls-slot'));
+  assert.equal(controls.parent, elements.get('filter-sheet-body'));
   assert.equal(trigger.getAttribute('aria-expanded'), 'false');
   assert.equal(documentRoot.activeElement, trigger);
 });
 
-test('leaving the mobile breakpoint closes an open sheet', () => {
-  const { elements, dialog, controller, mobileQuery } = makeSheet();
-  controller.open();
-  mobileQuery.dispatchEvent(Object.assign(new Event('change'), { matches: false }));
-  assert.equal(dialog.open, false);
-  assert.equal(elements.get('filter-controls').parent, elements.get('filter-controls-slot'));
+test('a sheet opened from another chip returns focus to that chip', () => {
+  const { documentRoot, elements, dialog, controller } = makeSheet();
+  const destChip = elements.get('dest-chip');
+  controller.open(destChip);
+  assert.equal(dialog.open, true);
+  dialog.close();
+  assert.equal(documentRoot.activeElement, destChip);
+
+  destChip.visible = false;
+  controller.open(destChip);
+  dialog.close();
+  assert.equal(documentRoot.activeElement, elements.get('filter-open-btn'));
 });
 
 test('only a backdrop gesture outside the sheet dismisses it', () => {
@@ -186,49 +181,37 @@ test('only a backdrop gesture outside the sheet dismisses it', () => {
   assert.equal(dialog.open, false);
 });
 
-test('chip and clear buttons delegate removal to the caller', () => {
-  const { documentRoot, elements, calls } = makeSheet();
-  const chip = documentRoot.createElement('button');
-  chip.className = 'active-chip';
-  chip.dataset.filter = 'destination';
-  chip.dataset.value = 'bangkok';
-  elements.get('active-chips-list').append(chip);
-
-  const click = new Event('click');
-  Object.defineProperty(click, 'target', { value: chip });
-  elements.get('active-chips-list').dispatchEvent(click);
-  elements.get('active-chips-clear').dispatchEvent(new Event('click'));
+test('the sheet reset delegates clearing to the caller', () => {
+  const { elements, calls } = makeSheet();
   elements.get('filter-sheet-reset').dispatchEvent(new Event('click'));
-
-  assert.deepEqual(calls, [
-    ['remove', { filter: 'destination', value: 'bangkok' }],
-    ['clearAll'],
-    ['clearAll'],
-  ]);
+  assert.deepEqual(calls, [['clearAll']]);
 });
 
 test('init returns null when the sheet markup is missing', () => {
   const { documentRoot } = makeDocument([]);
-  assert.equal(initFilterSheet({ documentRoot, onRemove() {}, onClearAll() {} }), null);
+  assert.equal(initFilterSheet({ documentRoot, onClearAll() {} }), null);
 });
 
-test('markup keeps one controls node inside the inline slot and a search-row trigger', async () => {
+test('markup keeps the controls inside the sheet and the Filters chip in the chip row', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  const searchRow = html.match(/<div class="search-row">[\s\S]*?<!-- Desktop renders/);
-  assert.ok(searchRow, 'search row should precede the controls slot');
-  assert.match(searchRow[0], /id="search"/);
-  assert.match(searchRow[0], /id="filter-open-btn"[^>]*aria-controls="filter-sheet"/);
-  assert.match(searchRow[0], /id="fav-filter-btn"/);
+  const chipRow = html.match(/<div class="chip-row" id="chip-row">[\s\S]*?<\/div>\s*<\/div>/)?.[0] ?? '';
+  const searchBar = html.match(/<div class="search-bar" role="search">[\s\S]*?<\/div>/)?.[0] ?? '';
+  assert.match(searchBar, /id="search"/);
+  assert.match(searchBar, /id="fav-filter-btn"/);
+  assert.match(chipRow, /id="filter-open-btn"[^>]*aria-controls="filter-sheet"/);
+  assert.match(chipRow, /id="dest-chip"[^>]*aria-controls="filter-sheet"/);
+  assert.match(chipRow, /id="filter-chips"/);
   assert.equal(html.match(/id="filter-controls"/g)?.length, 1);
-  assert.ok(html.indexOf('id="filter-controls-slot"') < html.indexOf('id="filter-controls"'));
-  assert.ok(html.indexOf('id="filter-controls"') < html.indexOf('id="cat-filter"'));
-  assert.match(html, /<dialog class="filter-sheet" id="filter-sheet"/);
+  const sheet = html.match(/<dialog class="filter-sheet" id="filter-sheet"[\s\S]*?<\/dialog>/)?.[0] ?? '';
+  assert.ok(sheet.indexOf('id="filter-sheet-body"') < sheet.indexOf('id="filter-controls"'));
+  assert.ok(sheet.indexOf('id="filter-controls"') < sheet.indexOf('id="cat-filter"'));
+  assert.doesNotMatch(html, /filter-controls-slot|active-chips/);
 });
 
-test('mobile sheet styles stay behind the 700px breakpoint', async () => {
+test('filter sheet is a centered dialog on desktop and a bottom sheet on mobile', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
-  assert.match(css, /\.filter-open-btn,\.active-chips,\.filter-sheet\{display:none\}/);
-  assert.match(css, /@media\(max-width:700px\)\{\s*\.filter-controls-slot\{display:none\}/);
+  assert.match(css, /\.filter-sheet\{width:min\(440px,calc\(100vw - 32px\)\);[^}]*margin:auto;/);
+  assert.match(css, /@media\(max-width:700px\)\{\s*\.filter-sheet\{position:fixed;inset:auto 0 0;/);
   // Destination keeps its toggle in the sheet and expands in place instead of floating.
   assert.doesNotMatch(css, /\.filter-sheet \.dest-filter-menu\[hidden\]/);
   assert.doesNotMatch(css, /\.filter-sheet \.dest-filter-btn\{display:none\}/);

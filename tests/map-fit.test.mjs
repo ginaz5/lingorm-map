@@ -12,7 +12,7 @@ function resetState() {
   state.pendingDestinationFit = false;
 }
 
-test('Google fits multiple visible results with padding', () => {
+test('Google fits multiple visible results with per-side padding', () => {
   const calls = [];
   state.data = [
     { lat: '13.7', lng: '100.5' },
@@ -34,7 +34,7 @@ test('Google fits multiple visible results with padding', () => {
         east: 102.8,
         west: 100.5,
       },
-      padding: 48,
+      padding: { top: 48, right: 48, bottom: 48, left: 48 },
     }]);
     assert.equal(state.pendingDestinationFit, false);
   } finally {

@@ -24,7 +24,7 @@ import {
 } from '../src/ui/render.js';
 import { applyFiltersAndSyncMap } from '../src/app/app-coordinator.js';
 import { parseCSV } from '../src/data/csv-parser.js';
-import { refreshActivePopup } from '../src/map/map.js';
+import { refreshPlaceDetail } from '../src/ui/place-detail.js';
 import { reconcileDestinationFilter } from '../src/features/destination-filter.js';
 import { locationTypeLabel } from '../src/data/location-types.js';
 import { lang, setLang, t as translate } from '../src/core/i18n.js';
@@ -282,15 +282,14 @@ test('green rate sorting keeps ties consistent and respects filtered results', (
 test('selecting a green rate refreshes the list at the top while background updates retain scroll', t => {
   topRateFixture();
   const listeners = {};
-  const makePanel = () => ({ setAttribute(name, value) { this[name] = value; }, classList: { toggle() {} } });
   const elements = {
     search: { value: '' }, 'cat-filter': { value: '' }, 'label-filter': { value: '' },
     'loc-list': { innerHTML: '', scrollTop: 900 }, 'result-info': {},
-    panel: makePanel(), 'map-wrap': makePanel(), 'tab-map': makePanel(), 'tab-list': makePanel(),
+    'place-detail': { hidden: true },
     'exchange-sort': { value: 'default', options: [], addEventListener(name, fn) { listeners[name] = fn; } },
   };
   const globals = {
-    document: { visibilityState: 'hidden', getElementById: id => elements[id] ?? null, addEventListener() {} },
+    document: { visibilityState: 'hidden', getElementById: id => elements[id] ?? null, addEventListener() {}, querySelectorAll: () => [] },
     window: { addEventListener() {} },
     localStorage: { getItem: () => 'true', setItem() {} },
   };
@@ -310,8 +309,7 @@ test('selecting a green rate refreshes the list at the top while background upda
   elements['exchange-sort'].value = 'USD_100';
   listeners.change();
   assert.equal(elements['loc-list'].scrollTop, 0);
-  assert.equal(elements.panel['data-mobile-tab'], 'list');
-  assert.equal(elements['map-wrap']['data-mobile-tab'], 'list');
+  assert.equal(elements['place-detail'].hidden, true);
   assert.match(elements['loc-list'].innerHTML.trimStart(), /^<div class="loc-card/);
   assert.doesNotMatch(elements['loc-list'].innerHTML, /class="fx-top"/);
   assert.deepEqual(
@@ -435,7 +433,7 @@ function browserHarness(t, onChange = () => {}) {
 }
 
 for (const provider of ['google', 'here']) {
-  test(`${provider} popup and list clear expired quotes, keep branches, and recover from a new snapshot`, async t => {
+  test(`${provider} place detail and list clear expired quotes, keep branches, and recover from a new snapshot`, async t => {
     const rows = parseCSV(readFileSync(new URL('../data/locations.csv', import.meta.url), 'utf8'));
     const branch = rows.find(row => row.id === slugs[0]);
     const regular = rows.find(row => isPublicLocation(row) && row.type !== 'Currency Exchange');
@@ -444,7 +442,7 @@ for (const provider of ['google', 'here']) {
     assert.equal(branch.type, 'Currency Exchange');
     assert.equal(branch.catEn, '');
 
-    const mapKeys = ['provider', 'map', 'activeIdx', 'infoWindow', 'infoBubble', 'markers', 'markerClusterer'];
+    const mapKeys = ['provider', 'map', 'activeIdx', 'markers', 'markerClusterer'];
     const previousMapState = Object.fromEntries(mapKeys.map(key => [key, state[key]]));
     t.after(() => Object.assign(state, previousMapState));
     const elements = {
@@ -453,23 +451,22 @@ for (const provider of ['google', 'here']) {
       'exchange-sort': { value: 'USD_100', options: ['default', 'USD_100', 'USD_50', 'TWD'].map(value => ({ value })), addEventListener() {} },
       'exchange-sort-label': { hidden: false },
       'exchange-sort-hint': { hidden: false },
+      'place-detail': { hidden: false },
+      'place-detail-body': { innerHTML: '', scrollTop: 0 },
     };
-    let popupHtml = '';
-    const popup = { setContent: html => { popupHtml = html; } };
     const { browserDocument, browserNavigator, listeners } = browserHarness(t, () => {
       applyFiltersAndSyncMap();
-      refreshActivePopup();
+      refreshPlaceDetail();
     });
     browserDocument.getElementById = id => elements[id] ?? null;
     Object.assign(state, {
       data: [regular, branch], activeIdx: 1, provider, map: null, markers: [], markerClusterer: null,
-      infoWindow: provider === 'google' ? popup : null,
-      infoBubble: provider === 'here' ? popup : null,
     });
     syncExchangeControls();
     applyFiltersAndSyncMap();
-    refreshActivePopup();
-    for (const html of [elements['loc-list'].innerHTML, popupHtml]) {
+    assert.equal(refreshPlaceDetail(), true);
+    const detail = elements['place-detail-body'];
+    for (const html of [elements['loc-list'].innerHTML, detail.innerHTML]) {
       assert.match(html, /32\.83 THB/);
       assert.match(html, /fx-best/);
       assert.match(html, /class="fx-checked"/);
@@ -479,7 +476,7 @@ for (const provider of ['google', 'here']) {
     browserNavigator.onLine = false;
     listeners.offline();
     t.mock.timers.tick(5_000);
-    for (const html of [elements['loc-list'].innerHTML, popupHtml]) {
+    for (const html of [elements['loc-list'].innerHTML, detail.innerHTML]) {
       assert.doesNotMatch(html, /32\.83 THB|fx-best|class="fx-checked"/);
       assert.equal((html.match(/暫無報價/g) || []).length, 3);
     }
@@ -494,7 +491,7 @@ for (const provider of ['google', 'here']) {
     listeners.online();
     t.mock.timers.tick(0);
     await new Promise(resolve => setImmediate(resolve));
-    for (const html of [elements['loc-list'].innerHTML, popupHtml]) {
+    for (const html of [elements['loc-list'].innerHTML, detail.innerHTML]) {
       assert.match(html, /32\.83 THB/);
       assert.match(html, /class="fx-checked"/);
       assert.doesNotMatch(html, /暫無報價|fx-best/);

@@ -1,6 +1,6 @@
 import { lang, t } from '../core/i18n.js';
 import { state } from '../core/state.js';
-import { fitMapToVisibleLocations } from '../map/map.js';
+import { centerMapOn } from '../map/viewport.js';
 import {
   trackLocateResult,
   trackLocationAction,
@@ -22,23 +22,6 @@ export function getEffectiveTheme() {
     return localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
   } catch (_) {
     return 'light';
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// MOBILE TABS
-// ═══════════════════════════════════════════════════
-/** @param {'map'|'list'} tab */
-export function switchTab(tab) {
-  const isMap = tab === 'map';
-  requiredElement('panel').setAttribute('data-mobile-tab', isMap ? 'map' : 'list');
-  requiredElement('map-wrap').setAttribute('data-mobile-tab', isMap ? 'map' : 'list');
-  requiredElement('tab-map').classList.toggle('active', isMap);
-  requiredElement('tab-list').classList.toggle('active', !isMap);
-  if (isMap && state.map) {
-    if (state.provider === 'google') google.maps.event.trigger(state.map, 'resize');
-    else state.map.getViewPort().resize();
-    if (state.pendingDestinationFit) fitMapToVisibleLocations();
   }
 }
 
@@ -67,6 +50,45 @@ export function openNavigation(i, source = 'unknown') {
     + '&travelmode=transit';
   trackLocationAction(row, 'directions', source);
   window.open(url, '_blank');
+}
+
+/**
+ * Link that reopens this site on one place (read at boot by main.js).
+ * @param {string} id location slug
+ * @param {{ origin: string, pathname: string }} [location]
+ */
+export function placeShareUrl(id, location = window.location) {
+  const url = new URL(location.pathname, location.origin);
+  url.searchParams.set('place', id);
+  return url.toString();
+}
+
+/**
+ * Share a place with the native share sheet, or copy its link where the Web
+ * Share API is unavailable (most desktop browsers).
+ * @param {number} i
+ * @param {'list_card'|'popup'|'unknown'} [source]
+ */
+export async function sharePlace(i, source = 'unknown') {
+  const row = state.data[i];
+  if (!row) return;
+  const name = lang === 'zh' ? row.nameZh : row.nameEn;
+  const url = placeShareUrl(row.id);
+  trackLocationAction(row, 'share', source);
+  if (typeof navigator.share === 'function') {
+    try {
+      await navigator.share({ title: `${name} · LingOrm Map`, url });
+    } catch (_) {
+      // Dismissing the share sheet rejects with AbortError; nothing to do.
+    }
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    showSnackbar(t('share_copied'));
+  } catch (_) {
+    showSnackbar(url, 8000);
+  }
 }
 
 /** @param {number} i @param {'list_card'|'popup'|'unknown'} [source] */
@@ -113,13 +135,13 @@ export function locateMe() {
         state.userLocationMarker = new google.maps.marker.AdvancedMarkerElement({
           map: state.map, position: { lat, lng }, content: el, zIndex: 999,
         });
-        state.map.panTo({ lat, lng });
       } else {
         const domIcon = new H.map.DomIcon(el);
         state.userLocationMarker = new H.map.DomMarker({ lat, lng }, { icon: domIcon, zIndex: 999 });
         state.map.addObject(state.userLocationMarker);
-        state.map.setCenter({ lat, lng });
       }
+      // Centre in the uncovered map area, above the bottom sheet.
+      centerMapOn({ lat, lng });
       trackLocateResult('success');
       showSnackbar(t('locate_snack'));
     },

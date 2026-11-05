@@ -16,9 +16,11 @@ import {
   locationTypeLabel,
 } from '../data/location-types.js';
 import { trackLocationOpen } from '../services/analytics.js';
-import { switchTab } from './ui.js';
-import { openLocationPopup } from '../map/popup.js';
+import { openPlaceDetail } from './place-detail.js';
+import { focusWhenReady } from '../map/viewport.js';
+import { showSelectedMarker } from '../map/map.js';
 import { renderActiveFilters } from '../features/filter-sheet.js';
+import { renderFilterChips } from '../features/filter-chips.js';
 
 // ISO commit time of data/locations.csv, injected by Vite (see vite.config.js).
 // Guarded so non-Vite contexts (Node tests) don't throw a ReferenceError.
@@ -259,7 +261,7 @@ export function sortVisibleIndexes(indexes, sort) {
 }
 
 // ═══════════════════════════════════════════════════
-// POPUP CONTENT (used by HERE map bubbles)
+// LOCATION ACTIONS + PLACE DETAIL CONTENT
 // ═══════════════════════════════════════════════════
 /**
  * @param {number} i
@@ -287,28 +289,63 @@ function renderLocationActions(i, row, source) {
   </div>`;
 }
 
-/** @param {number} i @returns {string} */
-export function buildPopupContent(i) {
+const NAV_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 3l-7.5 18-3-7.5L3 11 21 3z"/></svg>';
+const MAPS_ICON = '<svg viewBox="0 0 48 56" aria-hidden="true"><path d="M24 2C13.5 2 5 10.5 5 21c0 14 19 33 19 33S43 35 43 21C43 10.5 34.5 2 24 2z" fill="#34A853"/><path d="M24 2 L5 21 L24 21 Z" fill="#EA4335"/><path d="M24 2 L43 21 L24 21 Z" fill="#4285F4"/><path d="M5 21 L24 21 L24 40 Z" fill="#FBBC04"/><circle cx="24" cy="21" r="8" fill="white"/></svg>';
+const SHARE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>';
+
+/**
+ * Round, labelled action buttons under the place title. Analytics keeps the
+ * historical `popup` interaction source for this view so reports stay
+ * comparable with the InfoWindow era.
+ * @param {number} i
+ * @param {LocationRow} row
+ * @returns {string}
+ */
+function renderPlaceActions(i, row) {
+  const hasCoords = parseFloat(row.lat) && parseFloat(row.lng);
+  const isFav = state.favorites.has(row.id);
+  /** @param {string} icon @param {string} label */
+  const content = (icon, label) =>
+    `<span class="place-action-icon">${icon}</span><span class="place-action-label">${label}</span>`;
+  return `<div class="place-actions" role="group" aria-label="${t('place_actions')}">
+    ${hasCoords ? `<button type="button" class="place-action is-primary" onclick="openNavigation(${i}, 'popup')">${content(NAV_ICON, t('nav_btn'))}</button>` : ''}
+    <button type="button" class="place-action fav-btn${isFav ? ' fav-active' : ''}" data-fav-id="${row.id}"
+      aria-pressed="${isFav}" onclick="toggleFavorite('${row.id}', event, 'popup')">${content(heartSVG(isFav), t('save_btn'))}</button>
+    ${hasCoords ? `<button type="button" class="place-action" onclick="openInGoogleMaps(${i}, 'popup')">${content(MAPS_ICON, t('open_maps_btn'))}</button>` : ''}
+    <button type="button" class="place-action" onclick="sharePlace(${i}, 'popup')">${content(SHARE_ICON, t('share_btn'))}</button>
+  </div>`;
+}
+
+/**
+ * Full place view rendered into #place-detail-body: title, collection badges,
+ * actions, the complete notes, exchange rates, and sources.
+ * @param {number} i
+ * @returns {string}
+ */
+export function buildPlaceDetailContent(i) {
   const row = state.data[i];
   const name = lang === 'zh' ? row.nameZh : row.nameEn;
   const notes = lang === 'zh' ? row.notesZh : row.notesEn;
   const cat = lang === 'zh' ? row.catZh : row.catEn;
   const type = row.type ? locationTypeLabel(row.type, lang) : '';
   const approx = isApproximateCoords(row);
-  return `<div class="popup-content">
-    <div class="popup-name">${row.icon} ${name}</div>
-    ${row.alt ? `<div class="popup-alt">${row.alt}</div>` : ''}
-    <div class="badges popup-badges">
+  return `<div class="place-content">
+    <div class="place-head">
+      <div class="place-icon" aria-hidden="true">${row.icon}</div>
+      <div class="place-title-wrap">
+        <h2 class="place-name" id="place-detail-title">${name}</h2>
+        ${row.alt ? `<div class="place-alt">${row.alt}</div>` : ''}
+      </div>
+    </div>
+    <div class="badges place-badges">
       ${cat ? `<span class="badge b-cat">${cat}</span>` : ''}
       ${type ? `<span class="badge ${isExchangeLocation(row) ? `b-exchange${getExchangeBrand(row) === 'orange' ? ' is-exchange-orange' : ''}` : 'b-label'}">${type}</span>` : ''}
     </div>
-    <div class="popup-notes">${notes}</div>
+    ${renderPlaceActions(i, row)}
+    <div class="place-notes">${notes}</div>
     ${renderExchangeRates(row)}
     ${approx ? `<div class="approx-tag">${t('approx')}</div>` : ''}
-    <div class="popup-footer">
-      ${renderSources(row)}
-      ${renderLocationActions(i, row, 'popup')}
-    </div>
+    ${renderSources(row)}
   </div>`;
 }
 
@@ -317,7 +354,7 @@ export function buildPopupContent(i) {
 // ═══════════════════════════════════════════════════
 /**
  * List cards clamp notes to two lines, so blank separator lines would waste
- * that budget. The popup keeps the notes exactly as authored.
+ * that budget. The place detail keeps the notes exactly as authored.
  * @param {string} notes
  * @returns {string}
  */
@@ -366,39 +403,32 @@ export function renderList() {
 }
 
 /**
+ * Select a place: open its detail view, then centre it in the uncovered part
+ * of the map. List cards zoom to the place; marker taps keep the user's zoom
+ * and only pan the marker clear of the panel.
  * @param {number} i
- * @param {{ centerMap?: boolean, source?: 'list_card'|'map_marker' }} [options]
+ * @param {{ zoomToPlace?: boolean, source?: 'list_card'|'map_marker'|'shared_link' }} [options]
  */
 export function activateCard(i, options = {}) {
-  const centerMap = options.centerMap !== false;
-  state.activeIdx = i;
   const row = state.data[i];
+  if (!row) return;
+  state.activeIdx = i;
   trackLocationOpen(row, options.source || 'list_card');
-  const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+  // Panel first: the map insets depend on the sheet / side panel it reveals.
+  openPlaceDetail(i);
 
-  if (centerMap && lat && lng && state.map) {
-    if (window.innerWidth <= 700) switchTab('map');
-    if (state.provider === 'google') {
-      state.map.setCenter({ lat, lng });
-      state.map.setZoom(15);
-      openLocationPopup(i, buildPopupContent(i));
-    } else if (state.provider === 'here') {
-      state.map.setCenter({ lat, lng });
-      state.map.setZoom(15);
-      openLocationPopup(i, buildPopupContent(i));
-    }
+  const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+  if (lat && lng) {
+    focusWhenReady({ lat, lng }, options.zoomToPlace === false ? {} : { zoom: 15 });
+    // Drawn even when the place's own marker is inside a cluster.
+    showSelectedMarker(i);
   }
 
   document.querySelectorAll('.loc-card').forEach(c => c.classList.remove('active'));
   state.markers.forEach((marker, markerIndex) => {
     marker?.__markerContent?.classList.toggle('active', markerIndex === i);
   });
-  const card = document.getElementById('card-' + i);
-  if (card) {
-    card.classList.add('active');
-    const raf = typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame : (/** @type {FrameRequestCallback} */ cb) => { cb(0); return 0; };
-    raf(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-  }
+  document.getElementById('card-' + i)?.classList.add('active');
 }
 
 /** @param {unknown} value */
@@ -454,6 +484,7 @@ export function applyFilters() {
     updatedEl.textContent = state.isLoading || !updated ? '' : t('updated', updated);
   }
   renderActiveFilters();
+  renderFilterChips();
 }
 
 // ═══════════════════════════════════════════════════
@@ -474,9 +505,14 @@ export function updateLangUI() {
     else if (el.dataset.i18nPh) { const v = t(el.dataset.i18nPh); if (v !== el.dataset.i18nPh) /** @type {HTMLInputElement|HTMLTextAreaElement} */ (el).placeholder = v; }
     else if (el.dataset.i18nAria) { const v = t(el.dataset.i18nAria); if (v !== el.dataset.i18nAria) el.setAttribute('aria-label', v); }
   });
+  // Page language for assistive tech and the menu's language switch (CSS).
+  const root = document.documentElement;
+  if (root) {
+    root.lang = lang === 'zh' ? 'zh-TW' : 'en';
+    root.dataset.lang = lang;
+  }
   const langBtnLabel = document.getElementById('lang-btn-label');
-  if (!langBtnLabel) throw new Error('Missing required element #lang-btn-label');
-  langBtnLabel.textContent = t('lang_btn');
+  if (langBtnLabel) langBtnLabel.textContent = t('lang_btn');
 }
 
 export function buildCatFilter() {

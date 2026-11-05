@@ -2,19 +2,27 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="LingOrm Map"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#ffffff"/>
+<meta name="description" content="LingOrm 粉絲踩點地圖：曼谷與各地的取景地、應援與推薦地點。"/>
 <title>LingOrm Map</title>
 <link rel="icon" type="image/svg+xml" href="./favicon.svg"/>
+<link rel="manifest" href="/manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
 try {
   document.documentElement.dataset.theme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.lang = localStorage.getItem('lang') === 'en' ? 'en' : 'zh';
 } catch (_) {
   document.documentElement.dataset.theme = 'light';
+  document.documentElement.dataset.lang = 'zh';
 }
 </script>
 <link rel="stylesheet" href="./styles.css"/>
@@ -38,192 +46,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <input name="page_url"/><input name="contact"/>
 </form>
 
-<!-- HEADER -->
-<header>
-  <button type="button" id="home-btn" class="logo cal-sans" data-i18n-aria="home_btn_label">
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <rect width="24" height="24" rx="6" fill="currentColor"/>
-      <path d="M4.5 7.5v9h4" stroke="var(--canvas)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      <circle cx="15" cy="12" r="4.5" stroke="var(--canvas)" stroke-width="2" fill="none"/>
-    </svg>
-    LingOrm Map
-  </button>
-  <div class="hdr-spacer"></div>
-  <button class="btn-ghost" id="issue-btn">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    <span data-i18n="issue_btn"></span>
-  </button>
-  <button class="btn-ghost" id="locate-btn" type="button" data-i18n-aria="locate_btn_label">
-    <svg class="locate-icon" width="14" height="14" viewBox="0 0 24 24"
-      fill="currentColor" aria-hidden="true">
-      <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
-    </svg>
-    <span data-i18n="locate_btn_label"></span>
-  </button>
-  <button class="btn-ghost" id="fan-resources-btn" type="button"
-    aria-haspopup="dialog" aria-controls="fan-resources-modal" aria-expanded="false">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>
-    <span data-i18n="fan_resources_title"></span>
-  </button>
-  <a class="btn-ghost header-link" id="changelog-btn" href="./changelog.html">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
-    <span data-i18n="changelog_title"></span>
-  </a>
-  <button class="btn-ghost" id="lang-btn">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-    <span id="lang-btn-label"></span>
-  </button>
-  <button class="btn-ghost" id="theme-btn" type="button">
-    <span class="theme-icon" aria-hidden="true">
-      <svg class="theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg>
-      <svg class="theme-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-    </span>
-    <span data-i18n="theme_btn"></span>
-  </button>
-  <div class="mobile-actions">
-    <button class="mobile-actions-btn" id="mobile-actions-btn" type="button"
-      aria-haspopup="menu" aria-expanded="false" aria-controls="mobile-actions-menu"
-      data-i18n-aria="more_actions">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-    </button>
-    <div class="mobile-actions-menu" id="mobile-actions-menu" role="menu" hidden>
-      <button type="button" class="mobile-action-item" data-mobile-action="fan-resources" role="menuitem"
-        aria-haspopup="dialog" aria-controls="fan-resources-modal" aria-expanded="false">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>
-        <span data-i18n="fan_resources_title"></span>
-      </button>
-      <a class="mobile-action-item" href="./changelog.html" role="menuitem">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
-        <span data-i18n="changelog_title"></span>
-      </a>
-      <button type="button" class="mobile-action-item" data-mobile-action="issue" role="menuitem">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <span data-i18n="issue_btn"></span>
-      </button>
-    </div>
-  </div>
-</header>
-
 <!-- SNACKBAR -->
 <div class="snackbar" id="snackbar" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<!-- APP BODY -->
-<div class="app-body">
-  <div class="panel" id="panel" data-mobile-tab="list">
-    <div class="filters">
-      <div class="search-row">
-        <div class="search-wrap">
-          <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2Zm0 2a6 6 0 1 0 0 12A6 6 0 0 0 10 4Zm8.586 12.172 2.828 2.828-1.414 1.414-2.828-2.828 1.414-1.414Z"/></svg>
-          <input class="search-input" id="search" type="search" data-i18n-ph="search_ph"/>
-        </div>
-        <button class="filter-open-btn" id="filter-open-btn" type="button"
-          aria-haspopup="dialog" aria-controls="filter-sheet" aria-expanded="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
-          <span data-i18n="filter_btn"></span>
-          <span class="filter-count-badge" id="filter-count-badge" hidden></span>
-        </button>
-        <button class="fav-filter-btn" id="fav-filter-btn" aria-pressed="false" aria-label="我的最愛">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        </button>
-      </div>
-      <!-- Desktop renders the controls inline here. On mobile the slot is hidden and
-           #filter-controls moves into #filter-sheet-body while the sheet is open. -->
-      <div class="filter-controls-slot" id="filter-controls-slot">
-        <div class="filter-controls" id="filter-controls">
-          <div class="filter-row">
-            <select class="filter-sel" id="cat-filter"></select>
-            <div class="label-filter">
-              <select class="filter-sel" id="label-filter" data-i18n-aria="label_filter"></select>
-              <button class="label-info-btn" id="label-info-btn" type="button"
-                data-i18n-aria="collection_info_btn" aria-expanded="false"
-                aria-haspopup="dialog" aria-controls="label-info-popover">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9"></circle>
-                  <path d="M12 11v5M12 8h.01"></path>
-                </svg>
-              </button>
-              <div class="label-info-popover" id="label-info-popover" role="dialog"
-                aria-labelledby="label-info-title" hidden>
-                <div class="label-info-head">
-                  <strong id="label-info-title" data-i18n="collection_info_title"></strong>
-                  <button class="label-info-close" id="label-info-close" type="button"
-                    data-i18n-aria="collection_info_close">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg>
-                  </button>
-                </div>
-                <dl class="label-info-list">
-                  <div class="label-info-item">
-                    <dt><span class="badge b-label">LingOrm</span></dt>
-                    <dd data-i18n="collection_info_lingorm"></dd>
-                  </div>
-                  <div class="label-info-item">
-                    <dt><span class="badge b-label" data-i18n="collection_label_jkr_picks"></span></dt>
-                    <dd data-i18n="collection_info_jkr_picks"></dd>
-                  </div>
-                  <div class="label-info-item">
-                    <dt><span class="badge b-label" data-i18n="collection_label_jkr_projects"></span></dt>
-                    <dd data-i18n="collection_info_jkr_projects"></dd>
-                  </div>
-                  <div class="label-info-item">
-                    <dt><span class="badge b-label" data-i18n="collection_label_admin"></span></dt>
-                    <dd data-i18n="collection_info_admin"></dd>
-                  </div>
-                  <div class="label-info-item">
-                    <dt><span class="badge b-exchange" data-i18n="category_currency_exchange"></span></dt>
-                    <dd data-i18n="collection_info_currency_exchange"></dd>
-                  </div>
-                </dl>
-              </div>
-            </div>
-            <div class="destination-filter">
-              <button class="dest-filter-btn" id="dest-filter-btn" type="button"
-                aria-haspopup="dialog" aria-expanded="false" aria-controls="dest-filter-menu">
-                <span id="dest-filter-label"></span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5z"/></svg>
-              </button>
-              <div class="dest-filter-menu" id="dest-filter-menu" role="dialog"
-                aria-labelledby="dest-filter-label" hidden>
-                <div class="dest-filter-head">
-                  <span data-i18n="dest_filter"></span>
-                  <button class="dest-filter-clear" id="dest-filter-clear" type="button"
-                    data-i18n="clear"></button>
-                </div>
-                <label class="dest-option dest-all-option">
-                  <input type="checkbox" id="dest-filter-all">
-                  <span class="dest-check" aria-hidden="true"></span>
-                  <span data-i18n="all_destinations"></span>
-                </label>
-                <div class="dest-filter-groups" id="dest-filter-groups"></div>
-              </div>
-            </div>
-          </div>
-          <div class="exchange-toolbar">
-            <label class="exchange-sort-label" for="exchange-sort" id="exchange-sort-label" data-i18n="fx_sort_label" hidden></label>
-            <select class="filter-sel exchange-sort" id="exchange-sort" aria-describedby="exchange-sort-hint" hidden>
-              <option value="default" data-i18n="fx_sort_default"></option>
-              <option value="USD_100" data-i18n="fx_sort_usd_100"></option>
-              <option value="USD_50" data-i18n="fx_sort_usd_50"></option>
-              <option value="TWD" data-i18n="fx_sort_twd"></option>
-              <option value="USD_1965" data-i18n="fx_sort_usd_1965"></option>
-              <option value="TWD_1965" data-i18n="fx_sort_twd_1965"></option>
-            </select>
-            <p class="exchange-sort-hint" id="exchange-sort-hint" data-i18n="fx_sort_scope" hidden></p>
-          </div>
-        </div>
-      </div>
-      <!-- Mobile only: active filters, rendered by src/features/filter-sheet.js -->
-      <div class="active-chips" id="active-chips" hidden>
-        <div class="active-chips-list" id="active-chips-list"></div>
-        <button class="active-chips-clear" id="active-chips-clear" type="button" data-i18n="clear"></button>
-      </div>
-      <div class="result-meta">
-        <span class="result-info" id="result-info"></span>
-        <span class="last-updated" id="last-updated"></span>
-      </div>
-    </div>
-    <div class="loc-list" id="loc-list"></div>
-  </div>
-  <div id="map-wrap" data-mobile-tab="list">
+<!-- APP BODY
+     Map-first layout: the map fills the viewport and every control floats on
+     top of it. #panel is a draggable bottom sheet below 701px (see
+     src/ui/bottom-sheet.js) and a collapsible left side panel above it
+     (see src/ui/side-panel.js). -->
+<main class="app-body" id="app-body">
+  <div id="map-wrap">
     <div id="map-loading" class="map-loading">
       <div>
         <div class="loading-spinner"></div>
@@ -231,26 +63,151 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
     </div>
     <div id="map"></div>
-    <div class="map-legend">
+  </div>
+
+  <!-- FLOATING SEARCH + FILTER CHIPS -->
+  <div class="map-top" id="map-top">
+    <div class="search-bar" role="search">
+      <button type="button" class="search-bar-btn" id="menu-btn"
+        aria-haspopup="dialog" aria-controls="side-menu" aria-expanded="false"
+        data-i18n-aria="menu_open">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <input class="search-input" id="search" type="search" autocomplete="off"
+        enterkeyhint="search" data-i18n-ph="search_ph" data-i18n-aria="search_label"/>
+      <button type="button" class="search-bar-btn search-clear-btn" id="search-clear-btn"
+        data-i18n-aria="search_clear" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+      <button class="search-bar-btn fav-filter-btn" id="fav-filter-btn" aria-pressed="false" aria-label="我的最愛">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </button>
+    </div>
+    <div class="chip-row" id="chip-row">
+      <button class="chip filter-open-btn" id="filter-open-btn" type="button"
+        aria-haspopup="dialog" aria-controls="filter-sheet" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+        <span data-i18n="filter_btn"></span>
+        <span class="filter-count-badge" id="filter-count-badge" hidden></span>
+      </button>
+      <button class="chip dest-chip" id="dest-chip" type="button"
+        aria-haspopup="dialog" aria-controls="filter-sheet">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        <span id="dest-chip-label"></span>
+      </button>
+      <!-- Collection and category chips, rendered by src/features/filter-chips.js -->
+      <div class="chip-list" id="filter-chips" role="group" data-i18n-aria="quick_filters"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS PANEL: bottom sheet on mobile, side panel on desktop -->
+  <section class="panel" id="panel" data-view="results" data-i18n-aria="panel_label">
+    <div class="sheet-grip" id="sheet-grip">
+      <button type="button" class="sheet-handle-btn" id="sheet-handle"
+        aria-controls="panel" aria-expanded="false" data-i18n-aria="sheet_expand">
+        <span class="sheet-handle" aria-hidden="true"></span>
+      </button>
+    </div>
+    <div class="panel-view panel-results" id="panel-results">
+      <div class="result-meta" id="result-meta">
+        <span class="result-info" id="result-info"></span>
+        <span class="last-updated" id="last-updated"></span>
+      </div>
+      <div class="loc-list" id="loc-list"></div>
+    </div>
+    <article class="panel-view place-detail" id="place-detail" aria-labelledby="place-detail-title" hidden>
+      <div class="place-detail-bar" id="place-detail-bar">
+        <button type="button" class="place-detail-back" id="place-detail-back">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6 9 12l6 6"/></svg>
+          <span data-i18n="back_to_results"></span>
+        </button>
+      </div>
+      <div class="place-detail-body" id="place-detail-body"></div>
+    </article>
+    <button type="button" class="panel-toggle" id="panel-toggle"
+      aria-controls="panel" aria-expanded="true" data-i18n-aria="panel_collapse">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 7l-5 5 5 5"/></svg>
+    </button>
+  </section>
+
+  <!-- MAP CONTROLS -->
+  <div class="map-fabs" id="map-fabs">
+    <button class="map-fab" id="locate-btn" type="button" data-i18n-aria="locate_btn_label">
+      <svg class="locate-icon" width="22" height="22" viewBox="0 0 24 24"
+        fill="currentColor" aria-hidden="true">
+        <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+      </svg>
+    </button>
+  </div>
+</main>
+
+<!-- DIALOG: SIDE MENU (replaces the header and the mobile overflow menu) -->
+<dialog class="side-menu" id="side-menu" data-i18n-aria="menu_label">
+  <div class="side-menu-content">
+    <div class="side-menu-head">
+      <button type="button" id="home-btn" class="logo cal-sans" data-i18n-aria="home_btn_label">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+          <rect width="24" height="24" rx="6" fill="currentColor"/>
+          <path d="M4.5 7.5v9h4" stroke="var(--canvas)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle cx="15" cy="12" r="4.5" stroke="var(--canvas)" stroke-width="2" fill="none"/>
+        </svg>
+        LingOrm Map
+      </button>
+      <button type="button" class="side-menu-close" id="side-menu-close" data-i18n-aria="menu_close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <nav class="side-menu-list">
+      <!-- Settings show both choices with the current one highlighted (CSS reads
+           <html data-lang> / <html data-theme>); the aria-label states the
+           current value and what a tap does. -->
+      <button type="button" class="side-menu-item" id="lang-btn" data-i18n-aria="menu_language_aria">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="side-menu-label" data-i18n="menu_language"></span>
+        <span class="side-menu-switch" aria-hidden="true">
+          <span class="side-menu-option" data-lang-option="zh">中文</span>
+          <span class="side-menu-option" data-lang-option="en">English</span>
+        </span>
+      </button>
+      <button type="button" class="side-menu-item" id="theme-btn">
+        <span class="theme-icon" aria-hidden="true">
+          <svg class="theme-icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="theme-icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </span>
+        <span class="side-menu-label" data-i18n="theme_btn"></span>
+        <span class="side-menu-switch" aria-hidden="true">
+          <span class="side-menu-option" data-theme-option="light" data-i18n="theme_light"></span>
+          <span class="side-menu-option" data-theme-option="dark" data-i18n="theme_dark"></span>
+        </span>
+      </button>
+      <div class="side-menu-divider" role="separator"></div>
+      <button type="button" class="side-menu-item" id="fan-resources-btn"
+        aria-haspopup="dialog" aria-controls="fan-resources-modal" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+        <span class="side-menu-label" data-i18n="fan_resources_title"></span>
+      </button>
+      <a class="side-menu-item" id="changelog-btn" href="./changelog.html">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
+        <span class="side-menu-label" data-i18n="changelog_title"></span>
+      </a>
+      <button type="button" class="side-menu-item" id="issue-btn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span class="side-menu-label" data-i18n="issue_btn"></span>
+      </button>
+      <button type="button" class="side-menu-item" id="install-btn" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3M10 18h4"/></svg>
+        <span class="side-menu-label" data-i18n="install_app"></span>
+      </button>
+    </nav>
+    <div class="side-menu-foot">
       <div class="leg-row" id="map-provider-badge">
+        <span class="provider-caption" data-i18n="map_provider_label"></span>
         <div class="leg-dot" id="provider-dot"></div>
         <span id="provider-label" class="provider-label"></span>
       </div>
     </div>
   </div>
-</div>
-
-<!-- MOBILE TAB BAR -->
-<div class="tab-bar">
-  <button class="tab-btn" id="tab-map">
-    <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
-    <span data-i18n="tab_map"></span>
-  </button>
-  <button class="tab-btn active" id="tab-list">
-    <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
-    <span data-i18n="tab_list"></span>
-  </button>
-</div>
+</dialog>
 
 <!-- DIALOG: FAN RESOURCES -->
 <dialog class="fan-resources-dialog" id="fan-resources-modal"
@@ -364,7 +321,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </dialog>
 
-<!-- DIALOG: MOBILE FILTER SHEET -->
+<!-- DIALOG: FILTER SHEET (bottom sheet on mobile, centered dialog on desktop)
+     The controls live here permanently; the chip row mirrors the selects. -->
 <dialog class="filter-sheet" id="filter-sheet" aria-labelledby="filter-sheet-title">
   <div class="filter-sheet-content">
     <div class="sheet-handle" aria-hidden="true"></div>
@@ -372,7 +330,98 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <h2 id="filter-sheet-title" data-i18n="filter_sheet_title"></h2>
       <button class="filter-sheet-reset" id="filter-sheet-reset" type="button" data-i18n="clear_all"></button>
     </div>
-    <div class="filter-sheet-body" id="filter-sheet-body"></div>
+    <div class="filter-sheet-body" id="filter-sheet-body">
+      <div class="filter-controls" id="filter-controls">
+        <div class="filter-row">
+          <div class="filter-field">
+            <label class="filter-field-label" for="cat-filter" data-i18n="category_filter"></label>
+            <select class="filter-sel" id="cat-filter"></select>
+          </div>
+          <div class="filter-field">
+            <label class="filter-field-label" for="label-filter" data-i18n="label_filter"></label>
+            <div class="label-filter">
+              <select class="filter-sel" id="label-filter" data-i18n-aria="label_filter"></select>
+              <button class="label-info-btn" id="label-info-btn" type="button"
+                data-i18n-aria="collection_info_btn" aria-expanded="false"
+                aria-haspopup="dialog" aria-controls="label-info-popover">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M12 11v5M12 8h.01"></path>
+                </svg>
+              </button>
+              <div class="label-info-popover" id="label-info-popover" role="dialog"
+                aria-labelledby="label-info-title" hidden>
+                <div class="label-info-head">
+                  <strong id="label-info-title" data-i18n="collection_info_title"></strong>
+                  <button class="label-info-close" id="label-info-close" type="button"
+                    data-i18n-aria="collection_info_close">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"></path></svg>
+                  </button>
+                </div>
+                <dl class="label-info-list">
+                  <div class="label-info-item">
+                    <dt><span class="badge b-label">LingOrm</span></dt>
+                    <dd data-i18n="collection_info_lingorm"></dd>
+                  </div>
+                  <div class="label-info-item">
+                    <dt><span class="badge b-label" data-i18n="collection_label_jkr_picks"></span></dt>
+                    <dd data-i18n="collection_info_jkr_picks"></dd>
+                  </div>
+                  <div class="label-info-item">
+                    <dt><span class="badge b-label" data-i18n="collection_label_jkr_projects"></span></dt>
+                    <dd data-i18n="collection_info_jkr_projects"></dd>
+                  </div>
+                  <div class="label-info-item">
+                    <dt><span class="badge b-label" data-i18n="collection_label_admin"></span></dt>
+                    <dd data-i18n="collection_info_admin"></dd>
+                  </div>
+                  <div class="label-info-item">
+                    <dt><span class="badge b-exchange" data-i18n="category_currency_exchange"></span></dt>
+                    <dd data-i18n="collection_info_currency_exchange"></dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </div>
+          <div class="filter-field">
+            <span class="filter-field-label" data-i18n="dest_filter"></span>
+            <div class="destination-filter">
+              <button class="dest-filter-btn" id="dest-filter-btn" type="button"
+                aria-haspopup="dialog" aria-expanded="false" aria-controls="dest-filter-menu">
+                <span id="dest-filter-label"></span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5z"/></svg>
+              </button>
+              <div class="dest-filter-menu" id="dest-filter-menu" role="dialog"
+                aria-labelledby="dest-filter-label" hidden>
+                <div class="dest-filter-head">
+                  <span data-i18n="dest_filter"></span>
+                  <button class="dest-filter-clear" id="dest-filter-clear" type="button"
+                    data-i18n="clear"></button>
+                </div>
+                <label class="dest-option dest-all-option">
+                  <input type="checkbox" id="dest-filter-all">
+                  <span class="dest-check" aria-hidden="true"></span>
+                  <span data-i18n="all_destinations"></span>
+                </label>
+                <div class="dest-filter-groups" id="dest-filter-groups"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="exchange-toolbar">
+          <label class="exchange-sort-label" for="exchange-sort" id="exchange-sort-label" data-i18n="fx_sort_label" hidden></label>
+          <select class="filter-sel exchange-sort" id="exchange-sort" aria-describedby="exchange-sort-hint" hidden>
+            <option value="default" data-i18n="fx_sort_default"></option>
+            <option value="USD_100" data-i18n="fx_sort_usd_100"></option>
+            <option value="USD_50" data-i18n="fx_sort_usd_50"></option>
+            <option value="TWD" data-i18n="fx_sort_twd"></option>
+            <option value="USD_1965" data-i18n="fx_sort_usd_1965"></option>
+            <option value="TWD_1965" data-i18n="fx_sort_twd_1965"></option>
+          </select>
+          <p class="exchange-sort-hint" id="exchange-sort-hint" data-i18n="fx_sort_scope" hidden></p>
+        </div>
+      </div>
+    </div>
     <div class="filter-sheet-foot">
       <button class="filter-sheet-done" id="filter-sheet-done" type="button"></button>
     </div>

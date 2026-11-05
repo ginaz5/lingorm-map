@@ -9,7 +9,7 @@ import { locationTypeLabel } from '../data/location-types.js';
 /**
  * List the sheet-owned filters that are currently narrowing results, in the
  * same order the controls appear. Search and favorites stay visible in the
- * search row, so they are intentionally not repeated as chips.
+ * search bar, so they are not counted on the Filters chip badge.
  * @param {{ category: string, type: string, destinations: Iterable<string> }} input
  * @param {Language} language
  * @returns {ActiveFilter[]}
@@ -38,30 +38,8 @@ function selectById(documentRoot, id) {
 }
 
 /**
- * @param {Document} documentRoot
- * @param {ActiveFilter} filter
- * @returns {HTMLButtonElement}
- */
-function createChip(documentRoot, filter) {
-  const chip = documentRoot.createElement('button');
-  chip.type = 'button';
-  chip.className = 'active-chip';
-  chip.dataset.filter = filter.filter;
-  chip.dataset.value = filter.value;
-  chip.setAttribute('aria-label', t('remove_filter', filter.label));
-  const label = documentRoot.createElement('span');
-  label.textContent = filter.label;
-  const icon = documentRoot.createElement('span');
-  icon.className = 'active-chip-x';
-  icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = '×';
-  chip.append(label, icon);
-  return chip;
-}
-
-/**
- * Sync the mobile filter summary (badge, chips, sheet footer) with the
- * current controls. Safe to call when the mobile elements are absent.
+ * Sync the filter summary (count badge on the Filters chip, sheet footer)
+ * with the current controls. Safe to call when the elements are absent.
  * @param {Document} [documentRoot]
  */
 export function renderActiveFilters(documentRoot = document) {
@@ -69,12 +47,11 @@ export function renderActiveFilters(documentRoot = document) {
   const type = selectById(documentRoot, 'label-filter');
   if (!category || !type) return;
 
-  const filters = listActiveFilters({
+  const count = listActiveFilters({
     category: category.value || '',
     type: type.value || '',
     destinations: state.selectedDestinations,
-  }, lang);
-  const count = filters.length;
+  }, lang).length;
 
   const badge = documentRoot.getElementById('filter-count-badge');
   if (badge) {
@@ -83,13 +60,6 @@ export function renderActiveFilters(documentRoot = document) {
   }
   documentRoot.getElementById('filter-open-btn')?.classList.toggle('is-active', count > 0);
 
-  const chips = documentRoot.getElementById('active-chips');
-  const list = documentRoot.getElementById('active-chips-list');
-  if (chips && list) {
-    chips.hidden = count === 0;
-    list.replaceChildren(...filters.map(filter => createChip(documentRoot, filter)));
-  }
-
   const done = documentRoot.getElementById('filter-sheet-done');
   if (done) {
     done.textContent = state.isLoading ? t('filter_done') : t('show_results', state.visIdx.length);
@@ -97,48 +67,31 @@ export function renderActiveFilters(documentRoot = document) {
 }
 
 /**
- * Mobile filter sheet. The single #filter-controls node moves into the dialog
- * while it is open and back to its inline slot on close, so existing control
- * IDs and listeners keep working without a duplicated DOM.
+ * The "all filters" sheet: a native modal <dialog> that holds the category,
+ * collection, destination and exchange-sort controls. It is a bottom sheet
+ * below 701px and a centered dialog above (styles.css); the controls never
+ * move, so their IDs and listeners stay stable.
  * @param {{
- *   onRemove: (filter: Pick<ActiveFilter, 'filter'|'value'>) => void,
  *   onClearAll: () => void,
  *   beforeOpen?: () => void,
  *   documentRoot?: Document,
- *   mobileQuery?: MediaQueryList|null,
  * }} options
  */
-export function initFilterSheet({
-  onRemove,
-  onClearAll,
-  beforeOpen,
-  documentRoot = document,
-  mobileQuery,
-}) {
-  // Resolve the default here, not in the parameter list: esbuild lowers `?.`
-  // for the chrome87 build target, and lowering inside a parameter default
-  // emits a temp var scoped to a nested IIFE -> "r is not defined" at runtime.
-  const mediaQuery = mobileQuery === undefined
-    ? documentRoot.defaultView?.matchMedia?.('(max-width: 700px)') ?? null
-    : mobileQuery;
+export function initFilterSheet({ onClearAll, beforeOpen, documentRoot = document }) {
   const dialogElement = /** @type {HTMLDialogElement|null} */ (documentRoot.getElementById('filter-sheet'));
   const triggerElement = documentRoot.getElementById('filter-open-btn');
-  const bodyElement = documentRoot.getElementById('filter-sheet-body');
-  const slotElement = documentRoot.getElementById('filter-controls-slot');
-  const controlsElement = documentRoot.getElementById('filter-controls');
-  if (!dialogElement || !triggerElement || !bodyElement || !slotElement || !controlsElement) return null;
+  if (!dialogElement || !triggerElement) return null;
   const dialog = dialogElement;
   const trigger = triggerElement;
-  const body = bodyElement;
-  const slot = slotElement;
-  const controls = controlsElement;
-  const chipsList = documentRoot.getElementById('active-chips-list');
+  /** @type {HTMLElement} */
+  let returnFocus = trigger;
   let startedOnBackdrop = false;
 
-  function open() {
+  /** @param {HTMLElement} [from] element that gets focus back on close */
+  function open(from = trigger) {
     if (dialog.open) return;
     beforeOpen?.();
-    body.append(controls);
+    returnFocus = from;
     dialog.showModal();
     trigger.setAttribute('aria-expanded', 'true');
   }
@@ -155,28 +108,9 @@ export function initFilterSheet({
       || event.clientY < rect.top || event.clientY > rect.bottom;
   }
 
-  trigger.addEventListener('click', open);
+  trigger.addEventListener('click', () => open(trigger));
   documentRoot.getElementById('filter-sheet-done')?.addEventListener('click', close);
   documentRoot.getElementById('filter-sheet-reset')?.addEventListener('click', onClearAll);
-  documentRoot.getElementById('active-chips-clear')?.addEventListener('click', () => {
-    onClearAll();
-    trigger.focus();
-  });
-
-  chipsList?.addEventListener('click', event => {
-    const target = /** @type {Element|null} */ (event.target);
-    const chip = /** @type {HTMLElement|null} */ (
-      typeof target?.closest === 'function' ? target.closest('.active-chip') : null
-    );
-    const filter = chip?.dataset.filter;
-    const value = chip?.dataset.value;
-    if (!filter || value === undefined) return;
-    if (filter !== 'category' && filter !== 'type' && filter !== 'destination') return;
-    onRemove({ filter, value });
-    // The clicked chip was re-rendered away; keep keyboard focus in the row.
-    const next = /** @type {HTMLElement|null} */ (chipsList.querySelector('.active-chip'));
-    (next ?? trigger).focus();
-  });
 
   dialog.addEventListener('pointerdown', event => { startedOnBackdrop = isBackdrop(event); });
   dialog.addEventListener('click', event => {
@@ -185,14 +119,9 @@ export function initFilterSheet({
   });
   // Native Escape dismissal also fires close.
   dialog.addEventListener('close', () => {
-    slot.append(controls);
     trigger.setAttribute('aria-expanded', 'false');
-    if (trigger.getClientRects().length > 0) trigger.focus();
-  });
-
-  // Rotating or resizing into the desktop layout returns controls inline.
-  mediaQuery?.addEventListener?.('change', event => {
-    if (!event.matches) close();
+    const target = returnFocus.getClientRects().length > 0 ? returnFocus : trigger;
+    target.focus();
   });
 
   return { open, close };

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { isExchangeOnlyCluster, isExchangeOnlyDataPoints, makeMarkerContent } from '../src/map/map.js';
-import { buildPopupContent, compactCardNotes, renderList } from '../src/ui/render.js';
+import { buildPlaceDetailContent, compactCardNotes, renderList } from '../src/ui/render.js';
 import { state } from '../src/core/state.js';
 
 const REMOVED_UI_TOKENS = [
@@ -72,7 +72,7 @@ test('list and popup do not expose status, edit actions, or duplicate badges', (
 
     renderList();
     const listHtml = elements['loc-list'].innerHTML;
-    const popupHtml = buildPopupContent(0);
+    const popupHtml = buildPlaceDetailContent(0);
 
     for (const html of [listHtml, popupHtml]) {
       assert.doesNotMatch(html, /Needs Review|待確認|b-verified|b-review|b-notfound/);
@@ -144,7 +144,7 @@ test('HERE cluster theme colors a cluster green only when every leaf data point 
   assert.equal(isExchangeOnlyDataPoints(forEachOf([])), false);
 });
 
-test('list card notes drop blank separator lines; popup keeps notes as authored', () => {
+test('list card notes drop blank separator lines; place detail keeps notes as authored', () => {
   assert.equal(compactCardNotes('Title\n\nHighlight\n \n\nMore\n'), 'Title\nHighlight\nMore');
   assert.equal(compactCardNotes('One line'), 'One line');
   assert.equal(compactCardNotes(''), '');
@@ -159,7 +159,7 @@ test('list card notes drop blank separator lines; popup keeps notes as authored'
     state.favorites = new Set();
     renderList();
     assert.match(elements['loc-list'].innerHTML, /<div class="card-notes">(Title\nBody|標題\n內文)<\/div>/);
-    assert.match(buildPopupContent(0), /<div class="popup-notes">(Title\n\nBody|標題\n\n內文)<\/div>/);
+    assert.match(buildPlaceDetailContent(0), /<div class="place-notes">(Title\n\nBody|標題\n\n內文)<\/div>/);
   } finally {
     globalThis.document = previousDocument;
   }

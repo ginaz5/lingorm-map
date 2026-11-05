@@ -27,9 +27,10 @@ when historical investigation is necessary.
 - `src/core/state.js`: shared state
 - `src/core/i18n.js`: zh/en translations and `t()`
 - `src/data/csv-parser.js`, `src/data/destinations.js`: location parsing and destination taxonomy
-- `src/ui/render.js`, `src/ui/ui.js`: rendering, theme, tabs, snackbar, and navigation
-- `src/map/map.js`: Google/HERE maps, markers, popups, and map theme
-- `src/features/`: destination filtering, favorites, forms, and What's New
+- `src/ui/render.js`, `src/ui/ui.js`: rendering, place detail content, theme, snackbar, navigation, and sharing
+- `src/ui/bottom-sheet.js`, `src/ui/side-panel.js`, `src/ui/place-detail.js`, `src/ui/side-menu.js`: map-first layout (mobile sheet, desktop panel, place detail view, navigation drawer)
+- `src/map/map.js`, `src/map/viewport.js`: Google/HERE maps, markers, map theme, and centring/fitting inside the uncovered map area
+- `src/features/`: destination filtering, filter chips and sheet, favorites, forms, install entry, and What's New
 - `src/services/submit.js`: shared form submission transport
 - `netlify/functions/`: runtime config and location snapshot APIs
 - `data/locations.csv`: production location snapshot
