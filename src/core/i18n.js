@@ -13,7 +13,7 @@ export function setLang(l) {
 
 export const T = {
   zh: {
-    hdr_sub: '鄺玲玲曼谷踩點地圖',
+    hdr_sub: 'LingOrm 踩點地圖',
     lang_btn: 'EN',
     theme_btn: '主題',
     theme_light: '淺色',
