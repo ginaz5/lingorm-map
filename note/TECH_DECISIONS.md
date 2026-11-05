@@ -700,3 +700,14 @@ schedule run（延遲 +24、+1、+86、+22 分鐘），報價會在一天大部�
   scheduler 每次只做約 1 秒的檢查，不派送 worker。
 - 代價：外部服務持有 PAT（外洩最壞為額外觸發，受 guard 保護；須設到期並可隨時撤銷）；
   每次正式部署後須更新 `EXCHANGE_RATES_1965_PRODUCTION_COMMIT`（與原 Netlify rebind 負擔相同）。
+
+**2026-11-05 遠端唯讀驗證（未部署）：**
+
+- 正式 published deploy `6ae7604dfbc661289706beb5` 為 ready／main／production，commit `0af7448c`。
+- Netlify 24 小時 log：`exchange-rates-1965-schedule` 30 輪全部
+  `skipped`／`netlify_disabled_or_stale_binding`，沒有派送 worker。worker 目前不耗 compute，
+  但也沒有任何來源在更新橘標報價。推斷自 11/01 換版後 binding 已失效（只保留 24 小時 log，未直接確認）。
+- Actions `inspect --target production`（run 41987618067，main `0af7448`）：
+  `target_metadata_mismatch`，來源請求 0。Netlify API 讀取成功，代表 Environment 的
+  `NETLIFY_AUTH_TOKEN` 有效；失配來自 `EXCHANGE_RATES_1965_PRODUCTION_COMMIT` 不是 `0af7448…`。
+  須人工更新該 variable 後才能發布。
