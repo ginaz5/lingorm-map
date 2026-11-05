@@ -184,7 +184,10 @@ header {
 
 /* Layout — map-first: the map fills the window and every control floats on it.
    #panel is a bottom sheet below 701px and a left side panel above it. */
-.app-body{position:fixed;inset:0;overflow:hidden}
+/* clip, not just hidden: an overflow:hidden box can still be scrolled by
+   focus or scrollIntoView on content inside the off-screen part of the sheet,
+   which would shift the whole map UI. */
+.app-body{position:fixed;inset:0;overflow:hidden;overflow:clip}
 #map-wrap{position:absolute;inset:0;overflow:hidden;background:var(--surface)}
 #map{width:100%;height:100%}
 
@@ -301,7 +304,8 @@ header {
   .panel:not([data-sheet="full"]) .loc-list,
   .panel:not([data-sheet="full"]) .place-detail-body{overflow-y:hidden}
   .loc-list{overscroll-behavior:contain;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
-  .map-fabs{bottom:calc(var(--sheet-visible,var(--sheet-peek)) + 12px);
+  /* +26px clears the provider attribution row (≈14px) above the peek sheet. */
+  .map-fabs{bottom:calc(var(--sheet-visible,var(--sheet-peek)) + 26px);
     transition:bottom .32s cubic-bezier(.2,.8,.2,1),opacity .2s}
   .sheet-dragging .map-fabs{transition:opacity .2s}
   [data-sheet="full"] .map-fabs{opacity:0;pointer-events:none}
@@ -554,6 +558,9 @@ header {
   font-size:14px;line-height:1;background:var(--marker-bg);color:var(--marker-fg);
   filter:drop-shadow(0 0 1px var(--marker-ring));transition:box-shadow .18s ease,transform .18s ease}
 .marker-dot.active{box-shadow:0 4px 12px rgba(0,0,0,.4),0 0 15px rgba(255,255,255,.6);transform:scale(1.08)}
+/* Selected place pin (drawn above clusters, see showSelectedMarker in map.js) */
+.marker-dot.is-selected{width:34px;height:34px;font-size:17px;border-width:3px;
+  box-shadow:0 0 0 3px var(--primary),0 6px 16px rgba(0,0,0,.45);transform:none;pointer-events:none}
 .marker-dot.is-exchange{--marker-bg:#16835b;--marker-fg:#fff;--marker-ring:#b7f0d7}
 .marker-cluster{border-radius:50%;background:var(--marker-bg);color:var(--marker-fg);
   font-family:'Inter',sans-serif;font-weight:600;font-size:13px;
@@ -747,7 +754,7 @@ header {
   max-width:calc(100vw - 32px);white-space:normal;text-align:center;line-height:1.45;
   opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
 .snackbar.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:700px){.snackbar{bottom:calc(var(--sheet-visible,var(--sheet-peek)) + 16px)}}
+@media(max-width:700px){.snackbar{bottom:calc(var(--sheet-visible,var(--sheet-peek)) + 26px)}}
 
 /* Popup footer: src-tag left, buttons right — always single row */
 .popup-footer{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}

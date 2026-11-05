@@ -181,6 +181,11 @@ export function initFilterChips({ documentRoot = document, onDestinationClick } 
     select.dispatchEvent(new Event('change', { bubbles: true }));
   });
 
-  documentRoot.getElementById('dest-chip')?.addEventListener('click', () => onDestinationClick?.());
+  documentRoot.getElementById('dest-chip')?.addEventListener('click', event => {
+    // The document-level outside-click listener in destination-filter.js
+    // would otherwise close the menu this click is about to open.
+    event.stopPropagation();
+    onDestinationClick?.();
+  });
   return { render: () => renderFilterChips(documentRoot) };
 }

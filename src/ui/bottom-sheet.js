@@ -137,7 +137,7 @@ export function initBottomSheet({ documentRoot = document, initialSnap = 'half',
    *   startY: number, startX: number, startVisible: number, lastY: number,
    *   lastT: number, velocity: number, visible: number, dragging: boolean,
    *   decided: boolean, content: boolean, scroller: HTMLElement|null,
-   *   pointerId: number|null,
+   *   pointerId: number|null, touchTarget: EventTarget|null,
    * }}
    */
   let drag = null;
@@ -170,6 +170,8 @@ export function initBottomSheet({ documentRoot = document, initialSnap = 'half',
 
   /** @param {SheetSnap} next @param {SheetChangeSource} [source] */
   function setSnap(next, source = 'program') {
+    // A programmatic snap wins over any gesture still in progress.
+    if (drag) release();
     const changed = next !== snap;
     snap = next;
     syncAttributes();
@@ -188,8 +190,19 @@ export function initBottomSheet({ documentRoot = document, initialSnap = 'half',
     drag = {
       startY: y, startX: x, startVisible: heights[snap], lastY: y, lastT: time,
       velocity: 0, visible: heights[snap], dragging: false, decided: !content,
-      content, scroller: content ? activeScroller() : null, pointerId: null,
+      content, scroller: content ? activeScroller() : null, pointerId: null, touchTarget: null,
     };
+  }
+
+  /** Forget the current gesture and its per-target touch listeners. */
+  function release() {
+    const target = drag?.touchTarget;
+    if (target) {
+      target.removeEventListener('touchmove', onTouchMove);
+      target.removeEventListener('touchend', onTouchEnd);
+      target.removeEventListener('touchcancel', onTouchEnd);
+    }
+    drag = null;
   }
 
   /** @param {number} y @param {number} time @returns {boolean} whether the sheet moved */
@@ -212,7 +225,7 @@ export function initBottomSheet({ documentRoot = document, initialSnap = 'half',
   function end() {
     if (!drag) return;
     const finished = drag;
-    drag = null;
+    release();
     if (!finished.dragging) return;
     suppressHandleClick = true;
     setTimeout(() => { suppressHandleClick = false; }, 0);
@@ -234,6 +247,11 @@ export function initBottomSheet({ documentRoot = document, initialSnap = 'half',
   });
   panel.addEventListener('pointermove', event => {
     if (!drag || drag.content || drag.pointerId !== event.pointerId) return;
+    // A mouse release outside the window can be missed: no button, no drag.
+    if (event.pointerType === 'mouse' && event.buttons === 0) {
+      end();
+      return;
+    }
     if (move(event.clientY, event.timeStamp) && !panel.hasPointerCapture?.(event.pointerId)) {
       panel.setPointerCapture?.(event.pointerId);
     }
@@ -244,14 +262,18 @@ export function initBottomSheet({ documentRoot = document, initialSnap = 'half',
   panel.addEventListener('pointercancel', event => {
     if (drag && !drag.content && drag.pointerId === event.pointerId) end();
   });
+  panel.addEventListener('lostpointercapture', event => {
+    if (drag && !drag.content && drag.pointerId === event.pointerId) end();
+  });
 
   // Scrollable content: touch events so a sheet drag can cancel scrolling.
-  panel.addEventListener('touchstart', event => {
-    if (!active || event.touches.length !== 1 || inDragZone(event.target)) return;
-    const touch = event.touches[0];
-    begin(touch.clientX, touch.clientY, event.timeStamp, true);
-  }, { passive: true });
-  panel.addEventListener('touchmove', event => {
+  // Touch events keep targeting the element the finger first touched, even
+  // after a re-render (exchange-rate refreshes replace list and detail HTML)
+  // detaches it, so they would stop reaching #panel and the drag would never
+  // end. Listen on that target for the rest of the gesture instead.
+  /** @param {Event} rawEvent */
+  function onTouchMove(rawEvent) {
+    const event = /** @type {TouchEvent} */ (rawEvent);
     if (!drag || !drag.content) return;
     const touch = event.touches[0];
     if (!touch) return;
@@ -264,18 +286,40 @@ export function initBottomSheet({ documentRoot = document, initialSnap = 'half',
       const takeOver = Math.abs(rise) > Math.abs(sideways) &&
         (snap !== 'full' || (rise < 0 && atTop));
       if (!takeOver) {
-        drag = null;
+        release();
         return;
       }
     }
     if (move(touch.clientY, event.timeStamp) && event.cancelable) event.preventDefault();
-  }, { passive: false });
-  panel.addEventListener('touchend', () => { if (drag?.content) end(); });
-  panel.addEventListener('touchcancel', () => { if (drag?.content) end(); });
+  }
+
+  function onTouchEnd() {
+    if (drag?.content) end();
+  }
+
+  panel.addEventListener('touchstart', event => {
+    if (!active || event.touches.length !== 1 || inDragZone(event.target)) return;
+    if (drag) release(); // a gesture whose end was never delivered
+    const touch = event.touches[0];
+    begin(touch.clientX, touch.clientY, event.timeStamp, true);
+    const target = event.target;
+    if (drag && target) {
+      drag.touchTarget = target;
+      target.addEventListener('touchmove', onTouchMove, { passive: false });
+      target.addEventListener('touchend', onTouchEnd);
+      target.addEventListener('touchcancel', onTouchEnd);
+    }
+  }, { passive: true });
 
   handle.addEventListener('click', () => {
     if (suppressHandleClick || !active) return;
     setSnap(snap === 'full' ? 'half' : 'full', 'handle');
+  });
+
+  // Safety net for browsers without overflow:clip (styles.css): the app shell
+  // must never keep a scroll offset.
+  appBody?.addEventListener('scroll', () => {
+    if (appBody.scrollTop || appBody.scrollLeft) appBody.scrollTo(0, 0);
   });
 
   win.addEventListener('resize', measure);

@@ -18,6 +18,7 @@ import {
 import { trackLocationOpen } from '../services/analytics.js';
 import { openPlaceDetail } from './place-detail.js';
 import { focusWhenReady } from '../map/viewport.js';
+import { showSelectedMarker } from '../map/map.js';
 import { renderActiveFilters } from '../features/filter-sheet.js';
 import { renderFilterChips } from '../features/filter-chips.js';
 
@@ -419,6 +420,8 @@ export function activateCard(i, options = {}) {
   const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
   if (lat && lng) {
     focusWhenReady({ lat, lng }, options.zoomToPlace === false ? {} : { zoom: 15 });
+    // Drawn even when the place's own marker is inside a cluster.
+    showSelectedMarker(i);
   }
 
   document.querySelectorAll('.loc-card').forEach(c => c.classList.remove('active'));

@@ -8,7 +8,7 @@
 
 import { state } from '../core/state.js';
 import { buildPlaceDetailContent } from './render.js';
-import { setSheetSnap, getSheetSnap } from './bottom-sheet.js';
+import { setSheetSnap } from './bottom-sheet.js';
 import { setPanelCollapsed } from './side-panel.js';
 import { isMobileLayout } from './layout.js';
 
@@ -51,7 +51,8 @@ export function openPlaceDetail(i) {
   body.scrollTop = 0;
   setView(true);
   if (isMobileLayout()) {
-    if (getSheetSnap() !== 'half') setSheetSnap('half');
+    // Always snap (idempotent): also settles a gesture still in progress.
+    setSheetSnap('half');
   } else {
     setPanelCollapsed(false);
   }

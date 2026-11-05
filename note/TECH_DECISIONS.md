@@ -200,9 +200,11 @@ HERE Maps 主題同步：依 `getHereBaseLayer()` 切換可用的日間／夜間
   原本的 header 按鈕（語言、主題、粉絲資源、更新紀錄、問題回報）移到左側抽屜
   `<dialog class="side-menu">`。
 - **同一個 `#panel` 兩種形態**：≤700px 是可拖曳 bottom sheet（peek 112px／half 45%／full 到搜尋列下方，
-  `src/ui/bottom-sheet.js`）；>700px 是可收合的左側面板（`src/ui/side-panel.js`）。
+  `src/ui/bottom-sheet.js`），開啟時為 peek，地圖為主，如同地圖 App 首頁；>700px 是可收合的左側面板（`src/ui/side-panel.js`）。
 - **地點詳細面板取代 popup**：選取地點時 panel 從清單切成詳細資訊（`src/ui/place-detail.js`），
   Google 與 HERE 共用同一份 UI；provider 專屬邏輯只剩地圖平移與控制項位置。
+- **已選取地點圖釘**：密集區在 zoom 15 仍可能被群聚，因此選取地點另畫一個較大的圖釘
+  （`showSelectedMarker`，Google `AdvancedMarkerElement`／HERE `DomMarker`，`zIndex` 2000），不參與群聚。
 - **地圖 insets**：`src/map/viewport.js` 依「目標」sheet 高度／面板狀態計算被浮動 UI 蓋住的區域，
   置中（Google `panBy`、HERE `screenToGeo` 後 `setCenter`）與 `fitBounds` padding 都對準可見區域。
 - **Chip 只是 select 的鏡像**：`#cat-filter`／`#label-filter` 仍是唯一狀態來源；chip 設值後派發 `change`，
@@ -220,8 +222,9 @@ HERE Maps 主題同步：依 `getHereBaseLayer()` 切換可用的日間／夜間
 
 **Provider 條款與可見性：**
 - 地圖不延伸到面板下方：桌機 `#map-wrap` 從面板右側開始（收合時才全寬），
-  手機地圖底部停在 peek sheet 上緣，確保 Google／HERE logo 與條款連結在預設狀態可見。
-  sheet 拉到 half／full 時仍會暫時蓋住，屬已知取捨。
+  手機地圖底部停在 peek sheet 上緣，且開啟時 sheet 為 peek，確保 Google／HERE logo 與條款連結在預設狀態可見。
+  sheet 拉到 half／full（含開啟地點時的 half）會暫時蓋住，屬已知取捨；若要完全避免，
+  需讓地圖容器跟著 sheet 改變高度並補償中心點，代價是每次切換都 resize 地圖。
 - Google：`gestureHandling:'greedy'`（單指拖曳）、`disableDefaultUI`、手機不顯示縮放鍵、
   `clickableIcons:false`（避免 Google POI 彈窗搶走點擊）。HERE：手機隱藏預設控制項。
 

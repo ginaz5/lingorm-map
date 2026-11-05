@@ -149,7 +149,7 @@ http://localhost:8888
 - 地圖正常載入
 - 卡片名稱、類別、說明正常顯示，且不顯示審核狀態
 - 沒有空白卡片
-- 地圖填滿整個視窗；搜尋列與篩選 chip 浮在上方；Google／HERE 的 logo 與條款連結在預設狀態可見（手機 sheet 在 peek／half 時、桌機面板展開時）
+- 地圖填滿整個視窗；搜尋列與篩選 chip 浮在上方；Google／HERE 的 logo 與條款連結在預設狀態可見（手機開啟時 sheet 在 peek；桌機面板展開或收合時）
 - 語言切換正常
 - 篩選順序為「類別／標籤／目的地」；預設選項為「所有標籤／All label」，中文標籤顯示 LingOrm、JKR 推薦、JKR 應援、留友看，英文維持正式 Type 值
 - 標籤旁的資訊按鈕可透過桌機 hover／focus 或點擊開啟分類說明，並能以點擊外部、再次點擊或 Escape 關閉；手機點擊可正常操作
@@ -161,6 +161,7 @@ http://localhost:8888
 - 目的地可跨國複選，國家 checkbox 能全選／取消子目的地，部分選取時顯示 indeterminate
 - 目的地變更立即套用，重新整理後保留，且地圖自動縮放至全部篩選結果
 - 手機版 bottom sheet：拖曳把手或標頭可在 peek／half／full 間切換，快速滑動會跳到下一段；half 時在清單上往上滑會展開，full 時清單可捲動、捲到頂再往下拉會收合；點把手切換 half／full。實機（iOS Safari、Android Chrome）都要測
+- 點列表卡片後，即使該地點在 zoom 15 仍落在群聚內，也會出現較大的「已選取」圖釘；返回清單後圖釘消失
 - 手機版 320px／390px：點地圖標記或列表卡片後，sheet 升到 half，地點落在 sheet 與搜尋列之間的可見地圖中央；點標記維持原縮放、點卡片縮放到 15。Google Maps 與 HERE 都要確認。回歸測試：`node --test tests/place-focus.test.mjs tests/bottom-sheet.test.mjs`
 - 桌機：左側面板可用右緣按鈕收合／展開，收合時地圖全寬；chip 列在搜尋列右側可水平捲動
 - 搜尋：手機點搜尋框時 sheet 展開到 full、按 Enter 回到 half；有文字時顯示清除（×）

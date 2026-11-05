@@ -27,19 +27,23 @@ function setup(provider, options = {}) {
   globalThis.window = dom.view;
   globalThis.document = dom.documentRoot;
   const calls = [];
+  const objects = [];
+  const googleMarkers = [];
   const map = {
     setCenter: (center, animate) => calls.push(animate ? ['center', center, 'animate'] : ['center', center]),
     setZoom: zoom => calls.push(['zoom', zoom]),
     panBy: (x, y) => calls.push(['panBy', x, y]),
     screenToGeo: (x, y) => ({ x, y }),
-    addLayer() {}, removeLayer() {}, removeObject() {},
+    addLayer() {}, removeLayer() {},
+    addObject: object => objects.push(object),
+    removeObject: object => { const at = objects.indexOf(object); if (at >= 0) objects.splice(at, 1); },
   };
   let hereTap = null;
   globalThis.google = {
     maps: {
       marker: {
         AdvancedMarkerElement: class {
-          constructor(opts) { Object.assign(this, opts); this.listeners = {}; }
+          constructor(opts) { Object.assign(this, opts); this.listeners = {}; googleMarkers.push(this); }
           addListener(event, callback) { this.listeners[event] = callback; }
         },
       },
@@ -50,7 +54,11 @@ function setup(provider, options = {}) {
       DataPoint: class {},
       Provider: class { addEventListener(_event, callback) { hereTap = callback; } },
     },
-    map: { layer: { ObjectLayer: class {} } },
+    map: {
+      layer: { ObjectLayer: class {} },
+      DomIcon: class { constructor(element) { this.element = element; } },
+      DomMarker: class { constructor(position, options) { Object.assign(this, { position, options }); } },
+    },
   };
   Object.assign(state, {
     provider, map,
@@ -61,8 +69,12 @@ function setup(provider, options = {}) {
     })),
     visIdx: [0, 1], markers: [], activeIdx: -1, markerClusterer: null, favorites: new Set(),
   });
+  /** The selected-place pin currently on the map, if any. */
+  const selectedPin = () => provider === 'google'
+    ? googleMarkers.find(marker => marker.zIndex === 2000 && marker.map === map) ?? null
+    : objects.find(object => object.options?.zIndex === 2000) ?? null;
   return {
-    ...dom, calls, map,
+    ...dom, calls, map, selectedPin,
     tapMarker(i) {
       if (provider === 'google') state.markers[i].listeners.click();
       else hereTap({ target: { getData: () => ({ index: i }) } });
@@ -106,6 +118,9 @@ for (const provider of ['google', 'here']) {
     h.tapMarker(1);
 
     assert.equal(state.activeIdx, 1);
+    const pin = h.selectedPin();
+    assert.ok(pin, 'the selected place gets its own pin above clusters');
+    assert.deepEqual(pin.position, { lat: 13.7, lng: 100.51 });
     assert.equal(h.elements['place-detail'].hidden, false);
     assert.match(h.elements['place-detail-body'].innerHTML, /地點 1/);
     // Opening a place raises the sheet to half before the map pans.
@@ -129,7 +144,11 @@ for (const provider of ['google', 'here']) {
     assert.equal(h.elements.panel.dataset.view, 'place');
 
     h.elements['loc-list'].scrollTop = 0; // a hidden list may lose its scroll
+    assert.ok(h.selectedPin());
+    activateCard(1); // selecting another place moves the single pin
+    assert.deepEqual(h.selectedPin().position, { lat: 13.7, lng: 100.51 });
     clearActiveLocation();
+    assert.equal(h.selectedPin(), null);
     assert.equal(state.activeIdx, -1);
     assert.equal(h.elements['place-detail'].hidden, true);
     assert.equal(h.elements['panel-results'].hidden, false);

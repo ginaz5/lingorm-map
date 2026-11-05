@@ -102,3 +102,15 @@ test('rendering is a no-op without the chip row markup', () => {
   assert.doesNotThrow(() => renderFilterChips({ getElementById: () => null }));
   assert.equal(initFilterChips({ documentRoot: { getElementById: () => null } }), null);
 });
+
+test('the destination chip keeps its click from the outside-click closer', () => {
+  const { documentRoot, elements } = makeChipDocument();
+  let opened = 0;
+  initFilterChips({ documentRoot, onDestinationClick: () => { opened += 1; } });
+  const click = new Event('click', { bubbles: true });
+  elements['dest-chip'].dispatchEvent(click);
+  assert.equal(opened, 1);
+  // A bubbling click reaching document would run closeDestinationFilter and
+  // close the list this chip just opened.
+  assert.equal(click.cancelBubble, true);
+});

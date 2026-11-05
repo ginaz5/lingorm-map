@@ -111,6 +111,20 @@ export function reconcileDestinationFilter() {
   return true;
 }
 
+/**
+ * Open the destination menu programmatically (the destination chip opens the
+ * filter sheet with this list already expanded).
+ */
+export function openDestinationFilter() {
+  const button = document.getElementById('dest-filter-btn');
+  const menu = document.getElementById('dest-filter-menu');
+  if (!button || !menu) return;
+  const panel = document.getElementById('panel');
+  if (panel) fitDestinationMenuHeight(button, menu, panel.getBoundingClientRect().bottom);
+  menu.hidden = false;
+  button.setAttribute('aria-expanded', 'true');
+}
+
 export function closeDestinationFilter() {
   const button = document.getElementById('dest-filter-btn');
   const menu = document.getElementById('dest-filter-menu');

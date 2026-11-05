@@ -40,6 +40,7 @@ import {
 } from './services/analytics.js';
 import {
   closeDestinationFilter,
+  openDestinationFilter,
   initDestinationFilter,
   reconcileDestinationFilter,
   renderDestinationFilter,
@@ -339,12 +340,12 @@ initFilterChips({
   onDestinationClick: () => {
     const destChip = document.getElementById('dest-chip');
     filterSheet?.open(destChip ?? undefined);
-    const destButton = document.getElementById('dest-filter-btn');
-    if (destButton?.getAttribute('aria-expanded') !== 'true') destButton?.click();
-    destButton?.scrollIntoView({ block: 'nearest' });
+    openDestinationFilter();
+    document.getElementById('dest-filter-btn')?.scrollIntoView({ block: 'nearest' });
   },
 });
 initBottomSheet({
+  initialSnap: 'peek',
   onSnapChange: (snap, source) => {
     if (source === 'drag' || source === 'handle') trackSheetView(snap, source);
   },

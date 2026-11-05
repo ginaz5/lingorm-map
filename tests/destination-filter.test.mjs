@@ -366,3 +366,28 @@ test('Escape closes an open destination menu without also dismissing a surroundi
     state.pendingDestinationFit = false;
   }
 });
+
+test('openDestinationFilter expands the destination list for the destination chip', async () => {
+  const { openDestinationFilter, closeDestinationFilter } = await import('../src/features/destination-filter.js');
+  const previousDocument = globalThis.document;
+  const attributes = new Map();
+  const button = {
+    setAttribute: (name, value) => attributes.set(name, value),
+    getBoundingClientRect: () => ({ bottom: 100 }),
+  };
+  const menu = { hidden: true, style: {} };
+  globalThis.document = {
+    getElementById: id => ({ 'dest-filter-btn': button, 'dest-filter-menu': menu,
+      panel: { getBoundingClientRect: () => ({ bottom: 700 }) } })[id] ?? null,
+  };
+  try {
+    openDestinationFilter();
+    assert.equal(menu.hidden, false);
+    assert.equal(attributes.get('aria-expanded'), 'true');
+    closeDestinationFilter();
+    assert.equal(menu.hidden, true);
+    assert.equal(attributes.get('aria-expanded'), 'false');
+  } finally {
+    globalThis.document = previousDocument;
+  }
+});

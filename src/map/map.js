@@ -206,6 +206,7 @@ export function syncVisibleMarkers() {
 /** Deselect the current place: detail view, highlighted card and marker. */
 export function clearActiveLocation() {
   cancelPendingFocus();
+  hideSelectedMarker();
   state.activeIdx = -1;
   closePlaceDetail();
   document.querySelectorAll('.loc-card').forEach(card => card.classList.remove('active'));
@@ -337,6 +338,57 @@ export function makeMarkerContent(icon, isExchange = false, brand = null) {
   el.className = `marker-dot${isExchange ? ' is-exchange' : ''}${brand === 'orange' ? ' is-exchange-orange' : ''}`;
   el.textContent = icon || '📍';
   return el;
+}
+
+// ═══════════════════════════════════════════════════
+// SELECTED PLACE PIN
+// ═══════════════════════════════════════════════════
+// A selected place can sit inside a cluster even at place zoom (dense
+// Bangkok streets), so its own marker may not be drawn. A separate, larger
+// pin is drawn for the selected place above clusters on both providers, like
+// the selected pin in a maps app. It is not part of clustering.
+/** @type {any} */
+let selectedMarker = null;
+/** @type {ActiveMapProvider|null} */
+let selectedMarkerProvider = null;
+
+/** @param {number} i */
+export function showSelectedMarker(i) {
+  hideSelectedMarker();
+  const row = state.data[i];
+  if (!state.map || !row) return false;
+  const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+  if (!lat || !lng) return false;
+  const el = makeMarkerContent(row.icon, isExchangeLocation(row), getExchangeBrand(row));
+  el.classList.add('active', 'is-selected');
+  if (state.provider === 'google') {
+    selectedMarker = new google.maps.marker.AdvancedMarkerElement({
+      map: state.map, position: { lat, lng }, content: el, zIndex: 2000,
+    });
+  } else if (state.provider === 'here') {
+    selectedMarker = new H.map.DomMarker({ lat, lng }, { icon: new H.map.DomIcon(el), zIndex: 2000 });
+    state.map.addObject(selectedMarker);
+  } else {
+    return false;
+  }
+  selectedMarkerProvider = state.provider;
+  return true;
+}
+
+export function hideSelectedMarker() {
+  if (!selectedMarker) return;
+  if (selectedMarkerProvider === 'google') {
+    selectedMarker.map = null;
+  } else if (selectedMarkerProvider === 'here') {
+    try { state.map?.removeObject(selectedMarker); } catch (_) { /* map already replaced */ }
+  }
+  selectedMarker = null;
+  selectedMarkerProvider = null;
+}
+
+/** Redraw the pin after a provider (re)initializes with a place still selected. */
+function restoreSelectedMarker() {
+  if (state.activeIdx >= 0) showSelectedMarker(state.activeIdx);
 }
 
 /**
@@ -631,6 +683,7 @@ function initWithGoogle(cfg, view = {}) {
   buildMarkers();
   if (state.pendingDestinationFit) fitMapToVisibleLocations();
   flushPendingFocus();
+  restoreSelectedMarker();
 }
 
 /**
@@ -657,6 +710,7 @@ export function getGoogleMapUiOptions(mobile) {
  */
 function reinitializeGoogleMap(theme) {
   if (!state.map || !state.mapConfig) return;
+  hideSelectedMarker();
   const center = state.map.getCenter?.() || { lat: 13.82, lng: 100.52 };
   const zoom = state.map.getZoom?.() ?? 11;
 
@@ -729,6 +783,7 @@ function initWithHere(apiKey) {
   buildMarkers();
   if (state.pendingDestinationFit) fitMapToVisibleLocations();
   flushPendingFocus();
+  restoreSelectedMarker();
 }
 
 /**
@@ -756,6 +811,7 @@ function arrangeHereControls(ui, mobile) {
 // ═══════════════════════════════════════════════════
 /** @param {MapConfig} cfg @returns {Promise<void>} */
 async function fallbackToHere(cfg) {
+  hideSelectedMarker();
   // Tear down Google state
   if (state.markerClusterer) {
     state.markerClusterer.clearMarkers();

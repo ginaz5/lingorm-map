@@ -192,6 +192,13 @@ test('activateCard opens the place detail and centers the HERE map at place zoom
     getElementById: (id) => detailElements[id] ?? null,
   };
   globalThis.window = { innerWidth: 1024 };
+  const previousHere = globalThis.H;
+  const objects = [];
+  globalThis.H = { map: {
+    DomIcon: class { constructor(element) { this.element = element; } },
+    DomMarker: class { constructor(position, options) { Object.assign(this, { position, options }); } },
+  } };
+  globalThis.document.createElement = () => ({ className: '', textContent: '', classList: { add() {} } });
 
   try {
     state.activeIdx = -1;
@@ -200,6 +207,8 @@ test('activateCard opens the place detail and centers the HERE map at place zoom
     state.map = {
       setCenter: (position) => centers.push(position),
       setZoom: (zoom) => zooms.push(zoom),
+      addObject: (object) => objects.push(object),
+      removeObject() {},
     };
     state.markers = [{
       id: 'marker-0',
@@ -221,9 +230,12 @@ test('activateCard opens the place detail and centers the HERE map at place zoom
     assert.deepEqual(activeClassOps, [['remove', 'active']]);
     assert.deepEqual(cardClassOps, [['add', 'active']]);
     assert.deepEqual(markerClassOps, [['active', true]]);
+    assert.equal(objects.length, 1, 'selected-place pin added to the HERE map');
+    assert.deepEqual(objects[0].position, { lat: 13.7, lng: 100.5 });
   } finally {
     globalThis.document = previousDocument;
     globalThis.window = previousWindow;
+    globalThis.H = previousHere;
     state.activeIdx = -1;
     state.provider = null;
     state.data = [];

@@ -112,3 +112,58 @@ test('desktop leaves the panel alone', () => {
 test('init returns null without the panel markup', () => {
   assert.equal(initBottomSheet({ documentRoot: { getElementById: () => null, defaultView: {} } }), null);
 });
+
+/** A touch event aimed at `target`, as browsers keep aiming the whole gesture. */
+function touchEvent(type, target, clientY, timeStamp) {
+  const event = Object.assign(new Event(type, { cancelable: true }), {
+    touches: type === 'touchend' ? [] : [{ clientX: 100, clientY }],
+  });
+  Object.defineProperty(event, 'target', { value: target });
+  Object.defineProperty(event, 'timeStamp', { value: timeStamp });
+  return event;
+}
+
+test('a content drag still ends when a re-render detached the touched element', () => {
+  const { elements } = initSheet();
+  // A card that is no longer inside #panel: its events never bubble there.
+  const detachedCard = new EventTarget();
+  detachedCard.closest = () => null;
+  elements.panel.dispatchEvent(touchEvent('touchstart', detachedCard, 600, 0));
+  const moves = [560, 500, 420, 340, 260, 200].map((y, k) => touchEvent('touchmove', detachedCard, y, 40 * (k + 1)));
+  for (const move of moves) detachedCard.dispatchEvent(move);
+  assert.ok(elements.panel.classList.contains('is-dragging'));
+  assert.equal(moves.at(-1).defaultPrevented, true, 'sheet drag cancels native scrolling');
+  detachedCard.dispatchEvent(touchEvent('touchend', detachedCard, 200, 280));
+  assert.equal(elements.panel.classList.contains('is-dragging'), false);
+  assert.equal(getSheetSnap(), 'full');
+});
+
+test('a programmatic snap settles a gesture whose end never arrived', () => {
+  const { elements } = initSheet();
+  const card = new EventTarget();
+  card.closest = () => null;
+  elements.panel.dispatchEvent(touchEvent('touchstart', card, 600, 0));
+  card.dispatchEvent(touchEvent('touchmove', card, 450, 50));
+  assert.ok(elements.panel.classList.contains('is-dragging'));
+  setSheetSnap('half'); // e.g. opening a place
+  assert.equal(elements.panel.classList.contains('is-dragging'), false);
+  assert.equal(elements.panel.style.values['--sheet-y'], '320px');
+  // Late events from the abandoned gesture are ignored.
+  card.dispatchEvent(touchEvent('touchmove', card, 200, 90));
+  assert.equal(elements.panel.style.values['--sheet-y'], '320px');
+});
+
+test('the app shell never keeps a scroll offset', async () => {
+  const { elements } = initSheet();
+  const appBody = elements['app-body'];
+  const resets = [];
+  appBody.scrollTo = (x, y) => { resets.push([x, y]); appBody.scrollTop = y; };
+  appBody.scrollTop = 103; // e.g. focus scrolled content of the off-screen sheet into view
+  appBody.dispatchEvent(new Event('scroll'));
+  assert.deepEqual(resets, [[0, 0]]);
+  assert.equal(appBody.scrollTop, 0);
+
+  const { readFile } = await import('node:fs/promises');
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+  assert.match(css, /\.app-body\{position:fixed;inset:0;overflow:hidden;overflow:clip\}/);
+});
