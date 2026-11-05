@@ -1,7 +1,8 @@
 # SuperRich 1965：Netlify 排程與背景取價
 
-> 2026-11-04 起正常自動取價改由 [GitHub Actions 排程](superrich1965-actions-runbook.zh-TW.md)
-> 執行以節省 Netlify compute credits；本手冊的 collector 保留為備援，平時保持 disabled。
+> 2026-11-05 起正式取價改由 [GitHub Actions](superrich1965-actions-runbook.zh-TW.md)（外部排程觸發
+> `workflow_dispatch`，GitHub cron 為備援）執行以節省 Netlify compute credits；本手冊的 collector
+> 保留為備援，平時保持 disabled。
 
 橘標改由 Netlify Scheduled Function 在泰國時間 08:00～22:30 每半小時派送背景工作。
 排程為 UTC `0,30 1-15 * * *`；台灣時間為 09:00～23:30。排程函式只派送，
@@ -30,7 +31,7 @@
   逐店 2～5 秒間隔，遇失敗即停、不新增來源 retry 或 Node fallback。唯一例外：
   token callback GET 若因單次 25 秒逾時失敗，同一 quote 內重試一次（見
   `note/TECH_DECISIONS.md` 2026-10-23）；rate POST 與其他失敗不重試。
-- GitHub workflow 有受 variable 控制的 cron（見 Actions 手冊）。Netlify control 啟用時，
+- GitHub workflow 由外部排程觸發，另有受 variable 控制的備援 cron（見 Actions 手冊）。Netlify control 啟用時，
   GitHub collector（手動或排程）會以 `netlify_collector_active` 零來源略過，避免兩邊發布。
 
 ## Python 打包
@@ -70,7 +71,7 @@ failed／notAttempted 等摘要，判斷完成須看 receipt 與公開 cache。
 1. 功能分支完成測試與 Deploy Preview；綁定、啟用 Preview 並人工派送全店，
    核對 38 店逐店發布、公開 cache、來源保護及零來源重播。
 2. 記錄 production control、共同 guard 與目前正式 deploy，確認沒有執行中的 Actions。
-   （先將 `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 改為 `false`。）
+   （先暫停外部排程，並將 `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 改為 `false`。）
 3. 發布 main 新部署；新 Netlify collector 尚未綁定時不會取價。
 4. 驗證正式 runtime API、公開 cache、前端，bind／enable 新正式 deploy。
 5. 人工派送驗證正式發布，再核對至少兩輪真正的 schedule receipt 與 38 店公開 cache。
@@ -80,4 +81,4 @@ failed／notAttempted 等摘要，判斷完成須看 receipt 與公開 cache。
 緊急撤價使用既有 quote control disable。這些控制不清除來源保護歷史。
 若需使用 GitHub 手動備援，先 disable Netlify collector，核對目前正式 SHA 並更新
 GitHub Environment 的 production binding；操作見[Actions 手動備援](superrich1965-actions-runbook.zh-TW.md)。
-改回 Netlify 時先關閉 GitHub 排程 variable。
+改回 Netlify 時先暫停外部排程並關閉 GitHub 排程 variable。

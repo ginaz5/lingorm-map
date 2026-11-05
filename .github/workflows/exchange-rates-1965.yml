@@ -3,13 +3,16 @@ name: SuperRich 1965 rates
 # This workflow publishes quotes, never website deployments. The existing
 # Environment name is retained; its dedicated site PAT remains main-only.
 #
-# The cron replaces the Netlify scheduler/background worker to save Netlify
-# compute credits (public repository: standard runner minutes are free).
-# Schedules run from main only and stay idle unless the repository variable
-# EXCHANGE_RATES_1965_SCHEDULE_ENABLED is exactly 'true'; the CLI checks it again.
-# Minutes 7/37 avoid GitHub's top-of-hour cron congestion. UTC 01:07–15:37 =
-# Asia/Bangkok 08:07–22:37. Quotes expire at the next half-hour + 35 min, so one
-# late or dropped run does not blank the map.
+# Production collection moved here from the Netlify background worker to save
+# Netlify compute credits (public repository: standard runner minutes are free).
+# The PRIMARY trigger is an external scheduler calling the workflow_dispatch API
+# at :00/:30 UTC 01-15 (see docs/superrich1965-actions-runbook.zh-TW.md).
+# GitHub's own cron is only a BACKUP: on 2026-10-22/23 it started 4 of about 50
+# expected runs, up to 86 min late. It runs from main only and stays idle unless
+# the repository variable EXCHANGE_RATES_1965_SCHEDULE_ENABLED is exactly 'true';
+# the CLI checks it again. Minutes 7/37 fall in the same UTC half hour as the
+# primary trigger, so a backup run after a successful one reuses that half
+# hour's quotes with zero source requests.
 on:
   schedule:
     - cron: '7,37 1-15 * * *'

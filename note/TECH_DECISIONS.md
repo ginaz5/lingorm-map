@@ -674,21 +674,29 @@ identity 不合而以 `invalid_operation` 停止，需人工檢查。Netlify col
 背景快取輪詢、到期撤價、兩品牌排序隔離及來源 collector 行為不變；單店 POST API 仍保留
 只讀相容契約，卡片不再呼叫。正式地點名稱、筆記與 Notion／CSV 資料未更動。
 
-### 2026-11-04：橘標自動取價改回 GitHub Actions 排程以節省 Netlify credits
+### 2026-11-04：橘標自動取價改由 GitHub Actions 執行以節省 Netlify credits
 
 Netlify credit-based plan 以 10 credits／GB-hour 計 function compute。橘標 background
-worker 每輪約 245 秒（逐店 2～5 秒間隔佔約一半），每天 30 輪、預設 1 GB 記憶體，
+worker（1 GB）每輪約 245 秒（逐店 2～5 秒間隔佔約一半），每天 30 輪，
 約 61 GB-hour／月 ≈ 610 credits／月，遠高於綠標排程（每輪約 8 秒，約 20 credits／月）
 與公開快取讀取。Repository 為 public，GitHub-hosted 標準 runner 分鐘數不計費，
 且 10/22 Actions Python 傳輸已有正式 38 店成功紀錄。
 
-- Workflow 新增 cron `7,37 1-15 * * *`（避開整點壅塞）；job 與 CLI 兩層都要求
-  repository variable `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 精確為 `true`。
+**觸發方式（2026-11-05 修正）：** 原本只加 GitHub cron。驗證時查到 10/21 23:41Z～
+10/23 約 11:00Z 開關為 true、cron `0,30 1-15 * * *` 時，約 50 個預期輪次只建立 4 個
+schedule run（延遲 +24、+1、+86、+22 分鐘），報價會在一天大部分時間過期。
+因此主要觸發改為外部排程服務（例如 cron-job.org）以 repo-scoped fine-grained PAT
+（只有 Actions: Read and write）呼叫 `workflow_dispatch` API；現行 main 已接受此事件，
+不需合併或部署即可切換。曾考慮由 Netlify scheduler 改派 GitHub dispatch（約 3 credits／月，
+無第三方），但需一次正式部署，目前 credits 不足，列為後續選項。
+
+- GitHub cron `7,37 1-15 * * *` 保留為免費備援；job 與 CLI 兩層都要求 repository variable
+  `EXCHANGE_RATES_1965_SCHEDULE_ENABLED` 精確為 `true`。與主要觸發同一 UTC 半小時，
+  前一輪成功時只會 cache hit、零來源請求。
 - CLI 只接受 schedule 執行 `publish-all-python --target production`；scheduled inspect、
   Preview 與 variable 非 `true` 仍以 `invalid_actions_identity` 在開 store 前拒絕。
-- 來源保護、ledger、production SHA 綁定與 `netlify_collector_active` 互斥不變。
-  Netlify scheduler／worker 程式保留為備援；collector disabled 時 scheduler 每次只做
-  約 1 秒的檢查，不派送 worker。
-- 代價：GitHub cron 可能延遲或在高峰被略過；報價有效至下一個半小時加 35 分鐘，
-  單輪延遲不會清空地圖。Public repository 60 天無活動會停用排程。每次正式部署後
-  須更新 `EXCHANGE_RATES_1965_PRODUCTION_COMMIT`（與原 Netlify rebind 負擔相同）。
+- 來源保護、ledger、production SHA 綁定、`netlify_collector_active` 互斥與 concurrency
+  不變，外部觸發只決定時間。Netlify scheduler／worker 保留為備援；collector disabled 時
+  scheduler 每次只做約 1 秒的檢查，不派送 worker。
+- 代價：外部服務持有 PAT（外洩最壞為額外觸發，受 guard 保護；須設到期並可隨時撤銷）；
+  每次正式部署後須更新 `EXCHANGE_RATES_1965_PRODUCTION_COMMIT`（與原 Netlify rebind 負擔相同）。

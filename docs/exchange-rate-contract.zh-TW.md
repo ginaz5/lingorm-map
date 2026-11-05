@@ -84,8 +84,9 @@ Notion 仍是位置系統來源；匯率與營業時間不寫入位置 snapshot�
 
 ## 來源工作與驗證
 
-綠標由獨立 Netlify collector 更新快照。橘標由 GitHub Actions 排程（受 repository
-variable 控制）逐店發布；綁定部署的 Netlify scheduler／Python background worker 保留為備援。
+綠標由獨立 Netlify collector 更新快照。橘標由 GitHub Actions 逐店發布（外部排程觸發
+`workflow_dispatch`，受 variable 控制的 GitHub cron 為備援）；綁定部署的 Netlify scheduler／Python
+background worker 保留為備援。
 橘標沿用共同 source guard、冷卻、lease、CAS 與 operation ledger；正式部署更換後
 必須核對並重新綁定，不清除來源保護歷史。單店報價發布成功只清除連續失敗計數，
 封鎖等級與未到期封鎖時間不變。目標 breaker 的清理僅以該次來源工作前讀取的版本做一次

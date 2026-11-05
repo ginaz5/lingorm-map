@@ -27,9 +27,10 @@ USD／TWD 指定面額買入價、橘色 marker／群聚，以及 Google／HERE 
 綠標 USD 50、100 同價時合併顯示 USD 50/100，異價或缺價時分開；橘標固定顯示 USD 50/100。
 兩品牌 TWD 各自保留指定面額。頁面自動只讀快取，不會向官網取價；
 卡片不提供單店刷新按鈕。有效期與綠標相同，排序選單旁統一說明只比較所選品牌
-已有有效報價的分店。38 家橘標位置由 Notion 管理；報價由 GitHub Actions 排程
-（Python 傳輸，寫入 Netlify Blobs）每半小時更新，時段為泰國 08:07～22:37。
-2026-11-04 起由 Netlify background worker 改為 Actions，以節省 Netlify compute credits。
+已有有效報價的分店。38 家橘標位置由 Notion 管理；報價由 GitHub Actions
+（Python 傳輸，寫入 Netlify Blobs）每半小時更新，時段為泰國 08:00～22:30。
+主要由外部排程呼叫 `workflow_dispatch` 觸發，GitHub 內建 cron 僅為備援（實測漏跑率高）。
+2026-11-05 起由 Netlify background worker 改為 Actions，以節省 Netlify compute credits。
 2026-10-24 PR #18 正式部署已通過兩輪自動排程驗收，後續追加回查也成功；實際部署與
 各輪來源／發布數量見[最新上線紀錄](docs/superrich1965-netlify-pr18-release-2026-10-24.zh-TW.md)。
 網站換版後須更新 GitHub Environment 的 `EXCHANGE_RATES_1965_PRODUCTION_COMMIT`。
@@ -38,7 +39,7 @@ Netlify scheduler／worker 保留為備援，平時 collector disabled。
 
 維護入口：[文件索引](docs/README.md)、[匯率資料契約](docs/exchange-rate-contract.zh-TW.md)、
 [Netlify 維運手冊](docs/superrich1965-netlify-runbook.zh-TW.md)、
-[Actions 排程與手動取價](docs/superrich1965-actions-runbook.zh-TW.md)。
+[Actions 取價與外部排程](docs/superrich1965-actions-runbook.zh-TW.md)。
 
 ---
 
@@ -47,9 +48,11 @@ Netlify scheduler／worker 保留為備援，平時 collector disabled。
 The app is a static site with Netlify Functions for map configuration, the location
 snapshot, and cached exchange rates. Browser state holds filters and displayed
 quotes; Netlify Blobs persist rate controls and quotes. SuperRich Thailand uses its
-Netlify collector. SuperRich 1965 is collected by a main-only, variable-gated GitHub
-Actions cron (Python transport, writes Netlify Blobs); the deploy-bound Netlify scheduled
-dispatcher and Python background collector remain as a disabled fallback.
+Netlify collector. SuperRich 1965 is collected by a main-only GitHub Actions workflow
+(Python transport, writes Netlify Blobs), triggered every half hour by an external
+scheduler through the `workflow_dispatch` API, with a variable-gated GitHub cron as backup.
+The deploy-bound Netlify scheduled dispatcher and Python background collector remain as a
+disabled fallback.
 Public orange-rate APIs only read cached data; they never dispatch source work.
 The [documentation index](docs/README.md) separates current operations from archived rollout records.
 
