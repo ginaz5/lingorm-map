@@ -157,7 +157,7 @@ http://localhost:8888
 - 點 marker 或卡片會在面板開啟地點詳細資訊（不再出現 InfoWindow／InfoBubble），同時顯示類別與 Type badge；「返回清單」或 Escape 回到原本的清單位置。Google Maps 與 HERE 都要確認
 - 手機版以 `Bar / Rooftop Club`、`JKR Fan Projects`、`酒吧/天台俱樂部` 等最長篩選文字檢查，320px 與一般手機寬度都不裁切或水平溢出
 - 定位按鈕浮在地圖右下（手機跟著 sheet 上下移動，sheet 全開時隱藏），桌機不與 Google／HERE 縮放鍵重疊
-- 左上角選單（抽屜）在 320px、390px 與桌機寬度下，中英文完整顯示；語言與主題切換即時生效且選單保持開啟；粉絲資源、問題回報會先關閉選單再開啟對話框；Escape／點背景可關閉
+- 左上角選單（抽屜）在 320px、390px 與桌機寬度下，中英文完整顯示；開啟時搜尋列、chip 與定位鍵淡出，抽屜旁不露出半截元件；語言（中文｜English）與主題（淺色｜深色）兩個選項都顯示、目前值反白，切換即時生效且選單保持開啟，關閉後焦點回到 ☰；粉絲資源、問題回報會先關閉選單再開啟對話框；Escape／點背景可關閉
 - 目的地可跨國複選，國家 checkbox 能全選／取消子目的地，部分選取時顯示 indeterminate
 - 目的地變更立即套用，重新整理後保留，且地圖自動縮放至全部篩選結果
 - 手機版 bottom sheet：拖曳把手或標頭可在 peek／half／full 間切換，快速滑動會跳到下一段；half 時在清單上往上滑會展開，full 時清單可捲動、捲到頂再往下拉會收合；點把手切換 half／full。實機（iOS Safari、Android Chrome）都要測

@@ -142,13 +142,13 @@ function applyTheme() {
   const theme = getEffectiveTheme();
   document.documentElement.dataset.theme = theme;
 
+  // The menu shows both themes and highlights the current one (CSS reads
+  // <html data-theme>); the label states the current theme and the action,
+  // and reads through data-i18n-aria so a language switch relabels it too.
   const themeBtn = document.getElementById('theme-btn');
-  if (themeBtn) themeBtn.setAttribute('aria-pressed', String(theme === 'dark'));
-  // The value reads through data-i18n so a language switch relabels it too.
-  const themeValue = document.getElementById('theme-btn-value');
-  if (themeValue) {
-    themeValue.dataset.i18n = theme === 'dark' ? 'theme_dark' : 'theme_light';
-    themeValue.textContent = t(themeValue.dataset.i18n);
+  if (themeBtn) {
+    themeBtn.dataset.i18nAria = theme === 'dark' ? 'menu_theme_aria_dark' : 'menu_theme_aria_light';
+    themeBtn.setAttribute('aria-label', t(themeBtn.dataset.i18nAria));
   }
   // Browser / installed-app chrome follows the in-app theme, not the OS one.
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLORS[theme]);

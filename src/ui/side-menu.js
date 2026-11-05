@@ -27,10 +27,15 @@ export function initSideMenu({ documentRoot = document } = {}) {
   let restoreFocus = true;
   let startedOnBackdrop = false;
 
+  // While open, styles.css fades the floating search bar, chips and map
+  // buttons so no half-covered fragments show beside the drawer.
+  const root = documentRoot.documentElement;
+
   function open() {
     if (dialog.open) return;
     restoreFocus = true;
     dialog.showModal();
+    root?.classList.add('menu-open');
     trigger.setAttribute('aria-expanded', 'true');
   }
 
@@ -62,6 +67,7 @@ export function initSideMenu({ documentRoot = document } = {}) {
   });
   // Native Escape dismissal also fires close.
   dialog.addEventListener('close', () => {
+    root?.classList.remove('menu-open');
     trigger.setAttribute('aria-expanded', 'false');
     if (restoreFocus) trigger.focus();
     restoreFocus = true;

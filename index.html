@@ -19,8 +19,10 @@
 <script>
 try {
   document.documentElement.dataset.theme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.lang = localStorage.getItem('lang') === 'en' ? 'en' : 'zh';
 } catch (_) {
   document.documentElement.dataset.theme = 'light';
+  document.documentElement.dataset.lang = 'zh';
 }
 </script>
 <link rel="stylesheet" href="./styles.css"/>
@@ -157,10 +159,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
     <p class="side-menu-sub" data-i18n="hdr_sub"></p>
     <nav class="side-menu-list">
-      <button type="button" class="side-menu-item" id="lang-btn">
+      <!-- Settings show both choices with the current one highlighted (CSS reads
+           <html data-lang> / <html data-theme>); the aria-label states the
+           current value and what a tap does. -->
+      <button type="button" class="side-menu-item" id="lang-btn" data-i18n-aria="menu_language_aria">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         <span class="side-menu-label" data-i18n="menu_language"></span>
-        <span class="side-menu-value" id="lang-btn-label"></span>
+        <span class="side-menu-switch" aria-hidden="true">
+          <span class="side-menu-option" data-lang-option="zh">中文</span>
+          <span class="side-menu-option" data-lang-option="en">English</span>
+        </span>
       </button>
       <button type="button" class="side-menu-item" id="theme-btn">
         <span class="theme-icon" aria-hidden="true">
@@ -168,7 +176,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <svg class="theme-icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </span>
         <span class="side-menu-label" data-i18n="theme_btn"></span>
-        <span class="side-menu-value" id="theme-btn-value"></span>
+        <span class="side-menu-switch" aria-hidden="true">
+          <span class="side-menu-option" data-theme-option="light" data-i18n="theme_light"></span>
+          <span class="side-menu-option" data-theme-option="dark" data-i18n="theme_dark"></span>
+        </span>
       </button>
       <div class="side-menu-divider" role="separator"></div>
       <button type="button" class="side-menu-item" id="fan-resources-btn"
@@ -191,6 +202,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </nav>
     <div class="side-menu-foot">
       <div class="leg-row" id="map-provider-badge">
+        <span class="provider-caption" data-i18n="map_provider_label"></span>
         <div class="leg-dot" id="provider-dot"></div>
         <span id="provider-label" class="provider-label"></span>
       </div>

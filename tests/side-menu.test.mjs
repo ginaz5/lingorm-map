@@ -6,7 +6,7 @@ import { initInstallApp, isIosDevice, isStandaloneDisplay } from '../src/feature
 import { element } from './helpers/map-first-dom.mjs';
 
 function makeMenu() {
-  const documentRoot = { activeElement: null };
+  const documentRoot = { activeElement: null, documentElement: element() };
   const focusable = extra => {
     const node = element(extra);
     node.focus = () => { documentRoot.activeElement = node; };
@@ -25,11 +25,15 @@ function makeMenu() {
 
 test('the menu button opens the drawer and closing returns focus to it', () => {
   const { documentRoot, dialog, trigger, closeButton } = makeMenu();
+  const root = documentRoot.documentElement;
   trigger.dispatchEvent(new Event('click'));
   assert.equal(dialog.open, true);
   assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  // The floating search bar and chips step back while the drawer is open.
+  assert.equal(root.classList.contains('menu-open'), true);
   closeButton.dispatchEvent(new Event('click'));
   assert.equal(dialog.open, false);
+  assert.equal(root.classList.contains('menu-open'), false);
   assert.equal(trigger.getAttribute('aria-expanded'), 'false');
   assert.equal(documentRoot.activeElement, trigger);
 });
@@ -113,4 +117,36 @@ test('the manifest makes the site installable without a service worker', async (
   assert.match(html, /viewport-fit=cover/);
   assert.match(html, /<meta name="theme-color" content="#ffffff"\/>/);
   assert.doesNotMatch(html, /serviceWorker|service-worker/);
+});
+
+test('language and theme show both choices with the current one highlighted', async () => {
+  const [html, css, mainSrc] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8'),
+    readFile(new URL('../src/main.js', import.meta.url), 'utf8'),
+  ]);
+  const { T } = await import('../src/core/i18n.js');
+  const langBtn = html.match(/<button[^>]*id="lang-btn"[\s\S]*?<\/button>/)?.[0] ?? '';
+  const themeBtn = html.match(/<button[^>]*id="theme-btn"[\s\S]*?<\/button>/)?.[0] ?? '';
+  assert.match(langBtn, /data-i18n-aria="menu_language_aria"/);
+  assert.match(langBtn, /data-lang-option="zh">中文</);
+  assert.match(langBtn, /data-lang-option="en">English</);
+  assert.match(themeBtn, /data-theme-option="light" data-i18n="theme_light"/);
+  assert.match(themeBtn, /data-theme-option="dark" data-i18n="theme_dark"/);
+  assert.doesNotMatch(html, /side-menu-value/, 'no lone value that could read as state or action');
+  // Pre-paint: the inline head script sets both attributes the switch reads.
+  assert.match(html, /dataset\.lang = localStorage\.getItem\('lang'\) === 'en' \? 'en' : 'zh'/);
+  assert.match(css, /:root\[data-lang="zh"\] \[data-lang-option="zh"\],:root\[data-lang="en"\] \[data-lang-option="en"\],\s*:root\[data-theme="light"\] \[data-theme-option="light"\],:root\[data-theme="dark"\] \[data-theme-option="dark"\]\{/);
+  assert.match(css, /\.menu-open \.map-top,\.menu-open \.map-fabs\{opacity:0;visibility:hidden;transition:opacity \.15s,visibility 0s \.15s\}/);
+  // Visibility must come back instantly on close, or focus cannot return to ☰.
+  assert.match(css, /\.map-top\{transition:opacity \.15s,visibility 0s\}/);
+  // The theme label states the current value and the action, in both languages.
+  assert.match(mainSrc, /theme === 'dark' \? 'menu_theme_aria_dark' : 'menu_theme_aria_light'/);
+  for (const language of ['zh', 'en']) {
+    for (const key of ['menu_language_aria', 'menu_theme_aria_light', 'menu_theme_aria_dark', 'map_provider_label']) {
+      assert.equal(typeof T[language][key], 'string', `${language}.${key}`);
+    }
+  }
+  assert.match(T.zh.menu_language_aria, /^語言：中文/);
+  assert.match(T.en.menu_language_aria, /^Language: English/);
 });

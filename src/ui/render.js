@@ -505,9 +505,14 @@ export function updateLangUI() {
     else if (el.dataset.i18nPh) { const v = t(el.dataset.i18nPh); if (v !== el.dataset.i18nPh) /** @type {HTMLInputElement|HTMLTextAreaElement} */ (el).placeholder = v; }
     else if (el.dataset.i18nAria) { const v = t(el.dataset.i18nAria); if (v !== el.dataset.i18nAria) el.setAttribute('aria-label', v); }
   });
+  // Page language for assistive tech and the menu's language switch (CSS).
+  const root = document.documentElement;
+  if (root) {
+    root.lang = lang === 'zh' ? 'zh-TW' : 'en';
+    root.dataset.lang = lang;
+  }
   const langBtnLabel = document.getElementById('lang-btn-label');
-  if (!langBtnLabel) throw new Error('Missing required element #lang-btn-label');
-  langBtnLabel.textContent = t('lang_btn');
+  if (langBtnLabel) langBtnLabel.textContent = t('lang_btn');
 }
 
 export function buildCatFilter() {
