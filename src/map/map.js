@@ -2,6 +2,7 @@ import { state } from '../core/state.js';
 import { getEffectiveTheme } from '../ui/ui.js';
 import { activateCard, isPublicLocation } from '../ui/render.js';
 import { closePlaceDetail } from '../ui/place-detail.js';
+import { collapseSheetForMapGesture } from '../ui/bottom-sheet.js';
 import { isMobileLayout } from '../ui/layout.js';
 import {
   cancelPendingFocus,
@@ -666,6 +667,8 @@ function initWithGoogle(cfg, view = {}) {
     backgroundColor: state.mapTheme === 'dark' ? '#111827' : '#e5e7eb',
     ...getGoogleMapUiOptions(isMobileLayout()),
   });
+  // Panning the map to look around lowers the mobile sheet out of the way.
+  state.map.addListener('dragstart', collapseSheetForMapGesture);
 
   // Watch for Google quota-exceeded error overlay
   const mapEl = requiredElement('map');
@@ -776,6 +779,8 @@ function initWithHere(apiKey) {
     }
   );
   new H.mapevents.Behavior(new H.mapevents.MapEvents(state.map));
+  // Panning the map to look around lowers the mobile sheet out of the way.
+  state.map.addEventListener('dragstart', collapseSheetForMapGesture);
   state.hereUi = H.ui.UI.createDefault(state.map, layers, uiLocale);
   arrangeHereControls(state.hereUi, isMobileLayout());
 

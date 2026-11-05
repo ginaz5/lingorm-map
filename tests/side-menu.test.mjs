@@ -134,6 +134,10 @@ test('language and theme show both choices with the current one highlighted', as
   assert.match(themeBtn, /data-theme-option="light" data-i18n="theme_light"/);
   assert.match(themeBtn, /data-theme-option="dark" data-i18n="theme_dark"/);
   assert.doesNotMatch(html, /side-menu-value/, 'no lone value that could read as state or action');
+  // The drawer header already says "LingOrm Map"; no repeated subtitle.
+  assert.doesNotMatch(html, /side-menu-sub|data-i18n="hdr_sub"/);
+  assert.equal(T.zh.hdr_sub, undefined);
+  assert.equal(T.en.hdr_sub, undefined);
   // Pre-paint: the inline head script sets both attributes the switch reads.
   assert.match(html, /dataset\.lang = localStorage\.getItem\('lang'\) === 'en' \? 'en' : 'zh'/);
   assert.match(css, /:root\[data-lang="zh"\] \[data-lang-option="zh"\],:root\[data-lang="en"\] \[data-lang-option="en"\],\s*:root\[data-theme="light"\] \[data-theme-option="light"\],:root\[data-theme="dark"\] \[data-theme-option="dark"\]\{/);

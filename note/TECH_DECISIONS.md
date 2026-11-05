@@ -203,6 +203,10 @@ HERE Maps 主題同步：依 `getHereBaseLayer()` 切換可用的日間／夜間
   `src/ui/bottom-sheet.js`），開啟時為 peek，地圖為主，如同地圖 App 首頁；>700px 是可收合的左側面板（`src/ui/side-panel.js`）。
 - **地點詳細面板取代 popup**：選取地點時 panel 從清單切成詳細資訊（`src/ui/place-detail.js`），
   Google 與 HERE 共用同一份 UI；provider 專屬邏輯只剩地圖平移與控制項位置。
+- **拖曳地圖時收起 sheet**：使用者開始拖曳地圖（Google／HERE `dragstart`，程式平移不觸發）時，手機 sheet 降到 peek，
+  地點頁在 peek 只顯示一行名稱；點把手依 peek→half→full 回升。
+- **深色模式 marker 用淺色**：原本深色模式一般 marker 為珊瑚橘 `#ff6b35`，與橘標 `#eb7923` 幾乎同色；改為淺色底深色字，
+  與綠標、橘標、使用者位置藍點都能區分。
 - **已選取地點圖釘**：密集區在 zoom 15 仍可能被群聚，因此選取地點另畫一個較大的圖釘
   （`showSelectedMarker`，Google `AdvancedMarkerElement`／HERE `DomMarker`，`zIndex` 2000），不參與群聚。
 - **地圖 insets**：`src/map/viewport.js` 依「目標」sheet 高度／面板狀態計算被浮動 UI 蓋住的區域，

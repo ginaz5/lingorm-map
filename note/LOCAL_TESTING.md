@@ -163,6 +163,8 @@ http://localhost:8888
 - 手機版 bottom sheet：拖曳把手或標頭可在 peek／half／full 間切換，快速滑動會跳到下一段；half 時在清單上往上滑會展開，full 時清單可捲動、捲到頂再往下拉會收合；點把手切換 half／full。實機（iOS Safari、Android Chrome）都要測
 - 點列表卡片後，即使該地點在 zoom 15 仍落在群聚內，也會出現較大的「已選取」圖釘；返回清單後圖釘消失
 - 手機版 320px／390px：點地圖標記或列表卡片後，sheet 升到 half，地點落在 sheet 與搜尋列之間的可見地圖中央；點標記維持原縮放、點卡片縮放到 15。Google Maps 與 HERE 都要確認。回歸測試：`node --test tests/place-focus.test.mjs tests/bottom-sheet.test.mjs`
+- 手機開啟地點後單指拖曳地圖：sheet 降到 peek，只顯示一行地點名稱；點把手回到 half（peek→half→full）
+- 深色模式：一般地點 marker／群聚為淺色，與綠標（綠）、橘標（橘）、使用者位置（藍）四者可清楚區分
 - 桌機：左側面板可用右緣按鈕收合／展開，收合時地圖全寬；chip 列在搜尋列右側可水平捲動
 - 搜尋：手機點搜尋框時 sheet 展開到 full、按 Enter 回到 half；有文字時顯示清除（×）
 - 分享：地點資訊的「分享」在手機開啟系統分享面板、桌機複製連結；開啟 `/?place=<slug>` 會直接顯示該地點，網址參數隨即移除

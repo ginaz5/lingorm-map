@@ -73,9 +73,11 @@
   --muted: #a1a1aa;
   --brand-accent: #60a5fa;
   --brand-accent-hover: #93c5fd;
-  --marker-bg: #ff6b35;
-  --marker-fg: #ffffff;
-  --marker-ring: #ffffff;
+  /* Light-neutral markers on the dark map. Not orange: SuperRich 1965 uses
+     orange (#eb7923) and must stay distinguishable from regular places. */
+  --marker-bg: #f4f4f5;
+  --marker-fg: #111214;
+  --marker-ring: #111214;
   --accent-soft: rgba(96,165,250,.14);
   --on-accent: #0b1220;
   --success: #4ade80;
@@ -318,6 +320,10 @@ header {
   .map-fabs{bottom:calc(var(--sheet-visible,var(--sheet-peek)) + 26px);
     transition:bottom .32s cubic-bezier(.2,.8,.2,1),opacity .2s,visibility 0s}
   .sheet-dragging .map-fabs{transition:opacity .2s}
+  /* Lowered while the user looks around the map: show just which place is
+     open (one-line name); the back row returns when the sheet comes up. */
+  .panel[data-sheet="peek"][data-view="place"] .place-detail-bar{display:none}
+  .panel[data-sheet="peek"][data-view="place"] .place-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   [data-sheet="full"] .map-fabs{opacity:0;pointer-events:none}
 }
 
@@ -491,6 +497,8 @@ header {
 }
 .b-exchange{background:rgba(22,131,91,.1);color:#11724f;border-color:rgba(22,131,91,.28)}
 .b-exchange.is-exchange-orange{background:rgba(235,121,35,.12);color:#a94700;border-color:rgba(235,121,35,.35)}
+:root[data-theme="dark"] .b-exchange{background:rgba(112,217,173,.12);color:#70d9ad;border-color:rgba(112,217,173,.32)}
+:root[data-theme="dark"] .b-exchange.is-exchange-orange{background:rgba(255,173,112,.12);color:#ffad70;border-color:rgba(255,173,112,.34)}
 .fx-panel{--fx-accent:#16835b;--fx-status-color:#11724f;margin-top:10px;padding:10px;border:1px solid rgba(22,131,91,.22);border-radius:9px;background:rgba(22,131,91,.045);color:var(--primary);overflow-wrap:anywhere}
 .fx-panel.is-exchange-orange{--fx-accent:#a94700;--fx-status-color:#a94700;border-color:rgba(235,121,35,.3);background:rgba(235,121,35,.06)}
 :root[data-theme="dark"] .fx-panel{--fx-status-color:#70d9ad}
@@ -842,7 +850,8 @@ header {
 .menu-open .map-top,.menu-open .map-fabs{opacity:0;visibility:hidden;transition:opacity .15s,visibility 0s .15s}
 .side-menu-content{display:flex;flex-direction:column;min-height:100%;
   padding:calc(8px + env(safe-area-inset-top,0px)) 0 calc(16px + env(safe-area-inset-bottom,0px))}
-.side-menu-head{display:flex;align-items:center;justify-content:space-between;gap:8px;height:56px;padding:0 8px 0 20px}
+.side-menu-head{display:flex;align-items:center;justify-content:space-between;gap:8px;height:64px;padding:0 8px 8px 20px;
+  border-bottom:1px solid var(--hairline);margin-bottom:8px}
 .side-menu .logo{font-size:18px;gap:10px;align-self:center;height:44px}
 .side-menu .logo svg{margin-top:0}
 .side-menu-close{width:40px;height:40px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;
@@ -850,8 +859,6 @@ header {
 .side-menu-close:hover{background:var(--menu-hover);color:var(--primary)}
 .side-menu-close:focus-visible{outline:2px solid var(--brand-accent);outline-offset:-2px}
 .side-menu-close svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-.side-menu-sub{padding:0 20px 16px;font-size:13px;line-height:1.5;color:var(--muted);
-  border-bottom:1px solid var(--hairline);margin-bottom:8px}
 .side-menu-list{display:flex;flex-direction:column;gap:2px;padding:4px 8px}
 .side-menu-item{width:100%;min-height:48px;display:flex;align-items:center;gap:16px;padding:0 14px;border:0;
   border-radius:24px;background:none;color:var(--primary);font:inherit;font-size:15px;font-weight:500;

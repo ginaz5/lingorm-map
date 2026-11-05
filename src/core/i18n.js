@@ -13,7 +13,6 @@ export function setLang(l) {
 
 export const T = {
   zh: {
-    hdr_sub: 'LingOrm 踩點地圖',
     lang_btn: 'EN',
     theme_btn: '主題',
     theme_light: '淺色',
@@ -196,7 +195,6 @@ export const T = {
     sheet_loading: '載入中…',
   },
   en: {
-    hdr_sub: 'LingOrm Location Map',
     lang_btn: '中文',
     theme_btn: 'Theme',
     theme_light: 'Light',

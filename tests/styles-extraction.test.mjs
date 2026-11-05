@@ -84,11 +84,13 @@ test('unused map-link and Leaflet styles are not kept', async () => {
   assert.equal(css.includes('leaflet-popup'), false);
 });
 
-test('map markers keep their light style and use coral with contrast in dark mode', async () => {
+test('map markers are black in light mode and light-neutral in dark mode', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
   assert.match(css, /:root\s*\{[\s\S]*--marker-bg:\s*#111111/);
-  assert.match(css, /:root\[data-theme="dark"\][\s\S]*--marker-bg:\s*#ff6b35/);
+  // Not coral/orange in dark mode: that read as SuperRich 1965 orange.
+  assert.match(css, /:root\[data-theme="dark"\][\s\S]*--marker-bg:\s*#f4f4f5;\s*--marker-fg:\s*#111214;\s*--marker-ring:\s*#111214;/);
+  assert.doesNotMatch(css, /--marker-bg:\s*#ff6b35/);
   assert.match(css, /--marker-fg:\s*#ffffff/);
   assert.match(css, /--marker-ring:\s*#ffffff/);
   assert.match(css, /\.marker-cluster\{[^}]*background:var\(--marker-bg\);color:var\(--marker-fg\)/);
@@ -156,4 +158,19 @@ test('place detail, list card, and fan resource descriptions share the left-rule
   assert.match(css, /\.fan-resource-description\{[^}]*margin-bottom:auto/);
   assert.doesNotMatch(css, /\.fan-resource-description\{[^}]*flex:1/);
   assert.match(css, /\.card-notes\{[^}]*-webkit-line-clamp:2/);
+});
+
+test('dark-mode place markers stay distinguishable from the orange SuperRich 1965 markers', async () => {
+  const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+  const dark = css.match(/:root\[data-theme="dark"\] \{([\s\S]*?)\n\}/)?.[1] ?? '';
+  const markerBg = dark.match(/--marker-bg: (#[0-9a-f]{6});/i)?.[1];
+  const orange = css.match(/\.marker-dot\.is-exchange-orange,\.marker-cluster\.is-exchange-orange\{--marker-bg:(#[0-9a-f]{6})/i)?.[1];
+  const green = css.match(/\.marker-dot\.is-exchange\{--marker-bg:(#[0-9a-f]{6})/i)?.[1];
+  assert.ok(markerBg && orange && green);
+  const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  const distance = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i]));
+  // Light mode uses #111111 vs #eb7923 (distance ≈ 280); keep dark mode as far apart.
+  assert.ok(distance(markerBg, orange) > 200, `dark marker ${markerBg} too close to orange ${orange}`);
+  assert.ok(distance(markerBg, green) > 200, `dark marker ${markerBg} too close to green ${green}`);
+  assert.match(css, /:root\[data-theme="dark"\] \.b-exchange\.is-exchange-orange\{[^}]*color:#ffad70/);
 });

@@ -18,7 +18,7 @@ import { t } from '../core/i18n.js';
 import { MOBILE_QUERY } from './layout.js';
 
 /** @typedef {'peek'|'half'|'full'} SheetSnap */
-/** @typedef {'drag'|'handle'|'program'} SheetChangeSource */
+/** @typedef {'drag'|'handle'|'map'|'program'} SheetChangeSource */
 /** @typedef {Record<SheetSnap, number>} SheetHeights */
 
 /** @type {readonly SheetSnap[]} */
@@ -89,6 +89,18 @@ let controller = null;
  */
 export function setSheetSnap(snap, source = 'program') {
   controller?.setSnap(snap, source);
+}
+
+/**
+ * The user started panning the map: lower the sheet to peek so the map is
+ * free to explore, like a maps app. The open place or list stays in the
+ * sheet and comes back with a tap or drag. No-op on desktop.
+ * @returns {boolean} whether the sheet moved
+ */
+export function collapseSheetForMapGesture() {
+  if (!controller?.isActive() || controller.getSnap() === 'peek') return false;
+  controller.setSnap('peek', 'map');
+  return true;
 }
 
 /** @returns {SheetSnap} */
@@ -311,9 +323,10 @@ export function initBottomSheet({ documentRoot = document, initialSnap = 'half',
     }
   }, { passive: true });
 
+  // Tap steps up from peek to half to full; from full it returns to half.
   handle.addEventListener('click', () => {
     if (suppressHandleClick || !active) return;
-    setSnap(snap === 'full' ? 'half' : 'full', 'handle');
+    setSnap(snap === 'peek' ? 'half' : snap === 'half' ? 'full' : 'half', 'handle');
   });
 
   // Safety net for browsers without overflow:clip (styles.css): the app shell

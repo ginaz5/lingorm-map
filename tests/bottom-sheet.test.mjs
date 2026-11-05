@@ -167,3 +167,26 @@ test('the app shell never keeps a scroll offset', async () => {
   const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
   assert.match(css, /\.app-body\{position:fixed;inset:0;overflow:hidden;overflow:clip\}/);
 });
+
+test('panning the map lowers the sheet to peek; the handle steps back up', async () => {
+  const { collapseSheetForMapGesture } = await import('../src/ui/bottom-sheet.js');
+  const { elements, changes } = initSheet();
+  assert.equal(getSheetSnap(), 'half');
+  assert.equal(collapseSheetForMapGesture(), true);
+  assert.equal(getSheetSnap(), 'peek');
+  assert.equal(collapseSheetForMapGesture(), false, 'already at peek');
+  elements['sheet-handle'].dispatchEvent(new Event('click'));
+  assert.equal(getSheetSnap(), 'half', 'tap from peek returns to half, not full');
+  // map gestures are not counted as user sheet views (main.js tracks drag/handle)
+  assert.deepEqual(changes, [['peek', 'map'], ['half', 'handle']]);
+
+  initSheet({ width: 1280 });
+  assert.equal(collapseSheetForMapGesture(), false, 'desktop side panel is unaffected');
+});
+
+test('both map providers lower the sheet when the user starts panning', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const mapSrc = await readFile(new URL('../src/map/map.js', import.meta.url), 'utf8');
+  assert.match(mapSrc, /state\.map\.addListener\('dragstart', collapseSheetForMapGesture\)/);
+  assert.match(mapSrc, /state\.map\.addEventListener\('dragstart', collapseSheetForMapGesture\)/);
+});
