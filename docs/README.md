@@ -16,8 +16,8 @@
 - [兩品牌匯率資料與公開 API 契約](exchange-rate-contract.zh-TW.md)。
 - 橘標使用 branch／cache 逐店報價與 runtime 身分端點，舊完整快照 API／fallback／本機取價 CLI 已退役；綠標完整快照繼續使用。
 - [綠標維運](../note/LOCAL_TESTING.md#換匯功能上線與維運手冊)。
-- [橘標 Netlify 維運](superrich1965-netlify-runbook.zh-TW.md)：現行自動排程、部署綁定、收據與回滾。
-- [橘標 Actions 手動備援](superrich1965-actions-runbook.zh-TW.md)：無 cron，先停用 Netlify collector 再接手。
+- [橘標 Actions 取價與外部排程](superrich1965-actions-runbook.zh-TW.md)：現行外部排程觸發、備援 cron、production SHA 綁定與切換步驟。
+- [橘標 Netlify 維運](superrich1965-netlify-runbook.zh-TW.md)：備援 collector 的部署綁定、收據與回滾。
 - [橘標 PR #18 正式部署與排程驗收（2026-10-24）](superrich1965-netlify-pr18-release-2026-10-24.zh-TW.md)及[結構化證據](evidence/superrich1965-netlify-pr18-release-2026-10-24.json)。
 
 ## 地點與查證資料

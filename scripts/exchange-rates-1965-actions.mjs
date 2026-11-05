@@ -31,13 +31,19 @@ export function parseActionsArgs(argv) {
   return { mode, alias, scope: ACTIONS_SCOPE };
 }
 
-/** Manual dispatch only: the workflow has no schedule.
- * @param {Record<string,string|undefined>} env
+export const SCHEDULE_ENABLED_ENV = 'EXCHANGE_RATES_1965_SCHEDULE_ENABLED';
+
+/** Manual dispatch, or the workflow cron. A scheduled run may only publish all
+ * branches to production, and only while the repository variable is exactly true.
+ * @param {Record<string,string|undefined>} env @param {string} mode @param {string} alias
  */
-function executionIdentity(env) {
+function executionIdentity(env, mode, alias) {
+  const event = env.GITHUB_EVENT_NAME;
+  const scheduled = event === 'schedule' && mode === ACTIONS_MODE && alias === 'production' &&
+    env[SCHEDULE_ENABLED_ENV] === 'true';
   if (env.GITHUB_ACTIONS !== 'true' || env.GITHUB_REPOSITORY !== REPOSITORY ||
       !/^[1-9][0-9]{0,19}$/.test(env.GITHUB_RUN_ID ?? '') || !/^[a-f0-9]{40}$/.test(env.GITHUB_SHA ?? '') ||
-      env.GITHUB_REF !== 'refs/heads/main' || env.GITHUB_EVENT_NAME !== 'workflow_dispatch') {
+      env.GITHUB_REF !== 'refs/heads/main' || (event !== 'workflow_dispatch' && !scheduled)) {
     throw new Error('invalid_actions_identity');
   }
   return { repository: REPOSITORY, runId: /** @type {string} */ (env.GITHUB_RUN_ID), commit: /** @type {string} */ (env.GITHUB_SHA) };
@@ -68,8 +74,8 @@ export async function runActionsCommand(argv, { env = process.env, openTargetImp
   let observedSourceRequests = 0;
   try {
     const { mode, alias, scope } = parseActionsArgs(argv);
-    // Schedule events fail closed in every mode, including read-only inspect.
-    const identity = mode === 'inspect' && env.GITHUB_EVENT_NAME !== 'schedule' ? null : executionIdentity(env);
+    // Scheduled inspect, Preview or disabled-schedule runs fail closed before any store opens.
+    const identity = mode === 'inspect' && env.GITHUB_EVENT_NAME !== 'schedule' ? null : executionIdentity(env, mode, alias);
     const opened = await openTargetImpl({ alias, targetsInput, env, fetchImpl });
     const { target, metadata, store, sourceGuardStore, verifyCurrent } = opened;
     const netlifyControl = (await readEntry(store, NETLIFY_CONTROL_KEY))?.data;

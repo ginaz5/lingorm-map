@@ -93,14 +93,36 @@ test('production metadata revalidation rejects a changed deployment and keeps cr
   assert.equal(JSON.stringify(opened).includes('PRIVATE_ADMIN_TOKEN'),false);
 });
 
-test('a schedule event is rejected in every mode before opening stores or sending HTTP',async()=>{
-  // The Netlify scheduler owns collection; the workflow has no cron, even if the old variable is set.
-  const scheduled={...ENV,GITHUB_EVENT_NAME:'schedule',GITHUB_EVENT_SCHEDULE:'0,30 1-15 * * *',EXCHANGE_RATES_1965_SCHEDULE_ENABLED:'true'};
-  for(const [mode,target] of [['inspect','production'],['publish-all-python','production'],['publish-all-python','preview-reviewed']]) {
-    const result=await runActionsCommand([mode,'--target',target],{env:scheduled,
-      openTargetImpl:async()=>assert.fail('a schedule must not open target'),pythonFetchImpl:async()=>assert.fail('zero source')});
+test('a schedule event may only run the enabled full production publish',async()=>{
+  const scheduled={...ENV,GITHUB_EVENT_NAME:'schedule',GITHUB_EVENT_SCHEDULE:'7,37 1-15 * * *',EXCHANGE_RATES_1965_SCHEDULE_ENABLED:'true'};
+  const rejected=[
+    [scheduled,'inspect','production'],
+    [scheduled,'publish-all-python','preview-reviewed'],
+    ...[undefined,'','false','TRUE','1'].map(value=>[{...scheduled,EXCHANGE_RATES_1965_SCHEDULE_ENABLED:value},'publish-all-python','production']),
+    [{...scheduled,GITHUB_REF:'refs/heads/other'},'publish-all-python','production'],
+  ];
+  for(const [env,mode,target] of rejected) {
+    const result=await runActionsCommand([mode,'--target',target],{env,
+      openTargetImpl:async()=>assert.fail('a rejected schedule must not open target'),pythonFetchImpl:async()=>assert.fail('zero source')});
     assert.equal(result.exitCode,2);assert.equal(result.summary.reason,'invalid_actions_identity');assert.equal(result.summary.sourceRequestCount,0);
   }
+});
+
+test('an enabled schedule publishes all 38 production branches like a manual run',async t=>{
+  const h=await harness(t);
+  h.input.env={...ENV,GITHUB_EVENT_NAME:'schedule',EXCHANGE_RATES_1965_SCHEDULE_ENABLED:'true'};
+  const result=await h.run();assert.equal(result.exitCode,0);assert.equal(result.summary.published,38);
+  assert.equal(result.summary.sourceRequestCount,39);assert.equal(h.http.length,39);
+});
+
+test('an enabled Netlify collector also blocks a scheduled GitHub run',async t=>{
+  const h=await harness(t);
+  h.input.env={...ENV,GITHUB_EVENT_NAME:'schedule',EXCHANGE_RATES_1965_SCHEDULE_ENABLED:'true'};
+  h.store.seed(NETLIFY_CONTROL_KEY, { schemaVersion: 1, enabled: true, bindingVersion: uuid(3),
+    quoteControlVersion: uuid(1), deployID: DEPLOY, commit: DEPLOY_SHA, branch: 'main', context: 'production',
+    hmacKey: '1'.repeat(64), changedAt: new Date(START).toISOString() });
+  const result=await h.run();assert.equal(result.exitCode,3);assert.equal(result.summary.reason,'netlify_collector_active');
+  assert.equal(h.http.length,0);
 });
 
 test('a manual run outside main or this repository is rejected before opening stores',async()=>{
@@ -150,9 +172,13 @@ test('missing control or paused guard keeps production source untouched',async t
   }
 });
 
-test('workflow retains manual fallback, main-only Environment and concurrency after Netlify cron cutover',async()=>{
+test('workflow keeps manual runs and a variable-gated main-only production cron',async()=>{
   const workflow=await readFile(new URL('../.github/workflows/exchange-rates-1965.yml',import.meta.url),'utf8');
-  assert.doesNotMatch(workflow,/\bcron:/);assert.match(workflow,/github.event_name == 'workflow_dispatch'/);
+  assert.match(workflow,/cron: '7,37 1-15 \* \* \*'/);assert.match(workflow,/github.event_name == 'workflow_dispatch'/);
+  assert.match(workflow,/github.event_name == 'schedule' && vars.EXCHANGE_RATES_1965_SCHEDULE_ENABLED == 'true'/);
+  assert.match(workflow,/ACTION_MODE: \$\{\{ github.event_name == 'schedule' && 'publish-all-python' \|\| inputs.action \}\}/);
+  assert.match(workflow,/ACTION_TARGET: \$\{\{ github.event_name == 'schedule' && 'production' \|\| inputs.target \}\}/);
+  assert.match(workflow,/EXCHANGE_RATES_1965_SCHEDULE_ENABLED: \$\{\{ vars.EXCHANGE_RATES_1965_SCHEDULE_ENABLED \}\}/);
   assert.match(workflow,/group: exchange-rates-1965-source/);assert.match(workflow,/cancel-in-progress: false/);
   assert.match(workflow,/environment: superrich1965-preview/);assert.match(workflow,/github.ref == 'refs\/heads\/main'/);
   assert.ok(workflow.indexOf('NETLIFY_AUTH_TOKEN:')>workflow.indexOf('Verify Python stdlib transport offline'));
