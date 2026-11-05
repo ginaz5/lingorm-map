@@ -196,7 +196,7 @@ export const T = {
     sheet_loading: '載入中…',
   },
   en: {
-    hdr_sub: 'LingOrm Bangkok Location Map',
+    hdr_sub: 'LingOrm Location Map',
     lang_btn: '中文',
     theme_btn: 'Theme',
     theme_light: 'Light',
